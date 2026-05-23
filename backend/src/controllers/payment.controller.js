@@ -22,11 +22,19 @@ export async function createSubscriptionHandler(req, res, next) {
 export async function webhookHandler(req, res) {
   const sig = req.headers['stripe-signature']
   let event
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, config.stripeWebhookSecret)
-  } catch (err) {
-    console.error('Payment webhook signature failed:', err.message)
-    return res.status(400).json({ error: 'Webhook signature verification failed' })
+  if (config.stripeWebhookSecret) {
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, config.stripeWebhookSecret)
+    } catch (err) {
+      console.error('Payment webhook signature failed:', err.message)
+      return res.status(400).json({ error: 'Webhook signature verification failed' })
+    }
+  } else {
+    try {
+      event = JSON.parse(req.body.toString())
+    } catch {
+      return res.status(400).json({ error: 'Invalid webhook payload' })
+    }
   }
 
   try {

@@ -87,8 +87,15 @@ git push -u origin main
 SSH into your VPS as root:
 
 ```bash
-ssh root@YOUR_VPS_IP
-```
+ssh root@5.189.143.148
+fijnar-geZrub-7buzsy
+cd /var/www/chat  
+git pull origin main
+
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
 Create a non-root user (recommended):
 
@@ -168,7 +175,7 @@ sudo -i -u postgres
 psql
 
 # Run these SQL commands:
-CREATE USER chatuser WITH PASSWORD 'your_strong_password_here';
+CREATE USER chatuser WITH PASSWORD 'mujeeb';
 CREATE DATABASE chatapp OWNER chatuser;
 GRANT ALL PRIVILEGES ON DATABASE chatapp TO chatuser;
 \q
@@ -193,7 +200,7 @@ psql -U chatuser -d chatapp -h localhost
 cd /home/deploy
 
 # Clone your repo
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git chat
+git clone https://github.com/MMAkbar993/chat-app.git chat
 cd chat
 ```
 
@@ -217,12 +224,12 @@ Fill in the values:
 PORT=3001
 NODE_ENV=production
 
-DATABASE_URL=postgres://chatuser:your_strong_password_here@localhost:5432/chatapp
+DATABASE_URL=postgres://chatuser:mujeeb@localhost:5432/chatapp
 
 JWT_SECRET=generate_a_random_64_char_string_here
 JWT_REFRESH_SECRET=generate_a_different_random_64_char_string_here
 
-FRONTEND_URL=https://yourdomain.com
+FRONTEND_URL=https://connectar.online
 
 # Stripe (if using payments)
 STRIPE_SECRET_KEY=sk_live_...
@@ -254,7 +261,7 @@ nano .env
 ```
 
 ```env
-VITE_API_URL=https://yourdomain.com
+VITE_API_URL=https://connectar.online
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
 ```
 
@@ -291,7 +298,7 @@ This creates `/home/deploy/chat/frontend/dist/` — the static files Nginx will 
 Create a PM2 ecosystem file:
 
 ```bash
-cat > /home/deploy/chat/ecosystem.config.cjs << 'EOF'
+cat > /var/www/chat/ecosystem.config.cjs << 'EOF'
 module.exports = {
   apps: [
     {
@@ -317,7 +324,7 @@ EOF
 Create the logs folder and start:
 
 ```bash
-mkdir -p /home/deploy/chat/logs
+mkdir -p /var/www/chat/logs
 
 cd /home/deploy/chat
 pm2 start ecosystem.config.cjs
@@ -330,7 +337,7 @@ Check the backend is running:
 ```bash
 pm2 status
 pm2 logs chat-backend
-curl http://localhost:3001/api/health   # should return 200 if you have a health route
+curl https://connectar.online/api/health   # should return 200 if you have a health route
 ```
 
 ---
@@ -348,7 +355,7 @@ Paste this (replace `yourdomain.com`):
 ```nginx
 server {
     listen 80;
-    server_name yourdomain.com www.yourdomain.com;
+    server_name https://connectar.online/ www.connectar.online.com;
 
     # Increase body size for file uploads
     client_max_body_size 25M;
