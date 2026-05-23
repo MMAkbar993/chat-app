@@ -1,14 +1,16 @@
 import { stripe } from '../config/stripe.js'
 import { config } from '../config/env.js'
-import { findUserById, updateSubscription, updateSubscriptionStatus } from '../db/queries/users.js'
+import { findUserById, updateSubscription, updateSubscriptionStatus, updateStripeCustomer } from '../db/queries/users.js'
 
-const stripeConfigured = (key) => key && !key.startsWith('sk_test_...')
+function isStripeConfigured(key) {
+  return Boolean(key) && /^sk_(test|live)_[A-Za-z0-9]{20,}/.test(key)
+}
 
 export async function createSubscription(userId, planType) {
   const user = await findUserById(userId)
   if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
 
-  if (!stripeConfigured(config.stripeSecretKey)) {
+  if (!isStripeConfigured(config.stripeSecretKey)) {
     await updateSubscription(userId, {
       subscriptionId: 'dev_bypass',
       plan: planType,
@@ -18,12 +20,21 @@ export async function createSubscription(userId, planType) {
     return { subscriptionId: 'dev_bypass', clientSecret: null }
   }
 
-  if (!user.stripe_customer_id) throw Object.assign(new Error('Stripe customer not set up'), { status: 400 })
+  let customerId = user.stripe_customer_id
+  if (!customerId) {
+    const stripeCustomer = await stripe.customers.create({
+      email: user.email,
+      name: user.full_name,
+      metadata: { userId: user.id },
+    })
+    await updateStripeCustomer(userId, stripeCustomer.id)
+    customerId = stripeCustomer.id
+  }
 
   const priceId = planType === 'yearly' ? config.stripeYearlyPriceId : config.stripeMonthlyPriceId
 
   const subscription = await stripe.subscriptions.create({
-    customer: user.stripe_customer_id,
+    customer: customerId,
     items: [{ price: priceId }],
     payment_behavior: 'default_incomplete',
     payment_settings: { save_default_payment_method: 'on_subscription' },

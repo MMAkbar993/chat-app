@@ -11,6 +11,10 @@ import {
 } from '../db/queries/users.js'
 import { stripe } from '../config/stripe.js'
 
+function isStripeConfigured(key) {
+  return Boolean(key) && /^sk_(test|live)_[A-Za-z0-9]{20,}/.test(key)
+}
+
 export async function registerUser({ full_name, username, country, email, primary_role, phone, password }) {
   const existingEmail = await findUserByEmail(email)
   if (existingEmail) {
@@ -31,8 +35,7 @@ export async function registerUser({ full_name, username, country, email, primar
   const password_hash = await bcrypt.hash(password, 12)
   const user = await createUser({ full_name, username, country, email, primary_role, phone, password_hash })
 
-  const stripeKeyConfigured = config.stripeSecretKey && !config.stripeSecretKey.startsWith('sk_test_...')
-  if (stripeKeyConfigured) {
+  if (isStripeConfigured(config.stripeSecretKey)) {
     try {
       const stripeCustomer = await stripe.customers.create({
         email,
@@ -41,9 +44,7 @@ export async function registerUser({ full_name, username, country, email, primar
       })
       await updateStripeCustomer(user.id, stripeCustomer.id)
     } catch (err) {
-      console.error('Stripe customer creation failed, rolling back user:', err)
-      await query('DELETE FROM users WHERE id = $1', [user.id]).catch(() => {})
-      throw new Error('Payment system unavailable, please try again')
+      console.error('Stripe customer creation failed (user still created):', err.message)
     }
   }
 
