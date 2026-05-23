@@ -1,0 +1,194 @@
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useSocket } from './SocketContext'
+import { useAuth } from './AuthContext'
+import { playReceivedSound } from '../utils/sounds'
+import {
+  getConversations, getMessages, sendMessageApi, markReadApi,
+  archiveConversation, pinConversation, favoriteConversation, muteConversation,
+  deleteConversationApi, clearMessagesApi,
+} from '../api/conversations'
+
+const ChatContext = createContext(null)
+
+export function ChatProvider({ children }) {
+  const { socket } = useSocket()
+  const { user } = useAuth()
+  const [conversations, setConversations] = useState([])
+  const [activeConversation, setActiveConversation] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [loadingMessages, setLoadingMessages] = useState(false)
+  const [typingUsers, setTypingUsers] = useState({})
+  const [replyTo, setReplyToState] = useState(null)
+  const [conversationFilter, setConversationFilter] = useState('all')
+  const activeConvRef = useRef(null)
+
+  useEffect(() => {
+    activeConvRef.current = activeConversation
+  }, [activeConversation])
+
+  const filteredConversations = useMemo(() => {
+    if (conversationFilter === 'all')       return conversations.filter((c) => !c.is_archived)
+    if (conversationFilter === 'favourite') return conversations.filter((c) => c.is_favorite && !c.is_archived)
+    if (conversationFilter === 'pinned')    return conversations.filter((c) => c.is_pinned && !c.is_archived)
+    if (conversationFilter === 'archive')   return conversations.filter((c) => c.is_archived)
+    if (conversationFilter === 'trash')     return conversations.filter((c) => c.is_archived)
+    return conversations
+  }, [conversations, conversationFilter])
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const data = await getConversations()
+      setConversations(data.conversations || [])
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    loadConversations()
+  }, [loadConversations])
+
+  const openConversation = useCallback(async (conv) => {
+    if (activeConvRef.current?.id === conv.id) return
+    setActiveConversation(conv)
+    setMessages([])
+    setLoadingMessages(true)
+    try {
+      socket?.emit('join-conversation', conv.id)
+      const data = await getMessages(conv.id)
+      setMessages(data.messages || [])
+      await markReadApi(conv.id)
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c))
+      )
+    } catch {}
+    setLoadingMessages(false)
+  }, [socket])
+
+  const closeConversation = useCallback(() => {
+    if (activeConvRef.current) {
+      socket?.emit('leave-conversation', activeConvRef.current.id)
+    }
+    setActiveConversation(null)
+    setMessages([])
+  }, [socket])
+
+  const sendMessage = useCallback(async (conversationId, content, messageType = 'text', replyToMessageId = null) => {
+    if (!socket) return
+    const isMedia = messageType !== 'text'
+    socket.emit('send-message', {
+      conversationId,
+      content: isMedia ? null : content,
+      mediaUrl: isMedia ? content : null,
+      messageType,
+      replyToMessageId,
+    })
+    await loadConversations()
+  }, [socket, loadConversations])
+
+  const setReplyTo = useCallback((msg) => {
+    setReplyToState(msg ? { id: msg.id, content: msg.content, senderName: msg.sender_display_name || msg.sender_name } : null)
+  }, [])
+
+  const clearReply = useCallback(() => {
+    setReplyToState(null)
+  }, [])
+
+  const flagApiMap = {
+    is_archived: archiveConversation,
+    is_pinned:   pinConversation,
+    is_favorite: favoriteConversation,
+    is_muted:    muteConversation,
+  }
+
+  const toggleConversationFlag = useCallback(async (id, flag) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, [flag]: !c[flag] } : c))
+    )
+    try {
+      const apiFn = flagApiMap[flag]
+      if (apiFn) await apiFn(id)
+    } catch {
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, [flag]: !c[flag] } : c))
+      )
+    }
+  }, [])
+
+  const removeConversation = useCallback(async (id) => {
+    try {
+      await deleteConversationApi(id)
+      setConversations((prev) => prev.filter((c) => c.id !== id))
+      if (activeConvRef.current?.id === id) {
+        setActiveConversation(null)
+        setMessages([])
+      }
+    } catch {}
+  }, [])
+
+  const clearConversationMessages = useCallback(async (id) => {
+    try {
+      await clearMessagesApi(id)
+      if (activeConvRef.current?.id === id) {
+        setMessages([])
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const onNewMessage = (msg) => {
+      if (msg.sender_id !== user?.id) {
+        playReceivedSound()
+      }
+      if (activeConvRef.current?.id === msg.conversation_id) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev
+          return [...prev, msg]
+        })
+        markReadApi(msg.conversation_id).catch(() => {})
+      }
+      loadConversations()
+    }
+
+    const onTyping = ({ conversationId, userId }) => {
+      setTypingUsers((prev) => ({ ...prev, [conversationId]: userId }))
+    }
+
+    const onStopTyping = ({ conversationId }) => {
+      setTypingUsers((prev) => {
+        const next = { ...prev }
+        delete next[conversationId]
+        return next
+      })
+    }
+
+    socket.on('new-message', onNewMessage)
+    socket.on('user-typing', onTyping)
+    socket.on('user-stop-typing', onStopTyping)
+
+    return () => {
+      socket.off('new-message', onNewMessage)
+      socket.off('user-typing', onTyping)
+      socket.off('user-stop-typing', onStopTyping)
+    }
+  }, [socket, loadConversations])
+
+  return (
+    <ChatContext.Provider value={{
+      conversations, filteredConversations, loadConversations,
+      conversationFilter, setConversationFilter,
+      activeConversation, openConversation, closeConversation,
+      messages, setMessages, loadingMessages,
+      sendMessage,
+      typingUsers,
+      replyTo, setReplyTo, clearReply,
+      toggleConversationFlag, removeConversation, clearConversationMessages,
+    }}>
+      {children}
+    </ChatContext.Provider>
+  )
+}
+
+export function useChat() {
+  return useContext(ChatContext)
+}
