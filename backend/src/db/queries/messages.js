@@ -1,4 +1,5 @@
 import { query } from '../../config/database.js'
+import { getReactionsForMessages } from './reactions.js'
 
 export async function getMessages(conversationId, userId, limit = 50, before = null) {
   const params = [conversationId, userId, limit]
@@ -27,7 +28,12 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
      LIMIT $3`,
     params
   )
-  return result.rows.reverse()
+  const messages = result.rows.reverse()
+  if (messages.length > 0) {
+    const reactionsByMessage = await getReactionsForMessages(messages.map((m) => m.id))
+    messages.forEach((m) => { m.reactions = reactionsByMessage[m.id] || [] })
+  }
+  return messages
 }
 
 export async function createMessage({ conversationId, senderId, content, messageType = 'text', mediaUrl = null, replyToMessageId = null }) {

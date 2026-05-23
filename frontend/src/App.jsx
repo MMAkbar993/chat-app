@@ -25,24 +25,17 @@ const Spinner = () => (
   </div>
 )
 
-function ProtectedRoute({ children, requireVerified = false }) {
+function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
-  if (requireVerified) {
-    const fullyVerified = user.subscription_status === 'active' && user.kyc_status === 'verified'
-    if (!fullyVerified) return <Navigate to="/verify" replace />
-  }
   return children
 }
 
 function GuestRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <Spinner />
-  if (user) {
-    const fullyVerified = user.subscription_status === 'active' && user.kyc_status === 'verified'
-    return <Navigate to={fullyVerified ? '/chat' : '/verify'} replace />
-  }
+  if (user) return <Navigate to="/chat" replace />
   return children
 }
 
@@ -75,7 +68,7 @@ export default function App() {
           <Route path="/verify" element={<ProtectedRoute><VerifyPage /></ProtectedRoute>} />
 
           {/* Main app — requires full verification */}
-          <Route path="/chat" element={<ProtectedRoute requireVerified><ChatApp /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
 
           {/* Public pages (no auth) */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />

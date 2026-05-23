@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { useSocket } from '../../context/SocketContext'
 import MessageContextMenu from './MessageContextMenu'
 import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
@@ -24,12 +25,14 @@ function highlightText(text, query) {
 
 export default function MessageBubble({ msg, darkMode, onReply, onDelete, searchQuery, isCurrentMatch }) {
   const { user } = useAuth()
+  const { socket } = useSocket()
   const isMe = msg.sender_id === user?.id
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
-  const [reactions, setReactions] = useState({})
   const [showReactionPicker, setShowReactionPicker] = useState(false)
+
+  const reactions = msg.reactions || []
 
   if (msg.is_deleted) {
     return (
@@ -51,18 +54,17 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
     } catch {}
   }
 
-  function toggleReaction(emoji) {
-    setReactions((prev) => {
-      const count = prev[emoji] || 0
-      if (count === 0) return { ...prev, [emoji]: 1 }
-      const next = { ...prev }
-      if (count === 1) delete next[emoji]
-      else next[emoji] = count - 1
-      return next
+  function handleReaction(emoji) {
+    if (!socket || !msg.conversation_id) return
+    socket.emit('toggle-reaction', {
+      messageId: msg.id,
+      conversationId: msg.conversation_id,
+      emoji,
     })
+    setShowReactionPicker(false)
   }
 
-  const hasReactions = Object.keys(reactions).length > 0
+  const hasReactions = reactions.length > 0
 
   return (
     <div
@@ -116,7 +118,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
               {QUICK_REACTIONS.map((emoji) => (
                 <button
                   key={emoji}
-                  onClick={() => toggleReaction(emoji)}
+                  onClick={() => handleReaction(emoji)}
                   className="w-7 h-7 flex items-center justify-center text-lg hover:scale-125 transition-transform"
                 >
                   {emoji}
@@ -133,12 +135,11 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
                 </svg>
               </button>
 
-              {/* Full emoji picker for reactions */}
               {showReactionPicker && (
                 <div className={`absolute ${isMe ? 'right-0' : 'left-0'} bottom-full mb-1 z-30`}>
                   <EmojiPicker
                     darkMode={darkMode}
-                    onSelect={(emoji) => { toggleReaction(emoji) }}
+                    onSelect={(emoji) => handleReaction(emoji)}
                     onClose={() => { setShowReactionPicker(false); setHovered(false) }}
                   />
                 </div>
@@ -206,20 +207,25 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
         {/* Reactions display */}
         {hasReactions && (
           <div className={`flex gap-1 mt-1 flex-wrap ${isMe ? 'justify-end' : 'justify-start'}`}>
-            {Object.entries(reactions).map(([emoji, count]) => (
-              <button
-                key={emoji}
-                onClick={() => toggleReaction(emoji)}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
-                  darkMode
-                    ? 'bg-gray-700 border-gray-600 text-gray-200 hover:border-violet-400'
-                    : 'bg-white border-gray-200 text-gray-700 hover:border-violet-400'
-                }`}
-              >
-                <span>{emoji}</span>
-                {count > 1 && <span className="font-medium">{count}</span>}
-              </button>
-            ))}
+            {reactions.map(({ emoji, count, reactors }) => {
+              const reactedByMe = reactors?.includes(user?.id)
+              return (
+                <button
+                  key={emoji}
+                  onClick={() => handleReaction(emoji)}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
+                    reactedByMe
+                      ? 'bg-violet-100 border-violet-400 text-violet-700'
+                      : darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200 hover:border-violet-400'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-violet-400'
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  {count > 1 && <span className="font-medium">{count}</span>}
+                </button>
+              )
+            })}
           </div>
         )}
 

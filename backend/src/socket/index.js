@@ -5,6 +5,7 @@ import { createMessage } from '../db/queries/messages.js'
 import { getParticipants, isParticipant, unhideParticipants } from '../db/queries/conversations.js'
 import { createCall, updateCallStatus } from '../db/queries/calls.js'
 import { findUserById } from '../db/queries/users.js'
+import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 
 let io = null
 
@@ -80,6 +81,23 @@ export function initSocket(httpServer) {
 
     socket.on('stop-typing', ({ conversationId }) => {
       socket.to(`conv:${conversationId}`).emit('user-stop-typing', { conversationId, userId })
+    })
+
+    // --- Message Reactions ---
+
+    socket.on('toggle-reaction', async ({ messageId, conversationId, emoji }) => {
+      try {
+        const ok = await isParticipant(conversationId, userId)
+        if (!ok) return
+        await toggleReaction(messageId, userId, emoji)
+        const reactions = await getReactionsForMessage(messageId)
+        const participants = await getParticipants(conversationId)
+        participants.forEach((p) => {
+          io.to(`user:${p.id}`).emit('reaction-updated', { messageId, conversationId, reactions })
+        })
+      } catch (err) {
+        console.error('toggle-reaction error:', err)
+      }
     })
 
     // --- WebRTC Call Signaling ---

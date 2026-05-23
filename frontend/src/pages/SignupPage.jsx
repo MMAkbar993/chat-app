@@ -1,11 +1,10 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/layout/AuthLayout'
 import SignupForm from '../features/signup/SignupForm'
-import PaymentModal from '../features/payment/PaymentModal'
+import { Link } from 'react-router-dom'
 
 export default function SignupPage() {
-  const [paymentOpen, setPaymentOpen] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <AuthLayout
@@ -16,12 +15,7 @@ export default function SignupPage() {
         </span>
       }
     >
-      <SignupForm onSuccess={() => setPaymentOpen(true)} />
-
-      <PaymentModal
-        isOpen={paymentOpen}
-        onClose={() => setPaymentOpen(false)}
-      />
+      <SignupForm onSuccess={() => navigate('/chat')} />
     </AuthLayout>
   )
 }

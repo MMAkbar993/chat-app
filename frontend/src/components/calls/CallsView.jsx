@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getCalls } from '../../api/calls'
+import NewCallModal from './NewCallModal'
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - new Date(ts)) / 60000)
@@ -19,11 +20,12 @@ const STATUS_ICON = {
   busy: { color: 'text-yellow-500', label: 'Busy' },
 }
 
-export default function CallsView({ darkMode, onCallStart }) {
+export default function CallsView({ darkMode, onCallStart, onNewCall }) {
   const { user } = useAuth()
   const [calls, setCalls] = useState([])
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [showNewCall, setShowNewCall] = useState(false)
 
   useEffect(() => {
     getCalls().then((d) => setCalls(d.calls || [])).catch(() => {})
@@ -38,12 +40,21 @@ export default function CallsView({ darkMode, onCallStart }) {
     return true
   })
 
+  function handleNewCallStart(callType, targetUserId, targetName, targetAvatar) {
+    setShowNewCall(false)
+    onNewCall?.(callType, targetUserId, targetName, targetAvatar)
+  }
+
   return (
     <div className={`w-80 flex flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
         <div className="flex gap-2">
-          <button className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors">
+          <button
+            onClick={() => setShowNewCall(true)}
+            className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
+            title="New call"
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -89,8 +100,13 @@ export default function CallsView({ darkMode, onCallStart }) {
 
           return (
             <div key={c.id}
-              className={`flex items-center gap-3 px-4 py-3 border-b transition-colors ${darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'}`}>
-              <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 relative">
+              className={`flex items-center gap-3 px-4 py-3 border-b transition-colors cursor-pointer ${darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'}`}
+              onClick={() => {
+                const targetId = isMe ? c.callee_id : c.caller_id
+                if (targetId) onNewCall?.(c.call_type, targetId, otherName, otherAvatar)
+              }}
+            >
+              <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 relative">
                 {otherAvatar ? <img src={otherAvatar} alt="" className="w-full h-full object-cover" />
                   : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(otherName || '?')[0].toUpperCase()}</div>}
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
@@ -102,7 +118,7 @@ export default function CallsView({ darkMode, onCallStart }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{timeAgo(c.started_at)}</span>
+                  <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{label} · {timeAgo(c.started_at)}</span>
                 </div>
               </div>
               <svg className={`w-5 h-5 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,6 +132,14 @@ export default function CallsView({ darkMode, onCallStart }) {
           <p className={`text-sm text-center py-8 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>No calls yet</p>
         )}
       </div>
+
+      {showNewCall && (
+        <NewCallModal
+          darkMode={darkMode}
+          onClose={() => setShowNewCall(false)}
+          onCall={handleNewCallStart}
+        />
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { getMessages, getMessageById, createMessage, deleteMessage } from '../db/queries/messages.js'
 import { isParticipant, getParticipants } from '../db/queries/conversations.js'
+import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 import { getIo } from '../socket/index.js'
 
 export async function listMessages(req, res, next) {
@@ -82,6 +83,37 @@ export async function forwardMessage(req, res, next) {
     })
 
     res.status(201).json({ message: fullMsg })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function toggleReactionHandler(req, res, next) {
+  try {
+    const { messageId } = req.params
+    const { emoji } = req.body
+    if (!emoji) return res.status(400).json({ error: 'emoji required' })
+
+    const msg = await getMessageById(messageId)
+    if (!msg) return res.status(404).json({ error: 'Message not found' })
+
+    const ok = await isParticipant(msg.conversation_id, req.user.id)
+    if (!ok) return res.status(403).json({ error: 'Not a participant' })
+
+    await toggleReaction(messageId, req.user.id, emoji)
+    const reactions = await getReactionsForMessage(messageId)
+
+    const participants = await getParticipants(msg.conversation_id)
+    const io = getIo()
+    participants.forEach((p) => {
+      io.to(`user:${p.id}`).emit('reaction-updated', {
+        messageId,
+        conversationId: msg.conversation_id,
+        reactions,
+      })
+    })
+
+    res.json({ reactions })
   } catch (err) {
     next(err)
   }

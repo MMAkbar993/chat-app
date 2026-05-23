@@ -162,14 +162,22 @@ export function ChatProvider({ children }) {
       })
     }
 
+    const onReactionUpdated = ({ messageId, reactions }) => {
+      setMessages((prev) =>
+        prev.map((m) => m.id === messageId ? { ...m, reactions } : m)
+      )
+    }
+
     socket.on('new-message', onNewMessage)
     socket.on('user-typing', onTyping)
     socket.on('user-stop-typing', onStopTyping)
+    socket.on('reaction-updated', onReactionUpdated)
 
     return () => {
       socket.off('new-message', onNewMessage)
       socket.off('user-typing', onTyping)
       socket.off('user-stop-typing', onStopTyping)
+      socket.off('reaction-updated', onReactionUpdated)
     }
   }, [socket, loadConversations])
 

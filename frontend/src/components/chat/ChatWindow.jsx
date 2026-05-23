@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { deleteMessageApi } from '../../api/conversations'
-import { blockUser, unblockUser } from '../../api/users'
+import { blockUser, unblockUser, getBlockedUsers } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
@@ -81,12 +81,17 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Close panels and reset state when conversation changes
+  // Reset panels and load blocked status when conversation changes
   useEffect(() => {
     setShowContactInfo(false)
     setShowHeaderMenu(false)
     setIsBlocked(false)
     closeSearch()
+    const otherId = activeConversation?.other_user_id
+    if (!otherId) return
+    getBlockedUsers()
+      .then(({ blockedIds }) => setIsBlocked(blockedIds.includes(otherId)))
+      .catch(() => {})
   }, [activeConversation?.id])
 
   async function handleHeaderBlock() {

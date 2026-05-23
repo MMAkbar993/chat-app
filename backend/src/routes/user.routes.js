@@ -5,7 +5,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import {
   getProfile, updateProfile, uploadAvatar, getUserById,
-  getPublicProfile, getMySocialConnections,
+  getPublicProfile, getMySocialConnections, getBlockedUsers,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
 
@@ -30,6 +30,7 @@ userRouter.use(authMiddleware)
 
 userRouter.get('/me', getProfile)
 userRouter.get('/me/social', getMySocialConnections)
+userRouter.get('/me/blocked', getBlockedUsers)
 userRouter.patch('/me', updateProfile)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.get('/:id', getUserById)
