@@ -229,7 +229,7 @@ export default function SignupForm({ onSuccess }) {
       <p className="text-xs text-gray-400">2FA can be set up under Settings once logged in.</p>
 
       <Button type="submit" loading={isSubmitting} className="w-full mt-1">
-        Next Step (Payment Details) →
+        Create Account →
       </Button>
     </form>
   )

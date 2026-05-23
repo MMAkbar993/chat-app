@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSocket } from '../context/SocketContext'
 import { useAuth } from '../context/AuthContext'
 import { useChat } from '../context/ChatContext'
+import { getOrCreateDirect } from '../api/conversations'
 import { playRingtone, stopRingtone } from '../utils/sounds'
 import Sidebar from '../components/chat/Sidebar'
 import ChatsView from '../components/chat/ChatsView'
@@ -71,18 +72,28 @@ export default function ChatPage() {
 
   function handleCallStart(callType) {
     if (!activeConversation?.other_user_id) return
-    socket?.emit('call-initiate', {
-      targetUserId: activeConversation.other_user_id,
-      callType,
-      conversationId: activeConversation.id,
+    initiateCall(callType, activeConversation.other_user_id, activeConversation.id, {
+      name: activeConversation.other_user_display_name || activeConversation.other_user_name,
+      avatar: activeConversation.other_user_avatar,
     })
+  }
 
+  async function handleNewCall(callType, targetUserId, targetName, targetAvatar) {
+    try {
+      const data = await getOrCreateDirect(targetUserId)
+      const convId = data.conversation?.id || data.id
+      initiateCall(callType, targetUserId, convId, { name: targetName, avatar: targetAvatar })
+    } catch {}
+  }
+
+  function initiateCall(callType, targetUserId, conversationId, targetInfo) {
+    socket?.emit('call-initiate', { targetUserId, callType, conversationId })
     socket?.once('call-created', ({ call }) => {
       setActiveCall({
         ...call,
-        calleeId: activeConversation.other_user_id,
-        calleeName: activeConversation.other_user_display_name || activeConversation.other_user_name,
-        calleeAvatar: activeConversation.other_user_avatar,
+        calleeId: targetUserId,
+        calleeName: targetInfo?.name || 'Unknown',
+        calleeAvatar: targetInfo?.avatar || null,
         isCaller: true,
       })
     })
@@ -112,7 +123,7 @@ export default function ChatPage() {
       {section === 'chats' && <ChatsView darkMode={darkMode} />}
       {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} />}
       {section === 'groups' && <GroupsView darkMode={darkMode} />}
-      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} />}
+      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} />}
       {section === 'profile' && <ProfileView darkMode={darkMode} />}
       {section === 'settings' && <SettingsView darkMode={darkMode} />}
 

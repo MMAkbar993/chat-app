@@ -56,7 +56,7 @@ export async function getUserById(req, res, next) {
   try {
     const result = await query(
       `SELECT id, full_name, username, primary_role, avatar_url, display_name, bio
-       FROM users WHERE id = $1 AND is_active = true`,
+       FROM users WHERE id = $1`,
       [req.params.id]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
@@ -94,6 +94,18 @@ export async function getPublicProfile(req, res, next) {
         social_connections: socialConnections,
       },
     })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getBlockedUsers(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT blocked_id::text AS id FROM blocked_users WHERE blocker_id = $1`,
+      [req.user.id]
+    )
+    res.json({ blockedIds: result.rows.map((r) => r.id) })
   } catch (err) {
     next(err)
   }
