@@ -9,7 +9,7 @@ function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
-export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply }) {
+export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview }) {
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
@@ -142,7 +142,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
             </svg>
           </button>
           {showAttachMenu && (
-            <AttachmentMenu darkMode={darkMode} onClose={() => setShowAttachMenu(false)} onAttach={handleAttach} />
+            <AttachmentMenu darkMode={darkMode} onClose={() => setShowAttachMenu(false)} onAttach={handleAttach} onPreview={onMediaPreview} />
           )}
         </div>
 

@@ -144,6 +144,12 @@ export function ChatProvider({ children }) {
       if (activeConvRef.current?.id === msg.conversation_id) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev
+          const uploadingIdx = prev.findIndex((m) => m.uploading && m.sender_id === msg.sender_id)
+          if (uploadingIdx !== -1) {
+            const next = [...prev]
+            next[uploadingIdx] = msg
+            return next
+          }
           return [...prev, msg]
         })
         markReadApi(msg.conversation_id).catch(() => {})

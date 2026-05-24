@@ -75,7 +75,7 @@ function CameraModal({ onCapture, onClose, darkMode }) {
   )
 }
 
-export default function AttachmentMenu({ onClose, onAttach, darkMode }) {
+export default function AttachmentMenu({ onClose, onAttach, onPreview, darkMode }) {
   const menuRef = useRef(null)
   const galleryRef = useRef(null)
   const audioRef = useRef(null)
@@ -95,19 +95,26 @@ export default function AttachmentMenu({ onClose, onAttach, darkMode }) {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
+    const detectedType = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : type
+    const localUrl = URL.createObjectURL(file)
+    onPreview?.(localUrl, detectedType)
+    onClose()
     setUploading(true)
     try {
       const { fileUrl, messageType } = await uploadFile(file)
-      onAttach(fileUrl, messageType || type)
+      onAttach(fileUrl, messageType || detectedType)
     } catch (err) {
       console.error('Upload error:', err)
+      onPreview?.(null, null)
     }
     setUploading(false)
-    onClose()
   }
 
   async function handleCameraCapture(blob) {
     setShowCamera(false)
+    const localUrl = URL.createObjectURL(blob)
+    onPreview?.(localUrl, 'image')
+    onClose()
     setUploading(true)
     try {
       const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' })
@@ -115,9 +122,9 @@ export default function AttachmentMenu({ onClose, onAttach, darkMode }) {
       onAttach(fileUrl, messageType || 'image')
     } catch (err) {
       console.error('Camera upload error:', err)
+      onPreview?.(null, null)
     }
     setUploading(false)
-    onClose()
   }
 
   const itemClass = `flex items-center gap-3 w-full px-4 py-3 text-sm text-left transition-colors rounded-lg ${
