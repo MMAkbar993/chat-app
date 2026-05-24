@@ -6,10 +6,34 @@ import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
 import { forwardMessageApi } from '../../api/conversations'
 
-const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
 
 function formatTime(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function Ticks({ status }) {
+  if (status === 'read') {
+    return (
+      <svg className="inline-block ml-1 text-green-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
+        <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )
+  }
+  if (status === 'delivered') {
+    return (
+      <svg className="inline-block ml-1 text-gray-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
+        <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )
+  }
+  // sent — single tick
+  return (
+    <svg className="inline-block ml-1 text-gray-400" width="9" height="9" viewBox="0 0 9 9" fill="none">
+      <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
 }
 
 function highlightText(text, query) {
@@ -71,9 +95,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
       id={`msg-${msg.id}`}
       className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-1 items-end gap-2 ${isCurrentMatch ? 'rounded-xl ring-2 ring-violet-400 ring-offset-2' : ''}`}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => {
-        if (!showReactionPicker) { setHovered(false); setShowMenu(false) }
-      }}
+      onMouseLeave={() => { setHovered(false); setShowMenu(false) }}
     >
       {!isMe && (
         <div className="w-7 h-7 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0 mb-5 overflow-hidden">
@@ -110,43 +132,6 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
         )}
 
         <div className="relative">
-          {/* Reaction bar — floats above bubble on hover */}
-          {hovered && (
-            <div className={`absolute bottom-full ${isMe ? 'right-0' : 'left-0'} mb-1.5 flex items-center gap-0.5 z-20 px-2 py-1 rounded-full shadow-lg ${
-              darkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-100'
-            }`}>
-              {QUICK_REACTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => handleReaction(emoji)}
-                  className="w-7 h-7 flex items-center justify-center text-lg hover:scale-125 transition-transform"
-                >
-                  {emoji}
-                </button>
-              ))}
-              <button
-                onClick={() => setShowReactionPicker((v) => !v)}
-                className={`w-7 h-7 flex items-center justify-center rounded-full transition-colors ${
-                  darkMode ? 'text-gray-400 hover:bg-gray-600' : 'text-gray-400 hover:bg-gray-100'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-
-              {showReactionPicker && (
-                <div className={`absolute ${isMe ? 'right-0' : 'left-0'} bottom-full mb-1 z-30`}>
-                  <EmojiPicker
-                    darkMode={darkMode}
-                    onSelect={(emoji) => handleReaction(emoji)}
-                    onClose={() => { setShowReactionPicker(false); setHovered(false) }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Bubble */}
           <div className={`px-4 py-2 rounded-2xl text-sm ${
             isMe
@@ -229,15 +214,31 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
           </div>
         )}
 
-        <p className={`text-xs mt-1 ${isMe ? 'text-right' : 'text-left'} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          {formatTime(msg.created_at)}
-          {isMe && (
-            <svg className="inline-block ml-1 text-violet-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
-              <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </p>
+        <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+          <div className="relative">
+            <button
+              onClick={() => setShowReactionPicker((v) => !v)}
+              className={`w-5 h-5 flex items-center justify-center rounded-full transition-colors ${
+                darkMode ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+            {showReactionPicker && (
+              <div className={`absolute ${isMe ? 'right-0' : 'left-0'} bottom-full mb-1 z-30`}>
+                <EmojiPicker
+                  darkMode={darkMode}
+                  onSelect={(emoji) => handleReaction(emoji)}
+                  onClose={() => setShowReactionPicker(false)}
+                />
+              </div>
+            )}
+          </div>
+          <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.created_at)}</span>
+          {isMe && <Ticks status={msg.status || 'sent'} />}
+        </div>
       </div>
 
       {showForward && (

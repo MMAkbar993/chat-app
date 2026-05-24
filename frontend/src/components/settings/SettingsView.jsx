@@ -20,6 +20,8 @@ export default function SettingsView({ darkMode }) {
         bio: d.user.bio || '',
         gender: d.user.gender || '',
         phone: d.user.phone || '',
+        website: d.user.website || '',
+        location: d.user.location || '',
       })
     }).catch(() => {})
   }, [])
@@ -154,6 +156,26 @@ export default function SettingsView({ darkMode }) {
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 placeholder="Phone number"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={`text-xs mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Location</label>
+              <input
+                value={form.location}
+                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                placeholder="City, Country"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={`text-xs mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Website</label>
+              <input
+                value={form.website}
+                onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+                placeholder="https://yourwebsite.com"
                 className={inputCls}
               />
             </div>

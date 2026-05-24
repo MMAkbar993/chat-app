@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import ConfirmDialog from '../ui/ConfirmDialog'
@@ -24,7 +25,33 @@ function formatDate(ts) {
   return d.toLocaleDateString()
 }
 
+function SidebarTicks({ status }) {
+  if (status === 'read') {
+    return (
+      <svg className="ml-1 shrink-0 text-green-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
+        <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )
+  }
+  if (status === 'delivered') {
+    return (
+      <svg className="ml-1 shrink-0 text-gray-400" width="16" height="10" viewBox="0 0 16 10" fill="none">
+        <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )
+  }
+  // sent — single tick
+  return (
+    <svg className="ml-1 shrink-0 text-gray-400" width="9" height="10" viewBox="0 0 9 10" fill="none">
+      <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 export default function ChatsView({ darkMode }) {
+  const { user } = useAuth()
   const {
     filteredConversations, conversations, activeConversation, openConversation,
     conversationFilter, setConversationFilter,
@@ -33,6 +60,7 @@ export default function ChatsView({ darkMode }) {
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
   const [menuConvId, setMenuConvId] = useState(null)
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const [hoveredConvId, setHoveredConvId] = useState(null)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [confirm, setConfirm] = useState(null)
@@ -175,17 +203,13 @@ export default function ChatsView({ darkMode }) {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{c.last_message || ' '}</span>
-                      {c.unread_count > 0 && (
+                      {c.unread_count > 0 ? (
                         <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                           {c.unread_count}
                         </span>
-                      )}
-                      {c.unread_count == 0 && c.last_message && (
-                        <svg className="ml-1 shrink-0 text-violet-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
-                          <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
+                      ) : (c.last_message && c.last_message_sender_id === user?.id) ? (
+                        <SidebarTicks status={c.last_message_status || 'sent'} />
+                      ) : null}
                     </div>
                   </div>
                 </button>
@@ -194,7 +218,12 @@ export default function ChatsView({ darkMode }) {
                 {hoveredConvId === c.id && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setMenuConvId((id) => id === c.id ? null : c.id) }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+                        setMenuConvId((id) => id === c.id ? null : c.id)
+                      }}
                       className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                         darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-500 hover:bg-gray-100'
                       } shadow-sm`}
@@ -203,40 +232,6 @@ export default function ChatsView({ darkMode }) {
                         <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
                       </svg>
                     </button>
-                    {menuConvId === c.id && (
-                      <ChatItemMenu
-                        darkMode={darkMode}
-                        conv={c}
-                        onClose={() => setMenuConvId(null)}
-                        onArchive={() => {
-                          const wasArchived = c.is_archived
-                          toggleConversationFlag(c.id, 'is_archived')
-                          showToast(wasArchived ? 'Chat unarchived' : 'Chat archived', 'success')
-                        }}
-                        onFavourite={() => {
-                          const wasFav = c.is_favorite
-                          toggleConversationFlag(c.id, 'is_favorite')
-                          showToast(wasFav ? 'Removed from favourites' : 'Added to favourites', 'success')
-                        }}
-                        onMarkUnread={() => {
-                          setConversations((prev) =>
-                            prev.map((cv) => cv.id === c.id ? { ...cv, unread_count: 1 } : cv)
-                          )
-                          showToast('Marked as unread', 'info')
-                        }}
-                        onPin={() => {
-                          const wasPinned = c.is_pinned
-                          toggleConversationFlag(c.id, 'is_pinned')
-                          showToast(wasPinned ? 'Chat unpinned' : 'Chat pinned', 'success')
-                        }}
-                        onDelete={() => setConfirm({
-                          title: 'Delete Chat',
-                          message: 'This will permanently delete this chat and all its messages.',
-                          confirmLabel: 'Delete',
-                          onConfirm: () => { removeConversation(c.id); showToast('Chat deleted', 'info') },
-                        })}
-                      />
-                    )}
                   </div>
                 )}
               </div>
@@ -244,6 +239,55 @@ export default function ChatsView({ darkMode }) {
           })}
         </div>
       </div>
+
+      {/* Chat item context menu — rendered at fixed position to escape scroll clipping */}
+      {menuConvId && (() => {
+        const c = all.find((cv) => cv.id === menuConvId)
+        if (!c) return null
+        return (
+          <div className="fixed z-200" style={{ top: menuPos.top, right: menuPos.right }}>
+            <ChatItemMenu
+              darkMode={darkMode}
+              conv={c}
+              onClose={() => setMenuConvId(null)}
+              onArchive={() => {
+                const wasArchived = c.is_archived
+                toggleConversationFlag(c.id, 'is_archived')
+                showToast(wasArchived ? 'Chat unarchived' : 'Chat archived', 'success')
+                setMenuConvId(null)
+              }}
+              onFavourite={() => {
+                const wasFav = c.is_favorite
+                toggleConversationFlag(c.id, 'is_favorite')
+                showToast(wasFav ? 'Removed from favourites' : 'Added to favourites', 'success')
+                setMenuConvId(null)
+              }}
+              onMarkUnread={() => {
+                setConversations((prev) =>
+                  prev.map((cv) => cv.id === c.id ? { ...cv, unread_count: 1 } : cv)
+                )
+                showToast('Marked as unread', 'info')
+                setMenuConvId(null)
+              }}
+              onPin={() => {
+                const wasPinned = c.is_pinned
+                toggleConversationFlag(c.id, 'is_pinned')
+                showToast(wasPinned ? 'Chat unpinned' : 'Chat pinned', 'success')
+                setMenuConvId(null)
+              }}
+              onDelete={() => {
+                setConfirm({
+                  title: 'Delete Chat',
+                  message: 'This will permanently delete this chat and all its messages.',
+                  confirmLabel: 'Delete',
+                  onConfirm: () => { removeConversation(c.id); showToast('Chat deleted', 'info') },
+                })
+                setMenuConvId(null)
+              }}
+            />
+          </div>
+        )
+      })()}
 
       <ConfirmDialog
         open={!!confirm}
