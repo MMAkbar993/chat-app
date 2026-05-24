@@ -99,10 +99,12 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
       <div className="flex-1 px-4 py-4">
         {/* Avatar + name */}
         <div className="flex flex-col items-center mb-5">
-          <div className="relative w-20 h-20 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold mb-2">
-            {avatar
-              ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-              : (name || '?')[0].toUpperCase()}
+          <div className="relative w-20 h-20 mb-2">
+            <div className="w-full h-full rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
+              {avatar
+                ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                : (name || '?')[0].toUpperCase()}
+            </div>
             <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
           </div>
           <p className="font-semibold text-base">{name}</p>

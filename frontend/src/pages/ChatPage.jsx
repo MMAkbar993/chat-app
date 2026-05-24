@@ -17,8 +17,6 @@ import CallModal from '../components/calls/CallModal'
 import CallingCard from '../components/calls/CallingCard'
 import IncomingCallModal from '../components/calls/IncomingCallModal'
 
-const PANEL_VIEWS = ['chats', 'contacts', 'groups', 'calls', 'profile', 'settings']
-
 export default function ChatPage() {
   const [section, setSection] = useState('chats')
   const [darkMode, setDarkMode] = useState(false)
@@ -112,9 +110,6 @@ export default function ChatPage() {
     setIncomingCall(null)
   }
 
-  const showChatWindow = ['chats', 'contacts', 'groups'].includes(section)
-  const isProfileSettings = ['profile', 'settings'].includes(section)
-
   return (
     <div className={`h-screen flex overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
       <Sidebar active={section} onNav={setSection} darkMode={darkMode} onDarkMode={() => setDarkMode((d) => !d)} />
@@ -127,8 +122,8 @@ export default function ChatPage() {
       {section === 'profile' && <ProfileView darkMode={darkMode} />}
       {section === 'settings' && <SettingsView darkMode={darkMode} />}
 
-      {/* Right panel */}
-      {showChatWindow && activeConversation ? (
+      {/* Right panel — chat window only on chats tab, welcome screen everywhere else */}
+      {section === 'chats' && activeConversation ? (
         <ChatWindow darkMode={darkMode} onCallStart={handleCallStart} />
       ) : (
         <WelcomeScreen darkMode={darkMode} />

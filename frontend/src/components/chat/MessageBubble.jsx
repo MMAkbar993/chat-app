@@ -231,7 +231,12 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
 
         <p className={`text-xs mt-1 ${isMe ? 'text-right' : 'text-left'} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
           {formatTime(msg.created_at)}
-          {isMe && <span className="ml-1 text-violet-400">✓✓</span>}
+          {isMe && (
+            <svg className="inline-block ml-1 text-violet-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
+              <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
         </p>
       </div>
 
