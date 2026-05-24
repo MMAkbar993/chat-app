@@ -4,9 +4,12 @@ export async function getConversationsForUser(userId) {
   const result = await query(
     `SELECT
        c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at,
+       m.id AS last_message_id,
        m.content AS last_message,
        m.message_type AS last_message_type,
        m.created_at AS last_message_at,
+       m.status AS last_message_status,
+       m.sender_id AS last_message_sender_id,
        sender.full_name AS last_sender_name,
        cp.last_read_at,
        cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted,
@@ -26,7 +29,7 @@ export async function getConversationsForUser(userId) {
      LEFT JOIN users other_user ON other_user.id = cp2.user_id
      LEFT JOIN messages unread ON unread.conversation_id = c.id AND unread.sender_id != $1
      GROUP BY c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at,
-              m.content, m.message_type, m.created_at, sender.full_name, cp.last_read_at,
+              m.id, m.content, m.message_type, m.created_at, m.status, m.sender_id, sender.full_name, cp.last_read_at,
               cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted,
               other_user.id, other_user.full_name, other_user.avatar_url, other_user.display_name
      ORDER BY COALESCE(m.created_at, c.created_at) DESC`,

@@ -130,16 +130,22 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
 
         {/* Profile Info */}
         <div className={`rounded-xl p-3 mb-4 ${cardBg}`}>
-          <Section title="Profile Info" darkMode={darkMode}>
-            <InfoRow label="Name"     value={name}                               darkMode={darkMode} />
-            <InfoRow label="Location" value={profile?.country || profile?.location} darkMode={darkMode} />
-            <InfoRow label="Website"  value={profile?.website}                   darkMode={darkMode} />
-          </Section>
+          <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Profile Info</p>
+          <InfoRow label="Name"     value={name}                                        darkMode={darkMode} />
+          <InfoRow label="Location" value={profile?.location || profile?.country}        darkMode={darkMode} />
           <InfoRow label="Join Date" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null} darkMode={darkMode} />
-          {profile?.bio && (
-            <div>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Bio</p>
-              <p className={`text-sm mt-0.5 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{profile.bio}</p>
+          <InfoRow label="Bio"      value={profile?.bio}                                darkMode={darkMode} />
+          {profile?.website && (
+            <div className="mb-3">
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Website</p>
+              <a
+                href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-sm text-violet-500 hover:underline break-all`}
+              >
+                {profile.website}
+              </a>
             </div>
           )}
         </div>

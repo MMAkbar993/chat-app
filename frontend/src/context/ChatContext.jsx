@@ -56,6 +56,7 @@ export function ChatProvider({ children }) {
       const data = await getMessages(conv.id)
       setMessages(data.messages || [])
       await markReadApi(conv.id)
+      socket?.emit('mark-read', { conversationId: conv.id })
       setConversations((prev) =>
         prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c))
       )
@@ -146,8 +147,22 @@ export function ChatProvider({ children }) {
           return [...prev, msg]
         })
         markReadApi(msg.conversation_id).catch(() => {})
+        socket?.emit('mark-read', { conversationId: msg.conversation_id })
       }
       loadConversations()
+    }
+
+    const onMessageStatusUpdated = ({ messageIds, status }) => {
+      setMessages((prev) =>
+        prev.map((m) => messageIds.includes(m.id) ? { ...m, status } : m)
+      )
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.last_message_id && messageIds.includes(c.last_message_id)
+            ? { ...c, last_message_status: status }
+            : c
+        )
+      )
     }
 
     const onTyping = ({ conversationId, userId }) => {
@@ -172,12 +187,14 @@ export function ChatProvider({ children }) {
     socket.on('user-typing', onTyping)
     socket.on('user-stop-typing', onStopTyping)
     socket.on('reaction-updated', onReactionUpdated)
+    socket.on('message-status-updated', onMessageStatusUpdated)
 
     return () => {
       socket.off('new-message', onNewMessage)
       socket.off('user-typing', onTyping)
       socket.off('user-stop-typing', onStopTyping)
       socket.off('reaction-updated', onReactionUpdated)
+      socket.off('message-status-updated', onMessageStatusUpdated)
     }
   }, [socket, loadConversations])
 

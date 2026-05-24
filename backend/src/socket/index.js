@@ -1,13 +1,23 @@
 import { Server } from 'socket.io'
 import jwt from 'jsonwebtoken'
 import { config } from '../config/env.js'
-import { createMessage } from '../db/queries/messages.js'
+import { createMessage, markMessagesDelivered, markMessagesRead, getMessageById } from '../db/queries/messages.js'
 import { getParticipants, isParticipant, unhideParticipants } from '../db/queries/conversations.js'
 import { createCall, updateCallStatus } from '../db/queries/calls.js'
 import { findUserById } from '../db/queries/users.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 
 let io = null
+const onlineUsers = new Map() // userId → socket count
+
+function groupBySender(rows) {
+  const map = {}
+  rows.forEach(({ id, sender_id }) => {
+    if (!map[sender_id]) map[sender_id] = []
+    map[sender_id].push(id)
+  })
+  return map
+}
 
 export function getIo() {
   return io
@@ -35,15 +45,37 @@ export function initSocket(httpServer) {
 
   io.on('connection', (socket) => {
     const userId = socket.userId
+    onlineUsers.set(userId, (onlineUsers.get(userId) || 0) + 1)
 
     socket.join(`user:${userId}`)
 
-    socket.on('join-conversation', (conversationId) => {
+    socket.on('join-conversation', async (conversationId) => {
       socket.join(`conv:${conversationId}`)
+      try {
+        const updated = await markMessagesDelivered(conversationId, userId)
+        if (updated.length > 0) {
+          const bySender = groupBySender(updated)
+          for (const [senderId, messageIds] of Object.entries(bySender)) {
+            io.to(`user:${senderId}`).emit('message-status-updated', { messageIds, status: 'delivered', conversationId })
+          }
+        }
+      } catch {}
     })
 
     socket.on('leave-conversation', (conversationId) => {
       socket.leave(`conv:${conversationId}`)
+    })
+
+    socket.on('mark-read', async ({ conversationId }) => {
+      try {
+        const updated = await markMessagesRead(conversationId, userId)
+        if (updated.length > 0) {
+          const bySender = groupBySender(updated)
+          for (const [senderId, messageIds] of Object.entries(bySender)) {
+            io.to(`user:${senderId}`).emit('message-status-updated', { messageIds, status: 'read', conversationId })
+          }
+        }
+      } catch {}
     })
 
     socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, replyToMessageId }) => {
@@ -51,11 +83,17 @@ export function initSocket(httpServer) {
         const ok = await isParticipant(conversationId, userId)
         if (!ok) return
 
-        const msg = await createMessage({ conversationId, senderId: userId, content, messageType, mediaUrl, replyToMessageId })
+        const participants = await getParticipants(conversationId)
+        const recipient = participants.find((p) => p.id !== userId)
+        const isRecipientOnline = recipient && (onlineUsers.get(recipient.id) || 0) > 0
+        const status = isRecipientOnline ? 'delivered' : 'sent'
+
+        const msg = await createMessage({ conversationId, senderId: userId, content, messageType, mediaUrl, replyToMessageId, status })
         await unhideParticipants(conversationId)
-        const [participants, sender] = await Promise.all([
-          getParticipants(conversationId),
+
+        const [sender, replyMsg] = await Promise.all([
           findUserById(userId),
+          replyToMessageId ? getMessageById(replyToMessageId) : Promise.resolve(null),
         ])
 
         const fullMsg = {
@@ -64,6 +102,8 @@ export function initSocket(httpServer) {
           sender_name: sender?.full_name || null,
           sender_display_name: sender?.display_name || null,
           sender_avatar: sender?.avatar_url || null,
+          reply_content: replyMsg?.content || null,
+          reply_sender_name: replyMsg?.sender_display_name || replyMsg?.sender_name || null,
         }
 
         // Emit to all participants (including sender for echo)
@@ -161,7 +201,9 @@ export function initSocket(httpServer) {
     })
 
     socket.on('disconnect', () => {
-      // nothing to clean up – rooms are auto-cleared
+      const count = onlineUsers.get(userId) || 0
+      if (count <= 1) onlineUsers.delete(userId)
+      else onlineUsers.set(userId, count - 1)
     })
   })
 
