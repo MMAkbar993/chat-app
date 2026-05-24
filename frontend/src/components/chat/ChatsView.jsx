@@ -85,9 +85,11 @@ export default function ChatsView({ darkMode }) {
                 return (
                   <button key={c.id} onClick={() => openConversation(c)}
                     className="flex flex-col items-center gap-1 min-w-13">
-                    <div className="w-12 h-12 rounded-full overflow-hidden relative shrink-0">
-                      {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                        : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold">{(name || '?')[0].toUpperCase()}</div>}
+                    <div className="relative shrink-0 w-12 h-12">
+                      <div className="w-full h-full rounded-full overflow-hidden">
+                        {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                          : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold">{(name || '?')[0].toUpperCase()}</div>}
+                      </div>
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                     </div>
                   </button>
@@ -152,9 +154,11 @@ export default function ChatsView({ darkMode }) {
                       : darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
                   }`}
                 >
-                  <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 relative">
-                    {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(name || '?')[0].toUpperCase()}</div>}
+                  <div className="relative shrink-0 w-11 h-11">
+                    <div className="w-full h-full rounded-full overflow-hidden">
+                      {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(name || '?')[0].toUpperCase()}</div>}
+                    </div>
                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
                     {c.is_pinned && (
                       <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center">
@@ -177,7 +181,10 @@ export default function ChatsView({ darkMode }) {
                         </span>
                       )}
                       {c.unread_count == 0 && c.last_message && (
-                        <span className="ml-2 text-green-500 text-xs">✓✓</span>
+                        <svg className="ml-1 shrink-0 text-violet-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
+                          <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       )}
                     </div>
                   </div>

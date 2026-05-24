@@ -106,9 +106,11 @@ export default function CallsView({ darkMode, onCallStart, onNewCall }) {
                 if (targetId) onNewCall?.(c.call_type, targetId, otherName, otherAvatar)
               }}
             >
-              <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 relative">
-                {otherAvatar ? <img src={otherAvatar} alt="" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(otherName || '?')[0].toUpperCase()}</div>}
+              <div className="relative shrink-0 w-11 h-11">
+                <div className="w-full h-full rounded-full overflow-hidden">
+                  {otherAvatar ? <img src={otherAvatar} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(otherName || '?')[0].toUpperCase()}</div>}
+                </div>
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
               </div>
               <div className="flex-1 min-w-0">

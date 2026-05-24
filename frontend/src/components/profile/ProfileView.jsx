@@ -40,9 +40,11 @@ export default function ProfileView({ darkMode, onEdit }) {
 
       {/* Avatar */}
       <div className="flex flex-col items-center py-6">
-        <div className="w-20 h-20 rounded-full overflow-hidden mb-3 relative">
-          {profile.avatar_url ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full bg-violet-600 flex items-center justify-center text-white text-2xl font-bold">{(profile.display_name || profile.full_name || '?')[0].toUpperCase()}</div>}
+        <div className="relative w-20 h-20 mb-3">
+          <div className="w-full h-full rounded-full overflow-hidden">
+            {profile.avatar_url ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-violet-600 flex items-center justify-center text-white text-2xl font-bold">{(profile.display_name || profile.full_name || '?')[0].toUpperCase()}</div>}
+          </div>
           <span className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
         </div>
         <p className={`font-bold text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>{profile.display_name || profile.full_name}</p>
@@ -58,7 +60,7 @@ export default function ProfileView({ darkMode, onEdit }) {
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{row.label}</p>
                 <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{row.value}</p>
               </div>
-              <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {row.icon}
               </svg>
             </div>
