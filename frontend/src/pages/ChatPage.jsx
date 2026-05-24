@@ -116,7 +116,7 @@ export default function ChatPage() {
 
       {/* Left panel */}
       {section === 'chats' && <ChatsView darkMode={darkMode} />}
-      {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} />}
+      {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} />}
       {section === 'groups' && <GroupsView darkMode={darkMode} />}
       {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} />}
       {section === 'profile' && <ProfileView darkMode={darkMode} />}

@@ -3,11 +3,13 @@ import { getContacts } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
 import { useChat } from '../../context/ChatContext'
 import AddContactModal from './AddContactModal'
+import ContactDetailModal from './ContactDetailModal'
 
-export default function ContactsView({ darkMode, onNavigate }) {
+export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
   const [contacts, setContacts] = useState([])
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [selectedContact, setSelectedContact] = useState(null)
   const { openConversation } = useChat()
 
   const load = useCallback(async () => {
@@ -23,7 +25,6 @@ export default function ContactsView({ darkMode, onNavigate }) {
     (c.display_name || c.full_name || c.username || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  // Group alphabetically
   const grouped = {}
   filtered.forEach((c) => {
     const key = (c.display_name || c.full_name || c.username || '#')[0].toUpperCase()
@@ -35,8 +36,14 @@ export default function ContactsView({ darkMode, onNavigate }) {
     try {
       const data = await getOrCreateDirect(contact.id)
       openConversation(data.conversation)
+      setSelectedContact(null)
       onNavigate('chats')
     } catch {}
+  }
+
+  function handleCall(contact, callType) {
+    setSelectedContact(null)
+    onNewCall?.(callType, contact.id, contact.display_name || contact.full_name || contact.username, contact.avatar_url)
   }
 
   return (
@@ -72,9 +79,9 @@ export default function ContactsView({ darkMode, onNavigate }) {
           <div key={letter}>
             <div className={`px-4 py-1 text-xs font-bold ${darkMode ? 'text-gray-400 bg-gray-800' : 'text-gray-500 bg-gray-50'}`}>{letter}</div>
             {grouped[letter].map((c) => (
-              <button key={c.id} onClick={() => handleChat(c)}
+              <button key={c.id} onClick={() => setSelectedContact(c)}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
-                <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                <div className="w-11 h-11 rounded-full overflow-hidden shrink-0">
                   {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(c.display_name || c.full_name || '?')[0].toUpperCase()}</div>}
                 </div>
@@ -92,6 +99,16 @@ export default function ContactsView({ darkMode, onNavigate }) {
       </div>
 
       {showAdd && <AddContactModal darkMode={darkMode} onClose={() => setShowAdd(false)} onAdded={() => { load(); setShowAdd(false) }} />}
+
+      {selectedContact && (
+        <ContactDetailModal
+          contact={selectedContact}
+          darkMode={darkMode}
+          onClose={() => setSelectedContact(null)}
+          onChat={() => handleChat(selectedContact)}
+          onCall={(callType) => handleCall(selectedContact, callType)}
+        />
+      )}
     </div>
   )
 }
