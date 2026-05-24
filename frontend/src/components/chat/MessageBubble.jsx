@@ -143,11 +143,29 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
             {(() => {
               const src = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
               if (msg.message_type === 'image' && src)
-                return <img src={src} alt="media" className="rounded-lg max-w-full" />
+                return (
+                  <div className="relative">
+                    <img src={src} alt="media" className={`rounded-lg max-w-full ${msg.uploading ? 'opacity-60' : ''}`} />
+                    {msg.uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                        <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                )
               if (msg.message_type === 'audio' && src)
                 return <audio controls src={src} className="max-w-xs" />
               if (msg.message_type === 'video' && src)
-                return <video controls src={src} className="rounded-lg max-w-full max-h-48" />
+                return (
+                  <div className="relative">
+                    <video controls={!msg.uploading} src={src} className={`rounded-lg max-w-full max-h-48 ${msg.uploading ? 'opacity-60' : ''}`} />
+                    {msg.uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                        <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                )
               if (msg.message_type === 'file' && src)
                 return (
                   <a href={src} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline">

@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { deleteMessageApi } from '../../api/conversations'
-import { blockUser, unblockUser, getBlockedUsers } from '../../api/users'
+import { blockUser, unblockUser, getBlockedUsers, reportUser } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
@@ -44,6 +44,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const { showToast } = useToast()
   const bottomRef = useRef(null)
   const searchInputRef = useRef(null)
+  const tempMediaRef = useRef(null)
   const [showContactInfo, setShowContactInfo] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
   const [isBlocked, setIsBlocked] = useState(false)
@@ -51,6 +52,8 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchIndex, setSearchIndex] = useState(0)
+  const [showReportPrompt, setShowReportPrompt] = useState(false)
+  const [reportReason, setReportReason] = useState('')
 
   const matchIds = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -118,6 +121,28 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     : activeConversation.other_user_display_name || activeConversation.other_user_name || 'Unknown'
 
   const isTyping = typingUsers[activeConversation.id]
+
+  function handleMediaPreview(localUrl, messageType) {
+    if (!localUrl) {
+      if (tempMediaRef.current) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempMediaRef.current))
+        tempMediaRef.current = null
+      }
+      return
+    }
+    const tempId = `uploading-${Date.now()}`
+    tempMediaRef.current = tempId
+    setMessages((prev) => [...prev, {
+      id: tempId,
+      sender_id: user.id,
+      sender_display_name: user.display_name || user.full_name,
+      message_type: messageType,
+      media_url: localUrl,
+      content: null,
+      created_at: new Date().toISOString(),
+      uploading: true,
+    }])
+  }
 
   function handleSend(content, messageType = 'text', replyToMessageId = null) {
     sendMessage(activeConversation.id, content, messageType, replyToMessageId)
@@ -253,6 +278,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                     variant: isBlocked ? 'warning' : 'danger',
                     onConfirm: handleHeaderBlock,
                   })}
+                  onReport={() => { setReportReason(''); setShowReportPrompt(true) }}
                 />
               )}
             </div>
@@ -338,6 +364,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           darkMode={darkMode}
           replyTo={replyTo}
           onClearReply={clearReply}
+          onMediaPreview={handleMediaPreview}
         />
       </div>
 
@@ -364,6 +391,49 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         onCancel={() => setConfirm(null)}
         darkMode={darkMode}
       />
+
+      {showReportPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className={`w-72 rounded-2xl shadow-2xl p-5 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h3 className={`font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Report User</h3>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Reason (optional)"
+              rows={3}
+              className={`w-full rounded-xl px-3 py-2 text-sm outline-none resize-none mb-3 ${
+                darkMode ? 'bg-gray-700 text-white placeholder-gray-500' : 'bg-gray-100 text-gray-800 placeholder-gray-400'
+              }`}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowReportPrompt(false); setReportReason('') }}
+                className={`flex-1 py-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const otherId = activeConversation?.other_user_id
+                  if (otherId) {
+                    try {
+                      await reportUser(otherId, reportReason)
+                      showToast('Report submitted', 'success')
+                    } catch {
+                      showToast('Failed to submit report', 'error')
+                    }
+                  }
+                  setShowReportPrompt(false)
+                  setReportReason('')
+                }}
+                className="flex-1 py-2 rounded-xl text-sm bg-red-500 text-white hover:bg-red-600"
+              >
+                Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

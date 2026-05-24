@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
+import { reportUser } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import ChatItemMenu from './ChatItemMenu'
 import ChatFilterMenu from './ChatFilterMenu'
@@ -64,6 +65,8 @@ export default function ChatsView({ darkMode }) {
   const [hoveredConvId, setHoveredConvId] = useState(null)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [confirm, setConfirm] = useState(null)
+  const [reportTarget, setReportTarget] = useState(null)
+  const [reportReason, setReportReason] = useState('')
 
   const all = filteredConversations.filter((c) => {
     const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || '')
@@ -172,7 +175,7 @@ export default function ChatsView({ darkMode }) {
                 key={c.id}
                 className="relative"
                 onMouseEnter={() => setHoveredConvId(c.id)}
-                onMouseLeave={() => { setHoveredConvId(null); if (menuConvId === c.id) setMenuConvId(null) }}
+                onMouseLeave={() => setHoveredConvId(null)}
               >
                 <button
                   onClick={() => openConversation(c)}
@@ -284,6 +287,11 @@ export default function ChatsView({ darkMode }) {
                 })
                 setMenuConvId(null)
               }}
+              onReport={() => {
+                setReportTarget(c.other_user_id)
+                setReportReason('')
+                setMenuConvId(null)
+              }}
             />
           </div>
         )
@@ -298,6 +306,46 @@ export default function ChatsView({ darkMode }) {
         onCancel={() => setConfirm(null)}
         darkMode={darkMode}
       />
+
+      {reportTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className={`w-72 rounded-2xl shadow-2xl p-5 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h3 className={`font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Report User</h3>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Reason (optional)"
+              rows={3}
+              className={`w-full rounded-xl px-3 py-2 text-sm outline-none resize-none mb-3 ${
+                darkMode ? 'bg-gray-700 text-white placeholder-gray-500' : 'bg-gray-100 text-gray-800 placeholder-gray-400'
+              }`}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setReportTarget(null); setReportReason('') }}
+                className={`flex-1 py-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await reportUser(reportTarget, reportReason)
+                    showToast('Report submitted', 'success')
+                  } catch {
+                    showToast('Failed to submit report', 'error')
+                  }
+                  setReportTarget(null)
+                  setReportReason('')
+                }}
+                className="flex-1 py-2 rounded-xl text-sm bg-red-500 text-white hover:bg-red-600"
+              >
+                Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
