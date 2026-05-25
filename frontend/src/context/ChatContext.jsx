@@ -3,7 +3,7 @@ import { useSocket } from './SocketContext'
 import { useAuth } from './AuthContext'
 import { playReceivedSound } from '../utils/sounds'
 import {
-  getConversations, getMessages, sendMessageApi, markReadApi,
+  getConversations, getMessages, sendMessageApi, markReadApi, markUnreadApi,
   archiveConversation, pinConversation, favoriteConversation, muteConversation,
   deleteConversationApi, clearMessagesApi,
 } from '../api/conversations'
@@ -27,12 +27,18 @@ export function ChatProvider({ children }) {
   }, [activeConversation])
 
   const filteredConversations = useMemo(() => {
-    if (conversationFilter === 'all')       return conversations.filter((c) => !c.is_archived)
-    if (conversationFilter === 'favourite') return conversations.filter((c) => c.is_favorite && !c.is_archived)
-    if (conversationFilter === 'pinned')    return conversations.filter((c) => c.is_pinned && !c.is_archived)
-    if (conversationFilter === 'archive')   return conversations.filter((c) => c.is_archived)
-    if (conversationFilter === 'trash')     return conversations.filter((c) => c.is_archived)
-    return conversations
+    let list
+    if (conversationFilter === 'all')       list = conversations.filter((c) => !c.is_archived && !c.is_deleted)
+    else if (conversationFilter === 'favourite') list = conversations.filter((c) => c.is_favorite && !c.is_archived && !c.is_deleted)
+    else if (conversationFilter === 'pinned')    list = conversations.filter((c) => c.is_pinned && !c.is_archived && !c.is_deleted)
+    else if (conversationFilter === 'archive')   list = conversations.filter((c) => c.is_archived && !c.is_deleted)
+    else if (conversationFilter === 'trash')     list = conversations.filter((c) => c.is_deleted)
+    else list = conversations.filter((c) => !c.is_deleted)
+    return [...list].sort((a, b) => {
+      if (conversationFilter === 'trash') return 0
+      if (a.is_pinned === b.is_pinned) return 0
+      return a.is_pinned ? -1 : 1
+    })
   }, [conversations, conversationFilter])
 
   const loadConversations = useCallback(async () => {
@@ -117,11 +123,20 @@ export function ChatProvider({ children }) {
   const removeConversation = useCallback(async (id) => {
     try {
       await deleteConversationApi(id)
-      setConversations((prev) => prev.filter((c) => c.id !== id))
+      setConversations((prev) => prev.map((c) => c.id === id ? { ...c, is_deleted: true } : c))
       if (activeConvRef.current?.id === id) {
         setActiveConversation(null)
         setMessages([])
       }
+    } catch {}
+  }, [])
+
+  const markConversationUnread = useCallback(async (id) => {
+    try {
+      await markUnreadApi(id)
+      setConversations((prev) =>
+        prev.map((c) => c.id === id ? { ...c, unread_count: Math.max(1, c.unread_count || 1) } : c)
+      )
     } catch {}
   }, [])
 
@@ -213,7 +228,7 @@ export function ChatProvider({ children }) {
       sendMessage,
       typingUsers,
       replyTo, setReplyTo, clearReply,
-      toggleConversationFlag, removeConversation, clearConversationMessages,
+      toggleConversationFlag, removeConversation, clearConversationMessages, markConversationUnread,
     }}>
       {children}
     </ChatContext.Provider>

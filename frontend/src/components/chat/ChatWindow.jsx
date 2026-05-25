@@ -45,6 +45,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const bottomRef = useRef(null)
   const searchInputRef = useRef(null)
   const tempMediaRef = useRef(null)
+  const scrolledForConvRef = useRef(null)
   const [showContactInfo, setShowContactInfo] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
   const [isBlocked, setIsBlocked] = useState(false)
@@ -81,8 +82,12 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   function closeSearch() { setShowSearch(false); setSearchQuery(''); setSearchIndex(0) }
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (!bottomRef.current || !messages.length) return
+    const convId = activeConversation?.id
+    const isNewConv = scrolledForConvRef.current !== convId
+    if (isNewConv) scrolledForConvRef.current = convId
+    bottomRef.current.scrollIntoView({ behavior: isNewConv ? 'instant' : 'smooth' })
+  }, [messages, activeConversation?.id])
 
   // Reset panels and load blocked status when conversation changes
   useEffect(() => {

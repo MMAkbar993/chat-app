@@ -1,70 +1,213 @@
 import { useState, useEffect } from 'react'
-import { getMyProfile } from '../../api/users'
+import { getMyProfile, deactivateAccount } from '../../api/users'
+import { useAuth } from '../../context/AuthContext'
+import client from '../../api/client'
 
-export default function ProfileView({ darkMode, onEdit }) {
+const PLATFORMS = [
+  { key: 'facebook',  label: 'Facebook',    color: '#1877F2', symbol: 'f' },
+  { key: 'twitter',   label: 'X (Twitter)', color: '#000000', symbol: '𝕏' },
+  { key: 'linkedin',  label: 'LinkedIn',    color: '#0A66C2', symbol: 'in', noVerify: true },
+  { key: 'instagram', label: 'Instagram',   color: '#E1306C', symbol: '◎' },
+  { key: 'youtube',   label: 'YouTube',     color: '#FF0000', symbol: '▶' },
+  { key: 'kick',      label: 'Kick',        color: '#53FC18', symbol: '▸' },
+  { key: 'twitch',    label: 'Twitch',      color: '#9147FF', symbol: '◈' },
+]
+
+function Toggle({ on, onClick, disabled }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+      } ${on ? 'bg-violet-600' : 'bg-gray-300'}`}
+    >
+      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+        on ? 'translate-x-5' : 'translate-x-0.5'
+      }`} />
+    </button>
+  )
+}
+
+export default function ProfileView({ darkMode }) {
+  const { logout } = useAuth()
   const [profile, setProfile] = useState(null)
+  const [connections, setConnections] = useState([])
+  const [deactivating, setDeactivating] = useState(false)
+
+  const dm = darkMode
 
   useEffect(() => {
     getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
+    client.get('/users/me/social').then(({ data }) => setConnections(data.connections)).catch(() => {})
   }, [])
 
-  if (!profile) return (
-    <div className={`w-80 flex items-center justify-center border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
-      <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
+  async function handleDeactivate() {
+    if (!window.confirm('Deactivate your account? You will be signed out and your profile will no longer appear to others.')) return
+    setDeactivating(true)
+    try {
+      await deactivateAccount()
+      logout()
+    } catch {
+      setDeactivating(false)
+    }
+  }
 
-  const rows = [
-    { label: 'Name', value: profile.display_name || profile.full_name, icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    )},
-    { label: 'Username', value: profile.username, icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-    )},
-    { label: 'Role', value: profile.primary_role, icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    )},
-    { label: 'Phone', value: profile.phone, icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-    )},
-    { label: 'Country', value: profile.country, icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    )},
+  const hasVerified = connections.some((c) => c.platform !== 'linkedin')
+
+  const infoRows = [
+    { label: 'Name',      value: profile?.display_name || profile?.full_name },
+    { label: 'Username',  value: profile?.username ? `@${profile.username}` : null },
+    { label: 'Role',      value: profile?.primary_role },
+    { label: 'Phone',     value: profile?.phone },
+    { label: 'Gender',    value: profile?.gender },
+    { label: 'Bio',       value: profile?.bio },
+    { label: 'Location',  value: profile?.location || profile?.country },
+    { label: 'Join Date', value: profile?.created_at
+        ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : null },
   ]
 
+  const card = `rounded-2xl mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`
+  const divider = `divide-y ${dm ? 'divide-gray-700' : 'divide-gray-100'}`
+  const lbl = `text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`
+  const val = `text-sm font-medium ${dm ? 'text-white' : 'text-gray-800'}`
+  const head = `text-sm font-bold mb-2 ${dm ? 'text-white' : 'text-gray-900'}`
+
   return (
-    <div className={`w-80 flex flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
-      <div className="px-4 pt-5 pb-3">
-        <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Profile</h2>
+    <div className={`w-80 flex flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+      {/* Title */}
+      <div className="px-4 pt-5 pb-3 shrink-0">
+        <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Profile</h2>
       </div>
 
-      {/* Avatar */}
-      <div className="flex flex-col items-center py-6">
+      {/* Avatar + name card */}
+      <div className="flex flex-col items-center py-5 px-4 shrink-0">
         <div className="relative w-20 h-20 mb-3">
           <div className="w-full h-full rounded-full overflow-hidden">
-            {profile.avatar_url ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-              : <div className="w-full h-full bg-violet-600 flex items-center justify-center text-white text-2xl font-bold">{(profile.display_name || profile.full_name || '?')[0].toUpperCase()}</div>}
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-violet-600 flex items-center justify-center text-white text-2xl font-bold">
+                {((profile?.display_name || profile?.full_name || '?')[0]).toUpperCase()}
+              </div>
+            )}
           </div>
           <span className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
         </div>
-        <p className={`font-bold text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>{profile.display_name || profile.full_name}</p>
-        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{profile.primary_role || 'web'}</p>
+        <p className={`font-bold text-base ${dm ? 'text-white' : 'text-gray-900'}`}>
+          {profile ? (profile.display_name || profile.full_name) : 'Loading…'}
+        </p>
+        <p className={`text-sm text-center mt-1 px-4 ${profile?.bio ? (dm ? 'text-gray-400' : 'text-gray-500') : (dm ? 'text-gray-600' : 'text-gray-300')}`}>
+          {profile?.bio || 'Write something about yourself…'}
+        </p>
       </div>
 
-      <div className="px-4 pb-2">
-        <h3 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Profile Info</h3>
-        <div className={`rounded-2xl overflow-hidden divide-y ${darkMode ? 'bg-gray-800 divide-gray-700' : 'bg-gray-50 divide-gray-100'}`}>
-          {rows.filter((r) => r.value).map((row) => (
-            <div key={row.label} className="flex items-center justify-between px-4 py-3">
-              <div className="min-w-0">
-                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{row.label}</p>
-                <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-800'}`}>{row.value}</p>
+      <div className="px-4 pb-6">
+        {/* Profile Info */}
+        <h3 className={head}>Profile Info</h3>
+        <div className={`${card} overflow-hidden`}>
+          <div className={divider}>
+            {infoRows.map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between px-4 py-3">
+                <div className="min-w-0">
+                  <p className={lbl}>{label}</p>
+                  <p className={`${val} ${!value && profile ? (dm ? 'text-gray-600' : 'text-gray-300') : ''}`}>
+                    {profile ? (value || '—') : 'Loading…'}
+                  </p>
+                </div>
               </div>
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {row.icon}
-              </svg>
+            ))}
+          </div>
+        </div>
+
+        {/* Social Media */}
+        <h3 className={head}>Social Media</h3>
+        <div className={`${card} p-4`}>
+          <p className={`text-xs mb-3 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>
+            {hasVerified
+              ? 'Verified links are shown with a badge. Other links are displayed as provided.'
+              : 'Social links are displayed as provided and are not verified.'}
+          </p>
+          <div className="space-y-2">
+            {PLATFORMS.map((p) => {
+              const conn = connections.find((c) => c.platform === p.key)
+              const isVerified = !!conn && !p.noVerify
+              return (
+                <div key={p.key} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${dm ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                    style={{ backgroundColor: p.color }}
+                  >
+                    {p.symbol}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className={`text-sm font-medium ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
+                      {p.noVerify && (
+                        <span
+                          title="LinkedIn does not allow the app to confirm the profile, so this link is shown as the user typed it."
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center text-xs cursor-default select-none ${
+                            dm ? 'border-gray-500 text-gray-500' : 'border-gray-400 text-gray-400'
+                          }`}
+                        >
+                          i
+                        </span>
+                      )}
+                      {isVerified && (
+                        <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                    {conn?.username && (
+                      <p className={`text-xs truncate mt-0.5 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>@{conn.username}</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Authorized Users */}
+        <h3 className={head}>Authorized Users</h3>
+        <div className={`${card} p-4`}>
+          <p className={`text-xs ${dm ? 'text-gray-400' : 'text-gray-500'}`}>
+            Manage representation requests for your verified websites.
+          </p>
+        </div>
+
+        {/* Deactivate */}
+        <h3 className={head}>Deactivate</h3>
+        <div className={`${card} overflow-hidden`}>
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <p className={val}>Deactivate Account</p>
+              <p className={lbl}>Deactivate your Account.</p>
             </div>
-          ))}
+            <Toggle on={false} onClick={handleDeactivate} disabled={deactivating} />
+          </div>
+        </div>
+
+        {/* Logout */}
+        <h3 className={head}>Logout</h3>
+        <div className={`${card} overflow-hidden`}>
+          <button
+            onClick={logout}
+            className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
+              dm ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
+          >
+            <div>
+              <p className={val}>Logout</p>
+              <p className={lbl}>Sign out from this Device.</p>
+            </div>
+            <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

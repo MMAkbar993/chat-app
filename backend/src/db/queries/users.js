@@ -23,7 +23,8 @@ export async function findUserById(id) {
     `SELECT id, full_name, username, country, location, email, primary_role, phone,
             stripe_customer_id, stripe_subscription_id, subscription_plan,
             subscription_status, kyc_status, kyc_session_id, is_active, created_at,
-            avatar_url, display_name, bio, gender, website
+            avatar_url, display_name, bio, gender, website, date_of_birth,
+            website_verified, website_verify_token
      FROM users WHERE id = $1`,
     [id]
   )
