@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import MessageContextMenu from './MessageContextMenu'
@@ -55,6 +55,8 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
+  const [pickerDir, setPickerDir] = useState('up')
+  const reactionBtnRef = useRef(null)
 
   const reactions = msg.reactions || []
 
@@ -235,7 +237,12 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
         <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
           <div className="relative">
             <button
-              onClick={() => setShowReactionPicker((v) => !v)}
+              ref={reactionBtnRef}
+              onClick={() => {
+                const rect = reactionBtnRef.current?.getBoundingClientRect()
+                setPickerDir(rect && rect.top < 320 ? 'down' : 'up')
+                setShowReactionPicker((v) => !v)
+              }}
               className={`w-5 h-5 flex items-center justify-center rounded-full transition-colors ${
                 darkMode ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'
               }`}
@@ -245,7 +252,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
               </svg>
             </button>
             {showReactionPicker && (
-              <div className={`absolute ${isMe ? 'right-0' : 'left-0'} bottom-full mb-1 z-30`}>
+              <div className={`absolute ${isMe ? 'right-0' : 'left-0'} z-50 ${pickerDir === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                 <EmojiPicker
                   darkMode={darkMode}
                   onSelect={(emoji) => handleReaction(emoji)}
