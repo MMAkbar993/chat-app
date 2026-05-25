@@ -6,6 +6,7 @@ import {
   getParticipants,
   isParticipant,
   markRead,
+  markUnread,
   getConversationById,
   toggleArchive,
   togglePin,
@@ -69,6 +70,17 @@ export async function getConversation(req, res, next) {
 export async function markConversationRead(req, res, next) {
   try {
     await markRead(req.params.id, req.user.id)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function markConversationUnread(req, res, next) {
+  try {
+    const ok = await isParticipant(req.params.id, req.user.id)
+    if (!ok) return res.status(403).json({ error: 'Not a participant' })
+    await markUnread(req.params.id, req.user.id)
     res.json({ ok: true })
   } catch (err) {
     next(err)

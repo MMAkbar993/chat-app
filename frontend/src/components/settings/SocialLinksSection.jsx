@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react'
 import client from '../../api/client'
 
 const PLATFORMS = [
-  { key: 'linkedin',  label: 'LinkedIn',    color: '#0A66C2', icon: 'in' },
-  { key: 'youtube',   label: 'YouTube',     color: '#FF0000', icon: '▶' },
   { key: 'facebook',  label: 'Facebook',    color: '#1877F2', icon: 'f' },
   { key: 'instagram', label: 'Instagram',   color: '#E1306C', icon: '◎' },
   { key: 'twitter',   label: 'X (Twitter)', color: '#000000', icon: '𝕏' },
-  { key: 'twitch',    label: 'Twitch',      color: '#9147FF', icon: '◈' },
+  { key: 'linkedin',  label: 'LinkedIn',    color: '#0A66C2', icon: 'in', urlOnly: true },
+  { key: 'youtube',   label: 'YouTube',     color: '#FF0000', icon: '▶' },
   { key: 'kick',      label: 'Kick',        color: '#53FC18', icon: '▸' },
+  { key: 'twitch',    label: 'Twitch',      color: '#9147FF', icon: '◈' },
 ]
 
 export default function SocialLinksSection({ darkMode }) {
@@ -16,6 +16,8 @@ export default function SocialLinksSection({ darkMode }) {
   const [loading, setLoading] = useState(true)
   const [disconnecting, setDisconnecting] = useState(null)
   const [error, setError] = useState('')
+  const [linkedinUrl, setLinkedinUrl] = useState('')
+  const [savingLinkedin, setSavingLinkedin] = useState(false)
 
   const bg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
   const text = darkMode ? 'text-white' : 'text-gray-900'
@@ -24,14 +26,17 @@ export default function SocialLinksSection({ darkMode }) {
 
   useEffect(() => {
     client.get('/users/me/social')
-      .then(({ data }) => setConnections(data.connections))
+      .then(({ data }) => {
+        setConnections(data.connections)
+        const li = data.connections.find((c) => c.platform === 'linkedin')
+        if (li?.profile_url) setLinkedinUrl(li.profile_url)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
 
     // Listen for OAuth popup success
     const onMessage = (e) => {
       if (e.data?.type === 'social-connect-success') {
-        // Refresh connections
         client.get('/users/me/social')
           .then(({ data }) => setConnections(data.connections))
           .catch(() => {})
@@ -60,6 +65,22 @@ export default function SocialLinksSection({ darkMode }) {
     setDisconnecting(null)
   }
 
+  async function saveLinkedin() {
+    setSavingLinkedin(true)
+    setError('')
+    try {
+      await client.post('/social/linkedin/save-url', { url: linkedinUrl })
+      setConnections((prev) => {
+        const filtered = prev.filter((c) => c.platform !== 'linkedin')
+        if (linkedinUrl.trim()) return [...filtered, { platform: 'linkedin', profile_url: linkedinUrl.trim(), username: null }]
+        return filtered
+      })
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save LinkedIn URL')
+    }
+    setSavingLinkedin(false)
+  }
+
   const connectedKeys = new Set(connections.map((c) => c.platform))
 
   if (loading) return null
@@ -84,6 +105,38 @@ export default function SocialLinksSection({ darkMode }) {
           const conn = connections.find((c) => c.platform === p.key)
           const isConnected = !!conn
 
+          // LinkedIn: URL paste flow
+          if (p.urlOnly) {
+            return (
+              <div key={p.key} className={`rounded-xl p-3 border ${darkMode ? 'border-gray-600' : 'border-gray-200'} ${rowBg}`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: p.color }}>
+                    {p.icon}
+                  </div>
+                  <p className={`text-sm font-medium flex-1 ${text}`}>{p.label}</p>
+                  <span className={`text-xs ${sub}`}>URL only</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    placeholder="https://linkedin.com/in/yourname"
+                    className={`flex-1 min-w-0 rounded-xl px-3 py-1.5 text-xs outline-none border ${
+                      darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+                    }`}
+                  />
+                  <button
+                    onClick={saveLinkedin}
+                    disabled={savingLinkedin}
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 shrink-0 transition-colors"
+                  >
+                    {savingLinkedin ? '…' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
           return (
             <div
               key={p.key}
@@ -91,7 +144,6 @@ export default function SocialLinksSection({ darkMode }) {
                 darkMode ? 'border-gray-600' : 'border-gray-200'
               } ${rowBg}`}
             >
-              {/* Platform icon */}
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
                 style={{ backgroundColor: p.color }}
@@ -99,7 +151,6 @@ export default function SocialLinksSection({ darkMode }) {
                 {p.icon}
               </div>
 
-              {/* Info */}
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium ${text}`}>{p.label}</p>
                 {conn?.username && (
@@ -107,19 +158,26 @@ export default function SocialLinksSection({ darkMode }) {
                 )}
               </div>
 
-              {/* Action */}
               {isConnected ? (
-                <button
-                  onClick={() => disconnectPlatform(p.key)}
-                  disabled={disconnecting === p.key}
-                  className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 shrink-0"
-                >
-                  {disconnecting === p.key ? 'Removing…' : 'Disconnect'}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Verified</span>
+                  <button
+                    onClick={() => disconnectPlatform(p.key)}
+                    disabled={disconnecting === p.key}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 ${
+                      darkMode ? 'hover:bg-red-900/20' : ''
+                    }`}
+                    title="Remove connection"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => connectPlatform(p.key)}
-                  className="text-xs text-violet-600 hover:text-violet-800 font-medium shrink-0"
+                  className="text-xs bg-red-500 hover:bg-red-600 text-white rounded-lg px-3 py-1 font-medium shrink-0 transition-colors"
                 >
                   Connect
                 </button>

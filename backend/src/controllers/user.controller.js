@@ -1,3 +1,6 @@
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+import axios from 'axios'
 import { query } from '../config/database.js'
 import { findUserById } from '../db/queries/users.js'
 import {
@@ -22,7 +25,7 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const { display_name, bio, gender, phone, website, location } = req.body
+    const { display_name, bio, gender, phone, website, location, country, primary_role, date_of_birth } = req.body
     const result = await query(
       `UPDATE users SET
          display_name = COALESCE($1, display_name),
@@ -31,11 +34,26 @@ export async function updateProfile(req, res, next) {
          phone = COALESCE($4, phone),
          website = COALESCE($5, website),
          location = COALESCE($6, location),
+         country = COALESCE($7, country),
+         primary_role = COALESCE($8, primary_role),
+         date_of_birth = COALESCE($9::date, date_of_birth),
          updated_at = NOW()
-       WHERE id = $7
+       WHERE id = $10
        RETURNING id, full_name, username, country, location, email, primary_role, phone,
-                 avatar_url, display_name, bio, gender, website, subscription_status, kyc_status, is_active`,
-      [display_name || null, bio || null, gender || null, phone || null, website || null, location || null, req.user.id]
+                 avatar_url, display_name, bio, gender, website, date_of_birth,
+                 subscription_status, kyc_status, is_active`,
+      [
+        display_name !== undefined ? (display_name || null) : null,
+        bio || null,
+        gender || null,
+        phone || null,
+        website || null,
+        location || null,
+        country || null,
+        primary_role || null,
+        date_of_birth || null,
+        req.user.id,
+      ]
     )
     res.json({ user: result.rows[0] })
   } catch (err) {
@@ -102,6 +120,15 @@ export async function getPublicProfile(req, res, next) {
   }
 }
 
+export async function deactivateAccount(req, res, next) {
+  try {
+    await query(`UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`, [req.user.id])
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function getBlockedUsers(req, res, next) {
   try {
     const result = await query(
@@ -118,6 +145,112 @@ export async function getMySocialConnections(req, res, next) {
   try {
     const connections = await getSocialConnections(req.user.id)
     res.json({ connections })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function changePassword(req, res, next) {
+  try {
+    const { old_password, new_password } = req.body
+    if (!old_password || !new_password) {
+      return res.status(400).json({ error: 'Old and new password are required' })
+    }
+    if (new_password.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' })
+    }
+    const result = await query(`SELECT password_hash FROM users WHERE id = $1`, [req.user.id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
+    const valid = await bcrypt.compare(old_password, result.rows[0].password_hash)
+    if (!valid) return res.status(400).json({ error: 'Current password is incorrect' })
+    const newHash = await bcrypt.hash(new_password, 12)
+    await query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, [newHash, req.user.id])
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function deleteMyAccount(req, res, next) {
+  try {
+    await query(`DELETE FROM users WHERE id = $1`, [req.user.id])
+    res.clearCookie('refreshToken')
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function clearAllChats(req, res, next) {
+  try {
+    await query(
+      `UPDATE conversation_participants SET messages_cleared_at = NOW() WHERE user_id = $1`,
+      [req.user.id]
+    )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function deleteAllChats(req, res, next) {
+  try {
+    // Mark all messages as cleared (past) and soft-delete all sent messages for this user
+    await query(
+      `UPDATE conversation_participants SET messages_cleared_at = NOW() WHERE user_id = $1`,
+      [req.user.id]
+    )
+    await query(
+      `UPDATE messages SET is_deleted = true, content = NULL, updated_at = NOW()
+       WHERE sender_id = $1 AND is_deleted = false`,
+      [req.user.id]
+    )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function initWebsiteVerification(req, res, next) {
+  try {
+    const { url } = req.body
+    if (!url) return res.status(400).json({ error: 'Website URL is required' })
+    const token = crypto.randomBytes(20).toString('hex')
+    await query(
+      `UPDATE users SET website = $1, website_verify_token = $2, website_verified = false, updated_at = NOW() WHERE id = $3`,
+      [url, token, req.user.id]
+    )
+    res.json({ token, metaTag: `<meta name="site-verification" content="${token}">` })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function confirmWebsiteVerification(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT website, website_verify_token FROM users WHERE id = $1`,
+      [req.user.id]
+    )
+    const user = result.rows[0]
+    if (!user?.website || !user?.website_verify_token) {
+      return res.status(400).json({ error: 'No pending verification' })
+    }
+    let html = ''
+    try {
+      const resp = await axios.get(user.website, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 SiteVerifier/1.0' } })
+      html = resp.data || ''
+    } catch {
+      return res.status(400).json({ error: 'Could not reach your website. Make sure it is publicly accessible.' })
+    }
+    if (!html.includes(user.website_verify_token)) {
+      return res.status(400).json({ error: 'Verification tag not found. Make sure you added the meta tag to your page <head>.' })
+    }
+    await query(
+      `UPDATE users SET website_verified = true, updated_at = NOW() WHERE id = $1`,
+      [req.user.id]
+    )
+    res.json({ success: true })
   } catch (err) {
     next(err)
   }

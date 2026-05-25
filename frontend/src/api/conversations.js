@@ -4,6 +4,7 @@ export const getConversations = () => client.get('/conversations').then((r) => r
 export const getOrCreateDirect = (userId) => client.post('/conversations/direct', { userId }).then((r) => r.data)
 export const getConversation = (id) => client.get(`/conversations/${id}`).then((r) => r.data)
 export const markReadApi = (id) => client.patch(`/conversations/${id}/read`).then((r) => r.data)
+export const markUnreadApi = (id) => client.patch(`/conversations/${id}/mark-unread`).then((r) => r.data)
 export const getMessages = (conversationId, before) =>
   client.get(`/conversations/${conversationId}/messages`, { params: { before } }).then((r) => r.data)
 export const sendMessageApi = (conversationId, content, messageType = 'text') =>

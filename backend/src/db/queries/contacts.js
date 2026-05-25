@@ -3,14 +3,23 @@ import { query } from '../../config/database.js'
 export async function getContacts(userId) {
   const result = await query(
     `SELECT
-       u.id, u.full_name, u.username, u.primary_role, u.avatar_url, u.display_name, u.bio
+       u.id, u.full_name, u.username, u.primary_role, u.avatar_url, u.display_name, u.bio,
+       c.custom_first_name, c.custom_last_name
      FROM contacts c
      JOIN users u ON u.id = c.contact_id
      WHERE c.user_id = $1
-     ORDER BY u.full_name ASC`,
+     ORDER BY COALESCE(c.custom_first_name, u.full_name) ASC`,
     [userId]
   )
   return result.rows
+}
+
+export async function updateContactNames(userId, contactId, firstName, lastName) {
+  await query(
+    `UPDATE contacts SET custom_first_name = $3, custom_last_name = $4
+     WHERE user_id = $1 AND contact_id = $2`,
+    [userId, contactId, firstName || null, lastName || null]
+  )
 }
 
 export async function addContact(userId, contactId) {

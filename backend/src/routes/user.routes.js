@@ -5,7 +5,9 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import {
   getProfile, updateProfile, uploadAvatar, getUserById,
-  getPublicProfile, getMySocialConnections, getBlockedUsers,
+  getPublicProfile, getMySocialConnections, getBlockedUsers, deactivateAccount,
+  changePassword, deleteMyAccount, clearAllChats, deleteAllChats,
+  initWebsiteVerification, confirmWebsiteVerification,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
 
@@ -32,6 +34,13 @@ userRouter.get('/me', getProfile)
 userRouter.get('/me/social', getMySocialConnections)
 userRouter.get('/me/blocked', getBlockedUsers)
 userRouter.patch('/me', updateProfile)
+userRouter.patch('/me/deactivate', deactivateAccount)
+userRouter.patch('/me/password', changePassword)
+userRouter.delete('/me', deleteMyAccount)
+userRouter.patch('/me/chats/clear', clearAllChats)
+userRouter.delete('/me/chats', deleteAllChats)
+userRouter.post('/me/website/verify-init', initWebsiteVerification)
+userRouter.post('/me/website/verify-confirm', confirmWebsiteVerification)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)

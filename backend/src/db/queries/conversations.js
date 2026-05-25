@@ -12,7 +12,7 @@ export async function getConversationsForUser(userId) {
        m.sender_id AS last_message_sender_id,
        sender.full_name AS last_sender_name,
        cp.last_read_at,
-       cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted,
+       cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted, cp.is_deleted,
        other_user.id AS other_user_id,
        other_user.full_name AS other_user_name,
        other_user.avatar_url AS other_user_avatar,
@@ -30,7 +30,7 @@ export async function getConversationsForUser(userId) {
      LEFT JOIN messages unread ON unread.conversation_id = c.id AND unread.sender_id != $1
      GROUP BY c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at,
               m.id, m.content, m.message_type, m.created_at, m.status, m.sender_id, sender.full_name, cp.last_read_at,
-              cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted,
+              cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted, cp.is_deleted,
               other_user.id, other_user.full_name, other_user.avatar_url, other_user.display_name
      ORDER BY COALESCE(m.created_at, c.created_at) DESC`,
     [userId]
@@ -76,7 +76,14 @@ export async function toggleMute(conversationId, userId) {
 
 export async function deleteConversationForUser(conversationId, userId) {
   await query(
-    `UPDATE conversation_participants SET is_hidden = true WHERE conversation_id = $1 AND user_id = $2`,
+    `UPDATE conversation_participants SET is_deleted = true WHERE conversation_id = $1 AND user_id = $2`,
+    [conversationId, userId]
+  )
+}
+
+export async function markUnread(conversationId, userId) {
+  await query(
+    `UPDATE conversation_participants SET last_read_at = '2000-01-01' WHERE conversation_id = $1 AND user_id = $2`,
     [conversationId, userId]
   )
 }
@@ -106,9 +113,9 @@ export async function getDirectConversation(userA, userB) {
     [userA, userB]
   )
   if (!result.rows[0]) return null
-  // Restore the conversation for userA if they had hidden it
+  // Restore the conversation for userA if they had hidden or deleted it
   await query(
-    `UPDATE conversation_participants SET is_hidden = false WHERE conversation_id = $1 AND user_id = $2 AND is_hidden = true`,
+    `UPDATE conversation_participants SET is_hidden = false, is_deleted = false WHERE conversation_id = $1 AND user_id = $2 AND (is_hidden = true OR is_deleted = true)`,
     [result.rows[0].id, userA]
   )
   return result.rows[0]

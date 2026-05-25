@@ -1,0 +1,1 @@
+ALTER TABLE conversation_participants ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
