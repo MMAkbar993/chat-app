@@ -2,6 +2,34 @@ import { useState, useEffect, useRef } from 'react'
 import { getUserById, blockUser, unblockUser } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 
+const ROLE_LABELS = {
+  affiliate_publisher:  'Affiliate Publisher',
+  casino_operator:      'Casino Operator',
+  affiliate_manager:    'Affiliate Manager',
+  game_provider:        'Game Provider',
+  payment_provider:     'Payment Provider',
+  platform_provider:    'Platform Provider',
+  media_seo_agency:     'Media / SEO Agency',
+  event_organizer:      'Event Organizer',
+  influencer_streamer:  'Influencer / Streamer',
+  investor_advisor:     'Investor / Advisor',
+  compliance_legal:     'Compliance & Legal',
+  kyc_aml_provider:     'KYC / AML Provider',
+  other:                'Other',
+}
+
+function getTagline(profile) {
+  if (!profile) return null
+  const industryRole = ROLE_LABELS[profile.primary_role] || profile.primary_role || null
+  const hasCompanyAccess = profile.website_verified || profile.website_representation_approved
+  if (hasCompanyAccess && profile.job_title) {
+    return profile.company_name
+      ? `${profile.job_title} at ${profile.company_name}`
+      : profile.job_title
+  }
+  return industryRole
+}
+
 export default function ContactDetailModal({
   contact,
   darkMode,
@@ -21,7 +49,11 @@ export default function ContactDetailModal({
 
   useEffect(() => {
     if (!contact?.id) return
-    getUserById(contact.id).then((data) => setProfile(data.user || data)).catch(() => {})
+    getUserById(contact.id).then((data) => {
+      const u = data.user || data
+      setProfile(u)
+      if (u.is_blocked_by_me) setBlocked(true)
+    }).catch(() => {})
   }, [contact?.id])
 
   useEffect(() => {
@@ -70,7 +102,7 @@ export default function ContactDetailModal({
     ? `${contact.custom_first_name} ${contact.custom_last_name || ''}`.trim()
     : contact.display_name || contact.full_name || contact.username || 'Unknown'
   const avatar   = contact.avatar_url || profile?.avatar_url
-  const role     = contact.primary_role || profile?.primary_role || ''
+  const tagline  = getTagline(profile || contact)
   const website  = contact.website || profile?.website
   const bio      = contact.bio || profile?.bio
   const location = profile?.location || profile?.country
@@ -232,8 +264,37 @@ export default function ContactDetailModal({
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-base truncate">{displayName}</p>
-              {role && <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{role}</p>}
+              {tagline && <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{tagline}</p>}
               {blocked && <span className="text-xs text-orange-500 font-medium">Blocked</span>}
+              {/* Verification badges */}
+              {profile && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {profile.kyc_status === 'verified' && (
+                    <span title="This user has completed identity verification before joining Connect." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      KYC Verified
+                    </span>
+                  )}
+                  {profile.website_verified && (
+                    <span title="This website was verified through a meta tag or approved company representation." className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      Website Verified
+                    </span>
+                  )}
+                  {profile.website_representation_approved && (
+                    <span title="This user has been approved to represent this company on Connect." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                      Approved Rep
+                    </span>
+                  )}
+                  {socials.some((s) => s.url) && (
+                    <span title="This social profile was verified through secure OAuth login." className="inline-flex items-center gap-1 text-xs bg-pink-100 text-pink-700 rounded-full px-2 py-0.5 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                      Social Verified
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button onClick={onChat} title="Chat"
@@ -260,7 +321,7 @@ export default function ContactDetailModal({
           {/* Personal Information */}
           <div className={`rounded-xl p-4 ${sectionBg}`}>
             <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
-            <p className={noteCls}>Information shown here has been verified for this contact.</p>
+            <p className={noteCls}>This profile includes information verified through KYC, website verification, approved company representation, and connected social accounts.</p>
             <Row label="Local Time" value={localTime}
               icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" /></svg>}
             />
@@ -285,7 +346,7 @@ export default function ContactDetailModal({
           {socials.some((s) => s.url) && (
           <div className={`rounded-xl p-4 ${sectionBg}`}>
             <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
-            <p className={noteCls}>Social profiles are verified through the platform itself before being shown.</p>
+            <p className={noteCls}>Each social profile was verified through secure OAuth login on that platform.</p>
             <div className="space-y-3">
               {socials.filter((s) => s.url).map(({ name: sname, color, url, svg, linkedinWarning }) => (
                 <div key={sname} className="flex items-center gap-3">

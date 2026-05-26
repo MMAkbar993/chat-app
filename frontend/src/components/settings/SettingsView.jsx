@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { getMyProfile, updateProfile, uploadAvatar, deleteAccount } from '../../api/users'
+import { getMyProfile, updateProfile, uploadAvatar, deleteAccount, changePassword } from '../../api/users'
+import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import TwoFactorSection from './TwoFactorSection'
 import SocialLinksSection from './SocialLinksSection'
@@ -11,7 +12,21 @@ import DeviceSection from './DeviceSection'
 import BlockedContactsModal from '../contacts/BlockedContactsModal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 
-const PRIMARY_ROLES = ['Developer', 'Designer', 'Product Manager', 'Marketing', 'Sales', 'Support', 'Executive', 'Content Creator', 'Other']
+const INDUSTRY_ROLES = [
+  { value: 'affiliate_publisher',  label: 'Affiliate Publisher' },
+  { value: 'casino_operator',      label: 'Casino Operator' },
+  { value: 'affiliate_manager',    label: 'Affiliate Manager' },
+  { value: 'game_provider',        label: 'Game Provider' },
+  { value: 'payment_provider',     label: 'Payment Provider' },
+  { value: 'platform_provider',    label: 'Platform Provider' },
+  { value: 'media_seo_agency',     label: 'Media / SEO Agency' },
+  { value: 'event_organizer',      label: 'Event Organizer' },
+  { value: 'influencer_streamer',  label: 'Influencer / Streamer' },
+  { value: 'investor_advisor',     label: 'Investor / Advisor' },
+  { value: 'compliance_legal',     label: 'Compliance & Legal' },
+  { value: 'kyc_aml_provider',     label: 'KYC / AML Provider' },
+  { value: 'other',                label: 'Other' },
+]
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -43,6 +58,28 @@ function CollapsibleBox({ title, icon, children, darkMode, defaultOpen = false }
           {children}
         </div>
       )}
+    </div>
+  )
+}
+
+function DocModal({ title, content, darkMode, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className={`w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b shrink-0 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+          <h2 className="font-bold text-base">{title}</h2>
+          <button onClick={onClose} className={`p-1.5 rounded-lg ${darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className={`flex-1 overflow-y-auto px-6 py-5 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          {content.split('\n\n').map((para, i) => (
+            <p key={i} className="mb-4">{para}</p>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -95,20 +132,103 @@ function ArrowRow({ icon, label, description, onClick, darkMode, danger = false 
 
 // ─── profile form ────────────────────────────────────────────────────────────
 
+function LockTooltip({ tip, darkMode }) {
+  return (
+    <div className="relative group ml-1 inline-flex">
+      <svg className="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      <div className={`absolute left-5 bottom-0 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
+        {tip}
+      </div>
+    </div>
+  )
+}
+
+function ChangeEmailModal({ currentEmail, darkMode, onClose, onChanged }) {
+  const [step, setStep] = useState('form') // 'form' | 'done'
+  const [newEmail, setNewEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!newEmail.includes('@')) { setError('Enter a valid email address.'); return }
+    if (!password) { setError('Enter your current password to confirm.'); return }
+    setSaving(true)
+    setError('')
+    try {
+      await client.patch('/users/me/email', { new_email: newEmail, password })
+      setStep('done')
+      onChanged?.(newEmail)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not update email.')
+    }
+    setSaving(false)
+  }
+
+  const inp = `w-full rounded-xl px-4 py-2.5 text-sm outline-none border focus:ring-2 focus:ring-violet-400 transition-colors ${darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'}`
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className={`w-96 rounded-2xl shadow-2xl p-6 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="font-bold text-base">Change Email</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {step === 'done' ? (
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="font-semibold">Email Updated</p>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your email has been changed to <strong>{newEmail}</strong>.</p>
+            <button onClick={onClose} className="mt-2 px-6 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium">Done</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <p className="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2">{error}</p>}
+            <div>
+              <label className={`text-xs mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>New Email Address</label>
+              <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="new@email.com" className={inp} />
+            </div>
+            <div>
+              <label className={`text-xs mb-1 block ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Current Password (to confirm)</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={inp} />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onClose} className={`flex-1 py-2.5 rounded-xl text-sm font-medium ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>Cancel</button>
+              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50">
+                {saving ? 'Saving…' : 'Update Email'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const { setUser } = useAuth()
   const fileRef = useRef(null)
   const [form, setForm] = useState({
-    display_name:  profile.display_name || '',
     bio:           profile.bio || '',
     gender:        profile.gender || '',
     phone:         profile.phone || '',
-    website:       profile.website || '',
     location:      profile.location || '',
     country:       profile.country || '',
     primary_role:  profile.primary_role || '',
     date_of_birth: profile.date_of_birth ? profile.date_of_birth.split('T')[0] : '',
-    custom_role:   '',
+    job_title:     profile.job_title || '',
+    company_name:  profile.company_name || '',
   })
   const [displayMode, setDisplayMode] = useState(() => {
     return profile.display_name === profile.username ? 'username' : 'fullname'
@@ -116,14 +236,18 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState({})
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [currentEmail, setCurrentEmail] = useState(profile.email || '')
 
-  const isOtherRole = !PRIMARY_ROLES.slice(0, -1).includes(form.primary_role) && form.primary_role !== ''
+  const knownRoleValues = INDUSTRY_ROLES.map((r) => r.value)
+  const isOtherRole = form.primary_role && !knownRoleValues.includes(form.primary_role) && form.primary_role !== 'other'
   const kycLocked   = profile.kyc_status === 'verified'
 
   const inp = `w-full rounded-xl px-4 py-2.5 text-sm outline-none border ${
     darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
   } focus:ring-2 focus:ring-violet-400 transition-colors`
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
+  const lbl = `text-xs mb-1 flex items-center ${sub}`
 
   async function handleAvatar(e) {
     const file = e.target.files?.[0]
@@ -147,7 +271,6 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     const errs = validate()
     setErrors(errs)
     if (Object.keys(errs).length) return
-
     setSaving(true)
     try {
       const payload = {
@@ -157,8 +280,10 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         phone:         form.phone,
         location:      form.location,
         country:       form.country,
-        primary_role:  isOtherRole ? form.custom_role || form.primary_role : form.primary_role,
+        primary_role:  form.primary_role,
         date_of_birth: form.date_of_birth || undefined,
+        job_title:     form.job_title || undefined,
+        company_name:  form.company_name || undefined,
       }
       const data = await updateProfile(payload)
       setUser((prev) => ({ ...prev, ...data.user }))
@@ -173,6 +298,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const initials  = ((profile.display_name || profile.full_name || '?')[0]).toUpperCase()
 
   return (
+    <>
     <form onSubmit={handleSave} className="space-y-3">
       {/* Avatar */}
       <div className="flex justify-center mb-2">
@@ -193,56 +319,29 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
       {/* First Name (locked) */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>First Name</label>
+        <label className={lbl}>
+          Name
+          {kycLocked && <LockTooltip tip="Name cannot be changed after KYC verification." darkMode={darkMode} />}
+        </label>
         <input value={profile.full_name} disabled className={`${inp} opacity-60 cursor-not-allowed`} />
-        {kycLocked && (
-          <p className={`text-xs mt-1 flex items-center gap-1 ${sub}`}>
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Name cannot be changed after KYC verification.
-          </p>
-        )}
-      </div>
-
-      {/* Last Name (locked placeholder) */}
-      <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Last Name</label>
-        <input value="" disabled placeholder="Last Name" className={`${inp} opacity-60 cursor-not-allowed`} />
-        {kycLocked && (
-          <p className={`text-xs mt-1 flex items-center gap-1 ${sub}`}>
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Name cannot be changed after KYC verification.
-          </p>
-        )}
       </div>
 
       {/* Username */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Username</label>
-        <div className={`flex items-center rounded-xl border px-4 py-2.5 gap-2 ${
-          darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-        }`}>
+        <label className={lbl}>Username</label>
+        <div className={`flex items-center rounded-xl border px-4 py-2.5 gap-2 opacity-60 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
           <span className={`text-sm ${sub}`}>@</span>
-          <input
-            value={profile.username}
-            disabled
-            className={`flex-1 bg-transparent outline-none text-sm opacity-60 cursor-not-allowed ${darkMode ? 'text-white' : ''}`}
-          />
+          <input value={profile.username} disabled className={`flex-1 bg-transparent outline-none text-sm cursor-not-allowed ${darkMode ? 'text-white' : ''}`} />
         </div>
       </div>
 
-      {/* Display name mode */}
+      {/* Display name */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Display name in chat and profile</label>
-        <p className={`text-xs mb-1 ${sub}`}>This name is shown to others in chat lists, headers, and messages.</p>
-        <select
-          value={displayMode}
-          onChange={(e) => setDisplayMode(e.target.value)}
-          className={inp}
-        >
+        <label className={lbl}>
+          Display Name
+          <LockTooltip tip="This name is shown to others in chat lists, headers, and messages." darkMode={darkMode} />
+        </label>
+        <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={inp}>
           <option value="fullname">Full name</option>
           <option value="username">Username</option>
         </select>
@@ -250,7 +349,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
       {/* Gender */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Gender</label>
+        <label className={lbl}>Gender</label>
         <select value={form.gender} onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))} className={inp}>
           <option value="">Prefer not to say</option>
           <option value="Male">Male</option>
@@ -261,82 +360,76 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
       {/* Mobile */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Mobile Number</label>
-        <input
-          value={form.phone}
-          onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-          placeholder="+1 555 000 0000"
-          className={inp}
-        />
+        <label className={lbl}>Mobile Number</label>
+        <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+1 555 000 0000" className={inp} />
         {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
       </div>
 
-      {/* Email (read-only) */}
+      {/* Email — editable via modal */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Email</label>
-        <input value={profile.email || ''} disabled className={`${inp} opacity-60 cursor-not-allowed`} />
+        <label className={lbl}>Email</label>
+        <div className={`flex items-center rounded-xl border px-4 py-2.5 gap-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <span className={`flex-1 text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>{currentEmail}</span>
+          <button type="button" onClick={() => setShowEmailModal(true)} className="text-xs text-violet-500 hover:text-violet-700 font-medium shrink-0">Change</button>
+        </div>
       </div>
 
       {/* Date of birth */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Date of Birth</label>
-        <input
-          type="date"
-          value={form.date_of_birth}
-          onChange={(e) => setForm((f) => ({ ...f, date_of_birth: e.target.value }))}
-          className={inp}
-        />
+        <label className={lbl}>Date of Birth</label>
+        <input type="date" value={form.date_of_birth} onChange={(e) => setForm((f) => ({ ...f, date_of_birth: e.target.value }))} className={inp} />
       </div>
 
       {/* Country */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Country</label>
-        <input
-          value={form.country}
-          onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-          placeholder="Country"
-          className={inp}
-        />
+        <label className={lbl}>Country</label>
+        <input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Country" className={inp} />
       </div>
 
       {/* About */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>About</label>
-        <textarea
-          value={form.bio}
-          onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-          rows={3}
-          placeholder="Tell people about yourself…"
-          className={`${inp} resize-none`}
-        />
+        <label className={lbl}>About</label>
+        <textarea value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} rows={3} placeholder="Tell people about yourself…" className={`${inp} resize-none`} />
       </div>
 
-      {/* Primary role */}
+      {/* Industry Role */}
       <div>
-        <label className={`text-xs mb-1 block ${sub}`}>Primary Role</label>
-        <select
-          value={isOtherRole ? 'Other' : form.primary_role}
-          onChange={(e) => setForm((f) => ({ ...f, primary_role: e.target.value, custom_role: '' }))}
-          className={inp}
-        >
+        <label className={lbl}>Industry Role</label>
+        <select value={isOtherRole ? 'other' : form.primary_role} onChange={(e) => setForm((f) => ({ ...f, primary_role: e.target.value }))} className={inp}>
           <option value="">Select a role</option>
-          {PRIMARY_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          {INDUSTRY_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
         </select>
-        {(form.primary_role === 'Other' || isOtherRole) && (
-          <input
-            value={form.custom_role || (isOtherRole ? form.primary_role : '')}
-            onChange={(e) => setForm((f) => ({ ...f, custom_role: e.target.value }))}
-            placeholder="Describe your role…"
-            className={`${inp} mt-2`}
-          />
-        )}
       </div>
 
-      <button type="submit" disabled={saving}
-        className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 font-semibold text-sm disabled:opacity-50 transition-colors">
+      {/* Position */}
+      <div>
+        <label className={lbl}>Position</label>
+        <input value={form.job_title} onChange={(e) => setForm((f) => ({ ...f, job_title: e.target.value }))} placeholder="e.g. CEO, Affiliate Manager…" className={inp} />
+      </div>
+
+      {/* Company Name */}
+      <div>
+        <label className={lbl}>
+          Company Name
+          <LockTooltip tip='Shown as "Position at Company" when your website is verified.' darkMode={darkMode} />
+        </label>
+        <input value={form.company_name} onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))} placeholder="e.g. Affiliate Roulette" className={inp} />
+      </div>
+
+      <button type="submit" disabled={saving} className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 font-semibold text-sm disabled:opacity-50 transition-colors">
         {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Changes'}
       </button>
     </form>
+
+    {showEmailModal && (
+      <ChangeEmailModal
+        currentEmail={currentEmail}
+        darkMode={darkMode}
+        onClose={() => setShowEmailModal(false)}
+        onChanged={(email) => { setCurrentEmail(email); setShowEmailModal(false) }}
+      />
+    )}
+    </>
   )
 }
 
@@ -352,6 +445,7 @@ export default function SettingsView({ darkMode }) {
   const [showBlocked, setShowBlocked] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showDoc, setShowDoc] = useState(null) // 'terms' | 'privacy'
   const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState(null)
   const dm = darkMode
@@ -489,29 +583,27 @@ export default function SettingsView({ darkMode }) {
         <SectionLabel darkMode={dm}>Others</SectionLabel>
         <div className={`rounded-2xl overflow-hidden mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
 
-          <OthersBox
+          <ArrowRow
             darkMode={dm}
-            title="Terms & Conditions"
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             }
-          >
-            {TERMS}
-          </OthersBox>
+            label="Terms & Conditions"
+            onClick={() => setShowDoc('terms')}
+          />
 
-          <OthersBox
+          <ArrowRow
             darkMode={dm}
-            title="Privacy Policy"
             icon={
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             }
-          >
-            {PRIVACY}
-          </OthersBox>
+            label="Privacy Policy"
+            onClick={() => setShowDoc('privacy')}
+          />
 
           <ArrowRow
             darkMode={dm}
@@ -561,6 +653,14 @@ export default function SettingsView({ darkMode }) {
 
       {/* Blocked contacts modal */}
       {showBlocked && <BlockedContactsModal darkMode={dm} onClose={() => setShowBlocked(false)} />}
+
+      {/* Terms & Conditions / Privacy Policy modals */}
+      {showDoc === 'terms' && (
+        <DocModal title="Terms & Conditions" content={TERMS} darkMode={dm} onClose={() => setShowDoc(null)} />
+      )}
+      {showDoc === 'privacy' && (
+        <DocModal title="Privacy Policy" content={PRIVACY} darkMode={dm} onClose={() => setShowDoc(null)} />
+      )}
 
       {/* Delete account confirmation */}
       <ConfirmDialog

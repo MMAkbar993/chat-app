@@ -169,7 +169,10 @@ export async function markRead(conversationId, userId) {
 
 export async function getConversationById(id) {
   const result = await query(
-    `SELECT * FROM conversations WHERE id = $1`,
+    `SELECT c.*, u.full_name AS created_by_name, u.display_name AS created_by_display_name
+     FROM conversations c
+     LEFT JOIN users u ON u.id = c.created_by
+     WHERE c.id = $1`,
     [id]
   )
   return result.rows[0] || null
@@ -182,11 +185,14 @@ export async function removeParticipant(conversationId, userId) {
   )
 }
 
-export async function updateConversation(id, { name, avatarUrl }) {
+export async function updateConversation(id, { name, avatarUrl, description }) {
   const result = await query(
-    `UPDATE conversations SET name = COALESCE($1, name), avatar_url = COALESCE($2, avatar_url)
-     WHERE id = $3 RETURNING *`,
-    [name || null, avatarUrl || null, id]
+    `UPDATE conversations
+     SET name = COALESCE($1, name),
+         avatar_url = COALESCE($2, avatar_url),
+         description = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE description END
+     WHERE id = $4 RETURNING *`,
+    [name || null, avatarUrl || null, description !== undefined ? description : null, id]
   )
   return result.rows[0]
 }

@@ -79,3 +79,12 @@ export async function removeMember(req, res, next) {
     next(err)
   }
 }
+
+export async function leaveGroup(req, res, next) {
+  try {
+    await removeParticipant(req.params.id, req.user.id)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}

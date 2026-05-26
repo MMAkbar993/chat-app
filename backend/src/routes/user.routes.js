@@ -6,8 +6,9 @@ import { fileURLToPath } from 'url'
 import {
   getProfile, updateProfile, uploadAvatar, getUserById,
   getPublicProfile, getMySocialConnections, getBlockedUsers, deactivateAccount,
-  changePassword, deleteMyAccount, clearAllChats, deleteAllChats,
-  initWebsiteVerification, confirmWebsiteVerification,
+  changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats,
+  initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification,
+  requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
 
@@ -36,11 +37,16 @@ userRouter.get('/me/blocked', getBlockedUsers)
 userRouter.patch('/me', updateProfile)
 userRouter.patch('/me/deactivate', deactivateAccount)
 userRouter.patch('/me/password', changePassword)
+userRouter.patch('/me/email', changeEmail)
 userRouter.delete('/me', deleteMyAccount)
 userRouter.patch('/me/chats/clear', clearAllChats)
 userRouter.delete('/me/chats', deleteAllChats)
 userRouter.post('/me/website/verify-init', initWebsiteVerification)
 userRouter.post('/me/website/verify-confirm', confirmWebsiteVerification)
+userRouter.delete('/me/website', removeWebsiteVerification)
+userRouter.post('/me/website/request-representation', requestRepresentation)
+userRouter.get('/me/website/representation-requests', getRepresentationRequests)
+userRouter.patch('/me/website/representation-requests/:id', handleRepresentationRequest)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)

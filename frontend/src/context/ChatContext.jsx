@@ -20,6 +20,7 @@ export function ChatProvider({ children }) {
   const [typingUsers, setTypingUsers] = useState({})
   const [replyTo, setReplyToState] = useState(null)
   const [conversationFilter, setConversationFilter] = useState('all')
+  const [onlineUsers, setOnlineUsers] = useState(new Set())
   const activeConvRef = useRef(null)
 
   useEffect(() => {
@@ -50,6 +51,9 @@ export function ChatProvider({ children }) {
 
   useEffect(() => {
     loadConversations()
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
   }, [loadConversations])
 
   const openConversation = useCallback(async (conv) => {
@@ -152,9 +156,25 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     if (!socket) return
 
+    const getNotifPrefs = () => {
+      try { return JSON.parse(localStorage.getItem('notif_prefs')) || {} } catch { return {} }
+    }
+
+    const showBrowserNotif = (msg) => {
+      const prefs = getNotifPrefs()
+      if (prefs.messageNotifs === false) return
+      if (document.hasFocus()) return
+      if (Notification.permission !== 'granted') return
+      const title = msg.sender_display_name || msg.sender_name || 'New message'
+      const body = msg.message_type === 'text' ? (msg.content || '') : `Sent a ${msg.message_type}`
+      new Notification(title, { body, icon: '/Icon.png' })
+    }
+
     const onNewMessage = (msg) => {
       if (msg.sender_id !== user?.id) {
-        playReceivedSound()
+        const prefs = getNotifPrefs()
+        if (prefs.sound !== false) playReceivedSound()
+        showBrowserNotif(msg)
       }
       if (activeConvRef.current?.id === msg.conversation_id) {
         setMessages((prev) => {
@@ -204,11 +224,25 @@ export function ChatProvider({ children }) {
       )
     }
 
+    const onPresence = ({ userId, online }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev)
+        if (online) next.add(userId)
+        else next.delete(userId)
+        return next
+      })
+    }
+
+    const onOnlineList = ({ userIds }) => setOnlineUsers(new Set(userIds))
+
     socket.on('new-message', onNewMessage)
     socket.on('user-typing', onTyping)
     socket.on('user-stop-typing', onStopTyping)
     socket.on('reaction-updated', onReactionUpdated)
     socket.on('message-status-updated', onMessageStatusUpdated)
+    socket.on('user-presence', onPresence)
+    socket.on('online-users', onOnlineList)
+    socket.emit('get-online-users')
 
     return () => {
       socket.off('new-message', onNewMessage)
@@ -216,6 +250,8 @@ export function ChatProvider({ children }) {
       socket.off('user-stop-typing', onStopTyping)
       socket.off('reaction-updated', onReactionUpdated)
       socket.off('message-status-updated', onMessageStatusUpdated)
+      socket.off('user-presence', onPresence)
+      socket.off('online-users', onOnlineList)
     }
   }, [socket, loadConversations])
 
@@ -229,6 +265,7 @@ export function ChatProvider({ children }) {
       typingUsers,
       replyTo, setReplyTo, clearReply,
       toggleConversationFlag, removeConversation, clearConversationMessages, markConversationUnread,
+      onlineUsers,
     }}>
       {children}
     </ChatContext.Provider>

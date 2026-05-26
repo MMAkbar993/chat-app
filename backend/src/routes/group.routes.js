@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { authMiddleware } from '../middleware/auth.js'
-import { listGroups, createGroup, getGroup, updateGroup, addMember, removeMember } from '../controllers/group.controller.js'
+import { listGroups, createGroup, getGroup, updateGroup, addMember, removeMember, leaveGroup } from '../controllers/group.controller.js'
 
 export const groupRouter = Router()
 groupRouter.use(authMiddleware)
@@ -11,3 +11,4 @@ groupRouter.get('/:id', getGroup)
 groupRouter.patch('/:id', updateGroup)
 groupRouter.post('/:id/members', addMember)
 groupRouter.delete('/:id/members/:userId', removeMember)
+groupRouter.delete('/:id/leave', leaveGroup)

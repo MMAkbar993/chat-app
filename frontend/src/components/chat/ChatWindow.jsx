@@ -4,10 +4,12 @@ import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { deleteMessageApi } from '../../api/conversations'
 import { blockUser, unblockUser, getBlockedUsers, reportUser } from '../../api/users'
+import { getGroup } from '../../api/groups'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
 import ContactInfoPanel from './ContactInfoPanel'
+import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
 
 function formatDate(ts) {
@@ -49,6 +51,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const [showContactInfo, setShowContactInfo] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
   const [isBlocked, setIsBlocked] = useState(false)
+  const [groupParticipants, setGroupParticipants] = useState([])
   const [confirm, setConfirm] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -89,17 +92,26 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     bottomRef.current.scrollIntoView({ behavior: isNewConv ? 'instant' : 'smooth' })
   }, [messages, activeConversation?.id])
 
-  // Reset panels and load blocked status when conversation changes
+  // Reset panels and load blocked status / group participants when conversation changes
   useEffect(() => {
     setShowContactInfo(false)
     setShowHeaderMenu(false)
     setIsBlocked(false)
+    setGroupParticipants([])
     closeSearch()
-    const otherId = activeConversation?.other_user_id
-    if (!otherId) return
-    getBlockedUsers()
-      .then(({ blockedIds }) => setIsBlocked(blockedIds.includes(otherId)))
-      .catch(() => {})
+    if (!activeConversation?.id) return
+    if (activeConversation.type === 'group') {
+      getGroup(activeConversation.id)
+        .then((data) => setGroupParticipants(data.group.participants || []))
+        .catch(() => {})
+    } else {
+      const otherId = activeConversation.other_user_id
+      if (otherId) {
+        getBlockedUsers()
+          .then(({ blockedIds }) => setIsBlocked(blockedIds.includes(otherId)))
+          .catch(() => {})
+      }
+    }
   }, [activeConversation?.id])
 
   async function handleHeaderBlock() {
@@ -168,24 +180,48 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       <div className={`flex-1 flex flex-col h-full min-w-0 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         {/* Header */}
         <div className={`flex items-center justify-between px-5 py-3 border-b ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
               {activeConversation.other_user_avatar || activeConversation.avatar_url ? (
                 <img src={activeConversation.other_user_avatar || activeConversation.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 (otherName || '?')[0].toUpperCase()
               )}
             </div>
-            <div>
-              <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName}</p>
-              {isTyping
-                ? <p className="text-xs text-green-500">typing...</p>
-                : <p className="text-xs text-green-500">Online</p>}
+            <div className="min-w-0">
+              <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName}</p>
+              {isGroup ? (
+                <div className="flex items-center gap-2">
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {isTyping ? 'typing…' : `${groupParticipants.length} members`}
+                  </p>
+                  {groupParticipants.length > 0 && (
+                    <div className="flex -space-x-1">
+                      {groupParticipants.slice(0, 4).map((p) => (
+                        <div key={p.id} className="w-4 h-4 rounded-full overflow-hidden border border-white bg-violet-400 flex items-center justify-center text-white text-[8px] font-bold shrink-0">
+                          {p.avatar_url
+                            ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                            : (p.display_name || p.full_name || '?')[0].toUpperCase()}
+                        </div>
+                      ))}
+                      {groupParticipants.length > 4 && (
+                        <div className="w-4 h-4 rounded-full bg-violet-600 border border-white flex items-center justify-center text-white text-[7px] font-bold shrink-0">
+                          +{groupParticipants.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                isTyping
+                  ? <p className="text-xs text-green-500">typing...</p>
+                  : <p className="text-xs text-green-500">Online</p>
+              )}
             </div>
           </div>
 
           {/* Header action buttons */}
-          <div className="flex items-center gap-1 relative">
+          <div className="flex items-center gap-1 relative shrink-0">
             {/* Search */}
             <button
               onClick={() => setShowSearch((v) => !v)}
@@ -200,7 +236,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
               </svg>
             </button>
 
-            {!isGroup && onCallStart && (
+            {onCallStart && (
               <>
                 {/* Video call */}
                 <button onClick={() => onCallStart('video')}
@@ -373,7 +409,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         />
       </div>
 
-      {/* Contact Info Panel */}
+      {/* Contact / Group Info Panel */}
       {showContactInfo && !isGroup && (
         <ContactInfoPanel
           conversation={activeConversation}
@@ -382,6 +418,15 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           onCallStart={onCallStart}
           isBlocked={isBlocked}
           onBlockChange={setIsBlocked}
+          onSearch={() => setShowSearch(true)}
+        />
+      )}
+      {showContactInfo && isGroup && (
+        <GroupInfoPanel
+          conversation={activeConversation}
+          darkMode={darkMode}
+          onClose={() => setShowContactInfo(false)}
+          onCallStart={onCallStart}
           onSearch={() => setShowSearch(true)}
         />
       )}
