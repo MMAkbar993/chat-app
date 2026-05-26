@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import client, { getAccessToken } from '../../api/client'
+import ConfirmDialog from '../ui/ConfirmDialog'
 
 const PLATFORMS = [
   { key: 'facebook',  label: 'Facebook',    color: '#1877F2', icon: 'f' },
@@ -11,17 +12,16 @@ const PLATFORMS = [
   { key: 'twitch',    label: 'Twitch',      color: '#9147FF', icon: '◈' },
 ]
 
-export default function SocialLinksSection({ darkMode }) {
+export default function SocialLinksSection({ darkMode, onToast }) {
   const [connections, setConnections] = useState([])
   const [loading, setLoading] = useState(true)
   const [disconnecting, setDisconnecting] = useState(null)
-  const [error, setError] = useState('')
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [savingLinkedin, setSavingLinkedin] = useState(false)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(null)
 
-  const bg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
-  const text = darkMode ? 'text-white' : 'text-gray-900'
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
+  const text = darkMode ? 'text-white' : 'text-gray-900'
   const rowBg = darkMode ? 'bg-gray-700' : 'bg-white'
 
   useEffect(() => {
@@ -34,17 +34,21 @@ export default function SocialLinksSection({ darkMode }) {
       .catch(() => {})
       .finally(() => setLoading(false))
 
-    // Listen for OAuth popup success
     const onMessage = (e) => {
       if (e.data?.type === 'social-connect-success') {
+        const label = PLATFORMS.find((p) => p.key === e.data.platform)?.label || e.data.platform
+        onToast?.(`${label} account connected successfully.`)
         client.get('/users/me/social')
           .then(({ data }) => setConnections(data.connections))
           .catch(() => {})
       }
+      if (e.data?.type === 'social-connect-error') {
+        onToast?.(e.data.reason || 'Could not connect account. Please try again.', 'error')
+      }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [])
+  }, [onToast])
 
   function connectPlatform(key) {
     const apiBase = import.meta.env.VITE_API_URL || window.location.origin.replace(':5173', ':3001')
@@ -55,19 +59,18 @@ export default function SocialLinksSection({ darkMode }) {
 
   async function disconnectPlatform(key) {
     setDisconnecting(key)
-    setError('')
     try {
       await client.delete(`/social/${key}`)
       setConnections((prev) => prev.filter((c) => c.platform !== key))
+      onToast?.('Account disconnected.')
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to disconnect')
+      onToast?.(err.response?.data?.error || 'Could not disconnect account. Please try again.', 'error')
     }
     setDisconnecting(null)
   }
 
   async function saveLinkedin() {
     setSavingLinkedin(true)
-    setError('')
     try {
       await client.post('/social/linkedin/save-url', { url: linkedinUrl })
       setConnections((prev) => {
@@ -75,37 +78,29 @@ export default function SocialLinksSection({ darkMode }) {
         if (linkedinUrl.trim()) return [...filtered, { platform: 'linkedin', profile_url: linkedinUrl.trim(), username: null }]
         return filtered
       })
+      onToast?.('LinkedIn profile URL saved.')
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save LinkedIn URL')
+      onToast?.(err.response?.data?.error || 'Failed to save LinkedIn URL', 'error')
     }
     setSavingLinkedin(false)
   }
 
-  const connectedKeys = new Set(connections.map((c) => c.platform))
-
   if (loading) return null
 
+  const confirmLabel = PLATFORMS.find((p) => p.key === confirmDisconnect)?.label || ''
+
   return (
-    <div className={`rounded-2xl p-4 mb-4 ${bg}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <svg className="w-4 h-4 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-        <span className={`text-sm font-bold ${text}`}>Social Accounts</span>
-      </div>
-
+    <>
       <p className={`text-xs mb-4 ${sub}`}>
-        Connect your social accounts to verify your identity and display them on your public profile.
+        All social profiles are verified via OAuth unless otherwise stated.
+        Verified links are shown with a badge. Other links are displayed as provided.
       </p>
-
-      {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
 
       <div className="space-y-2">
         {PLATFORMS.map((p) => {
           const conn = connections.find((c) => c.platform === p.key)
           const isConnected = !!conn
 
-          // LinkedIn: URL paste flow
           if (p.urlOnly) {
             return (
               <div key={p.key} className={`rounded-xl p-3 border ${darkMode ? 'border-gray-600' : 'border-gray-200'} ${rowBg}`}>
@@ -114,8 +109,18 @@ export default function SocialLinksSection({ darkMode }) {
                     {p.icon}
                   </div>
                   <p className={`text-sm font-medium flex-1 ${text}`}>{p.label}</p>
-                  <span className={`text-xs ${sub}`}>URL only</span>
+                  <div className="relative group">
+                    <svg className={`w-3.5 h-3.5 cursor-help ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
+                      LinkedIn does not allow OAuth to verify profile.
+                    </div>
+                  </div>
                 </div>
+                <p className={`text-xs mb-2 ${sub}`}>
+                  Your LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourname).
+                </p>
                 <div className="flex gap-2">
                   <input
                     value={linkedinUrl}
@@ -162,10 +167,10 @@ export default function SocialLinksSection({ darkMode }) {
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Verified</span>
                   <button
-                    onClick={() => disconnectPlatform(p.key)}
+                    onClick={() => setConfirmDisconnect(p.key)}
                     disabled={disconnecting === p.key}
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 ${
-                      darkMode ? 'hover:bg-red-900/20' : ''
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 ${
+                      darkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-50'
                     }`}
                     title="Remove connection"
                   >
@@ -186,6 +191,21 @@ export default function SocialLinksSection({ darkMode }) {
           )
         })}
       </div>
-    </div>
+
+      <ConfirmDialog
+        open={!!confirmDisconnect}
+        darkMode={darkMode}
+        title="Remove social account?"
+        message="Remove this social account? You can connect again later."
+        confirmLabel={disconnecting ? 'Removing…' : 'Remove'}
+        variant="danger"
+        onConfirm={() => {
+          const key = confirmDisconnect
+          setConfirmDisconnect(null)
+          disconnectPlatform(key)
+        }}
+        onCancel={() => setConfirmDisconnect(null)}
+      />
+    </>
   )
 }
