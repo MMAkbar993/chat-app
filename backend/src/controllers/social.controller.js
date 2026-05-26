@@ -124,9 +124,13 @@ export function socialConnect(req, res) {
   const cfg = PLATFORMS[platform]
   if (!cfg) return res.status(404).json({ error: 'Unknown platform' })
 
+  if (!cfg.clientId()) {
+    const reason = `${platform.charAt(0).toUpperCase() + platform.slice(1)} OAuth is not configured. Set the client ID, secret and redirect URL.`
+    return res.redirect(`${FRONTEND}/social-error?reason=${encodeURIComponent(reason)}`)
+  }
+
   const state = `${req.user.id}:${Date.now()}:${Math.random().toString(36).slice(2)}`
   oauthStateMap.set(state, req.user.id)
-  // Clean old states after 10 minutes
   setTimeout(() => oauthStateMap.delete(state), 10 * 60 * 1000)
 
   const params = new URLSearchParams({
@@ -146,7 +150,16 @@ export async function socialCallback(req, res) {
   const cfg = PLATFORMS[platform]
 
   if (!cfg) return res.redirect(`${FRONTEND}/social-error?reason=unknown_platform`)
-  if (error) return res.redirect(`${FRONTEND}/social-error?reason=${encodeURIComponent(error)}`)
+
+  if (error) {
+    const reason = error === 'access_denied'
+      ? 'Access was denied or the authorization expired. Try connecting again.'
+      : 'Could not connect account. Please try again.'
+    return res.send(`<html><body><script>
+      if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(reason)}},'${FRONTEND}');window.close();}
+      else{window.location.href='${FRONTEND}/social-error?reason=${encodeURIComponent(reason)}';}
+    </script></body></html>`)
+  }
 
   const userId = oauthStateMap.get(state)
   if (!userId) return res.redirect(`${FRONTEND}/social-error?reason=invalid_state`)
@@ -222,7 +235,11 @@ export async function socialCallback(req, res) {
     `)
   } catch (err) {
     console.error(`Social auth error (${platform}):`, err.message)
-    res.redirect(`${FRONTEND}/social-error?reason=${encodeURIComponent('Connection failed')}`)
+    const reason = 'Could not connect account. Please try again.'
+    res.send(`<html><body><script>
+      if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(reason)}},'${FRONTEND}');window.close();}
+      else{window.location.href='${FRONTEND}/social-error?reason=${encodeURIComponent(reason)}';}
+    </script></body></html>`)
   }
 }
 
