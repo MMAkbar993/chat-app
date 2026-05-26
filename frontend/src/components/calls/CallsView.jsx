@@ -20,7 +20,7 @@ const STATUS_ICON = {
   busy: { color: 'text-yellow-500', label: 'Busy' },
 }
 
-export default function CallsView({ darkMode, onCallStart, onNewCall }) {
+export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat }) {
   const { user } = useAuth()
   const [calls, setCalls] = useState([])
   const [filter, setFilter] = useState('all')
@@ -103,7 +103,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall }) {
               className={`flex items-center gap-3 px-4 py-3 border-b transition-colors cursor-pointer ${darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'}`}
               onClick={() => {
                 const targetId = isMe ? c.callee_id : c.caller_id
-                if (targetId) onNewCall?.(c.call_type, targetId, otherName, otherAvatar)
+                if (targetId) onOpenChat?.(targetId)
               }}
             >
               <div className="relative shrink-0 w-11 h-11">

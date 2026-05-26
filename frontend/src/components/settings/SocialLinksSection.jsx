@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import client from '../../api/client'
+import client, { getAccessToken } from '../../api/client'
 
 const PLATFORMS = [
   { key: 'facebook',  label: 'Facebook',    color: '#1877F2', icon: 'f' },
@@ -47,9 +47,9 @@ export default function SocialLinksSection({ darkMode }) {
   }, [])
 
   function connectPlatform(key) {
-    // In dev, backend is on :3001; in prod, same origin via proxy
     const apiBase = import.meta.env.VITE_API_URL || window.location.origin.replace(':5173', ':3001')
-    const url = `${apiBase}/api/social/${key}/connect`
+    const token = getAccessToken()
+    const url = `${apiBase}/api/social/${key}/connect${token ? `?token=${encodeURIComponent(token)}` : ''}`
     window.open(url, 'oauth-connect', 'width=600,height=700,menubar=no,toolbar=no')
   }
 
@@ -152,7 +152,7 @@ export default function SocialLinksSection({ darkMode }) {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${text}`}>{p.label}</p>
+                <p className={`text-sm font-medium whitespace-nowrap ${text}`}>{p.label}</p>
                 {conn?.username && (
                   <p className={`text-xs truncate ${sub}`}>@{conn.username}</p>
                 )}

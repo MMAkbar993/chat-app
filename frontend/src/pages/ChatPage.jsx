@@ -24,7 +24,7 @@ export default function ChatPage() {
   const [incomingCall, setIncomingCall] = useState(null)
   const { socket } = useSocket()
   const { user } = useAuth()
-  const { activeConversation } = useChat()
+  const { activeConversation, openConversation } = useChat()
 
   useEffect(() => {
     if (!socket) return
@@ -118,12 +118,12 @@ export default function ChatPage() {
       {section === 'chats' && <ChatsView darkMode={darkMode} />}
       {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} />}
       {section === 'groups' && <GroupsView darkMode={darkMode} />}
-      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} />}
+      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} />}
       {section === 'profile' && <ProfileView darkMode={darkMode} />}
       {section === 'settings' && <SettingsView darkMode={darkMode} />}
 
-      {/* Right panel — chat window only on chats tab, welcome screen everywhere else */}
-      {section === 'chats' && activeConversation ? (
+      {/* Right panel — chat window on chats/groups tabs, welcome screen everywhere else */}
+      {(section === 'chats' || section === 'groups') && activeConversation ? (
         <ChatWindow darkMode={darkMode} onCallStart={handleCallStart} />
       ) : (
         <WelcomeScreen darkMode={darkMode} />

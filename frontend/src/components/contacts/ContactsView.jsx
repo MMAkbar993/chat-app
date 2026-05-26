@@ -1,8 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
+
+const ROLE_LABELS = {
+  affiliate_publisher:  'Affiliate Publisher',
+  casino_operator:      'Casino Operator',
+  affiliate_manager:    'Affiliate Manager',
+  game_provider:        'Game Provider',
+  payment_provider:     'Payment Provider',
+  platform_provider:    'Platform Provider',
+  media_seo_agency:     'Media / SEO Agency',
+  event_organizer:      'Event Organizer',
+  influencer_streamer:  'Influencer / Streamer',
+  investor_advisor:     'Investor / Advisor',
+  compliance_legal:     'Compliance & Legal',
+  kyc_aml_provider:     'KYC / AML Provider',
+  other:                'Other',
+}
 import { getContacts, removeContact } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
 import { useChat } from '../../context/ChatContext'
-import { useSocket } from '../../context/SocketContext'
 import AddContactModal from './AddContactModal'
 import ContactDetailModal from './ContactDetailModal'
 import EditContactModal from './EditContactModal'
@@ -18,10 +33,8 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
   const [selectedContact, setSelectedContact] = useState(null)
   const [editContact, setEditContact] = useState(null)
   const [toast, setToast] = useState(null)
-  const [onlineUsers, setOnlineUsers] = useState(new Set())
 
-  const { openConversation } = useChat()
-  const { socket } = useSocket()
+  const { openConversation, onlineUsers } = useChat()
 
   const load = useCallback(async () => {
     try {
@@ -31,27 +44,6 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
   }, [])
 
   useEffect(() => { load() }, [load])
-
-  // Track online presence via socket
-  useEffect(() => {
-    if (!socket) return
-    const onPresence = ({ userId, online }) => {
-      setOnlineUsers((prev) => {
-        const next = new Set(prev)
-        if (online) next.add(userId)
-        else next.delete(userId)
-        return next
-      })
-    }
-    const onOnlineList = ({ userIds }) => setOnlineUsers(new Set(userIds))
-    socket.on('user-presence', onPresence)
-    socket.on('online-users', onOnlineList)
-    socket.emit('get-online-users')
-    return () => {
-      socket.off('user-presence', onPresence)
-      socket.off('online-users', onOnlineList)
-    }
-  }, [socket])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -207,7 +199,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
                     </div>
                     <div className="min-w-0">
                       <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
-                      <p className={`text-xs ${sub}`}>{c.primary_role || c.username}</p>
+                      <p className={`text-xs ${sub}`}>{ROLE_LABELS[c.primary_role] || c.primary_role || c.username}</p>
                     </div>
                   </button>
                 )

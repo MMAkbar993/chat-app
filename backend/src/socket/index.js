@@ -200,10 +200,23 @@ export function initSocket(httpServer) {
       io.to(`user:${targetUserId}`).emit('webrtc-ice-candidate', { callId, candidate })
     })
 
+    // Emit current online list to the newly connected user
+    socket.emit('online-users', { userIds: Array.from(onlineUsers.keys()) })
+    // Broadcast this user coming online to everyone else
+    socket.broadcast.emit('user-presence', { userId, online: true })
+
+    socket.on('get-online-users', () => {
+      socket.emit('online-users', { userIds: Array.from(onlineUsers.keys()) })
+    })
+
     socket.on('disconnect', () => {
       const count = onlineUsers.get(userId) || 0
-      if (count <= 1) onlineUsers.delete(userId)
-      else onlineUsers.set(userId, count - 1)
+      if (count <= 1) {
+        onlineUsers.delete(userId)
+        io.emit('user-presence', { userId, online: false })
+      } else {
+        onlineUsers.set(userId, count - 1)
+      }
     })
   })
 

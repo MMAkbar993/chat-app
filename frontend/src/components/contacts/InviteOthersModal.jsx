@@ -4,7 +4,7 @@ import { sendInvite } from '../../api/contacts'
 export default function InviteOthersModal({ darkMode, onClose }) {
   const [recipient, setRecipient] = useState('')
   const [message, setMessage] = useState(
-    "Hi! I'd like to invite you to join our chat app. Sign up and we can start chatting right away!"
+    "Hi! I'd like to invite you to join Connect, a verified chat platform built for the iGaming industry. Once you sign up, we can connect directly and start chatting securely."
   )
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)

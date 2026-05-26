@@ -59,6 +59,7 @@ export default function ChatsView({ darkMode }) {
     filteredConversations, conversations, activeConversation, openConversation,
     conversationFilter, setConversationFilter,
     toggleConversationFlag, removeConversation, markConversationUnread,
+    onlineUsers,
   } = useChat()
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
@@ -143,7 +144,9 @@ export default function ChatsView({ darkMode }) {
                         {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                           : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold">{(name || '?')[0].toUpperCase()}</div>}
                       </div>
-                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                      {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                      )}
                     </div>
                   </button>
                 )
@@ -212,9 +215,11 @@ export default function ChatsView({ darkMode }) {
                       {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                         : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(name || '?')[0].toUpperCase()}</div>}
                     </div>
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                    {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                    )}
                     {c.is_pinned && (
-                      <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center">
+                      <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-amber-400 rounded-full flex items-center justify-center">
                         <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                         </svg>

@@ -25,7 +25,7 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const { display_name, bio, gender, phone, website, location, country, primary_role, date_of_birth } = req.body
+    const { display_name, bio, gender, phone, website, location, country, primary_role, date_of_birth, job_title, company_name } = req.body
     const result = await query(
       `UPDATE users SET
          display_name = COALESCE($1, display_name),
@@ -37,10 +37,13 @@ export async function updateProfile(req, res, next) {
          country = COALESCE($7, country),
          primary_role = COALESCE($8, primary_role),
          date_of_birth = COALESCE($9::date, date_of_birth),
+         job_title = COALESCE($10, job_title),
+         company_name = COALESCE($11, company_name),
          updated_at = NOW()
-       WHERE id = $10
+       WHERE id = $12
        RETURNING id, full_name, username, country, location, email, primary_role, phone,
                  avatar_url, display_name, bio, gender, website, date_of_birth,
+                 job_title, company_name, website_verified, website_representation_approved,
                  subscription_status, kyc_status, is_active`,
       [
         display_name !== undefined ? (display_name || null) : null,
@@ -52,6 +55,8 @@ export async function updateProfile(req, res, next) {
         country || null,
         primary_role || null,
         date_of_birth || null,
+        job_title !== undefined ? (job_title || null) : null,
+        company_name !== undefined ? (company_name || null) : null,
         req.user.id,
       ]
     )
@@ -75,13 +80,28 @@ export async function uploadAvatar(req, res, next) {
 export async function getUserById(req, res, next) {
   try {
     const result = await query(
-      `SELECT id, full_name, username, primary_role, avatar_url, display_name, bio,
-              country, location, website, created_at
-       FROM users WHERE id = $1`,
-      [req.params.id]
+      `SELECT u.id, u.full_name, u.username, u.primary_role, u.avatar_url, u.display_name, u.bio,
+              u.country, u.location, u.website, u.created_at, u.date_of_birth,
+              u.job_title, u.company_name, u.website_verified, u.website_representation_approved,
+              u.kyc_status,
+              EXISTS(SELECT 1 FROM blocked_users WHERE blocker_id = $2 AND blocked_id = u.id) AS is_blocked_by_me
+       FROM users u WHERE u.id = $1`,
+      [req.params.id, req.user.id]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
-    res.json({ user: result.rows[0] })
+
+    const user = result.rows[0]
+    const socialResult = await query(
+      `SELECT platform, profile_url, username AS social_username
+       FROM social_connections WHERE user_id = $1`,
+      [user.id]
+    )
+    const socialMap = {}
+    socialResult.rows.forEach((s) => {
+      socialMap[`${s.platform}_url`] = s.profile_url || (s.social_username ? `https://${s.platform}.com/${s.social_username}` : null)
+    })
+
+    res.json({ user: { ...user, ...socialMap } })
   } catch (err) {
     next(err)
   }
@@ -132,10 +152,35 @@ export async function deactivateAccount(req, res, next) {
 export async function getBlockedUsers(req, res, next) {
   try {
     const result = await query(
-      `SELECT blocked_id::text AS id FROM blocked_users WHERE blocker_id = $1`,
+      `SELECT u.id, u.full_name, u.username, u.display_name, u.avatar_url
+       FROM blocked_users b
+       JOIN users u ON u.id = b.blocked_id
+       WHERE b.blocker_id = $1
+       ORDER BY u.full_name`,
       [req.user.id]
     )
-    res.json({ blockedIds: result.rows.map((r) => r.id) })
+    res.json({ blockedUsers: result.rows })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function changeEmail(req, res, next) {
+  try {
+    const { new_email, password } = req.body
+    if (!new_email || !password) return res.status(400).json({ error: 'New email and current password are required' })
+    if (!new_email.includes('@')) return res.status(400).json({ error: 'Invalid email address' })
+
+    const existing = await query(`SELECT 1 FROM users WHERE email = $1 AND id != $2`, [new_email, req.user.id])
+    if (existing.rows.length > 0) return res.status(400).json({ error: 'Email is already in use' })
+
+    const result = await query(`SELECT password_hash FROM users WHERE id = $1`, [req.user.id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
+    const valid = await bcrypt.compare(password, result.rows[0].password_hash)
+    if (!valid) return res.status(400).json({ error: 'Current password is incorrect' })
+
+    await query(`UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2`, [new_email, req.user.id])
+    res.json({ success: true })
   } catch (err) {
     next(err)
   }
@@ -215,12 +260,128 @@ export async function initWebsiteVerification(req, res, next) {
   try {
     const { url } = req.body
     if (!url) return res.status(400).json({ error: 'Website URL is required' })
+
+    // Normalise to bare URL for comparison
+    let normalised = url.trim().replace(/\/+$/, '')
+
+    // Check if another user already verified this website
+    const claimed = await query(
+      `SELECT id, display_name, full_name FROM users
+       WHERE website_verified = true AND LOWER(TRIM(TRAILING '/' FROM website)) = LOWER($1) AND id != $2`,
+      [normalised, req.user.id]
+    )
+    if (claimed.rows[0]) {
+      const owner = claimed.rows[0]
+      return res.status(409).json({
+        error: 'already_claimed',
+        ownerName: owner.display_name || owner.full_name || 'another user',
+        ownerId: owner.id,
+        websiteUrl: normalised,
+      })
+    }
+
     const token = crypto.randomBytes(20).toString('hex')
     await query(
       `UPDATE users SET website = $1, website_verify_token = $2, website_verified = false, updated_at = NOW() WHERE id = $3`,
-      [url, token, req.user.id]
+      [normalised, token, req.user.id]
     )
     res.json({ token, metaTag: `<meta name="site-verification" content="${token}">` })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function removeWebsiteVerification(req, res, next) {
+  try {
+    await query(
+      `UPDATE users SET website = NULL, website_verify_token = NULL, website_verified = false,
+       website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+      [req.user.id]
+    )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function requestRepresentation(req, res, next) {
+  try {
+    const { url, ownerId } = req.body
+    if (!url || !ownerId) return res.status(400).json({ error: 'url and ownerId are required' })
+
+    // Verify the owner still has this verified
+    const owner = await query(
+      `SELECT id FROM users WHERE id = $1 AND website_verified = true`,
+      [ownerId]
+    )
+    if (!owner.rows[0]) return res.status(404).json({ error: 'Owner not found or website no longer verified' })
+
+    await query(
+      `INSERT INTO website_representation_requests (website_url, requester_id, owner_id)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (website_url, requester_id) DO UPDATE SET status = 'pending', created_at = NOW()`,
+      [url, req.user.id, ownerId]
+    )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getRepresentationRequests(req, res, next) {
+  try {
+    // Requests where current user is the owner
+    const result = await query(
+      `SELECT r.id, r.website_url, r.status, r.created_at,
+              u.id AS requester_id, u.display_name, u.full_name, u.avatar_url, u.username
+       FROM website_representation_requests r
+       JOIN users u ON u.id = r.requester_id
+       WHERE r.owner_id = $1 AND r.status = 'pending'
+       ORDER BY r.created_at DESC`,
+      [req.user.id]
+    )
+    res.json({ requests: result.rows })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function handleRepresentationRequest(req, res, next) {
+  try {
+    const { id } = req.params
+    const { action } = req.body // 'approve' | 'reject'
+    if (!['approve', 'reject'].includes(action)) return res.status(400).json({ error: 'Invalid action' })
+
+    const reqResult = await query(
+      `SELECT * FROM website_representation_requests WHERE id = $1 AND owner_id = $2`,
+      [id, req.user.id]
+    )
+    if (!reqResult.rows[0]) return res.status(404).json({ error: 'Request not found' })
+
+    const repReq = reqResult.rows[0]
+    const status = action === 'approve' ? 'approved' : 'rejected'
+
+    await query(
+      `UPDATE website_representation_requests SET status = $1 WHERE id = $2`,
+      [status, id]
+    )
+
+    if (action === 'approve') {
+      // Grant the requester representation status; copy company info from owner
+      const ownerResult = await query(
+        `SELECT company_name FROM users WHERE id = $1`,
+        [req.user.id]
+      )
+      const ownerCompany = ownerResult.rows[0]?.company_name || null
+      await query(
+        `UPDATE users SET website_representation_approved = true,
+         company_name = COALESCE(company_name, $1), updated_at = NOW()
+         WHERE id = $2`,
+        [ownerCompany, repReq.requester_id]
+      )
+    }
+
+    res.json({ success: true })
   } catch (err) {
     next(err)
   }

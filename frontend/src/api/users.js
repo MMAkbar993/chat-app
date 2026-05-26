@@ -19,6 +19,10 @@ export const clearAllChats   = () => client.patch('/users/me/chats/clear').then(
 export const deleteAllChats  = () => client.delete('/users/me/chats').then((r) => r.data)
 export const initWebsiteVerify    = (url) => client.post('/users/me/website/verify-init', { url }).then((r) => r.data)
 export const confirmWebsiteVerify = () => client.post('/users/me/website/verify-confirm').then((r) => r.data)
+export const removeWebsiteVerify  = () => client.delete('/users/me/website').then((r) => r.data)
+export const requestRepresentation = (url, ownerId) => client.post('/users/me/website/request-representation', { url, ownerId }).then((r) => r.data)
+export const getRepresentationRequests = () => client.get('/users/me/website/representation-requests').then((r) => r.data)
+export const handleRepresentationRequest = (id, action) => client.patch(`/users/me/website/representation-requests/${id}`, { action }).then((r) => r.data)
 export const uploadFile  = (file) => {
   const form = new FormData()
   form.append('file', file)

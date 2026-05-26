@@ -226,6 +226,29 @@ export async function socialCallback(req, res) {
   }
 }
 
+export async function saveLinkedinUrl(req, res, next) {
+  try {
+    const { url } = req.body
+    if (!url || !url.trim()) return res.status(400).json({ error: 'URL is required' })
+    const trimmed = url.trim()
+    if (!trimmed.includes('linkedin.com/in/')) {
+      return res.status(400).json({ error: 'Please provide a valid LinkedIn profile URL' })
+    }
+    await upsertSocialConnection(req.user.id, 'linkedin', {
+      platformUserId: null,
+      username: null,
+      displayName: null,
+      profileUrl: trimmed,
+      accessToken: null,
+      refreshToken: null,
+      tokenExpiresAt: null,
+    })
+    res.json({ success: true, profileUrl: trimmed })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function socialDisconnect(req, res, next) {
   try {
     const { platform } = req.params
