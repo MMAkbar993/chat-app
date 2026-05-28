@@ -7,6 +7,20 @@ import {
   getSocialConnections,
   getPublicSocialConnections,
 } from '../db/queries/auth_extras.js'
+import { getIo } from '../socket/index.js'
+
+async function createNotification(userId, type, data = {}) {
+  try {
+    const result = await query(
+      `INSERT INTO notifications (user_id, type, data) VALUES ($1, $2, $3) RETURNING id`,
+      [userId, type, JSON.stringify(data)]
+    )
+    const io = getIo()
+    if (io) {
+      io.to(`user:${userId}`).emit('notification', { id: result.rows[0].id, type, data })
+    }
+  } catch {}
+}
 
 export async function getProfile(req, res, next) {
   try {
@@ -326,6 +340,15 @@ export async function requestRepresentation(req, res, next) {
        ON CONFLICT (website_url, requester_id) DO UPDATE SET status = 'pending', created_at = NOW()`,
       [url, req.user.id, ownerId]
     )
+
+    const requester = await findUserById(req.user.id)
+    const requesterName = requester?.display_name || requester?.full_name || requester?.username || 'Someone'
+    await createNotification(ownerId, 'rep_request', {
+      requesterName,
+      requesterId: req.user.id,
+      websiteUrl: url,
+    })
+
     res.json({ success: true })
   } catch (err) {
     next(err)
@@ -370,19 +393,28 @@ export async function handleRepresentationRequest(req, res, next) {
       [status, id]
     )
 
+    const owner = await findUserById(req.user.id)
+    const ownerName = owner?.display_name || owner?.full_name || owner?.username || 'The website owner'
+
     if (action === 'approve') {
       // Grant the requester representation status; copy company info from owner
-      const ownerResult = await query(
-        `SELECT company_name FROM users WHERE id = $1`,
-        [req.user.id]
-      )
-      const ownerCompany = ownerResult.rows[0]?.company_name || null
       await query(
         `UPDATE users SET website_representation_approved = true,
          company_name = COALESCE(company_name, $1), updated_at = NOW()
          WHERE id = $2`,
-        [ownerCompany, repReq.requester_id]
+        [owner?.company_name || null, repReq.requester_id]
       )
+    }
+
+    await createNotification(repReq.requester_id, 'rep_decision', {
+      action,
+      ownerName,
+      websiteUrl: repReq.website_url,
+    })
+
+    const io = getIo()
+    if (io) {
+      io.to(`user:${repReq.requester_id}`).emit('rep-request-update', { action, websiteUrl: repReq.website_url })
     }
 
     res.json({ success: true })
@@ -421,6 +453,31 @@ export async function confirmWebsiteVerification(req, res, next) {
        company_name = COALESCE(company_name, $1),
        updated_at = NOW() WHERE id = $2`,
       [domainName, req.user.id]
+    )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getNotifications(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT id, type, data, read, created_at FROM notifications
+       WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
+      [req.user.id]
+    )
+    res.json({ notifications: result.rows })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function markNotificationsRead(req, res, next) {
+  try {
+    await query(
+      `UPDATE notifications SET read = true WHERE user_id = $1`,
+      [req.user.id]
     )
     res.json({ success: true })
   } catch (err) {
