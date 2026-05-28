@@ -61,6 +61,17 @@ export async function updateGroup(req, res, next) {
   }
 }
 
+export async function uploadGroupAvatar(req, res, next) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+    const avatarUrl = `/uploads/${req.file.filename}`
+    const updated = await updateConversation(req.params.id, { avatarUrl })
+    res.json({ avatarUrl, group: updated })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function addMember(req, res, next) {
   try {
     const { userId } = req.body
