@@ -11,6 +11,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [verified, setVerified] = useState(profile?.website_verified || false)
+  const [approved, setApproved] = useState(profile?.website_representation_approved || false)
   const [claimedInfo, setClaimedInfo] = useState(null) // { ownerName, ownerId, websiteUrl }
   const [reprRequested, setReprRequested] = useState(false)
   const [pendingRequests, setPendingRequests] = useState([])
@@ -21,6 +22,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
   } focus:ring-2 focus:ring-violet-400`
   const codeBg = darkMode ? 'bg-gray-900 text-green-400 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'
+
+  useEffect(() => {
+    setVerified(profile?.website_verified || false)
+    setApproved(profile?.website_representation_approved || false)
+  }, [profile?.website_verified, profile?.website_representation_approved])
 
   useEffect(() => {
     if (verified) {
@@ -96,6 +102,25 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       await handleRepresentationRequest(id, action)
       setPendingRequests((prev) => prev.filter((r) => r.id !== id))
     } catch {}
+  }
+
+  if (approved && !verified) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Authorized Representative</span>
+        </div>
+        <div className={`rounded-xl border p-3 ${darkMode ? 'border-violet-800 bg-violet-900/20' : 'border-violet-100 bg-violet-50'}`}>
+          <p className={`text-xs ${darkMode ? 'text-violet-300' : 'text-violet-700'}`}>
+            You have been approved as an authorized representative
+            {profile?.company_name ? ` of ${profile.company_name}` : ''}. Your profile now shows your company affiliation.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (verified || step === 3) {

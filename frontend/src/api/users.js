@@ -23,6 +23,8 @@ export const removeWebsiteVerify  = () => client.delete('/users/me/website').the
 export const requestRepresentation = (url, ownerId) => client.post('/users/me/website/request-representation', { url, ownerId }).then((r) => r.data)
 export const getRepresentationRequests = () => client.get('/users/me/website/representation-requests').then((r) => r.data)
 export const handleRepresentationRequest = (id, action) => client.patch(`/users/me/website/representation-requests/${id}`, { action }).then((r) => r.data)
+export const getNotifications = () => client.get('/users/me/notifications').then((r) => r.data)
+export const markNotificationsRead = () => client.patch('/users/me/notifications/read-all').then((r) => r.data)
 export const uploadFile  = (file) => {
   const form = new FormData()
   form.append('file', file)

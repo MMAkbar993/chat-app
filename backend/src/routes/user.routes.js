@@ -9,6 +9,7 @@ import {
   changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats,
   initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification,
   requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
+  getNotifications, markNotificationsRead,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
 
@@ -47,6 +48,8 @@ userRouter.delete('/me/website', removeWebsiteVerification)
 userRouter.post('/me/website/request-representation', requestRepresentation)
 userRouter.get('/me/website/representation-requests', getRepresentationRequests)
 userRouter.patch('/me/website/representation-requests/:id', handleRepresentationRequest)
+userRouter.get('/me/notifications', getNotifications)
+userRouter.patch('/me/notifications/read-all', markNotificationsRead)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)

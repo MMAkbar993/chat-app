@@ -132,27 +132,42 @@ function ArrowRow({ icon, label, description, onClick, darkMode, danger = false 
 
 // ─── profile form ────────────────────────────────────────────────────────────
 
-function LockTooltip({ tip, darkMode }) {
+function InputIcon({ icon, tip, darkMode }) {
   return (
-    <div className="relative group ml-1 inline-flex">
-      <svg className="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-      <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
+    <div className="absolute right-3 top-1/2 -translate-y-1/2 group z-10">
+      <div className="cursor-help text-gray-400">{icon}</div>
+      <div className={`absolute right-0 top-full mt-1.5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
         {tip}
       </div>
     </div>
   )
 }
 
+function LockTooltip({ tip, darkMode }) {
+  return (
+    <InputIcon
+      darkMode={darkMode}
+      tip={tip}
+      icon={
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      }
+    />
+  )
+}
+
 function InfoTooltip({ tip, darkMode }) {
   return (
-    <div className="relative group ml-1 inline-flex">
-      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-xs cursor-help select-none leading-none ${darkMode ? 'border-gray-500 text-gray-400' : 'border-gray-400 text-gray-400'}`}>i</span>
-      <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
-        {tip}
-      </div>
-    </div>
+    <InputIcon
+      darkMode={darkMode}
+      tip={tip}
+      icon={
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      }
+    />
   )
 }
 
@@ -330,11 +345,11 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
       {/* First Name (locked) */}
       <div>
-        <label className={lbl}>
-          Name
+        <label className={lbl}>Name</label>
+        <div className="relative">
+          <input value={profile.full_name} disabled className={`${inp} opacity-60 cursor-not-allowed ${kycLocked ? 'pr-9' : ''}`} />
           {kycLocked && <LockTooltip tip="Name cannot be changed after KYC verification." darkMode={darkMode} />}
-        </label>
-        <input value={profile.full_name} disabled className={`${inp} opacity-60 cursor-not-allowed`} />
+        </div>
       </div>
 
       {/* Username */}
@@ -348,18 +363,18 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
       {/* Display name */}
       <div>
-        <label className={lbl}>
-          Display Name
-          <InfoTooltip tip="This name is shown to others in chat lists, headers, and messages." darkMode={darkMode} />
-        </label>
+        <label className={lbl}>Display Name</label>
         <div className="relative">
-          <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={`${inp} pr-8 appearance-none`}>
+          <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={`${inp} pr-14 appearance-none`}>
             <option value="fullname">Full name</option>
             <option value="username">Username</option>
           </select>
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <InfoTooltip tip="This name is shown to others in chat lists, headers, and messages." darkMode={darkMode} />
         </div>
       </div>
 
@@ -466,7 +481,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         currentEmail={currentEmail}
         darkMode={darkMode}
         onClose={() => setShowEmailModal(false)}
-        onChanged={(email) => { setCurrentEmail(email); setShowEmailModal(false) }}
+        onChanged={(email) => { setCurrentEmail(email) }}
       />
     )}
     </>

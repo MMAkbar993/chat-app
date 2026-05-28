@@ -23,7 +23,7 @@ export default function ChatPage() {
   const [activeCall, setActiveCall] = useState(null)
   const [incomingCall, setIncomingCall] = useState(null)
   const { socket } = useSocket()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { activeConversation, openConversation } = useChat()
 
   useEffect(() => {
@@ -46,16 +46,20 @@ export default function ChatPage() {
 
     const onCallRejected = () => setActiveCall(null)
 
+    const onRepUpdate = () => refreshUser()
+
     socket.on('incoming-call', onIncoming)
     socket.on('call-accepted', onCallAccepted)
     socket.on('call-ended', onCallEnded)
     socket.on('call-rejected', onCallRejected)
+    socket.on('rep-request-update', onRepUpdate)
 
     return () => {
       socket.off('incoming-call', onIncoming)
       socket.off('call-accepted', onCallAccepted)
       socket.off('call-ended', onCallEnded)
       socket.off('call-rejected', onCallRejected)
+      socket.off('rep-request-update', onRepUpdate)
     }
   }, [socket])
 
