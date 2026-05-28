@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
-import { getGroup, updateGroup, addMember, removeMember } from '../../api/groups'
+import { getGroup, updateGroup, addMember, removeMember, uploadGroupAvatar } from '../../api/groups'
 import { getContacts } from '../../api/contacts'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import client from '../../api/client'
@@ -54,6 +54,9 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const [editDesc, setEditDesc] = useState(false)
   const [descDraft, setDescDraft] = useState('')
   const [showEncryption, setShowEncryption] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef(null)
 
   useEffect(() => {
     if (!conversation?.id) return
@@ -114,6 +117,24 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
     }
   }
 
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarPreview(URL.createObjectURL(file))
+    setUploadingAvatar(true)
+    try {
+      const data = await uploadGroupAvatar(conversation.id, file)
+      setGroupData((prev) => ({ ...prev, avatar_url: data.avatarUrl }))
+      showToast('Group icon updated', 'success')
+    } catch {
+      setAvatarPreview(null)
+      showToast('Could not update group icon', 'error')
+    } finally {
+      setUploadingAvatar(false)
+      e.target.value = ''
+    }
+  }
+
   async function handleAddMember(contactId) {
     try {
       await addMember(conversation.id, contactId)
@@ -132,8 +153,8 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
     } catch {}
   }
 
-  const name   = conversation.name || 'Group'
-  const avatar = conversation.avatar_url
+  const name   = groupData?.name || conversation.name || 'Group'
+  const avatar = avatarPreview || groupData?.avatar_url || conversation.avatar_url
   const dm     = darkMode
   const bg     = dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'
   const card   = dm ? 'bg-gray-800' : 'bg-gray-50'
@@ -164,15 +185,34 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
           <>
             {/* Identity */}
             <div className="flex flex-col items-center py-5 px-4">
-              <div className="w-20 h-20 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold mb-2">
-                {avatar
-                  ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                  : (name || '?')[0].toUpperCase()}
+              <div className="relative w-20 h-20 mb-2">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
+                  {avatar
+                    ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                    : (name || '?')[0].toUpperCase()}
+                </div>
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
               {isAdmin && (
-                <button className={`text-xs mb-1 ${sub} hover:text-violet-500 transition-colors`}>
-                  Change Icon
-                </button>
+                <>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    className={`text-xs mb-1 ${sub} hover:text-violet-500 transition-colors`}
+                  >
+                    Change Icon
+                  </button>
+                </>
               )}
               <p className={`font-semibold text-base ${txt}`}>{name}</p>
               <p className={`text-xs ${sub}`}>{participants.length} participants</p>
