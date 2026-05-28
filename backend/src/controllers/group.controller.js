@@ -53,8 +53,8 @@ export async function getGroup(req, res, next) {
 
 export async function updateGroup(req, res, next) {
   try {
-    const { name } = req.body
-    const updated = await updateConversation(req.params.id, { name })
+    const { name, description } = req.body
+    const updated = await updateConversation(req.params.id, { name, description })
     res.json({ group: updated })
   } catch (err) {
     next(err)

@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middleware/auth.js'
-import { socialConnect, socialCallback, socialDisconnect, saveLinkedinUrl } from '../controllers/social.controller.js'
+import { socialConnect, socialCallback, socialDisconnect, saveLinkedinUrl, saveAffiliateRouletteUrl } from '../controllers/social.controller.js'
 import { config } from '../config/env.js'
 import { findUserById } from '../db/queries/users.js'
 
@@ -26,6 +26,9 @@ export const socialRouter = Router()
 
 // Save LinkedIn URL (URL-only flow, no OAuth)
 socialRouter.post('/linkedin/save-url', authMiddleware, saveLinkedinUrl)
+
+// Save Affiliate Roulette listing URL (URL-only flow, no OAuth)
+socialRouter.post('/affiliate-roulette/save-url', authMiddleware, saveAffiliateRouletteUrl)
 
 // Initiate OAuth — uses query param token because browser popups can't send headers
 socialRouter.get('/:platform/connect', socialConnectAuth, socialConnect)

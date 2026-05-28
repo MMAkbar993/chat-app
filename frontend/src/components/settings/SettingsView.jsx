@@ -138,7 +138,18 @@ function LockTooltip({ tip, darkMode }) {
       <svg className="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
-      <div className={`absolute left-5 bottom-0 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
+      <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
+        {tip}
+      </div>
+    </div>
+  )
+}
+
+function InfoTooltip({ tip, darkMode }) {
+  return (
+    <div className="relative group ml-1 inline-flex">
+      <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-xs cursor-help select-none leading-none ${darkMode ? 'border-gray-500 text-gray-400' : 'border-gray-400 text-gray-400'}`}>i</span>
+      <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
         {tip}
       </div>
     </div>
@@ -339,23 +350,33 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       <div>
         <label className={lbl}>
           Display Name
-          <LockTooltip tip="This name is shown to others in chat lists, headers, and messages." darkMode={darkMode} />
+          <InfoTooltip tip="This name is shown to others in chat lists, headers, and messages." darkMode={darkMode} />
         </label>
-        <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={inp}>
-          <option value="fullname">Full name</option>
-          <option value="username">Username</option>
-        </select>
+        <div className="relative">
+          <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={`${inp} pr-8 appearance-none`}>
+            <option value="fullname">Full name</option>
+            <option value="username">Username</option>
+          </select>
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
       {/* Gender */}
       <div>
         <label className={lbl}>Gender</label>
-        <select value={form.gender} onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))} className={inp}>
-          <option value="">Prefer not to say</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Others">Others</option>
-        </select>
+        <div className="relative">
+          <select value={form.gender} onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))} className={`${inp} pr-8 appearance-none`}>
+            <option value="">Prefer not to say</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Others">Others</option>
+          </select>
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
       {/* Mobile */}
@@ -395,10 +416,15 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       {/* Industry Role */}
       <div>
         <label className={lbl}>Industry Role</label>
-        <select value={isOtherRole ? 'other' : form.primary_role} onChange={(e) => setForm((f) => ({ ...f, primary_role: e.target.value }))} className={inp}>
-          <option value="">Select a role</option>
-          {INDUSTRY_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-        </select>
+        <div className="relative">
+          <select value={isOtherRole ? 'other' : form.primary_role} onChange={(e) => setForm((f) => ({ ...f, primary_role: e.target.value }))} className={`${inp} pr-8 appearance-none`}>
+            <option value="">Select a role</option>
+            {INDUSTRY_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
       {/* Position */}
@@ -407,13 +433,27 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         <input value={form.job_title} onChange={(e) => setForm((f) => ({ ...f, job_title: e.target.value }))} placeholder="e.g. CEO, Affiliate Manager…" className={inp} />
       </div>
 
-      {/* Company Name */}
+      {/* Company Name — locked, set via website verification */}
       <div>
         <label className={lbl}>
           Company Name
-          <LockTooltip tip='Shown as "Position at Company" when your website is verified.' darkMode={darkMode} />
+          <LockTooltip
+            tip={
+              profile.website_representation_approved
+                ? 'Company name was set when you were approved as a representative. Contact support to update.'
+                : profile.website_verified
+                  ? 'Company name is tied to your verified website. Contact support to update.'
+                  : 'Verify your website to unlock your company name.'
+            }
+            darkMode={darkMode}
+          />
         </label>
-        <input value={form.company_name} onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))} placeholder="e.g. Affiliate Roulette" className={inp} />
+        <input
+          value={form.company_name}
+          disabled
+          placeholder={profile.website_verified || profile.website_representation_approved ? '' : 'Requires website verification'}
+          className={`${inp} opacity-60 cursor-not-allowed`}
+        />
       </div>
 
       <button type="submit" disabled={saving} className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 font-semibold text-sm disabled:opacity-50 transition-colors">

@@ -13,9 +13,14 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
   const { socket } = useSocket()
   const localVideoRef = useRef(null)
   const remoteVideoRef = useRef(null)
+  const remoteAudioRef = useRef(null)
   const pcRef = useRef(null)
   const localStreamRef = useRef(null)
   const startTimeRef = useRef(Date.now())
+  const pendingOfferRef = useRef(null)
+  const pendingCandidatesRef = useRef([])
+  const endedRef = useRef(false)
+
   const [status, setStatus] = useState(isCaller ? 'calling' : 'connecting')
   const [muted, setMuted] = useState(false)
   const [videoOff, setVideoOff] = useState(false)
@@ -45,6 +50,18 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
     return () => cleanup()
   }, [])
 
+  async function handleOffer(offer) {
+    if (!pcRef.current) return
+    await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer))
+    for (const c of pendingCandidatesRef.current) {
+      try { await pcRef.current.addIceCandidate(new RTCIceCandidate(c)) } catch {}
+    }
+    pendingCandidatesRef.current = []
+    const answer = await pcRef.current.createAnswer()
+    await pcRef.current.setLocalDescription(answer)
+    socket?.emit('webrtc-answer', { callId: call.id || call.callId, targetUserId, answer })
+  }
+
   async function startCall() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true })
@@ -57,7 +74,12 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
       stream.getTracks().forEach((track) => pc.addTrack(track, stream))
 
       pc.ontrack = (e) => {
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0]
+        const remoteStream = e.streams[0]
+        if (isVideo && remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream
+        } else if (!isVideo && remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = remoteStream
+        }
         setStatus('connected')
       }
 
@@ -71,6 +93,11 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
         const offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
         socket?.emit('webrtc-offer', { callId: call.id || call.callId, targetUserId, offer })
+      } else if (pendingOfferRef.current) {
+        // Offer arrived before PC was ready — process it now
+        const buffered = pendingOfferRef.current
+        pendingOfferRef.current = null
+        await handleOffer(buffered)
       }
     } catch (err) {
       console.error('startCall error:', err)
@@ -82,25 +109,29 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
     if (!socket) return
 
     const onOffer = async ({ offer }) => {
-      if (!pcRef.current) return
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer))
-      const answer = await pcRef.current.createAnswer()
-      await pcRef.current.setLocalDescription(answer)
-      socket.emit('webrtc-answer', { callId: call.id || call.callId, targetUserId, answer })
+      if (!pcRef.current) {
+        pendingOfferRef.current = offer
+        return
+      }
+      await handleOffer(offer)
     }
 
     const onAnswer = async ({ answer }) => {
       if (!pcRef.current) return
+      if (pcRef.current.signalingState !== 'have-local-offer') return
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer))
-      setStatus('connected')
     }
 
     const onIce = async ({ candidate }) => {
-      if (!pcRef.current || !candidate) return
+      if (!candidate) return
+      if (!pcRef.current?.remoteDescription) {
+        pendingCandidatesRef.current.push(candidate)
+        return
+      }
       try { await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)) } catch {}
     }
 
-    const onEnded = () => endCall()
+    const onEnded = () => endCall(false)
 
     socket.on('webrtc-offer', onOffer)
     socket.on('webrtc-answer', onAnswer)
@@ -122,10 +153,14 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
     pcRef.current?.close()
   }
 
-  function endCall() {
+  function endCall(emitEnd = true) {
+    if (endedRef.current) return
+    endedRef.current = true
     playCallEnded()
-    const duration = Math.floor((Date.now() - startTimeRef.current) / 1000)
-    socket?.emit('call-end', { callId: call.id || call.callId, targetUserId, durationSeconds: duration })
+    if (emitEnd) {
+      const duration = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      socket?.emit('call-end', { callId: call.id || call.callId, targetUserId, durationSeconds: duration })
+    }
     cleanup()
     onEnd?.()
   }
@@ -153,6 +188,9 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900">
+
+      {/* Remote audio for audio calls */}
+      {!isVideo && <audio ref={remoteAudioRef} autoPlay />}
 
       {/* Background — remote video (video call) or gradient (audio call) */}
       {isVideo ? (
@@ -223,7 +261,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
           {/* End call */}
           <div className="flex flex-col items-center gap-2">
             <button
-              onClick={endCall}
+              onClick={() => endCall(true)}
               className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors shadow-xl"
             >
               <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -270,7 +308,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
         </div>
       </div>
 
-      {/* Hidden local audio video for audio calls (needed for WebRTC track setup) */}
+      {/* Hidden local video element needed for track setup even on audio calls */}
       {!isVideo && <video ref={localVideoRef} autoPlay muted playsInline className="hidden" />}
     </div>
   )

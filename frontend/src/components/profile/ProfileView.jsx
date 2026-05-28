@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react'
 import { getMyProfile, deactivateAccount } from '../../api/users'
 import { useAuth } from '../../context/AuthContext'
 import client from '../../api/client'
+import SocialIcon from '../ui/SocialIcon'
 
 const PLATFORMS = [
-  { key: 'facebook',  label: 'Facebook',    color: '#1877F2', symbol: 'f' },
-  { key: 'twitter',   label: 'X (Twitter)', color: '#000000', symbol: '𝕏' },
-  { key: 'linkedin',  label: 'LinkedIn',    color: '#0A66C2', symbol: 'in', noVerify: true },
-  { key: 'instagram', label: 'Instagram',   color: '#E1306C', symbol: '◎' },
-  { key: 'youtube',   label: 'YouTube',     color: '#FF0000', symbol: '▶' },
-  { key: 'kick',      label: 'Kick',        color: '#53FC18', symbol: '▸' },
-  { key: 'twitch',    label: 'Twitch',      color: '#9147FF', symbol: '◈' },
+  { key: 'facebook',  label: 'Facebook' },
+  { key: 'twitter',   label: 'X (Twitter)' },
+  { key: 'linkedin',  label: 'LinkedIn',  noVerify: true },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'youtube',   label: 'YouTube' },
+  { key: 'kick',      label: 'Kick' },
+  { key: 'twitch',    label: 'Twitch' },
 ]
 
 function Toggle({ on, onClick, disabled }) {
@@ -121,53 +122,44 @@ export default function ProfileView({ darkMode }) {
           </div>
         </div>
 
-        {/* Social Media */}
+        {/* Social Media — only show connected/verified accounts */}
         <h3 className={head}>Social Media</h3>
         <div className={`${card} p-4`}>
-          <p className={`text-xs mb-3 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>
-            {hasVerified
-              ? 'Verified links are shown with a badge. Other links are displayed as provided.'
-              : 'Social links are displayed as provided and are not verified.'}
-          </p>
-          <div className="space-y-2">
-            {PLATFORMS.map((p) => {
-              const conn = connections.find((c) => c.platform === p.key)
-              const isVerified = !!conn && !p.noVerify
-              return (
-                <div key={p.key} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${dm ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                    style={{ backgroundColor: p.color }}
-                  >
-                    {p.symbol}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className={`text-sm font-medium ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
-                      {p.noVerify && (
-                        <span
-                          title="LinkedIn does not allow the app to confirm the profile, so this link is shown as the user typed it."
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center text-xs cursor-default select-none ${
-                            dm ? 'border-gray-500 text-gray-500' : 'border-gray-400 text-gray-400'
-                          }`}
-                        >
-                          i
-                        </span>
-                      )}
-                      {isVerified && (
-                        <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">
-                          Verified
-                        </span>
+          {connections.length === 0 ? (
+            <p className={`text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+              No social accounts connected yet. Connect them in Settings to display verified links on your profile.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {PLATFORMS.map((p) => {
+                const conn = connections.find((c) => c.platform === p.key)
+                if (!conn) return null
+                const isVerified = !p.noVerify
+                return (
+                  <div key={p.key} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${dm ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                    <SocialIcon platform={p.key} size={28} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-sm font-medium ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
+                        {isVerified ? (
+                          <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">
+                            Verified
+                          </span>
+                        ) : (
+                          <span className={`text-xs rounded-full px-1.5 py-0.5 font-medium leading-none ${dm ? 'bg-gray-600 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                            Unverified
+                          </span>
+                        )}
+                      </div>
+                      {conn.username && (
+                        <p className={`text-xs truncate mt-0.5 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>@{conn.username}</p>
                       )}
                     </div>
-                    {conn?.username && (
-                      <p className={`text-xs truncate mt-0.5 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>@{conn.username}</p>
-                    )}
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Authorized Users */}
