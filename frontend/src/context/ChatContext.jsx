@@ -22,6 +22,11 @@ export function ChatProvider({ children }) {
   const [conversationFilter, setConversationFilter] = useState('all')
   const [onlineUsers, setOnlineUsers] = useState(new Set())
   const activeConvRef = useRef(null)
+  const conversationsRef = useRef([])
+
+  useEffect(() => {
+    conversationsRef.current = conversations
+  }, [conversations])
 
   useEffect(() => {
     activeConvRef.current = activeConversation
@@ -172,9 +177,13 @@ export function ChatProvider({ children }) {
 
     const onNewMessage = (msg) => {
       if (msg.sender_id !== user?.id) {
-        const prefs = getNotifPrefs()
-        if (prefs.sound !== false) playReceivedSound()
-        showBrowserNotif(msg)
+        try {
+          const conv = conversationsRef.current.find((c) => c.id === msg.conversation_id)
+          const isMuted = conv?.is_muted
+          const prefs = getNotifPrefs()
+          if (!isMuted && prefs.sound !== false) playReceivedSound()
+          if (!isMuted) showBrowserNotif(msg)
+        } catch {}
       }
       if (activeConvRef.current?.id === msg.conversation_id) {
         setMessages((prev) => {

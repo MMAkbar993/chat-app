@@ -171,8 +171,15 @@ export function initSocket(httpServer) {
 
     socket.on('call-reject', async ({ callId, callerId }) => {
       try {
-        await updateCallStatus(callId, 'declined', new Date())
+        const call = await updateCallStatus(callId, 'declined', new Date())
         io.to(`user:${callerId}`).emit('call-rejected', { callId })
+        if (call?.conversation_id) {
+          const content = JSON.stringify({ call_type: call.call_type, status: 'missed' })
+          const msg = await createMessage({ conversationId: call.conversation_id, senderId: call.caller_id, content, messageType: 'call', status: 'delivered' })
+          const participants = await getParticipants(call.conversation_id)
+          const fullMsg = { ...msg, sender_id: call.caller_id }
+          participants.forEach((p) => io.to(`user:${p.id}`).emit('new-message', fullMsg))
+        }
       } catch (err) {
         console.error('call-reject error:', err)
       }
@@ -180,8 +187,15 @@ export function initSocket(httpServer) {
 
     socket.on('call-end', async ({ callId, targetUserId, durationSeconds }) => {
       try {
-        await updateCallStatus(callId, 'answered', new Date(), durationSeconds)
+        const call = await updateCallStatus(callId, 'answered', new Date(), durationSeconds)
         io.to(`user:${targetUserId}`).emit('call-ended', { callId })
+        if (call?.conversation_id) {
+          const content = JSON.stringify({ call_type: call.call_type, status: 'ended', duration: durationSeconds || 0 })
+          const msg = await createMessage({ conversationId: call.conversation_id, senderId: call.caller_id, content, messageType: 'call', status: 'delivered' })
+          const participants = await getParticipants(call.conversation_id)
+          const fullMsg = { ...msg, sender_id: call.caller_id }
+          participants.forEach((p) => io.to(`user:${p.id}`).emit('new-message', fullMsg))
+        }
       } catch (err) {
         console.error('call-end error:', err)
       }

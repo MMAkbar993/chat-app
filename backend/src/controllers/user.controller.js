@@ -38,7 +38,11 @@ export async function updateProfile(req, res, next) {
          primary_role = COALESCE($8, primary_role),
          date_of_birth = COALESCE($9::date, date_of_birth),
          job_title = COALESCE($10, job_title),
-         company_name = COALESCE($11, company_name),
+         company_name = CASE
+           WHEN NOT website_verified AND NOT website_representation_approved
+           THEN COALESCE($11, company_name)
+           ELSE company_name
+         END,
          updated_at = NOW()
        WHERE id = $12
        RETURNING id, full_name, username, country, location, email, primary_role, phone,
@@ -407,9 +411,16 @@ export async function confirmWebsiteVerification(req, res, next) {
     if (!html.includes(user.website_verify_token)) {
       return res.status(400).json({ error: 'Verification tag not found. Make sure you added the meta tag to your page <head>.' })
     }
+    let domainName = null
+    try {
+      const raw = user.website.startsWith('http') ? user.website : `https://${user.website}`
+      domainName = new URL(raw).hostname.replace(/^www\./, '')
+    } catch {}
     await query(
-      `UPDATE users SET website_verified = true, updated_at = NOW() WHERE id = $1`,
-      [req.user.id]
+      `UPDATE users SET website_verified = true,
+       company_name = COALESCE(company_name, $1),
+       updated_at = NOW() WHERE id = $2`,
+      [domainName, req.user.id]
     )
     res.json({ success: true })
   } catch (err) {

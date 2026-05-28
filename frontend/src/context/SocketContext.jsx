@@ -16,7 +16,8 @@ export function SocketProvider({ children }) {
     const token = getAccessToken()
     const s = io('/', {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      upgrade: true,
     })
 
     s.on('connect', () => setConnected(true))

@@ -36,11 +36,15 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     }, 1500)
   }
 
+  function getNotifPrefs() {
+    try { return JSON.parse(localStorage.getItem('notif_prefs')) || {} } catch { return {} }
+  }
+
   function handleSubmit(e) {
     e?.preventDefault()
     const content = text.trim()
     if (!content) return
-    playSentSound()
+    if (getNotifPrefs().sound !== false) playSentSound()
     onSend(content, 'text', replyTo?.id || null)
     setText('')
     onClearReply?.()
@@ -87,7 +91,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
         const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' })
         try {
           const { fileUrl, messageType } = await uploadFile(file)
-          playSentSound()
+          if (getNotifPrefs().sound !== false) playSentSound()
           onSend(fileUrl, messageType || 'audio', replyTo?.id || null)
           onClearReply?.()
         } catch {}

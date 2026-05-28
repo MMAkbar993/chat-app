@@ -12,6 +12,44 @@ import ContactInfoPanel from './ContactInfoPanel'
 import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
 
+function formatDuration(secs) {
+  if (!secs) return ''
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function CallEventPill({ msg, userId, darkMode }) {
+  let callData = {}
+  try { callData = JSON.parse(msg.content || '{}') } catch {}
+  const isCaller = msg.sender_id === userId
+  const callType = callData.call_type === 'video' ? 'Video' : 'Audio'
+  const isMissed = callData.status === 'missed'
+  const dur = formatDuration(callData.duration)
+  const label = isMissed
+    ? isCaller ? `No answer · ${callType.toLowerCase()} call` : `Missed ${callType.toLowerCase()} call`
+    : `${callType} call${dur ? ` · ${dur}` : ''}`
+
+  return (
+    <div className="flex justify-center my-2">
+      <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs ${
+        isMissed
+          ? darkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-500'
+          : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+      }`}>
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {callData.call_type === 'video'
+            ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          }
+        </svg>
+        {label}
+        <span className="opacity-60">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+    </div>
+  )
+}
+
 function formatDate(ts) {
   const d = new Date(ts)
   const today = new Date()
@@ -63,7 +101,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return []
     return messages
-      .filter((m) => !m.is_deleted && m.content && m.content.toLowerCase().includes(q))
+      .filter((m) => !m.is_deleted && m.content && m.message_type !== 'call' && m.content.toLowerCase().includes(q))
       .map((m) => m.id)
   }, [messages, searchQuery])
 
@@ -217,6 +255,12 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                   ? <p className="text-xs text-green-500">typing...</p>
                   : <p className="text-xs text-green-500">Online</p>
               )}
+              <div className="flex items-center gap-1 mt-0.5">
+                <svg className="w-2.5 h-2.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span className={`text-[10px] ${darkMode ? 'text-green-400/70' : 'text-green-600/70'}`}>End-to-end encrypted</span>
+              </div>
             </div>
           </div>
 
@@ -384,6 +428,8 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                   {item.label}
                 </span>
               </div>
+            ) : item.msg.message_type === 'call' ? (
+              <CallEventPill key={item.msg.id} msg={item.msg} userId={user?.id} darkMode={darkMode} />
             ) : (
               <MessageBubble
                 key={item.msg.id}

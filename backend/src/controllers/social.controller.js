@@ -266,6 +266,32 @@ export async function saveLinkedinUrl(req, res, next) {
   }
 }
 
+export async function saveAffiliateRouletteUrl(req, res, next) {
+  try {
+    const { url } = req.body
+    const trimmed = (url || '').trim()
+    if (trimmed && !trimmed.startsWith('http')) {
+      return res.status(400).json({ error: 'Please provide a valid URL starting with http(s)://' })
+    }
+    if (trimmed) {
+      await upsertSocialConnection(req.user.id, 'affiliate_roulette', {
+        platformUserId: null,
+        username: null,
+        displayName: null,
+        profileUrl: trimmed,
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiresAt: null,
+      })
+    } else {
+      await deleteSocialConnection(req.user.id, 'affiliate_roulette')
+    }
+    res.json({ success: true, profileUrl: trimmed || null })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function socialDisconnect(req, res, next) {
   try {
     const { platform } = req.params

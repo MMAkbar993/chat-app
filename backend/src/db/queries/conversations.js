@@ -90,7 +90,7 @@ export async function markUnread(conversationId, userId) {
 
 export async function unhideParticipants(conversationId) {
   await query(
-    `UPDATE conversation_participants SET is_hidden = false WHERE conversation_id = $1 AND is_hidden = true`,
+    `UPDATE conversation_participants SET is_hidden = false, is_deleted = false WHERE conversation_id = $1 AND (is_hidden = true OR is_deleted = true)`,
     [conversationId]
   )
 }

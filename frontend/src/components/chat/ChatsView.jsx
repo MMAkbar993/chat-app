@@ -17,6 +17,31 @@ const FILTER_LABELS = {
   trash: 'Trash',
 }
 
+function formatLastMessage(content, type) {
+  if (!content && type !== 'call') return ' '
+  if (type === 'call') {
+    try {
+      const d = JSON.parse(content || '{}')
+      const kind = d.call_type === 'video' ? 'Video' : 'Audio'
+      if (d.status === 'missed') return `📵 Missed ${kind.toLowerCase()} call`
+      if (d.status === 'ended' && d.duration) {
+        const m = Math.floor(d.duration / 60)
+        const s = d.duration % 60
+        const dur = m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `0:${String(s).padStart(2, '0')}`
+        return `📞 ${kind} call · ${dur}`
+      }
+      return `📞 ${kind} call`
+    } catch {
+      return '📞 Call'
+    }
+  }
+  if (type === 'image') return '📷 Photo'
+  if (type === 'video') return '🎥 Video'
+  if (type === 'audio') return '🎤 Voice message'
+  if (type === 'file') return '📎 File'
+  return content || ' '
+}
+
 function formatDate(ts) {
   if (!ts) return ''
   const d = new Date(ts)
@@ -232,7 +257,7 @@ export default function ChatsView({ darkMode }) {
                       <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{c.last_message || ' '}</span>
+                      <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
                       {c.unread_count > 0 ? (
                         <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                           {c.unread_count}

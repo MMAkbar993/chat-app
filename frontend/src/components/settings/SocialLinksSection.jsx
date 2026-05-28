@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react'
 import client, { getAccessToken } from '../../api/client'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import SocialIcon from '../ui/SocialIcon'
 
 const PLATFORMS = [
-  { key: 'facebook',  label: 'Facebook',    color: '#1877F2', icon: 'f' },
-  { key: 'instagram', label: 'Instagram',   color: '#E1306C', icon: '◎' },
-  { key: 'twitter',   label: 'X (Twitter)', color: '#000000', icon: '𝕏' },
-  { key: 'linkedin',  label: 'LinkedIn',    color: '#0A66C2', icon: 'in', urlOnly: true },
-  { key: 'youtube',   label: 'YouTube',     color: '#FF0000', icon: '▶' },
-  { key: 'kick',      label: 'Kick',        color: '#53FC18', icon: '▸' },
-  { key: 'twitch',    label: 'Twitch',      color: '#9147FF', icon: '◈' },
+  { key: 'facebook',           label: 'Facebook' },
+  { key: 'instagram',          label: 'Instagram' },
+  { key: 'twitter',            label: 'X (Twitter)' },
+  { key: 'linkedin',           label: 'LinkedIn',           urlOnly: true },
+  { key: 'youtube',            label: 'YouTube' },
+  { key: 'kick',               label: 'Kick' },
+  { key: 'twitch',             label: 'Twitch' },
+  { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true, affiliateRoulette: true },
 ]
 
 export default function SocialLinksSection({ darkMode, onToast }) {
@@ -18,6 +20,8 @@ export default function SocialLinksSection({ darkMode, onToast }) {
   const [disconnecting, setDisconnecting] = useState(null)
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [savingLinkedin, setSavingLinkedin] = useState(false)
+  const [affiliateRouletteUrl, setAffiliateRouletteUrl] = useState('')
+  const [savingAffiliateRoulette, setSavingAffiliateRoulette] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState(null)
 
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
@@ -30,6 +34,8 @@ export default function SocialLinksSection({ darkMode, onToast }) {
         setConnections(data.connections)
         const li = data.connections.find((c) => c.platform === 'linkedin')
         if (li?.profile_url) setLinkedinUrl(li.profile_url)
+        const ar = data.connections.find((c) => c.platform === 'affiliate_roulette')
+        if (ar?.profile_url) setAffiliateRouletteUrl(ar.profile_url)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -69,6 +75,22 @@ export default function SocialLinksSection({ darkMode, onToast }) {
     setDisconnecting(null)
   }
 
+  async function saveAffiliateRoulette() {
+    setSavingAffiliateRoulette(true)
+    try {
+      await client.post('/social/affiliate-roulette/save-url', { url: affiliateRouletteUrl })
+      setConnections((prev) => {
+        const filtered = prev.filter((c) => c.platform !== 'affiliate_roulette')
+        if (affiliateRouletteUrl.trim()) return [...filtered, { platform: 'affiliate_roulette', profile_url: affiliateRouletteUrl.trim(), username: null }]
+        return filtered
+      })
+      onToast?.('Affiliate Roulette URL saved.')
+    } catch (err) {
+      onToast?.(err.response?.data?.error || 'Failed to save Affiliate Roulette URL', 'error')
+    }
+    setSavingAffiliateRoulette(false)
+  }
+
   async function saveLinkedin() {
     setSavingLinkedin(true)
     try {
@@ -102,40 +124,51 @@ export default function SocialLinksSection({ darkMode, onToast }) {
           const isConnected = !!conn
 
           if (p.urlOnly) {
+            const isAR = p.affiliateRoulette
+            const urlValue = isAR ? affiliateRouletteUrl : linkedinUrl
+            const setUrl = isAR ? setAffiliateRouletteUrl : setLinkedinUrl
+            const saveFn = isAR ? saveAffiliateRoulette : saveLinkedin
+            const saving = isAR ? savingAffiliateRoulette : savingLinkedin
+            const placeholder = isAR
+              ? 'https://affiliateroulette.com/your-listing'
+              : 'https://linkedin.com/in/yourname'
+            const hint = isAR
+              ? 'Your Affiliate Roulette listing URL.'
+              : 'Your LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourname).'
+            const tooltipText = isAR
+              ? 'Paste your Affiliate Roulette listing URL to display it on your profile.'
+              : 'LinkedIn does not allow OAuth to verify profile.'
+
             return (
               <div key={p.key} className={`rounded-xl p-3 border ${darkMode ? 'border-gray-600' : 'border-gray-200'} ${rowBg}`}>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: p.color }}>
-                    {p.icon}
-                  </div>
+                  <SocialIcon platform={p.key} size={32} />
                   <p className={`text-sm font-medium flex-1 ${text}`}>{p.label}</p>
                   <div className="relative group">
                     <svg className={`w-3.5 h-3.5 cursor-help ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
-                      LinkedIn does not allow OAuth to verify profile.
+                      {tooltipText}
                     </div>
                   </div>
                 </div>
-                <p className={`text-xs mb-2 ${sub}`}>
-                  Your LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourname).
-                </p>
+                <p className={`text-xs mb-2 ${sub}`}>{hint}</p>
                 <div className="flex gap-2">
                   <input
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    placeholder="https://linkedin.com/in/yourname"
+                    value={urlValue}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder={placeholder}
                     className={`flex-1 min-w-0 rounded-xl px-3 py-1.5 text-xs outline-none border ${
                       darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
                     }`}
                   />
                   <button
-                    onClick={saveLinkedin}
-                    disabled={savingLinkedin}
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 shrink-0 transition-colors"
+                    onClick={saveFn}
+                    disabled={saving}
+                    className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 shrink-0 transition-colors"
                   >
-                    {savingLinkedin ? '…' : 'Save'}
+                    {saving ? '…' : 'Save'}
                   </button>
                 </div>
               </div>
@@ -149,12 +182,7 @@ export default function SocialLinksSection({ darkMode, onToast }) {
                 darkMode ? 'border-gray-600' : 'border-gray-200'
               } ${rowBg}`}
             >
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                style={{ backgroundColor: p.color }}
-              >
-                {p.icon}
-              </div>
+              <SocialIcon platform={p.key} size={32} />
 
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium whitespace-nowrap ${text}`}>{p.label}</p>
