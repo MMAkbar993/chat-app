@@ -144,6 +144,26 @@ export function initSocket(httpServer) {
 
     socket.on('call-initiate', async ({ targetUserId, callType, conversationId }) => {
       try {
+        if (!targetUserId && conversationId) {
+          // Group call: ring all participants
+          const participants = await getParticipants(conversationId)
+          const call = await createCall({ callerId: userId, calleeId: null, conversationId, callType })
+          const caller = await findUserById(userId)
+          socket.emit('call-created', { call })
+          participants
+            .filter((p) => p.id !== userId)
+            .forEach((p) => {
+              io.to(`user:${p.id}`).emit('incoming-call', {
+                callId: call.id,
+                callerId: userId,
+                callType,
+                conversationId,
+                callerName: caller?.display_name || caller?.full_name || 'Unknown',
+                callerAvatar: caller?.avatar_url || null,
+              })
+            })
+          return
+        }
         const call = await createCall({ callerId: userId, calleeId: targetUserId, conversationId, callType })
         const caller = await findUserById(userId)
         socket.emit('call-created', { call })
@@ -185,16 +205,21 @@ export function initSocket(httpServer) {
       }
     })
 
-    socket.on('call-end', async ({ callId, targetUserId, durationSeconds }) => {
+    socket.on('call-end', async ({ callId, targetUserId, conversationId, durationSeconds }) => {
       try {
         const call = await updateCallStatus(callId, 'answered', new Date(), durationSeconds)
-        io.to(`user:${targetUserId}`).emit('call-ended', { callId })
-        if (call?.conversation_id) {
-          const content = JSON.stringify({ call_type: call.call_type, status: 'ended', duration: durationSeconds || 0 })
-          const msg = await createMessage({ conversationId: call.conversation_id, senderId: call.caller_id, content, messageType: 'call', status: 'delivered' })
-          const participants = await getParticipants(call.conversation_id)
-          const fullMsg = { ...msg, sender_id: call.caller_id }
+        const convId = call?.conversation_id || conversationId
+        if (convId) {
+          const participants = await getParticipants(convId)
+          participants.forEach((p) => {
+            if (p.id !== userId) io.to(`user:${p.id}`).emit('call-ended', { callId })
+          })
+          const content = JSON.stringify({ call_type: call?.call_type, status: 'ended', duration: durationSeconds || 0 })
+          const msg = await createMessage({ conversationId: convId, senderId: call?.caller_id || userId, content, messageType: 'call', status: 'delivered' })
+          const fullMsg = { ...msg, sender_id: call?.caller_id || userId }
           participants.forEach((p) => io.to(`user:${p.id}`).emit('new-message', fullMsg))
+        } else if (targetUserId) {
+          io.to(`user:${targetUserId}`).emit('call-ended', { callId })
         }
       } catch (err) {
         console.error('call-end error:', err)

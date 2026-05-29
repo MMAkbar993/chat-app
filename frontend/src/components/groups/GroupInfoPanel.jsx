@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { getGroup, updateGroup, addMember, removeMember, uploadGroupAvatar } from '../../api/groups'
-import { getContacts } from '../../api/contacts'
+import { getContacts, searchUsers } from '../../api/contacts'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import client from '../../api/client'
 
@@ -48,6 +48,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const [showAddMembers, setShowAddMembers] = useState(false)
   const [contacts, setContacts] = useState([])
   const [addSearch, setAddSearch] = useState('')
+  const [userSearchResults, setUserSearchResults] = useState([])
   const [confirm, setConfirm] = useState(null)
   const [showReport, setShowReport] = useState(false)
   const [reportReason, setReportReason] = useState('')
@@ -109,7 +110,9 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   async function handleSaveDesc() {
     try {
       await updateGroup(conversation.id, { description: descDraft })
-      setGroupData((prev) => ({ ...prev, description: descDraft }))
+      const fresh = await getGroup(conversation.id)
+      setGroupData(fresh.group)
+      setDescDraft(fresh.group.description || '')
       setEditDesc(false)
       showToast('Description updated', 'success')
     } catch {
@@ -152,6 +155,18 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
       setContacts(data.contacts || [])
     } catch {}
   }
+
+  useEffect(() => {
+    if (!showAddMembers) { setUserSearchResults([]); return }
+    if (addSearch.length < 2) { setUserSearchResults([]); return }
+    const t = setTimeout(async () => {
+      try {
+        const data = await searchUsers(addSearch)
+        setUserSearchResults(data.users || [])
+      } catch {}
+    }, 300)
+    return () => clearTimeout(t)
+  }, [addSearch, showAddMembers])
 
   const name   = groupData?.name || conversation.name || 'Group'
   const avatar = avatarPreview || groupData?.avatar_url || conversation.avatar_url
@@ -265,7 +280,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                 </>
               ) : (
                 <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {groupData?.description || 'No description'}
+                  {groupData?.description ?? 'No description'}
                 </p>
               )}
               {creatorName && (
@@ -494,7 +509,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
           >
             <div className="px-5 pt-5 pb-3 flex items-center justify-between">
               <h3 className={`font-semibold text-base ${txt}`}>Add Members</h3>
-              <button onClick={() => setShowAddMembers(false)}
+              <button onClick={() => { setShowAddMembers(false); setAddSearch('') }}
                 className={`w-7 h-7 flex items-center justify-center rounded-full ${dm ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -514,30 +529,32 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
               />
             </div>
             <div className="overflow-y-auto flex-1 pb-2">
-              {contacts
-                .filter((c) => !participants.some((p) => p.id === c.id))
-                .filter((c) => {
-                  if (!addSearch) return true
-                  return (c.display_name || c.full_name || '').toLowerCase().includes(addSearch.toLowerCase())
-                })
-                .map((c) => {
-                  const cName = c.display_name || c.full_name || c.username || '?'
+              {(() => {
+                const pool = addSearch.length >= 2 ? userSearchResults : contacts
+                const available = pool.filter((u) => !participants.some((p) => p.id === u.id))
+                if (available.length === 0) {
+                  return (
+                    <p className={`text-sm text-center py-6 ${sub}`}>
+                      {addSearch.length >= 2 ? 'No users found' : 'No contacts to add — type a name to search all users'}
+                    </p>
+                  )
+                }
+                return available.map((u) => {
+                  const uName = u.display_name || u.full_name || u.username || '?'
                   return (
                     <button
-                      key={c.id}
-                      onClick={() => { handleAddMember(c.id); setShowAddMembers(false) }}
+                      key={u.id}
+                      onClick={() => { handleAddMember(u.id); setShowAddMembers(false) }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
                     >
                       <div className="w-9 h-9 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-full h-full object-cover" /> : cName[0].toUpperCase()}
+                        {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : uName[0].toUpperCase()}
                       </div>
-                      <p className={`text-sm font-medium ${txt}`}>{cName}</p>
+                      <p className={`text-sm font-medium ${txt}`}>{uName}</p>
                     </button>
                   )
-                })}
-              {contacts.filter((c) => !participants.some((p) => p.id === c.id)).length === 0 && (
-                <p className={`text-sm text-center py-6 ${sub}`}>No contacts to add</p>
-              )}
+                })
+              })()}
             </div>
           </div>
         </div>
