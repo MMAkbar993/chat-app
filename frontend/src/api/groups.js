@@ -9,5 +9,5 @@ export const removeMember = (groupId, userId) => client.delete(`/groups/${groupI
 export const uploadGroupAvatar = (groupId, file) => {
   const form = new FormData()
   form.append('avatar', file)
-  return client.post(`/groups/${groupId}/avatar`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
+  return client.post(`/groups/${groupId}/avatar`, form).then((r) => r.data)
 }

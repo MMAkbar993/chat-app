@@ -73,6 +73,19 @@ export default function ChatPage() {
   }, [incomingCall])
 
   function handleCallStart(callType) {
+    if (activeConversation?.type === 'group') {
+      socket?.emit('call-initiate', { callType, conversationId: activeConversation.id })
+      socket?.once('call-created', ({ call }) => {
+        setActiveCall({
+          ...call,
+          calleeId: null,
+          calleeName: activeConversation.name || 'Group',
+          calleeAvatar: activeConversation.avatar_url || null,
+          isCaller: true,
+        })
+      })
+      return
+    }
     if (!activeConversation?.other_user_id) return
     initiateCall(callType, activeConversation.other_user_id, activeConversation.id, {
       name: activeConversation.other_user_display_name || activeConversation.other_user_name,
@@ -149,7 +162,7 @@ export default function ChatPage() {
           call={activeCall}
           darkMode={darkMode}
           onEnd={() => {
-            socket?.emit('call-end', { callId: activeCall.id || activeCall.callId, targetUserId: activeCall.calleeId || activeCall.callee_id })
+            socket?.emit('call-end', { callId: activeCall.id || activeCall.callId, targetUserId: activeCall.calleeId || activeCall.callee_id, conversationId: activeCall.conversation_id })
             setActiveCall(null)
           }}
         />
