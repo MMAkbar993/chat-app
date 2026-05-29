@@ -1,7 +1,7 @@
 -- Multiple verified websites per user
 CREATE TABLE IF NOT EXISTS verified_websites (
   id           SERIAL PRIMARY KEY,
-  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   url          TEXT NOT NULL,
   verify_token VARCHAR(255),
   verified     BOOLEAN NOT NULL DEFAULT false,
