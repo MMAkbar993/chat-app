@@ -9,7 +9,7 @@ import {
   changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats,
   initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification,
   requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
-  getNotifications, markNotificationsRead,
+  getNotifications, markNotificationsRead, getMyVerifiedWebsites,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
 
@@ -42,9 +42,10 @@ userRouter.patch('/me/email', changeEmail)
 userRouter.delete('/me', deleteMyAccount)
 userRouter.patch('/me/chats/clear', clearAllChats)
 userRouter.delete('/me/chats', deleteAllChats)
+userRouter.get('/me/websites', getMyVerifiedWebsites)
 userRouter.post('/me/website/verify-init', initWebsiteVerification)
 userRouter.post('/me/website/verify-confirm', confirmWebsiteVerification)
-userRouter.delete('/me/website', removeWebsiteVerification)
+userRouter.delete('/me/website/:id', removeWebsiteVerification)
 userRouter.post('/me/website/request-representation', requestRepresentation)
 userRouter.get('/me/website/representation-requests', getRepresentationRequests)
 userRouter.patch('/me/website/representation-requests/:id', handleRepresentationRequest)

@@ -5,13 +5,14 @@ import client from '../../api/client'
 import SocialIcon from '../ui/SocialIcon'
 
 const PLATFORMS = [
-  { key: 'facebook',  label: 'Facebook' },
-  { key: 'twitter',   label: 'X (Twitter)' },
-  { key: 'linkedin',  label: 'LinkedIn',  noVerify: true },
-  { key: 'instagram', label: 'Instagram' },
-  { key: 'youtube',   label: 'YouTube' },
-  { key: 'kick',      label: 'Kick' },
-  { key: 'twitch',    label: 'Twitch' },
+  { key: 'facebook',          label: 'Facebook' },
+  { key: 'twitter',           label: 'X (Twitter)' },
+  { key: 'linkedin',          label: 'LinkedIn',          noVerify: true },
+  { key: 'instagram',         label: 'Instagram' },
+  { key: 'youtube',           label: 'YouTube' },
+  { key: 'kick',              label: 'Kick' },
+  { key: 'twitch',            label: 'Twitch' },
+  { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true },
 ]
 
 function Toggle({ on, onClick, disabled }) {
@@ -54,7 +55,7 @@ export default function ProfileView({ darkMode }) {
     }
   }
 
-  const hasVerified = connections.some((c) => c.platform !== 'linkedin')
+  const hasVerified = connections.some((c) => c.platform !== 'linkedin' && c.platform !== 'affiliate_roulette')
 
   const infoRows = [
     { label: 'Name',      value: profile?.display_name || profile?.full_name },
@@ -134,20 +135,23 @@ export default function ProfileView({ darkMode }) {
               {PLATFORMS.map((p) => {
                 const conn = connections.find((c) => c.platform === p.key)
                 if (!conn) return null
-                const isVerified = !p.noVerify
                 return (
                   <div key={p.key} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${dm ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
                     <SocialIcon platform={p.key} size={28} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className={`text-sm font-medium ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
-                        {isVerified ? (
+                        {p.urlOnly ? (
                           <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">
-                            Verified
+                            Connected
                           </span>
-                        ) : (
+                        ) : p.noVerify ? (
                           <span className={`text-xs rounded-full px-1.5 py-0.5 font-medium leading-none ${dm ? 'bg-gray-600 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
                             Unverified
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">
+                            Verified
                           </span>
                         )}
                       </div>

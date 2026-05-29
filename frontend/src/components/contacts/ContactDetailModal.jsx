@@ -105,6 +105,7 @@ export default function ContactDetailModal({
   const avatar   = contact.avatar_url || profile?.avatar_url
   const tagline  = getTagline(profile || contact)
   const website  = contact.website || profile?.website
+  const verifiedWebsites = profile?.verified_websites || []
   const bio      = contact.bio || profile?.bio
   const location = profile?.location || profile?.country
   const joinDate = profile?.created_at
@@ -138,14 +139,16 @@ export default function ContactDetailModal({
   }
 
   const socials = [
-    { name: 'Facebook',  key: 'facebook',  url: profile?.facebook_url },
-    { name: 'Twitter',   key: 'twitter',   url: profile?.twitter_url },
-    { name: 'Instagram', key: 'instagram', url: profile?.instagram_url },
-    { name: 'LinkedIn',  key: 'linkedin',  url: profile?.linkedin_url, linkedinWarning: true },
-    { name: 'YouTube',   key: 'youtube',   url: profile?.youtube_url },
-    { name: 'Kick',      key: 'kick',      url: profile?.kick_url },
-    { name: 'Twitch',    key: 'twitch',    url: profile?.twitch_url },
+    { name: 'Facebook',          key: 'facebook',          url: profile?.facebook_url },
+    { name: 'Twitter',           key: 'twitter',           url: profile?.twitter_url },
+    { name: 'Instagram',         key: 'instagram',         url: profile?.instagram_url },
+    { name: 'LinkedIn',          key: 'linkedin',          url: profile?.linkedin_url, linkedinWarning: true },
+    { name: 'YouTube',           key: 'youtube',           url: profile?.youtube_url },
+    { name: 'Kick',              key: 'kick',              url: profile?.kick_url },
+    { name: 'Twitch',            key: 'twitch',            url: profile?.twitch_url },
+    { name: 'Affiliate Roulette', key: 'affiliate_roulette', url: profile?.affiliate_roulette_url, urlOnly: true },
   ]
+  const oauthSocials = socials.filter((s) => !s.urlOnly)
 
   const confirmMessages = {
     block: {
@@ -271,7 +274,7 @@ export default function ContactDetailModal({
             </div>
 
             {/* Verification badges — dedicated row below the header */}
-            {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || socials.some((s) => s.url)) && (
+            {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
               <div className={`flex flex-wrap gap-1.5 mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                 {profile.kyc_status === 'verified' && (
                   <span title="This user has completed identity verification before joining Connect." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium cursor-help">
@@ -291,7 +294,7 @@ export default function ContactDetailModal({
                     Approved Rep
                   </span>
                 )}
-                {socials.some((s) => s.url) && (
+                {oauthSocials.some((s) => s.url) && (
                   <span title="This social profile was verified through secure OAuth login." className="inline-flex items-center gap-1 text-xs bg-pink-100 text-pink-700 rounded-full px-2 py-0.5 font-medium cursor-help">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                     Social Verified
@@ -311,9 +314,31 @@ export default function ContactDetailModal({
             <Row label="Date of Birth" value={dob}
               icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2} /><path strokeLinecap="round" strokeWidth={2} d="M16 2v4M8 2v4M3 10h18" /></svg>}
             />
-            <Row label="Website" value={website} link={website ? (website.startsWith('http') ? website : `https://${website}`) : null}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
-            />
+            {verifiedWebsites.length > 0 ? (
+              <div className="flex items-start gap-3 py-2">
+                <span className="mt-0.5 text-gray-400">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                </span>
+                <div>
+                  <p className={labelCls}>Verified Websites</p>
+                  <div className="space-y-0.5 mt-0.5">
+                    {verifiedWebsites.map((w) => (
+                      <a key={w.id} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm font-medium text-violet-500 hover:underline break-all">
+                        <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {w.url.replace(/^https?:\/\//, '')}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Row label="Website" value={website} link={website ? (website.startsWith('http') ? website : `https://${website}`) : null}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
+              />
+            )}
             <Row label="Bio" value={bio}
               icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
             />
@@ -329,7 +354,7 @@ export default function ContactDetailModal({
           {socials.some((s) => s.url) && (
           <div className={`rounded-xl p-4 ${sectionBg}`}>
             <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
-            <p className={noteCls}>Each social profile was verified through secure OAuth login on that platform.</p>
+            <p className={noteCls}>OAuth-connected profiles are verified. Affiliate Roulette links are user-provided.</p>
             <div className="space-y-3">
               {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
                 <div key={sname} className="flex items-center gap-3">
