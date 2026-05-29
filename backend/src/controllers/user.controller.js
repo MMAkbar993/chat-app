@@ -109,17 +109,16 @@ export async function getUserById(req, res, next) {
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
 
     const user = result.rows[0]
-    const socialResult = await query(
-      `SELECT platform, profile_url, username AS social_username
-       FROM social_connections WHERE user_id = $1`,
-      [user.id]
-    )
+    const [socialResult, websitesResult] = await Promise.all([
+      query(`SELECT platform, profile_url, username AS social_username FROM social_connections WHERE user_id = $1`, [user.id]),
+      query(`SELECT id, url FROM verified_websites WHERE user_id = $1 AND verified = true ORDER BY created_at`, [user.id]),
+    ])
     const socialMap = {}
     socialResult.rows.forEach((s) => {
       socialMap[`${s.platform}_url`] = s.profile_url || (s.social_username ? `https://${s.platform}.com/${s.social_username}` : null)
     })
 
-    res.json({ user: { ...user, ...socialMap } })
+    res.json({ user: { ...user, ...socialMap, verified_websites: websitesResult.rows } })
   } catch (err) {
     next(err)
   }
@@ -136,7 +135,10 @@ export async function getPublicProfile(req, res, next) {
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
 
     const user = result.rows[0]
-    const socialConnections = await getPublicSocialConnections(user.id)
+    const [socialConnections, websitesResult] = await Promise.all([
+      getPublicSocialConnections(user.id),
+      query(`SELECT id, url FROM verified_websites WHERE user_id = $1 AND verified = true ORDER BY created_at`, [user.id]),
+    ])
 
     res.json({
       user: {
@@ -151,6 +153,7 @@ export async function getPublicProfile(req, res, next) {
         is_verified: user.kyc_status === 'verified',
         joined: user.created_at,
         social_connections: socialConnections,
+        verified_websites: websitesResult.rows,
       },
     })
   } catch (err) {
@@ -279,13 +282,14 @@ export async function initWebsiteVerification(req, res, next) {
     const { url } = req.body
     if (!url) return res.status(400).json({ error: 'Website URL is required' })
 
-    // Normalise to bare URL for comparison
-    let normalised = url.trim().replace(/\/+$/, '')
+    const normalised = url.trim().replace(/\/+$/, '')
 
     // Check if another user already verified this website
     const claimed = await query(
-      `SELECT id, display_name, full_name FROM users
-       WHERE website_verified = true AND LOWER(TRIM(TRAILING '/' FROM website)) = LOWER($1) AND id != $2`,
+      `SELECT u.id, u.display_name, u.full_name
+       FROM verified_websites vw
+       JOIN users u ON u.id = vw.user_id
+       WHERE vw.verified = true AND LOWER(vw.url) = LOWER($1) AND vw.user_id != $2`,
       [normalised, req.user.id]
     )
     if (claimed.rows[0]) {
@@ -299,11 +303,15 @@ export async function initWebsiteVerification(req, res, next) {
     }
 
     const token = crypto.randomBytes(20).toString('hex')
-    await query(
-      `UPDATE users SET website = $1, website_verify_token = $2, website_verified = false, updated_at = NOW() WHERE id = $3`,
-      [normalised, token, req.user.id]
+    const inserted = await query(
+      `INSERT INTO verified_websites (user_id, url, verify_token, verified, updated_at)
+       VALUES ($1, $2, $3, false, NOW())
+       ON CONFLICT (user_id, url) DO UPDATE
+         SET verify_token = EXCLUDED.verify_token, verified = false, updated_at = NOW()
+       RETURNING id`,
+      [req.user.id, normalised, token]
     )
-    res.json({ token, metaTag: `<meta name="site-verification" content="${token}">` })
+    res.json({ token, metaTag: `<meta name="site-verification" content="${token}">`, websiteId: inserted.rows[0].id })
   } catch (err) {
     next(err)
   }
@@ -311,12 +319,35 @@ export async function initWebsiteVerification(req, res, next) {
 
 export async function removeWebsiteVerification(req, res, next) {
   try {
+    const { id } = req.params
     await query(
-      `UPDATE users SET website = NULL, website_verify_token = NULL, website_verified = false,
-       website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+      `DELETE FROM verified_websites WHERE id = $1 AND user_id = $2`,
+      [id, req.user.id]
+    )
+    // If no verified websites remain, clear the flag on the user row
+    const remaining = await query(
+      `SELECT id FROM verified_websites WHERE user_id = $1 AND verified = true LIMIT 1`,
       [req.user.id]
     )
+    if (remaining.rows.length === 0) {
+      await query(
+        `UPDATE users SET website_verified = false, updated_at = NOW() WHERE id = $1`,
+        [req.user.id]
+      )
+    }
     res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getMyVerifiedWebsites(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT id, url, verified, created_at FROM verified_websites WHERE user_id = $1 ORDER BY created_at`,
+      [req.user.id]
+    )
+    res.json({ websites: result.rows })
   } catch (err) {
     next(err)
   }
@@ -327,10 +358,11 @@ export async function requestRepresentation(req, res, next) {
     const { url, ownerId } = req.body
     if (!url || !ownerId) return res.status(400).json({ error: 'url and ownerId are required' })
 
-    // Verify the owner still has this verified
+    // Verify the owner still has this website verified
     const owner = await query(
-      `SELECT id FROM users WHERE id = $1 AND website_verified = true`,
-      [ownerId]
+      `SELECT u.id FROM verified_websites vw JOIN users u ON u.id = vw.user_id
+       WHERE vw.user_id = $1 AND LOWER(vw.url) = LOWER($2) AND vw.verified = true`,
+      [ownerId, url.trim().replace(/\/+$/, '')]
     )
     if (!owner.rows[0]) return res.status(404).json({ error: 'Owner not found or website no longer verified' })
 
@@ -425,29 +457,38 @@ export async function handleRepresentationRequest(req, res, next) {
 
 export async function confirmWebsiteVerification(req, res, next) {
   try {
-    const result = await query(
-      `SELECT website, website_verify_token FROM users WHERE id = $1`,
-      [req.user.id]
+    const { websiteId } = req.body
+    if (!websiteId) return res.status(400).json({ error: 'websiteId is required' })
+
+    const pending = await query(
+      `SELECT id, url, verify_token FROM verified_websites WHERE id = $1 AND user_id = $2 AND verified = false`,
+      [websiteId, req.user.id]
     )
-    const user = result.rows[0]
-    if (!user?.website || !user?.website_verify_token) {
-      return res.status(400).json({ error: 'No pending verification' })
-    }
+    if (!pending.rows[0]) return res.status(400).json({ error: 'No pending verification found' })
+
+    const { url, verify_token } = pending.rows[0]
     let html = ''
     try {
-      const resp = await axios.get(user.website, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 SiteVerifier/1.0' } })
+      const resp = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 SiteVerifier/1.0' } })
       html = resp.data || ''
     } catch {
       return res.status(400).json({ error: 'Could not reach your website. Make sure it is publicly accessible.' })
     }
-    if (!html.includes(user.website_verify_token)) {
+    if (!html.includes(verify_token)) {
       return res.status(400).json({ error: 'Verification tag not found. Make sure you added the meta tag to your page <head>.' })
     }
+
+    await query(
+      `UPDATE verified_websites SET verified = true, verify_token = NULL, updated_at = NOW() WHERE id = $1`,
+      [websiteId]
+    )
+
     let domainName = null
     try {
-      const raw = user.website.startsWith('http') ? user.website : `https://${user.website}`
+      const raw = url.startsWith('http') ? url : `https://${url}`
       domainName = new URL(raw).hostname.replace(/^www\./, '')
     } catch {}
+
     await query(
       `UPDATE users SET website_verified = true,
        company_name = COALESCE(company_name, $1),

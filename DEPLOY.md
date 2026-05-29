@@ -91,6 +91,8 @@ ssh root@5.189.143.148
 REDACTED_ROTATED_PASSWORD
 cd /var/www/chat  
 git pull origin main
+npm run db:migrate
+pm2 restart all
 
 php artisan optimize:clear
 php artisan config:cache

@@ -3,13 +3,14 @@ import { useParams, Link } from 'react-router-dom'
 import client from '../api/client'
 
 const PLATFORM_META = {
-  linkedin:  { label: 'LinkedIn',  color: '#0A66C2', icon: 'in' },
-  youtube:   { label: 'YouTube',   color: '#FF0000', icon: '▶' },
-  facebook:  { label: 'Facebook',  color: '#1877F2', icon: 'f' },
-  instagram: { label: 'Instagram', color: '#E1306C', icon: '◎' },
-  twitter:   { label: 'X (Twitter)', color: '#000000', icon: '𝕏' },
-  twitch:    { label: 'Twitch',    color: '#9147FF', icon: '◈' },
-  kick:      { label: 'Kick',      color: '#53FC18', icon: '▸' },
+  linkedin:           { label: 'LinkedIn',          color: '#0A66C2', icon: 'in' },
+  youtube:            { label: 'YouTube',            color: '#FF0000', icon: '▶' },
+  facebook:           { label: 'Facebook',           color: '#1877F2', icon: 'f' },
+  instagram:          { label: 'Instagram',          color: '#E1306C', icon: '◎' },
+  twitter:            { label: 'X (Twitter)',        color: '#000000', icon: '𝕏' },
+  twitch:             { label: 'Twitch',             color: '#9147FF', icon: '◈' },
+  kick:               { label: 'Kick',               color: '#53FC18', icon: '▸' },
+  affiliate_roulette: { label: 'Affiliate Roulette', color: '#7C3AED', icon: 'AR' },
 }
 
 const ROLE_LABELS = {
@@ -127,6 +128,29 @@ export default function PublicProfilePage() {
               <p className="text-gray-600 text-sm leading-relaxed mb-5">{user.bio}</p>
             )}
 
+            {/* Verified websites */}
+            {user.verified_websites?.length > 0 && (
+              <div className="mb-5">
+                <h2 className="text-sm font-semibold text-gray-700 mb-3">Verified Websites</h2>
+                <div className="flex flex-wrap gap-2">
+                  {user.verified_websites.map((w) => (
+                    <a
+                      key={w.id}
+                      href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-violet-300 transition-colors text-sm text-gray-700 hover:text-gray-900"
+                    >
+                      <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">{w.url.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Social connections */}
             {user.social_connections?.length > 0 && (
               <div>
@@ -143,8 +167,8 @@ export default function PublicProfilePage() {
                         className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-violet-300 transition-colors text-sm text-gray-700 hover:text-gray-900"
                       >
                         <span
-                          className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold"
-                          style={{ backgroundColor: meta.color }}
+                          className="w-5 h-5 rounded flex items-center justify-center text-white font-bold"
+                          style={{ backgroundColor: meta.color, fontSize: meta.icon.length > 1 ? '7px' : '' }}
                         >
                           {meta.icon}
                         </span>

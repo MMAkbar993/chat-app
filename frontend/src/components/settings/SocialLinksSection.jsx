@@ -144,6 +144,9 @@ export default function SocialLinksSection({ darkMode, onToast }) {
                 <div className="flex items-center gap-3 mb-2">
                   <SocialIcon platform={p.key} size={32} />
                   <p className={`text-sm font-medium flex-1 ${text}`}>{p.label}</p>
+                  {isConnected && (
+                    <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Connected</span>
+                  )}
                   <div className="relative group">
                     <svg className={`w-3.5 h-3.5 cursor-help ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
