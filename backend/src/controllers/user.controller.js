@@ -341,6 +341,18 @@ export async function removeWebsiteVerification(req, res, next) {
   }
 }
 
+export async function revokeRepresentation(req, res, next) {
+  try {
+    await query(
+      `UPDATE users SET website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+      [req.user.id]
+    )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function getMyVerifiedWebsites(req, res, next) {
   try {
     const result = await query(
@@ -381,6 +393,41 @@ export async function requestRepresentation(req, res, next) {
       websiteUrl: url,
     })
 
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getApprovedRepresentatives(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT r.id, r.website_url, r.created_at,
+              u.id AS user_id, u.display_name, u.full_name, u.avatar_url, u.username
+       FROM website_representation_requests r
+       JOIN users u ON u.id = r.requester_id
+       WHERE r.owner_id = $1 AND r.status = 'approved'
+       ORDER BY r.created_at DESC`,
+      [req.user.id]
+    )
+    res.json({ representatives: result.rows })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function revokeRepresentative(req, res, next) {
+  try {
+    const { userId } = req.params
+    await query(
+      `UPDATE website_representation_requests SET status = 'revoked'
+       WHERE owner_id = $1 AND requester_id = $2`,
+      [req.user.id, userId]
+    )
+    await query(
+      `UPDATE users SET website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+      [userId]
+    )
     res.json({ success: true })
   } catch (err) {
     next(err)
