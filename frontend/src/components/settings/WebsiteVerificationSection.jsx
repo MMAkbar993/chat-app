@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
-  requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
+  requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
 } from '../../api/users'
 
 export default function WebsiteVerificationSection({ darkMode, profile }) {
@@ -20,6 +20,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [claimedInfo, setClaimedInfo] = useState(null)
   const [reprRequested, setReprRequested] = useState(false)
   const [removingId, setRemovingId] = useState(null)
+  const [revokingRepr, setRevokingRepr] = useState(false)
+  const [reprRevoked, setReprRevoked] = useState(false)
 
   const approved = profile?.website_representation_approved || false
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
@@ -118,7 +120,19 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     } catch {}
   }
 
-  if (approved && websites.length === 0) {
+  async function handleRevokeRepr() {
+    if (!window.confirm('Remove your authorized representative status? This will unlink your profile from the company.')) return
+    setRevokingRepr(true)
+    try {
+      await revokeRepresentation()
+      setReprRevoked(true)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to remove representative status.')
+    }
+    setRevokingRepr(false)
+  }
+
+  if ((approved && websites.length === 0) && !reprRevoked) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
@@ -133,6 +147,14 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             {profile?.company_name ? ` of ${profile.company_name}` : ''}. Your profile now shows your company affiliation.
           </p>
         </div>
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        <button
+          onClick={handleRevokeRepr}
+          disabled={revokingRepr}
+          className="text-xs text-red-500 hover:text-red-700 underline disabled:opacity-50"
+        >
+          {revokingRepr ? 'Removing…' : 'Remove representative status'}
+        </button>
       </div>
     )
   }
@@ -170,8 +192,6 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           ))}
         </div>
       )}
-
-      {error && <p className="text-xs text-red-500">{error}</p>}
 
       {/* Pending representation requests (only shown when owner has verified websites) */}
       {websites.length > 0 && pendingRequests.length > 0 && (

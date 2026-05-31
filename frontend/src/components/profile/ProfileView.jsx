@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getMyProfile, deactivateAccount } from '../../api/users'
+import { getMyProfile, deactivateAccount, getApprovedRepresentatives, revokeRepresentative } from '../../api/users'
 import { useAuth } from '../../context/AuthContext'
 import client from '../../api/client'
 import SocialIcon from '../ui/SocialIcon'
@@ -36,13 +36,26 @@ export default function ProfileView({ darkMode }) {
   const [profile, setProfile] = useState(null)
   const [connections, setConnections] = useState([])
   const [deactivating, setDeactivating] = useState(false)
+  const [representatives, setRepresentatives] = useState([])
+  const [revokingRep, setRevokingRep] = useState(null)
 
   const dm = darkMode
 
   useEffect(() => {
     getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
     client.get('/users/me/social').then(({ data }) => setConnections(data.connections)).catch(() => {})
+    getApprovedRepresentatives().then((d) => setRepresentatives(d.representatives || [])).catch(() => {})
   }, [])
+
+  async function handleRevokeRep(userId) {
+    if (!window.confirm("Remove this user's representative access?")) return
+    setRevokingRep(userId)
+    try {
+      await revokeRepresentative(userId)
+      setRepresentatives((prev) => prev.filter((r) => r.user_id !== userId))
+    } catch {}
+    setRevokingRep(null)
+  }
 
   async function handleDeactivate() {
     if (!window.confirm('Deactivate your account? You will be signed out and your profile will no longer appear to others.')) return
@@ -140,7 +153,7 @@ export default function ProfileView({ darkMode }) {
                     <SocialIcon platform={p.key} size={28} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className={`text-sm font-medium ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
+                        <p className={`text-sm font-medium whitespace-nowrap ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
                         {p.urlOnly ? (
                           <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">
                             Connected
@@ -169,9 +182,37 @@ export default function ProfileView({ darkMode }) {
         {/* Authorized Users */}
         <h3 className={head}>Authorized Users</h3>
         <div className={`${card} p-4`}>
-          <p className={`text-xs ${dm ? 'text-gray-400' : 'text-gray-500'}`}>
-            Manage representation requests for your verified websites.
-          </p>
+          {representatives.length === 0 ? (
+            <p className={`text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+              No authorized representatives yet. Approve requests from your verified website's settings.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {representatives.map((r) => {
+                const name = r.display_name || r.full_name || r.username || 'Unknown'
+                return (
+                  <div key={r.user_id} className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-sm font-bold">
+                      {r.avatar_url
+                        ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : name[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${dm ? 'text-white' : 'text-gray-800'}`}>{name}</p>
+                      <p className={`text-xs truncate ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{r.website_url}</p>
+                    </div>
+                    <button
+                      onClick={() => handleRevokeRep(r.user_id)}
+                      disabled={revokingRep === r.user_id}
+                      className="text-xs text-red-500 hover:text-red-700 shrink-0 disabled:opacity-50"
+                    >
+                      {revokingRep === r.user_id ? 'Removing…' : 'Remove'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Deactivate */}
