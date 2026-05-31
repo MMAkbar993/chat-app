@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
   requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
+  getWebsiteRepresentatives, transferWebsiteOwnership,
 } from '../../api/users'
 
 export default function WebsiteVerificationSection({ darkMode, profile }) {
@@ -22,6 +23,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [removingId, setRemovingId] = useState(null)
   const [revokingRepr, setRevokingRepr] = useState(false)
   const [reprRevoked, setReprRevoked] = useState(false)
+  // Transfer/delete dialog
+  const [removeDialog, setRemoveDialog] = useState(null) // { id, url, reps }
+  const [transferTo, setTransferTo] = useState('')
+  const [dialogLoading, setDialogLoading] = useState(false)
 
   const approved = profile?.website_representation_approved || false
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
@@ -91,15 +96,50 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setLoading(false)
   }
 
-  async function handleRemove(id) {
-    setRemovingId(id)
+  async function handleRemoveClick(website) {
+    setRemovingId(website.id)
     try {
-      await removeWebsiteVerify(id)
-      setWebsites((prev) => prev.filter((w) => w.id !== id))
+      const data = await getWebsiteRepresentatives(website.id)
+      if (data.representatives.length > 0) {
+        setRemoveDialog({ id: website.id, url: website.url, reps: data.representatives })
+        setTransferTo('')
+      } else {
+        if (!window.confirm(`Remove ${website.url}? This cannot be undone.`)) {
+          setRemovingId(null)
+          return
+        }
+        await removeWebsiteVerify(website.id)
+        setWebsites((prev) => prev.filter((w) => w.id !== website.id))
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to remove website.')
     }
     setRemovingId(null)
+  }
+
+  async function handleDialogDelete() {
+    setDialogLoading(true)
+    try {
+      await removeWebsiteVerify(removeDialog.id)
+      setWebsites((prev) => prev.filter((w) => w.id !== removeDialog.id))
+      setRemoveDialog(null)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to remove website.')
+    }
+    setDialogLoading(false)
+  }
+
+  async function handleDialogTransfer() {
+    if (!transferTo) return
+    setDialogLoading(true)
+    try {
+      await transferWebsiteOwnership(removeDialog.id, transferTo)
+      setWebsites((prev) => prev.filter((w) => w.id !== removeDialog.id))
+      setRemoveDialog(null)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to transfer ownership.')
+    }
+    setDialogLoading(false)
   }
 
   async function handleRequestRepresentation() {
@@ -182,11 +222,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                 {w.url}
               </a>
               <button
-                onClick={() => handleRemove(w.id)}
+                onClick={() => handleRemoveClick(w)}
                 disabled={removingId === w.id}
                 className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 shrink-0"
               >
-                {removingId === w.id ? 'Removing…' : 'Remove'}
+                {removingId === w.id ? 'Checking…' : 'Remove'}
               </button>
             </div>
           ))}
@@ -349,6 +389,72 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Transfer / delete dialog */}
+      {removeDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className={`w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+            <h3 className="font-semibold text-base">Remove Website</h3>
+            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <span className="font-medium">{removeDialog.url}</span> has {removeDialog.reps.length} authorized {removeDialog.reps.length === 1 ? 'user' : 'users'}.
+              You can transfer admin ownership to one of them, or delete the site and remove all associated users.
+            </p>
+
+            {/* Transfer option */}
+            <div className={`rounded-xl border p-4 space-y-3 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <p className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Transfer admin to</p>
+              <div className="space-y-2">
+                {removeDialog.reps.map((r) => {
+                  const name = r.display_name || r.full_name || r.username || 'Unknown'
+                  return (
+                    <label key={r.user_id} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="transferTo"
+                        value={r.user_id}
+                        checked={transferTo === r.user_id}
+                        onChange={() => setTransferTo(r.user_id)}
+                        className="accent-violet-600"
+                      />
+                      <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-xs font-bold">
+                        {r.avatar_url
+                          ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
+                          : name[0].toUpperCase()}
+                      </div>
+                      <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{name}</span>
+                    </label>
+                  )
+                })}
+              </div>
+              <button
+                onClick={handleDialogTransfer}
+                disabled={!transferTo || dialogLoading}
+                className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-40 transition-colors"
+              >
+                {dialogLoading ? 'Transferring…' : 'Transfer Ownership'}
+              </button>
+            </div>
+
+            {/* Delete option */}
+            <div className="space-y-2">
+              <button
+                onClick={handleDialogDelete}
+                disabled={dialogLoading}
+                className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-40 transition-colors"
+              >
+                {dialogLoading ? 'Deleting…' : 'Delete Site & Remove All Users'}
+              </button>
+              <button
+                onClick={() => { setRemoveDialog(null); setTransferTo('') }}
+                disabled={dialogLoading}
+                className={`w-full rounded-xl py-2 text-sm font-semibold border transition-colors ${darkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

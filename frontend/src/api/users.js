@@ -18,6 +18,8 @@ export const deleteAccount   = () => client.delete('/users/me').then((r) => r.da
 export const clearAllChats   = () => client.patch('/users/me/chats/clear').then((r) => r.data)
 export const deleteAllChats  = () => client.delete('/users/me/chats').then((r) => r.data)
 export const getMyVerifiedWebsites = () => client.get('/users/me/websites').then((r) => r.data)
+export const getWebsiteRepresentatives = (id) => client.get(`/users/me/website/${id}/representatives`).then((r) => r.data)
+export const transferWebsiteOwnership = (id, newOwnerId) => client.post(`/users/me/website/${id}/transfer`, { newOwnerId }).then((r) => r.data)
 export const initWebsiteVerify    = (url) => client.post('/users/me/website/verify-init', { url }).then((r) => r.data)
 export const confirmWebsiteVerify = (websiteId) => client.post('/users/me/website/verify-confirm', { websiteId }).then((r) => r.data)
 export const removeWebsiteVerify  = (id) => client.delete(`/users/me/website/${id}`).then((r) => r.data)

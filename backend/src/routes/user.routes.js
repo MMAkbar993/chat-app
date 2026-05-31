@@ -10,6 +10,7 @@ import {
   initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification,
   requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
   getApprovedRepresentatives, revokeRepresentative,
+  getWebsiteRepresentatives, transferWebsiteOwnership,
   getNotifications, markNotificationsRead, getMyVerifiedWebsites, revokeRepresentation,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
@@ -48,6 +49,8 @@ userRouter.post('/me/website/verify-init', initWebsiteVerification)
 userRouter.post('/me/website/verify-confirm', confirmWebsiteVerification)
 userRouter.post('/me/website/request-representation', requestRepresentation)
 userRouter.delete('/me/website/representation', revokeRepresentation)
+userRouter.get('/me/website/:id/representatives', getWebsiteRepresentatives)
+userRouter.post('/me/website/:id/transfer', transferWebsiteOwnership)
 userRouter.delete('/me/website/:id', removeWebsiteVerification)
 userRouter.get('/me/website/representatives', getApprovedRepresentatives)
 userRouter.delete('/me/website/representatives/:userId', revokeRepresentative)

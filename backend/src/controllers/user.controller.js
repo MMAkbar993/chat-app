@@ -317,14 +317,77 @@ export async function initWebsiteVerification(req, res, next) {
   }
 }
 
-export async function removeWebsiteVerification(req, res, next) {
+export async function getWebsiteRepresentatives(req, res, next) {
   try {
     const { id } = req.params
-    await query(
-      `DELETE FROM verified_websites WHERE id = $1 AND user_id = $2`,
+    const site = await query(
+      `SELECT url FROM verified_websites WHERE id = $1 AND user_id = $2`,
       [id, req.user.id]
     )
-    // If no verified websites remain, clear the flag on the user row
+    if (!site.rows[0]) return res.status(404).json({ error: 'Website not found' })
+    const { url } = site.rows[0]
+    const result = await query(
+      `SELECT u.id AS user_id, u.display_name, u.full_name, u.avatar_url, u.username
+       FROM website_representation_requests r
+       JOIN users u ON u.id = r.requester_id
+       WHERE r.owner_id = $1 AND LOWER(r.website_url) = LOWER($2) AND r.status = 'approved'`,
+      [req.user.id, url]
+    )
+    res.json({ representatives: result.rows, url })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function transferWebsiteOwnership(req, res, next) {
+  try {
+    const { id } = req.params
+    const { newOwnerId } = req.body
+    if (!newOwnerId) return res.status(400).json({ error: 'newOwnerId is required' })
+
+    const site = await query(
+      `SELECT url FROM verified_websites WHERE id = $1 AND user_id = $2`,
+      [id, req.user.id]
+    )
+    if (!site.rows[0]) return res.status(404).json({ error: 'Website not found' })
+    const { url } = site.rows[0]
+
+    // Verify the new owner is an approved rep for this site
+    const repCheck = await query(
+      `SELECT id FROM website_representation_requests
+       WHERE owner_id = $1 AND requester_id = $2 AND LOWER(website_url) = LOWER($3) AND status = 'approved'`,
+      [req.user.id, newOwnerId, url]
+    )
+    if (!repCheck.rows[0]) return res.status(400).json({ error: 'Selected user is not an approved representative of this site' })
+
+    let domainName = null
+    try {
+      const raw = url.startsWith('http') ? url : `https://${url}`
+      domainName = new URL(raw).hostname.replace(/^www\./, '')
+    } catch {}
+
+    // Give new owner a verified_websites entry
+    await query(
+      `INSERT INTO verified_websites (user_id, url, verified, updated_at)
+       VALUES ($1, $2, true, NOW())
+       ON CONFLICT (user_id, url) DO UPDATE SET verified = true, updated_at = NOW()`,
+      [newOwnerId, url]
+    )
+    // Mark new owner as website verified
+    await query(
+      `UPDATE users SET website_verified = true,
+       company_name = COALESCE(company_name, $1), updated_at = NOW() WHERE id = $2`,
+      [domainName, newOwnerId]
+    )
+    // Transfer all representation requests for this site to new owner
+    await query(
+      `UPDATE website_representation_requests SET owner_id = $1
+       WHERE owner_id = $2 AND LOWER(website_url) = LOWER($3)`,
+      [newOwnerId, req.user.id, url]
+    )
+    // Remove current owner's verified_websites entry
+    await query(`DELETE FROM verified_websites WHERE id = $1`, [id])
+    // Clear current owner's flags if no more verified sites
     const remaining = await query(
       `SELECT id FROM verified_websites WHERE user_id = $1 AND verified = true LIMIT 1`,
       [req.user.id]
@@ -335,6 +398,65 @@ export async function removeWebsiteVerification(req, res, next) {
         [req.user.id]
       )
     }
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function removeWebsiteVerification(req, res, next) {
+  try {
+    const { id } = req.params
+    const site = await query(
+      `SELECT url FROM verified_websites WHERE id = $1 AND user_id = $2`,
+      [id, req.user.id]
+    )
+    if (!site.rows[0]) return res.status(404).json({ error: 'Website not found' })
+    const { url } = site.rows[0]
+
+    // Revoke all approved reps for this site
+    const reps = await query(
+      `SELECT requester_id FROM website_representation_requests
+       WHERE owner_id = $1 AND LOWER(website_url) = LOWER($2) AND status = 'approved'`,
+      [req.user.id, url]
+    )
+    if (reps.rows.length > 0) {
+      await query(
+        `UPDATE website_representation_requests SET status = 'revoked'
+         WHERE owner_id = $1 AND LOWER(website_url) = LOWER($2) AND status = 'approved'`,
+        [req.user.id, url]
+      )
+      for (const { requester_id } of reps.rows) {
+        const otherApprovals = await query(
+          `SELECT id FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`,
+          [requester_id]
+        )
+        if (otherApprovals.rows.length === 0) {
+          await query(
+            `UPDATE users SET website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+            [requester_id]
+          )
+        }
+      }
+    }
+
+    await query(`DELETE FROM verified_websites WHERE id = $1`, [id])
+    const remaining = await query(
+      `SELECT id FROM verified_websites WHERE user_id = $1 AND verified = true LIMIT 1`,
+      [req.user.id]
+    )
+    if (remaining.rows.length === 0) {
+      await query(
+        `UPDATE users SET website_verified = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
+        [req.user.id]
+      )
+    }
+    // Clear users.website if it still holds the deleted URL
+    await query(
+      `UPDATE users SET website = NULL, updated_at = NOW()
+       WHERE id = $1 AND LOWER(TRIM(TRAILING '/' FROM COALESCE(website,''))) = LOWER($2)`,
+      [req.user.id, url.replace(/\/+$/, '').toLowerCase()]
+    )
     res.json({ success: true })
   } catch (err) {
     next(err)
