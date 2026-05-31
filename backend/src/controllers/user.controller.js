@@ -331,7 +331,7 @@ export async function removeWebsiteVerification(req, res, next) {
     )
     if (remaining.rows.length === 0) {
       await query(
-        `UPDATE users SET website_verified = false, updated_at = NOW() WHERE id = $1`,
+        `UPDATE users SET website_verified = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
         [req.user.id]
       )
     }
