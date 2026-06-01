@@ -121,6 +121,22 @@ export default function PublicProfilePage() {
                   Member since {joinYear}
                 </span>
               )}
+              {user.website_verified && (
+                <span title="This user has verified ownership of a website." className="inline-flex items-center gap-1 bg-green-50 text-green-700 rounded-full px-3 py-1 text-xs font-medium">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Website Verified
+                </span>
+              )}
+              {user.website_representation_approved && (
+                <span title="This user has been approved to represent a company on ConnectAR." className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 rounded-full px-3 py-1 text-xs font-medium">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Approved Rep
+                </span>
+              )}
             </div>
 
             {/* Bio */}
@@ -128,23 +144,32 @@ export default function PublicProfilePage() {
               <p className="text-gray-600 text-sm leading-relaxed mb-5">{user.bio}</p>
             )}
 
-            {/* Verified websites */}
-            {user.verified_websites?.length > 0 && (
+            {/* Websites (owned + represented) */}
+            {(user.verified_websites?.length > 0 || user.rep_websites?.length > 0) && (
               <div className="mb-5">
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">Verified Websites</h2>
+                <h2 className="text-sm font-semibold text-gray-700 mb-3">Websites</h2>
                 <div className="flex flex-wrap gap-2">
-                  {user.verified_websites.map((w) => (
-                    <a
-                      key={w.id}
-                      href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {(user.verified_websites || []).map((w) => (
+                    <a key={w.id} href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
+                      target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-violet-300 transition-colors text-sm text-gray-700 hover:text-gray-900"
                     >
                       <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="font-medium">{w.url.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                  ))}
+                  {(user.rep_websites || []).map((w, i) => (
+                    <a key={`rep-${i}`} href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-violet-100 hover:border-violet-300 transition-colors text-sm text-gray-700 hover:text-gray-900"
+                    >
+                      <svg className="w-4 h-4 text-violet-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-medium">{w.url.replace(/^https?:\/\//, '')}</span>
+                      <span className="text-xs text-gray-400">(rep)</span>
                     </a>
                   ))}
                 </div>
