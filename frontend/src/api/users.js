@@ -29,6 +29,7 @@ export const getApprovedRepresentatives = () => client.get('/users/me/website/re
 export const revokeRepresentative = (userId) => client.delete(`/users/me/website/representatives/${userId}`).then((r) => r.data)
 export const getRepresentationRequests = () => client.get('/users/me/website/representation-requests').then((r) => r.data)
 export const handleRepresentationRequest = (id, action) => client.patch(`/users/me/website/representation-requests/${id}`, { action }).then((r) => r.data)
+export const getMyRepresentationStatus = () => client.get('/users/me/website/my-requests').then((r) => r.data)
 export const getNotifications = () => client.get('/users/me/notifications').then((r) => r.data)
 export const markNotificationsRead = () => client.patch('/users/me/notifications/read-all').then((r) => r.data)
 export const uploadFile  = (file) => {

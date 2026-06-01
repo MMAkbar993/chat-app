@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
   requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
-  getWebsiteRepresentatives, transferWebsiteOwnership,
+  getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus,
 } from '../../api/users'
+import { useSocket } from '../../context/SocketContext'
 
 export default function WebsiteVerificationSection({ darkMode, profile }) {
+  const { socket } = useSocket()
   const [websites, setWebsites] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   const [pendingRequests, setPendingRequests] = useState([])
+  const [myPendingRequests, setMyPendingRequests] = useState([])
 
   // Add-website form state
   const [addOpen, setAddOpen] = useState(false)
@@ -40,6 +43,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       .then((d) => setWebsites(d.websites || []))
       .catch(() => {})
       .finally(() => setLoadingList(false))
+    // Load pending requests this user has sent as a requester (persists across refreshes)
+    getMyRepresentationStatus()
+      .then((d) => setMyPendingRequests(d.requests || []))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -49,6 +56,30 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
         .catch(() => {})
     }
   }, [websites.length])
+
+  // Real-time: refresh owner's pending list when a new rep request arrives
+  useEffect(() => {
+    if (!socket) return
+    function onNotification({ type }) {
+      if (type === 'rep_request') {
+        getRepresentationRequests()
+          .then((d) => setPendingRequests(d.requests || []))
+          .catch(() => {})
+      }
+    }
+    // Real-time: update requester's own pending status when owner decides
+    function onRepUpdate() {
+      getMyRepresentationStatus()
+        .then((d) => setMyPendingRequests(d.requests || []))
+        .catch(() => {})
+    }
+    socket.on('notification', onNotification)
+    socket.on('rep-request-update', onRepUpdate)
+    return () => {
+      socket.off('notification', onNotification)
+      socket.off('rep-request-update', onRepUpdate)
+    }
+  }, [socket])
 
   function resetAddForm() {
     setUrl('')
@@ -147,6 +178,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     try {
       await requestRepresentation(claimedInfo.websiteUrl, claimedInfo.ownerId)
       setReprRequested(true)
+      // Immediately reflect the new pending request so it survives a page refresh
+      const d = await getMyRepresentationStatus()
+      setMyPendingRequests(d.requests || [])
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to send request.')
     }
@@ -261,6 +295,29 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                 >
                   Reject
                 </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* My pending representation requests (requester view — persists across refreshes) */}
+      {myPendingRequests.length > 0 && (
+        <div className={`rounded-xl border p-3 space-y-2 ${darkMode ? 'border-yellow-800 bg-yellow-900/20' : 'border-yellow-200 bg-yellow-50'}`}>
+          <p className={`text-xs font-semibold ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+            My Sent Requests — Awaiting Approval
+          </p>
+          {myPendingRequests.map((r) => {
+            const ownerName = r.owner_display_name || r.owner_full_name || 'the site owner'
+            return (
+              <div key={r.id} className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-yellow-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className={`text-xs flex-1 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                  Awaiting approval from <span className="font-medium">{ownerName}</span> for{' '}
+                  <span className="font-medium">{r.website_url.replace(/^https?:\/\//, '')}</span>
+                </span>
               </div>
             )
           })}
