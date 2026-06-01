@@ -573,6 +573,23 @@ export async function revokeRepresentative(req, res, next) {
   }
 }
 
+export async function getMyRepresentationStatus(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT r.id, r.website_url, r.status, r.created_at,
+              u.display_name AS owner_display_name, u.full_name AS owner_full_name
+       FROM website_representation_requests r
+       JOIN users u ON u.id = r.owner_id
+       WHERE r.requester_id = $1 AND r.status = 'pending'
+       ORDER BY r.created_at DESC`,
+      [req.user.id]
+    )
+    res.json({ requests: result.rows })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function getRepresentationRequests(req, res, next) {
   try {
     // Requests where current user is the owner
