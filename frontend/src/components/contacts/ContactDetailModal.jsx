@@ -104,8 +104,12 @@ export default function ContactDetailModal({
     : contact.display_name || contact.full_name || contact.username || 'Unknown'
   const avatar   = contact.avatar_url || profile?.avatar_url
   const tagline  = getTagline(profile || contact)
-  const website  = contact.website || profile?.website
   const verifiedWebsites = profile?.verified_websites || []
+  const repWebsites = profile?.rep_websites || []
+  const allWebsites = [
+    ...verifiedWebsites.map((w) => ({ ...w, isOwner: true })),
+    ...repWebsites.map((w) => ({ ...w, isOwner: false })),
+  ]
   const bio      = contact.bio || profile?.bio
   const location = profile?.location || profile?.country
   const joinDate = profile?.created_at
@@ -314,21 +318,23 @@ export default function ContactDetailModal({
             <Row label="Date of Birth" value={dob}
               icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2} /><path strokeLinecap="round" strokeWidth={2} d="M16 2v4M8 2v4M3 10h18" /></svg>}
             />
-            {verifiedWebsites.length > 0 && (
+            {allWebsites.length > 0 && (
               <div className="flex items-start gap-3 py-2">
                 <span className="mt-0.5 text-gray-400">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                 </span>
                 <div>
-                  <p className={labelCls}>Verified Websites</p>
+                  <p className={labelCls}>Websites</p>
                   <div className="space-y-0.5 mt-0.5">
-                    {verifiedWebsites.map((w) => (
-                      <a key={w.id} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
+                    {allWebsites.map((w, i) => (
+                      <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1 text-sm font-medium text-violet-500 hover:underline break-all">
-                        <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                          style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         {w.url.replace(/^https?:\/\//, '')}
+                        {!w.isOwner && <span className="text-xs text-gray-400 ml-1">(rep)</span>}
                       </a>
                     ))}
                   </div>

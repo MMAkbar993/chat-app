@@ -109,16 +109,17 @@ export async function getUserById(req, res, next) {
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
 
     const user = result.rows[0]
-    const [socialResult, websitesResult] = await Promise.all([
+    const [socialResult, websitesResult, repWebsitesResult] = await Promise.all([
       query(`SELECT platform, profile_url, username AS social_username FROM social_connections WHERE user_id = $1`, [user.id]),
       query(`SELECT id, url FROM verified_websites WHERE user_id = $1 AND verified = true ORDER BY created_at`, [user.id]),
+      query(`SELECT website_url AS url FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`, [user.id]),
     ])
     const socialMap = {}
     socialResult.rows.forEach((s) => {
       socialMap[`${s.platform}_url`] = s.profile_url || (s.social_username ? `https://${s.platform}.com/${s.social_username}` : null)
     })
 
-    res.json({ user: { ...user, ...socialMap, verified_websites: websitesResult.rows } })
+    res.json({ user: { ...user, ...socialMap, verified_websites: websitesResult.rows, rep_websites: repWebsitesResult.rows } })
   } catch (err) {
     next(err)
   }
@@ -128,16 +129,17 @@ export async function getPublicProfile(req, res, next) {
   try {
     const result = await query(
       `SELECT id, full_name, username, primary_role, avatar_url, display_name, bio,
-              country, kyc_status, created_at
+              country, kyc_status, created_at, website_verified, website_representation_approved
        FROM users WHERE username = $1`,
       [req.params.username]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
 
     const user = result.rows[0]
-    const [socialConnections, websitesResult] = await Promise.all([
+    const [socialConnections, websitesResult, repWebsitesResult] = await Promise.all([
       getPublicSocialConnections(user.id),
       query(`SELECT id, url FROM verified_websites WHERE user_id = $1 AND verified = true ORDER BY created_at`, [user.id]),
+      query(`SELECT website_url AS url FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`, [user.id]),
     ])
 
     res.json({
@@ -151,9 +153,12 @@ export async function getPublicProfile(req, res, next) {
         bio: user.bio,
         country: user.country,
         is_verified: user.kyc_status === 'verified',
+        website_verified: user.website_verified,
+        website_representation_approved: user.website_representation_approved,
         joined: user.created_at,
         social_connections: socialConnections,
         verified_websites: websitesResult.rows,
+        rep_websites: repWebsitesResult.rows,
       },
     })
   } catch (err) {
@@ -373,9 +378,9 @@ export async function transferWebsiteOwnership(req, res, next) {
        ON CONFLICT (user_id, url) DO UPDATE SET verified = true, updated_at = NOW()`,
       [newOwnerId, url]
     )
-    // Mark new owner as website verified
+    // Mark new owner as website verified; clear their rep status since they're now the owner
     await query(
-      `UPDATE users SET website_verified = true,
+      `UPDATE users SET website_verified = true, website_representation_approved = false,
        company_name = COALESCE(company_name, $1), updated_at = NOW() WHERE id = $2`,
       [domainName, newOwnerId]
     )
@@ -384,6 +389,12 @@ export async function transferWebsiteOwnership(req, res, next) {
       `UPDATE website_representation_requests SET owner_id = $1
        WHERE owner_id = $2 AND LOWER(website_url) = LOWER($3)`,
       [newOwnerId, req.user.id, url]
+    )
+    // Remove the self-referential row where new owner is both owner and requester
+    await query(
+      `DELETE FROM website_representation_requests
+       WHERE owner_id = $1 AND requester_id = $1 AND LOWER(website_url) = LOWER($2)`,
+      [newOwnerId, url]
     )
     // Remove current owner's verified_websites entry
     await query(`DELETE FROM verified_websites WHERE id = $1`, [id])
@@ -433,7 +444,7 @@ export async function removeWebsiteVerification(req, res, next) {
         )
         if (otherApprovals.rows.length === 0) {
           await query(
-            `UPDATE users SET website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+            `UPDATE users SET website_representation_approved = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
             [requester_id]
           )
         }
@@ -466,7 +477,7 @@ export async function removeWebsiteVerification(req, res, next) {
 export async function revokeRepresentation(req, res, next) {
   try {
     await query(
-      `UPDATE users SET website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+      `UPDATE users SET website_representation_approved = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
       [req.user.id]
     )
     res.json({ success: true })
@@ -546,10 +557,16 @@ export async function revokeRepresentative(req, res, next) {
        WHERE owner_id = $1 AND requester_id = $2`,
       [req.user.id, userId]
     )
-    await query(
-      `UPDATE users SET website_representation_approved = false, updated_at = NOW() WHERE id = $1`,
+    const otherApprovals = await query(
+      `SELECT id FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`,
       [userId]
     )
+    if (otherApprovals.rows.length === 0) {
+      await query(
+        `UPDATE users SET website_representation_approved = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
+        [userId]
+      )
+    }
     res.json({ success: true })
   } catch (err) {
     next(err)
