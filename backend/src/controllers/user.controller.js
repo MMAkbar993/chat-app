@@ -476,10 +476,25 @@ export async function removeWebsiteVerification(req, res, next) {
 
 export async function revokeRepresentation(req, res, next) {
   try {
+    // Get owners before clearing so we can notify them
+    const ownerships = await query(
+      `SELECT owner_id FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`,
+      [req.user.id]
+    )
     await query(
       `UPDATE users SET website_representation_approved = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
       [req.user.id]
     )
+    await query(
+      `UPDATE website_representation_requests SET status = 'revoked' WHERE requester_id = $1 AND status = 'approved'`,
+      [req.user.id]
+    )
+    const io = getIo()
+    if (io) {
+      ownerships.rows.forEach(({ owner_id }) => {
+        io.to(`user:${owner_id}`).emit('rep-revoked', { requesterId: req.user.id })
+      })
+    }
     res.json({ success: true })
   } catch (err) {
     next(err)
@@ -566,6 +581,10 @@ export async function revokeRepresentative(req, res, next) {
         `UPDATE users SET website_representation_approved = false, company_name = NULL, updated_at = NOW() WHERE id = $1`,
         [userId]
       )
+    }
+    const io = getIo()
+    if (io) {
+      io.to(`user:${userId}`).emit('rep-request-update', { action: 'revoked' })
     }
     res.json({ success: true })
   } catch (err) {
