@@ -65,6 +65,8 @@ export default function ProfileView({ darkMode }) {
     try {
       await revokeRepresentative(userId)
       setRepresentatives((prev) => prev.filter((r) => r.user_id !== userId))
+      // Notify any open ContactDetailModal for this user to re-fetch their profile
+      window.dispatchEvent(new CustomEvent('rep-status-changed', { detail: { userId } }))
     } catch {}
     setRevokingRep(null)
   }
