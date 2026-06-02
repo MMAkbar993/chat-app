@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getUserById, blockUser, unblockUser } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import SocialIcon from '../ui/SocialIcon'
+import { useSocket } from '../../context/SocketContext'
 
 const ROLE_LABELS = {
   affiliate_publisher:  'Affiliate Publisher',
@@ -41,6 +42,7 @@ export default function ContactDetailModal({
   onEdit,
   onBlockToggle,
 }) {
+  const { socket } = useSocket()
   const [profile, setProfile] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirm, setConfirm] = useState(null) // { type: 'block'|'unblock'|'delete' }
@@ -48,14 +50,37 @@ export default function ContactDetailModal({
   const [toast, setToast] = useState(null)
   const menuRef = useRef(null)
 
-  useEffect(() => {
-    if (!contact?.id) return
-    getUserById(contact.id).then((data) => {
+  function refreshProfile(id) {
+    getUserById(id).then((data) => {
       const u = data.user || data
       setProfile(u)
       if (u.is_blocked_by_me) setBlocked(true)
     }).catch(() => {})
+  }
+
+  useEffect(() => {
+    if (!contact?.id) return
+    refreshProfile(contact.id)
   }, [contact?.id])
+
+  // Re-fetch profile when this contact's rep status is revoked (owner-initiated or self-initiated)
+  useEffect(() => {
+    if (!contact?.id) return
+    function onRepStatusChanged({ detail: { userId } }) {
+      if (userId === contact.id) refreshProfile(contact.id)
+    }
+    window.addEventListener('rep-status-changed', onRepStatusChanged)
+    return () => window.removeEventListener('rep-status-changed', onRepStatusChanged)
+  }, [contact?.id])
+
+  useEffect(() => {
+    if (!socket || !contact?.id) return
+    function onRepRevoked({ requesterId }) {
+      if (requesterId === contact.id) refreshProfile(contact.id)
+    }
+    socket.on('rep-revoked', onRepRevoked)
+    return () => socket.off('rep-revoked', onRepRevoked)
+  }, [socket, contact?.id])
 
   useEffect(() => {
     function onClickOutside(e) {
