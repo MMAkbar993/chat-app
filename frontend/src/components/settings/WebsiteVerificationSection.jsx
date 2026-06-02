@@ -68,8 +68,12 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           .catch(() => {})
       }
     }
-    // Real-time: update requester's own pending status when owner decides
-    function onRepUpdate() {
+    // Real-time: update requester's own pending/approved status when owner decides
+    function onRepUpdate({ action } = {}) {
+      if (action === 'revoked') {
+        // Owner removed us — hide the "Authorized Representative" panel immediately
+        setReprRevoked(true)
+      }
       getMyRepresentationStatus()
         .then((d) => setMyPendingRequests(d.requests || []))
         .catch(() => {})

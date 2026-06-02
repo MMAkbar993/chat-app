@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getMyProfile, deactivateAccount, getApprovedRepresentatives, revokeRepresentative } from '../../api/users'
 import { useAuth } from '../../context/AuthContext'
+import { useSocket } from '../../context/SocketContext'
 import client from '../../api/client'
 import SocialIcon from '../ui/SocialIcon'
 
@@ -33,6 +34,7 @@ function Toggle({ on, onClick, disabled }) {
 
 export default function ProfileView({ darkMode }) {
   const { logout } = useAuth()
+  const { socket } = useSocket()
   const [profile, setProfile] = useState(null)
   const [connections, setConnections] = useState([])
   const [deactivating, setDeactivating] = useState(false)
@@ -46,6 +48,16 @@ export default function ProfileView({ darkMode }) {
     client.get('/users/me/social').then(({ data }) => setConnections(data.connections)).catch(() => {})
     getApprovedRepresentatives().then((d) => setRepresentatives(d.representatives || [])).catch(() => {})
   }, [])
+
+  // Real-time: remove rep from list when they revoke themselves
+  useEffect(() => {
+    if (!socket) return
+    function onRepRevoked({ requesterId }) {
+      setRepresentatives((prev) => prev.filter((r) => r.user_id !== requesterId))
+    }
+    socket.on('rep-revoked', onRepRevoked)
+    return () => socket.off('rep-revoked', onRepRevoked)
+  }, [socket])
 
   async function handleRevokeRep(userId) {
     if (!window.confirm("Remove this user's representative access?")) return
