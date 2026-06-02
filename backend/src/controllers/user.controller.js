@@ -590,6 +590,22 @@ export async function getMyRepresentationStatus(req, res, next) {
   }
 }
 
+export async function cancelRepresentationRequest(req, res, next) {
+  try {
+    const { id } = req.params
+    const result = await query(
+      `DELETE FROM website_representation_requests
+       WHERE id = $1 AND requester_id = $2 AND status = 'pending'
+       RETURNING id`,
+      [id, req.user.id]
+    )
+    if (!result.rows[0]) return res.status(404).json({ error: 'Request not found or already processed' })
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function getRepresentationRequests(req, res, next) {
   try {
     // Requests where current user is the owner

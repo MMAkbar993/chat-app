@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
   requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
-  getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus,
+  getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus, cancelRepresentationRequest,
 } from '../../api/users'
 import { useSocket } from '../../context/SocketContext'
 
@@ -26,6 +26,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [removingId, setRemovingId] = useState(null)
   const [revokingRepr, setRevokingRepr] = useState(false)
   const [reprRevoked, setReprRevoked] = useState(false)
+  const [cancellingId, setCancellingId] = useState(null)
   // Transfer/delete dialog
   const [removeDialog, setRemoveDialog] = useState(null) // { id, url, reps }
   const [transferTo, setTransferTo] = useState('')
@@ -194,6 +195,17 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     } catch {}
   }
 
+  async function handleCancelRequest(id) {
+    setCancellingId(id)
+    try {
+      await cancelRepresentationRequest(id)
+      setMyPendingRequests((prev) => prev.filter((r) => r.id !== id))
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to cancel request.')
+    }
+    setCancellingId(null)
+  }
+
   async function handleRevokeRepr() {
     if (!window.confirm('Remove your authorized representative status? This will unlink your profile from the company.')) return
     setRevokingRepr(true)
@@ -318,6 +330,13 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                   Awaiting approval from <span className="font-medium">{ownerName}</span> for{' '}
                   <span className="font-medium">{r.website_url.replace(/^https?:\/\//, '')}</span>
                 </span>
+                <button
+                  onClick={() => handleCancelRequest(r.id)}
+                  disabled={cancellingId === r.id}
+                  className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 shrink-0 font-medium"
+                >
+                  {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
+                </button>
               </div>
             )
           })}

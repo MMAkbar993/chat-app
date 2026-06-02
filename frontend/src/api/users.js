@@ -30,6 +30,7 @@ export const revokeRepresentative = (userId) => client.delete(`/users/me/website
 export const getRepresentationRequests = () => client.get('/users/me/website/representation-requests').then((r) => r.data)
 export const handleRepresentationRequest = (id, action) => client.patch(`/users/me/website/representation-requests/${id}`, { action }).then((r) => r.data)
 export const getMyRepresentationStatus = () => client.get('/users/me/website/my-requests').then((r) => r.data)
+export const cancelRepresentationRequest = (id) => client.delete(`/users/me/website/my-requests/${id}`).then((r) => r.data)
 export const getNotifications = () => client.get('/users/me/notifications').then((r) => r.data)
 export const markNotificationsRead = () => client.patch('/users/me/notifications/read-all').then((r) => r.data)
 export const uploadFile  = (file) => {
