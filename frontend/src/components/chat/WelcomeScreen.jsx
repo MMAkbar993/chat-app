@@ -13,9 +13,15 @@ export default function WelcomeScreen({ darkMode }) {
         <span className="font-semibold">Welcome! {user?.display_name || user?.full_name || user?.username}</span>
         <span>😊</span>
       </div>
-      <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
         Choose a person or group to start chat with them.
       </p>
+      <div className="flex items-center gap-1">
+        <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <span className="text-xs text-gray-400">End-to-end encrypted</span>
+      </div>
     </div>
   )
 }

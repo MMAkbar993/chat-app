@@ -18,6 +18,7 @@ export const deleteConversationApi = (id) => client.delete(`/conversations/${id}
 export const clearMessagesApi     = (id) => client.delete(`/conversations/${id}/messages`).then((r) => r.data)
 export const forwardMessageApi    = (messageId, targetConversationId) =>
   client.post(`/conversations/messages/${messageId}/forward`, { targetConversationId }).then((r) => r.data)
-export const deleteMessageApi     = (id) => client.delete(`/conversations/messages/${id}`).then((r) => r.data)
+export const deleteMessageApi        = (id) => client.delete(`/conversations/messages/${id}`).then((r) => r.data)
+export const deleteMessageForMeApi   = (id) => client.delete(`/conversations/messages/${id}/for-me`).then((r) => r.data)
 export const toggleReactionApi    = (messageId, emoji) =>
   client.post(`/conversations/messages/${messageId}/reactions`, { emoji }).then((r) => r.data)

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
-import { deleteMessageApi } from '../../api/conversations'
+import { deleteMessageApi, deleteMessageForMeApi } from '../../api/conversations'
 import { blockUser, unblockUser, getBlockedUsers, reportUser } from '../../api/users'
 import { getGroup } from '../../api/groups'
 import ConfirmDialog from '../ui/ConfirmDialog'
@@ -80,6 +80,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     sendMessage, typingUsers,
     replyTo, setReplyTo, clearReply,
     toggleConversationFlag, removeConversation, clearConversationMessages,
+    onlineUsers,
   } = useChat()
   const { showToast } = useToast()
   const bottomRef = useRef(null)
@@ -210,6 +211,13 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     } catch {}
   }
 
+  async function handleDeleteMessageForMe(msgId) {
+    try {
+      await deleteMessageForMeApi(msgId)
+      setMessages((prev) => prev.filter((m) => m.id !== msgId))
+    } catch {}
+  }
+
   const items = groupByDate(messages)
 
   return (
@@ -219,13 +227,16 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         {/* Header */}
         <div className={`flex items-center justify-between px-5 py-3 border-b ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+            <button
+              onClick={() => setShowContactInfo((v) => !v)}
+              className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0 hover:ring-2 hover:ring-violet-400 transition-all"
+            >
               {activeConversation.other_user_avatar || activeConversation.avatar_url ? (
                 <img src={activeConversation.other_user_avatar || activeConversation.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 (otherName || '?')[0].toUpperCase()
               )}
-            </div>
+            </button>
             <div className="min-w-0">
               <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName}</p>
               {isGroup ? (
@@ -253,14 +264,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
               ) : (
                 isTyping
                   ? <p className="text-xs text-green-500">typing...</p>
-                  : <p className="text-xs text-green-500">Online</p>
+                  : onlineUsers?.has(activeConversation.other_user_id)
+                    ? <p className="text-xs text-green-500">Online</p>
+                    : <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Offline</p>
               )}
-              <div className="flex items-center gap-1 mt-0.5">
-                <svg className="w-2.5 h-2.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span className={`text-[10px] ${darkMode ? 'text-green-400/70' : 'text-green-600/70'}`}>End-to-end encrypted</span>
-              </div>
             </div>
           </div>
 
@@ -437,6 +444,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                 darkMode={darkMode}
                 onReply={(msg) => setReplyTo(msg)}
                 onDelete={handleDeleteMessage}
+                onDeleteForMe={handleDeleteMessageForMe}
                 searchQuery={searchQuery}
                 isCurrentMatch={item.msg.id === matchIds[searchIndex]}
               />
@@ -465,6 +473,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           isBlocked={isBlocked}
           onBlockChange={setIsBlocked}
           onSearch={() => setShowSearch(true)}
+          isOnline={onlineUsers?.has(activeConversation.other_user_id)}
         />
       )}
       {showContactInfo && isGroup && (
