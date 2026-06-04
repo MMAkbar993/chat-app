@@ -1,0 +1,2 @@
+ALTER TABLE messages DROP COLUMN IF EXISTS deleted_for;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_for UUID[] DEFAULT '{}';

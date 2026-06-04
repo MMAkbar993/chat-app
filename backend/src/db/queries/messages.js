@@ -23,6 +23,7 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
      LEFT JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id AND cp.user_id = $2
      WHERE m.conversation_id = $1
        AND (cp.messages_cleared_at IS NULL OR m.created_at > cp.messages_cleared_at)
+       AND NOT ($2::uuid = ANY(COALESCE(m.deleted_for, '{}')))
        ${beforeFilter}
      ORDER BY m.created_at DESC
      LIMIT $3`,
@@ -82,6 +83,16 @@ export async function deleteMessage(id, userId) {
   const result = await query(
     `UPDATE messages SET is_deleted = true, content = null
      WHERE id = $1 AND sender_id = $2
+     RETURNING id`,
+    [id, userId]
+  )
+  return result.rows[0] || null
+}
+
+export async function deleteMessageForMe(id, userId) {
+  const result = await query(
+    `UPDATE messages SET deleted_for = array_append(COALESCE(deleted_for, '{}'), $2::uuid)
+     WHERE id = $1 AND NOT ($2::uuid = ANY(COALESCE(deleted_for, '{}')))
      RETURNING id`,
     [id, userId]
   )

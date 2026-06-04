@@ -1,4 +1,4 @@
-import { getMessages, getMessageById, createMessage, deleteMessage } from '../db/queries/messages.js'
+import { getMessages, getMessageById, createMessage, deleteMessage, deleteMessageForMe } from '../db/queries/messages.js'
 import { isParticipant, getParticipants } from '../db/queries/conversations.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 import { getIo } from '../socket/index.js'
@@ -123,6 +123,15 @@ export async function removeMessage(req, res, next) {
   try {
     const deleted = await deleteMessage(req.params.id, req.user.id)
     if (!deleted) return res.status(403).json({ error: 'Cannot delete this message' })
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function removeMessageForMe(req, res, next) {
+  try {
+    await deleteMessageForMe(req.params.id, req.user.id)
     res.json({ ok: true })
   } catch (err) {
     next(err)

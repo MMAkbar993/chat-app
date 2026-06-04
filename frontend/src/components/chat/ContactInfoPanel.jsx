@@ -23,13 +23,14 @@ function InfoRow({ label, value, darkMode }) {
   )
 }
 
-export default function ContactInfoPanel({ conversation, darkMode, onClose, onCallStart, isBlocked: isBlockedProp, onBlockChange, onSearch }) {
+export default function ContactInfoPanel({ conversation, darkMode, onClose, onCallStart, isBlocked: isBlockedProp, onBlockChange, onSearch, isOnline }) {
   const { messages, toggleConversationFlag, removeConversation, conversations } = useChat()
   const { showToast } = useToast()
   const [profile, setProfile] = useState(null)
   const [localBlocked, setLocalBlocked] = useState(false)
   const [mediaTab, setMediaTab] = useState(null)
   const [confirm, setConfirm] = useState(null)
+  const [lightboxUrl, setLightboxUrl] = useState(null)
 
   const isBlocked = isBlockedProp !== undefined ? isBlockedProp : localBlocked
   function setIsBlocked(val) {
@@ -81,6 +82,15 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const name = conversation.other_user_display_name || conversation.other_user_name || profile?.display_name || profile?.full_name || 'Unknown'
   const avatar = conversation.other_user_avatar || profile?.avatar_url
 
+  const SOCIAL_DEFS = [
+    { name: 'Facebook',  key: 'facebook_url',  color: 'text-blue-600',  svg: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /> },
+    { name: 'Twitter',   key: 'twitter_url',   color: 'text-sky-500',   svg: <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /> },
+    { name: 'Instagram', key: 'instagram_url', color: 'text-pink-500',  svg: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></> },
+    { name: 'LinkedIn',  key: 'linkedin_url',  color: 'text-blue-700',  svg: <><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></> },
+    { name: 'YouTube',   key: 'youtube_url',   color: 'text-red-600',   svg: <><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z" /><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" /></> },
+  ]
+  const filteredSocials = profile ? SOCIAL_DEFS.filter(({ key }) => profile[key]) : []
+
   const panelBg = darkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-100 text-gray-900'
   const cardBg  = darkMode ? 'bg-gray-800' : 'bg-gray-50'
 
@@ -108,7 +118,10 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
             <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
           </div>
           <p className="font-semibold text-base">{name}</p>
-          <p className="text-xs text-green-500">Online</p>
+          {isOnline
+            ? <p className="text-xs text-green-500">Online</p>
+            : <p className="text-xs text-gray-400">Offline</p>
+          }
         </div>
 
         {/* Action buttons */}
@@ -150,22 +163,26 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
           )}
         </div>
 
-        {/* Social Profiles */}
-        <div className={`rounded-xl p-3 mb-4 ${cardBg}`}>
-          <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Profiles</p>
-          <div className="flex gap-4 justify-center">
-            {[
-              { name: 'Facebook',  color: 'text-blue-600',  svg: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /> },
-              { name: 'Twitter',   color: 'text-sky-500',   svg: <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /> },
-              { name: 'Instagram', color: 'text-pink-500',  svg: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></> },
-              { name: 'LinkedIn',  color: 'text-blue-700',  svg: <><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></> },
-            ].map(({ name: sname, color, svg }) => (
-              <button key={sname} title={sname} className={`w-10 h-10 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-sm ${color}`}>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{svg}</svg>
-              </button>
-            ))}
+        {/* Social Profiles — only shown when the user has at least one connected account */}
+        {filteredSocials.length > 0 && (
+          <div className={`rounded-xl p-3 mb-4 ${cardBg}`}>
+            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Profiles</p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {filteredSocials.map(({ name: sname, key, color, svg }) => (
+                <a
+                  key={sname}
+                  href={profile[key]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={sname}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-sm ${color} hover:opacity-80 transition-opacity`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{svg}</svg>
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Media Details */}
         <div className={`rounded-xl mb-4 overflow-hidden ${cardBg}`}>
@@ -194,7 +211,9 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
               {mediaTab === key && key === 'photos' && photos.length > 0 && (
                 <div className="grid grid-cols-3 gap-1 p-2">
                   {photos.slice(0, 9).map((m) => (
-                    <img key={m.id} src={m.media_url} alt="" className="w-full h-16 object-cover rounded" />
+                    <button key={m.id} onClick={() => setLightboxUrl(m.media_url)} className="w-full h-16 overflow-hidden rounded focus:outline-none">
+                      <img src={m.media_url} alt="" className="w-full h-full object-cover hover:opacity-80 transition-opacity" />
+                    </button>
                   ))}
                 </div>
               )}
@@ -282,6 +301,29 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
           ))}
         </div>
       </div>
+
+      {/* Photo lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* Report prompt */}
       {showReportPrompt && (

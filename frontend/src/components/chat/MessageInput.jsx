@@ -25,6 +25,9 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
 
   function handleChange(e) {
     setText(e.target.value)
+    const el = e.target
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
     if (!typingRef.current) {
       typingRef.current = true
       socket?.emit('typing', { conversationId })
@@ -47,6 +50,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     if (getNotifPrefs().sound !== false) playSentSound()
     onSend(content, 'text', replyTo?.id || null)
     setText('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
     onClearReply?.()
     socket?.emit('stop-typing', { conversationId })
     typingRef.current = false
@@ -158,7 +162,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
             <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Recording voice message...</span>
           </div>
         ) : (
-          <div className={`flex-1 flex items-center gap-2 rounded-2xl px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+          <div className={`flex-1 flex items-end gap-2 rounded-2xl px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
             <textarea
               ref={textareaRef}
               rows={1}
@@ -166,7 +170,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
               onChange={handleChange}
               onKeyDown={handleKey}
               placeholder="Type Your Message"
-              className={`flex-1 bg-transparent resize-none outline-none text-sm max-h-32 ${
+              className={`flex-1 bg-transparent resize-none outline-none text-sm max-h-32 overflow-y-auto leading-5 py-0.5 ${
                 darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'
               }`}
             />

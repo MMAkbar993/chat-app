@@ -47,7 +47,7 @@ function highlightText(text, query) {
   )
 }
 
-export default function MessageBubble({ msg, darkMode, onReply, onDelete, searchQuery, isCurrentMatch }) {
+export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
   const { user } = useAuth()
   const { socket } = useSocket()
   const isMe = msg.sender_id === user?.id
@@ -205,6 +205,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, search
               onForward={() => setShowForward(true)}
               onCopy={handleCopy}
               onDelete={() => onDelete?.(msg.id)}
+              onDeleteForMe={() => onDeleteForMe?.(msg.id)}
             />
           )}
         </div>
