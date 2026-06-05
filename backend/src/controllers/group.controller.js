@@ -8,6 +8,7 @@ import {
   getConversationById,
   getConversationsForUser,
 } from '../db/queries/conversations.js'
+import { getIo } from '../socket/index.js'
 
 export async function listGroups(req, res, next) {
   try {
@@ -76,6 +77,8 @@ export async function addMember(req, res, next) {
   try {
     const { userId } = req.body
     await addParticipant(req.params.id, userId)
+    const io = getIo()
+    if (io) io.to(`user:${userId}`).emit('reload-conversations')
     res.json({ ok: true })
   } catch (err) {
     next(err)
@@ -84,7 +87,11 @@ export async function addMember(req, res, next) {
 
 export async function removeMember(req, res, next) {
   try {
-    await removeParticipant(req.params.id, req.params.userId)
+    const conversationId = req.params.id
+    const userId = req.params.userId
+    await removeParticipant(conversationId, userId)
+    const io = getIo()
+    if (io) io.to(`user:${userId}`).emit('conversation-removed', { conversationId })
     res.json({ ok: true })
   } catch (err) {
     next(err)

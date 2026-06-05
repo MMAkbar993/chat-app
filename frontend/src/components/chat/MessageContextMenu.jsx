@@ -12,17 +12,17 @@ export default function MessageContextMenu({ onReply, onForward, onCopy, onDelet
     return () => document.removeEventListener('mousedown', handler)
   }, [onClose])
 
-  const itemClass = `flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition-colors ${
-    darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
+  const itemClass = `flex items-center gap-3 w-full px-3 py-2.5 text-sm text-left transition-colors rounded-xl whitespace-nowrap ${
+    darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
   }`
 
   return (
     <div
       ref={menuRef}
-      className={`absolute z-50 rounded-2xl shadow-xl py-1 ${
+      className={`absolute z-50 rounded-2xl shadow-xl py-1.5 px-1.5 ${
         darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
       } ${isMe ? 'right-0' : 'left-0'} top-0`}
-      style={{ minWidth: '10rem' }}
+      style={{ minWidth: '12rem' }}
     >
       {!showDeleteSub ? (
         <>
@@ -70,7 +70,7 @@ export default function MessageContextMenu({ onReply, onForward, onCopy, onDelet
             </svg>
             Back
           </button>
-          <div className={`my-1 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`} />
+          <div className={`my-1 -mx-1.5 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`} />
           <button
             className={`${itemClass} text-red-500 hover:text-red-600`}
             onClick={() => { onDeleteForMe(); onClose() }}

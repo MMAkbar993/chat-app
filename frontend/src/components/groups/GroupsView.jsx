@@ -66,7 +66,7 @@ function GroupMenu({ darkMode, onClose, onArchive, onMute, onPin, onMarkUnread, 
 export default function GroupsView({ darkMode }) {
   const {
     conversations, openConversation, activeConversation, loadConversations,
-    toggleConversationFlag, removeConversation, markConversationUnread,
+    toggleConversationFlag, removeConversation, dropConversation, markConversationUnread,
   } = useChat()
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
@@ -86,7 +86,7 @@ export default function GroupsView({ darkMode }) {
   async function handleLeave(g) {
     try {
       await client.delete(`/groups/${g.id}/leave`)
-      await loadConversations()
+      dropConversation(g.id)
       showToast('Left the group', 'info')
     } catch {
       showToast('Could not leave group', 'error')
