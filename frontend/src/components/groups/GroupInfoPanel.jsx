@@ -37,7 +37,7 @@ function Accordion({ title, count, darkMode, children }) {
 
 export default function GroupInfoPanel({ conversation, darkMode, onClose, onCallStart, onSearch }) {
   const { user } = useAuth()
-  const { messages, toggleConversationFlag, removeConversation } = useChat()
+  const { messages, toggleConversationFlag, removeConversation, dropConversation } = useChat()
   const { showToast } = useToast()
 
   const [participants, setParticipants] = useState([])
@@ -89,7 +89,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   async function handleLeave() {
     try {
       await client.delete(`/groups/${conversation.id}/leave`)
-      removeConversation(conversation.id)
+      dropConversation(conversation.id)
       onClose()
       showToast('Left the group', 'info')
     } catch {

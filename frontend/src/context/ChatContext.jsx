@@ -132,12 +132,21 @@ export function ChatProvider({ children }) {
   const removeConversation = useCallback(async (id) => {
     try {
       await deleteConversationApi(id)
-      setConversations((prev) => prev.map((c) => c.id === id ? { ...c, is_deleted: true } : c))
-      if (activeConvRef.current?.id === id) {
-        setActiveConversation(null)
-        setMessages([])
-      }
     } catch {}
+    setConversations((prev) => prev.map((c) => c.id === id ? { ...c, is_deleted: true } : c))
+    if (activeConvRef.current?.id === id) {
+      setActiveConversation(null)
+      setMessages([])
+    }
+  }, [])
+
+  // Drop a conversation from local state immediately without calling the delete API
+  const dropConversation = useCallback((id) => {
+    setConversations((prev) => prev.filter((c) => c.id !== id))
+    if (activeConvRef.current?.id === id) {
+      setActiveConversation(null)
+      setMessages([])
+    }
   }, [])
 
   const markConversationUnread = useCallback(async (id) => {
@@ -244,6 +253,16 @@ export function ChatProvider({ children }) {
 
     const onOnlineList = ({ userIds }) => setOnlineUsers(new Set(userIds))
 
+    const onReloadConversations = () => loadConversations()
+
+    const onConversationRemoved = ({ conversationId }) => {
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId))
+      if (activeConvRef.current?.id === conversationId) {
+        setActiveConversation(null)
+        setMessages([])
+      }
+    }
+
     socket.on('new-message', onNewMessage)
     socket.on('user-typing', onTyping)
     socket.on('user-stop-typing', onStopTyping)
@@ -251,6 +270,8 @@ export function ChatProvider({ children }) {
     socket.on('message-status-updated', onMessageStatusUpdated)
     socket.on('user-presence', onPresence)
     socket.on('online-users', onOnlineList)
+    socket.on('reload-conversations', onReloadConversations)
+    socket.on('conversation-removed', onConversationRemoved)
     socket.emit('get-online-users')
 
     return () => {
@@ -261,6 +282,8 @@ export function ChatProvider({ children }) {
       socket.off('message-status-updated', onMessageStatusUpdated)
       socket.off('user-presence', onPresence)
       socket.off('online-users', onOnlineList)
+      socket.off('reload-conversations', onReloadConversations)
+      socket.off('conversation-removed', onConversationRemoved)
     }
   }, [socket, loadConversations])
 
@@ -273,7 +296,7 @@ export function ChatProvider({ children }) {
       sendMessage,
       typingUsers,
       replyTo, setReplyTo, clearReply,
-      toggleConversationFlag, removeConversation, clearConversationMessages, markConversationUnread,
+      toggleConversationFlag, removeConversation, dropConversation, clearConversationMessages, markConversationUnread,
       onlineUsers,
     }}>
       {children}

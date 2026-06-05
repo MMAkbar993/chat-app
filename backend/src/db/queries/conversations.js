@@ -28,6 +28,9 @@ export async function getConversationsForUser(userId) {
      LEFT JOIN conversation_participants cp2 ON cp2.conversation_id = c.id AND cp2.user_id != $1 AND c.type = 'direct'
      LEFT JOIN users other_user ON other_user.id = cp2.user_id
      LEFT JOIN messages unread ON unread.conversation_id = c.id AND unread.sender_id != $1
+     WHERE (c.type != 'direct' OR NOT EXISTS (
+       SELECT 1 FROM blocked_users WHERE blocker_id = $1 AND blocked_id = other_user.id
+     ))
      GROUP BY c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at,
               m.id, m.content, m.message_type, m.created_at, m.status, m.sender_id, sender.full_name, cp.last_read_at,
               cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted, cp.is_deleted,

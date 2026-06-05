@@ -24,7 +24,7 @@ function InfoRow({ label, value, darkMode }) {
 }
 
 export default function ContactInfoPanel({ conversation, darkMode, onClose, onCallStart, isBlocked: isBlockedProp, onBlockChange, onSearch, isOnline }) {
-  const { messages, toggleConversationFlag, removeConversation, conversations } = useChat()
+  const { messages, toggleConversationFlag, removeConversation, dropConversation, conversations } = useChat()
   const { showToast } = useToast()
   const [profile, setProfile] = useState(null)
   const [localBlocked, setLocalBlocked] = useState(false)
@@ -65,6 +65,8 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
         await blockUser(otherUserId)
         setIsBlocked(true)
         showToast('User blocked', 'warning')
+        dropConversation(conversation.id)
+        onClose()
       }
     } catch {}
   }
@@ -115,7 +117,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
                 ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                 : (name || '?')[0].toUpperCase()}
             </div>
-            <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+            <span className={`absolute bottom-1 right-1 w-3.5 h-3.5 border-2 border-white rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
           </div>
           <p className="font-semibold text-base">{name}</p>
           {isOnline

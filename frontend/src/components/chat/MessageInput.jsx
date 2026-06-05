@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSocket } from '../../context/SocketContext'
 import { uploadFile } from '../../api/users'
 import AttachmentMenu from './AttachmentMenu'
@@ -14,7 +14,15 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   const [recording, setRecording] = useState(false)
-  const [recordSecs, setRecordSecs] = useState(0)
+  const [recordSecs, setRecordSecs] = useState(false)
+
+  // Preview state
+  const [preview, setPreview] = useState(null) // { url, file, duration }
+  const [playing, setPlaying] = useState(false)
+  const [playProgress, setPlayProgress] = useState(0)
+  const [sending, setSending] = useState(false)
+  const audioRef = useRef(null)
+
   const { socket } = useSocket()
   const typingRef = useRef(false)
   const typingTimerRef = useRef(null)
@@ -22,6 +30,22 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   const mediaRecorderRef = useRef(null)
   const chunksRef = useRef([])
   const recordTimerRef = useRef(null)
+
+  // Sync audio element events
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    function onTimeUpdate() {
+      setPlayProgress(el.duration ? el.currentTime / el.duration : 0)
+    }
+    function onEnded() { setPlaying(false); setPlayProgress(0) }
+    el.addEventListener('timeupdate', onTimeUpdate)
+    el.addEventListener('ended', onEnded)
+    return () => {
+      el.removeEventListener('timeupdate', onTimeUpdate)
+      el.removeEventListener('ended', onEnded)
+    }
+  }, [preview])
 
   function handleChange(e) {
     setText(e.target.value)
@@ -89,16 +113,14 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       mediaRecorderRef.current = mr
       chunksRef.current = []
       mr.ondataavailable = (e) => chunksRef.current.push(e.data)
-      mr.onstop = async () => {
+      mr.onstop = () => {
         stream.getTracks().forEach((t) => t.stop())
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' })
-        try {
-          const { fileUrl, messageType } = await uploadFile(file)
-          if (getNotifPrefs().sound !== false) playSentSound()
-          onSend(fileUrl, messageType || 'audio', replyTo?.id || null)
-          onClearReply?.()
-        } catch {}
+        const url = URL.createObjectURL(blob)
+        setPreview({ url, file, duration: recordSecs })
+        setRecording(false)
+        setRecordSecs(0)
       }
       mr.start()
       setRecording(true)
@@ -110,8 +132,34 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   function stopRecording() {
     mediaRecorderRef.current?.stop()
     clearInterval(recordTimerRef.current)
-    setRecording(false)
-    setRecordSecs(0)
+  }
+
+  function discardPreview() {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
+    if (preview?.url) URL.revokeObjectURL(preview.url)
+    setPreview(null)
+    setPlaying(false)
+    setPlayProgress(0)
+  }
+
+  function togglePlay() {
+    const el = audioRef.current
+    if (!el) return
+    if (playing) { el.pause(); setPlaying(false) }
+    else { el.play(); setPlaying(true) }
+  }
+
+  async function sendPreview() {
+    if (!preview) return
+    setSending(true)
+    try {
+      const { fileUrl, messageType } = await uploadFile(preview.file)
+      if (getNotifPrefs().sound !== false) playSentSound()
+      onSend(fileUrl, messageType || 'audio', replyTo?.id || null)
+      onClearReply?.()
+      discardPreview()
+    } catch {}
+    setSending(false)
   }
 
   return (
@@ -161,6 +209,43 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
             <span className={`text-sm font-mono tabular-nums ${darkMode ? 'text-white' : 'text-gray-800'}`}>{formatSecs(recordSecs)}</span>
             <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Recording voice message...</span>
           </div>
+        ) : preview ? (
+          /* ── Voice preview bar ── */
+          <div className={`flex-1 flex items-center gap-2 rounded-2xl px-3 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            {/* hidden audio element */}
+            <audio ref={audioRef} src={preview.url} preload="auto" />
+
+            {/* Play / Pause */}
+            <button type="button" onClick={togglePlay}
+              className="w-8 h-8 rounded-full bg-violet-500 hover:bg-violet-600 flex items-center justify-center text-white shrink-0 transition-colors">
+              {playing
+                ? <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                : <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              }
+            </button>
+
+            {/* Progress bar */}
+            <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
+              <div
+                className="h-full bg-violet-500 rounded-full transition-all"
+                style={{ width: `${playProgress * 100}%` }}
+              />
+            </div>
+
+            {/* Duration */}
+            <span className={`text-xs tabular-nums shrink-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {formatSecs(preview.duration)}
+            </span>
+
+            {/* Discard */}
+            <button type="button" onClick={discardPreview}
+              className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
+              title="Discard & re-record">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
         ) : (
           <div className={`flex-1 flex items-end gap-2 rounded-2xl px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
             <textarea
@@ -202,34 +287,36 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
           </div>
         )}
 
-        {/* Send / Mic / Stop */}
+        {/* Right action button */}
         {recording ? (
-          <button
-            type="button"
-            onClick={stopRecording}
-            className="w-10 h-10 shrink-0 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors"
-          >
+          <button type="button" onClick={stopRecording}
+            className="w-10 h-10 shrink-0 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <rect x="6" y="6" width="12" height="12" rx="1.5" />
             </svg>
           </button>
+        ) : preview ? (
+          <button type="button" onClick={sendPreview} disabled={sending}
+            className="w-10 h-10 shrink-0 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center text-white transition-colors disabled:opacity-60">
+            {sending
+              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+            }
+          </button>
         ) : text.trim() ? (
-          <button
-            type="submit"
-            className="w-10 h-10 shrink-0 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center text-white transition-colors"
-          >
+          <button type="submit"
+            className="w-10 h-10 shrink-0 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center text-white transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={startRecording}
+          <button type="button" onClick={startRecording}
             className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors ${
               darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
-            }`}
-          >
+            }`}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>

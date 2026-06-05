@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { getNotifications, markNotificationsRead } from '../../api/users'
+import UserProfileModal from '../ui/UserProfileModal'
 
 const NAV = [
   { key: 'chats', label: 'Chats', icon: (
@@ -56,6 +57,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
   const { socket } = useSocket()
   const [notifications, setNotifications] = useState([])
   const [showPanel, setShowPanel] = useState(false)
+  const [showOwnProfile, setShowOwnProfile] = useState(false)
   const panelRef = useRef(null)
 
   const unread = notifications.filter((n) => !n.read).length
@@ -95,6 +97,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
   }
 
   return (
+    <>
     <aside className={`w-16 flex flex-col items-center py-4 gap-1 border-r relative ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Logo */}
       <div className="mb-4">
@@ -193,7 +196,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
       </button>
 
       {/* Avatar */}
-      <button onClick={() => onNav('profile')} className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 hover:border-violet-400 transition-colors">
+      <button onClick={() => setShowOwnProfile(true)} className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 hover:border-violet-400 transition-colors">
         {user?.avatar_url ? (
           <img src={user.avatar_url} alt="me" className="w-full h-full object-cover" />
         ) : (
@@ -203,5 +206,15 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
         )}
       </button>
     </aside>
+
+    {showOwnProfile && (
+      <UserProfileModal
+        isSelf
+        darkMode={darkMode}
+        onClose={() => setShowOwnProfile(false)}
+        onNav={(key) => { onNav(key); setShowOwnProfile(false) }}
+      />
+    )}
+    </>
   )
 }

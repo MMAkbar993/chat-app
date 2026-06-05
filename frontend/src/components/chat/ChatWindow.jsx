@@ -11,6 +11,7 @@ import MessageInput from './MessageInput'
 import ContactInfoPanel from './ContactInfoPanel'
 import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
+import UserProfileModal from '../ui/UserProfileModal'
 
 function formatDuration(secs) {
   if (!secs) return ''
@@ -88,6 +89,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const tempMediaRef = useRef(null)
   const scrolledForConvRef = useRef(null)
   const [showContactInfo, setShowContactInfo] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
   const [isBlocked, setIsBlocked] = useState(false)
   const [groupParticipants, setGroupParticipants] = useState([])
@@ -228,7 +230,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         <div className={`flex items-center justify-between px-5 py-3 border-b ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => setShowContactInfo((v) => !v)}
+              onClick={() => setShowProfileModal(true)}
               className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0 hover:ring-2 hover:ring-violet-400 transition-all"
             >
               {activeConversation.other_user_avatar || activeConversation.avatar_url ? (
@@ -483,6 +485,17 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           onClose={() => setShowContactInfo(false)}
           onCallStart={onCallStart}
           onSearch={() => setShowSearch(true)}
+        />
+      )}
+
+      {/* Profile popup modal */}
+      {showProfileModal && !isGroup && (
+        <UserProfileModal
+          userId={activeConversation.other_user_id}
+          isOnline={onlineUsers?.has(activeConversation.other_user_id)}
+          darkMode={darkMode}
+          onClose={() => setShowProfileModal(false)}
+          onCallStart={onCallStart}
         />
       )}
 
