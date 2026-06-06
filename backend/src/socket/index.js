@@ -8,7 +8,8 @@ import { findUserById } from '../db/queries/users.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 
 let io = null
-const onlineUsers = new Map() // userId → socket count
+const onlineUsers = new Map()     // userId → socket count
+const groupCallRooms = new Map()  // callId → Map<userId, { name, avatar }>
 
 function groupBySender(rows) {
   const map = {}
@@ -146,9 +147,13 @@ export function initSocket(httpServer) {
       try {
         if (!targetUserId && conversationId) {
           // Group call: ring all participants
-          const participants = await getParticipants(conversationId)
+          const [participants, convResult, caller] = await Promise.all([
+            getParticipants(conversationId),
+            query('SELECT name FROM conversations WHERE id = $1', [conversationId]),
+            findUserById(userId),
+          ])
+          const conversationName = convResult.rows[0]?.name || 'Group'
           const call = await createCall({ callerId: userId, calleeId: null, conversationId, callType })
-          const caller = await findUserById(userId)
           socket.emit('call-created', { call })
           participants
             .filter((p) => p.id !== userId)
@@ -158,6 +163,8 @@ export function initSocket(httpServer) {
                 callerId: userId,
                 callType,
                 conversationId,
+                isGroup: true,
+                conversationName,
                 callerName: caller?.display_name || caller?.full_name || 'Unknown',
                 callerAvatar: caller?.avatar_url || null,
               })
@@ -239,6 +246,60 @@ export function initSocket(httpServer) {
       io.to(`user:${targetUserId}`).emit('webrtc-ice-candidate', { callId, candidate })
     })
 
+    // --- Group Call Room ---
+
+    socket.on('group-call-join', async ({ callId, conversationId }) => {
+      try {
+        const user = await findUserById(userId)
+        const userInfo = {
+          name: user?.display_name || user?.full_name || 'Unknown',
+          avatar: user?.avatar_url || null,
+        }
+
+        if (!groupCallRooms.has(callId)) groupCallRooms.set(callId, new Map())
+        const room = groupCallRooms.get(callId)
+
+        // Send current participants back to the joiner
+        const currentParticipants = Array.from(room.entries()).map(([uid, info]) => ({ id: uid, ...info }))
+        socket.emit('group-call-joined', { callId, participants: currentParticipants })
+
+        // Notify everyone already in the room
+        socket.to(`groupCall:${callId}`).emit('group-call-user-joined', {
+          callId,
+          user: { id: userId, ...userInfo },
+        })
+
+        // Add to room and join the socket room
+        room.set(userId, userInfo)
+        socket.join(`groupCall:${callId}`)
+      } catch (err) {
+        console.error('group-call-join error:', err)
+      }
+    })
+
+    socket.on('group-call-leave', ({ callId }) => {
+      const room = groupCallRooms.get(callId)
+      if (room) {
+        room.delete(userId)
+        if (room.size === 0) groupCallRooms.delete(callId)
+      }
+      socket.leave(`groupCall:${callId}`)
+      socket.to(`groupCall:${callId}`).emit('group-call-user-left', { callId, userId })
+    })
+
+    // Point-to-point WebRTC relay within a group call
+    socket.on('group-webrtc-offer', ({ callId, targetUserId, offer }) => {
+      io.to(`user:${targetUserId}`).emit('group-webrtc-offer', { callId, fromUserId: userId, offer })
+    })
+
+    socket.on('group-webrtc-answer', ({ callId, targetUserId, answer }) => {
+      io.to(`user:${targetUserId}`).emit('group-webrtc-answer', { callId, fromUserId: userId, answer })
+    })
+
+    socket.on('group-webrtc-ice', ({ callId, targetUserId, candidate }) => {
+      io.to(`user:${targetUserId}`).emit('group-webrtc-ice', { callId, fromUserId: userId, candidate })
+    })
+
     // Emit current online list to the newly connected user
     socket.emit('online-users', { userIds: Array.from(onlineUsers.keys()) })
     // Broadcast this user coming online to everyone else
@@ -256,6 +317,14 @@ export function initSocket(httpServer) {
       } else {
         onlineUsers.set(userId, count - 1)
       }
+      // Clean up any group call rooms this user was in
+      groupCallRooms.forEach((room, callId) => {
+        if (room.has(userId)) {
+          room.delete(userId)
+          socket.to(`groupCall:${callId}`).emit('group-call-user-left', { callId, userId })
+          if (room.size === 0) groupCallRooms.delete(callId)
+        }
+      })
     })
   })
 

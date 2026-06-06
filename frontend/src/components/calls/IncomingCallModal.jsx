@@ -16,9 +16,16 @@ export default function IncomingCallModal({ call, darkMode, onAccept, onReject }
           }
         </div>
         <div className="text-center">
-          <p className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>{call.callerName || 'Unknown'}</p>
+          <p className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            {call.isGroup ? (call.conversationName || 'Group Call') : (call.callerName || 'Unknown')}
+          </p>
+          {call.isGroup && (
+            <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              Started by {call.callerName}
+            </p>
+          )}
           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Incoming {call.callType === 'video' ? 'video' : 'voice'} call...
+            Incoming group {call.callType === 'video' ? 'video' : 'voice'} call…
           </p>
         </div>
         <div className="flex gap-6 mt-2">

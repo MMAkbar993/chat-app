@@ -12,6 +12,31 @@ const FILTERS = [
   { key: 'muted',    label: 'Muted Groups' },
 ]
 
+function formatLastMessage(content, type) {
+  if (!content && type !== 'call') return ' '
+  if (type === 'call') {
+    try {
+      const d = JSON.parse(content || '{}')
+      const kind = d.call_type === 'video' ? 'Video' : 'Audio'
+      if (d.status === 'missed') return `📵 Missed ${kind.toLowerCase()} call`
+      if (d.status === 'ended' && d.duration) {
+        const m = Math.floor(d.duration / 60)
+        const s = d.duration % 60
+        const dur = m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `0:${String(s).padStart(2, '0')}`
+        return `📞 ${kind} call · ${dur}`
+      }
+      return `📞 ${kind} call`
+    } catch {
+      return '📞 Call'
+    }
+  }
+  if (type === 'image') return '📷 Photo'
+  if (type === 'video') return '🎥 Video'
+  if (type === 'audio') return '🎤 Voice message'
+  if (type === 'file') return '📎 File'
+  return content || ' '
+}
+
 function formatDate(ts) {
   if (!ts) return ''
   const d = new Date(ts)
@@ -254,7 +279,7 @@ export default function GroupsView({ darkMode }) {
                     <span className={`text-xs shrink-0 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(g.last_message_at || g.updated_at)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs truncate ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{g.last_message || ' '}</span>
+                    <span className={`text-xs truncate ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(g.last_message, g.last_message_type)}</span>
                     {g.unread_count > 0 && (
                       <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                         {g.unread_count}

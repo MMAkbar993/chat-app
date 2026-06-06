@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { clearAllChats, deleteAllChats } from '../../api/users'
+import { deleteAllChats } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 
 function Toggle({ on, onClick }) {
@@ -18,7 +18,6 @@ function Toggle({ on, onClick }) {
 }
 
 export default function ChatSection({ darkMode }) {
-  const [clearPref, setClearPref] = useState(false)
   const [backup, setBackup] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -31,20 +30,6 @@ export default function ChatSection({ darkMode }) {
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
-  }
-
-  async function handleClearToggle() {
-    const next = !clearPref
-    setClearPref(next)
-    if (next) {
-      try {
-        await clearAllChats()
-        showToast('Chat list cleared from view.')
-      } catch {
-        setClearPref(false)
-        showToast('Could not clear chats.', 'error')
-      }
-    }
   }
 
   async function handleDeleteConfirm() {
@@ -68,18 +53,6 @@ export default function ChatSection({ darkMode }) {
           {toast.msg}
         </div>
       )}
-
-      <div className={divider}>
-        <div className="flex items-start justify-between gap-3 py-3">
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${text}`}>Clear All Chat</p>
-            <p className={`text-xs mt-0.5 ${sub}`}>
-              Saves your preference to clear chat list from view.
-            </p>
-          </div>
-          <Toggle on={clearPref} onClick={handleClearToggle} />
-        </div>
-      </div>
 
       <div className={divider}>
         <div className="flex items-start justify-between gap-3 py-3">
