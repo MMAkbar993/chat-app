@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import client from '../api/client'
+import { useAuth } from '../context/AuthContext'
+import { addContact } from '../api/contacts'
 
 const PLATFORM_META = {
   linkedin:           { label: 'LinkedIn',          color: '#0A66C2', icon: 'in' },
@@ -31,9 +33,12 @@ const ROLE_LABELS = {
 
 export default function PublicProfilePage() {
   const { username } = useParams()
+  const navigate = useNavigate()
+  const { user: authUser, loading: authLoading } = useAuth()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [addStatus, setAddStatus] = useState('idle') // idle | loading | added | already | error
 
   useEffect(() => {
     client.get(`/users/profile/${username}`)
@@ -43,6 +48,26 @@ export default function PublicProfilePage() {
       })
       .finally(() => setLoading(false))
   }, [username])
+
+  async function handleConnect() {
+    if (!authUser) {
+      navigate(`/login?next=/u/${username}`)
+      return
+    }
+    setAddStatus('loading')
+    try {
+      await addContact(user.id)
+      setAddStatus('added')
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setAddStatus('already')
+      } else {
+        setAddStatus('error')
+      }
+    }
+  }
+
+  const isSelf = authUser && user && authUser.id === user.id
 
   if (loading) {
     return (
@@ -73,7 +98,10 @@ export default function PublicProfilePage() {
           <Link to="/">
             <img src="/full-logo.png" alt="ConnectAR" className="h-8" />
           </Link>
-          <Link to="/login" className="text-sm text-violet-600 hover:underline font-medium">Sign In</Link>
+          {authUser
+            ? <Link to="/chat" className="text-sm text-violet-600 hover:underline font-medium">Go to App</Link>
+            : <Link to={`/login?next=/u/${username}`} className="text-sm text-violet-600 hover:underline font-medium">Sign In</Link>
+          }
         </div>
       </header>
 
@@ -208,9 +236,54 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-gray-400 mt-8">
-          <Link to="/signup" className="text-violet-600 hover:underline">Join ConnectAR</Link> to connect with {user.display_name || user.full_name}
-        </p>
+        {/* Connect CTA */}
+        <div className="mt-6 flex flex-col items-center gap-3">
+          {!isSelf && (
+            <>
+              {addStatus === 'added' ? (
+                <div className="flex items-center gap-2 text-green-600 font-medium text-sm">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Contact added! <Link to="/chat" className="text-violet-600 hover:underline">Open Pulse</Link>
+                </div>
+              ) : addStatus === 'already' ? (
+                <div className="flex items-center gap-2 text-violet-600 font-medium text-sm">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Already connected — <Link to="/chat" className="hover:underline">Open Pulse</Link>
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnect}
+                  disabled={addStatus === 'loading' || authLoading}
+                  className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-colors shadow-sm"
+                >
+                  {addStatus === 'loading' ? (
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                  )}
+                  {authUser ? 'Connect on Pulse' : 'Sign in to Connect'}
+                </button>
+              )}
+              {addStatus === 'error' && (
+                <p className="text-xs text-red-500">Something went wrong. Please try again.</p>
+              )}
+              {!authUser && (
+                <p className="text-xs text-gray-400">
+                  New here? <Link to={`/signup?next=/u/${username}`} className="text-violet-600 hover:underline">Create a free account</Link>
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </main>
     </div>
   )

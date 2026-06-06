@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import AuthLayout from '../components/layout/AuthLayout'
 import Input from '../components/ui/Input'
@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext'
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const nextPath = searchParams.get('next') || null
   const [serverError, setServerError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
@@ -31,6 +33,8 @@ export default function LoginPage() {
       const { subscription_status, kyc_status } = res.data.user
       if (subscription_status !== 'active' || kyc_status !== 'verified') {
         navigate('/verify')
+      } else if (nextPath) {
+        navigate(nextPath)
       } else {
         navigate('/dashboard')
       }

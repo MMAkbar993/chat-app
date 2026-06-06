@@ -11,7 +11,7 @@ import MessageInput from './MessageInput'
 import ContactInfoPanel from './ContactInfoPanel'
 import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
-import UserProfileModal from '../ui/UserProfileModal'
+import ContactDetailModal from '../contacts/ContactDetailModal'
 
 function formatDuration(secs) {
   if (!secs) return ''
@@ -490,12 +490,17 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
       {/* Profile popup modal */}
       {showProfileModal && !isGroup && (
-        <UserProfileModal
-          userId={activeConversation.other_user_id}
-          isOnline={onlineUsers?.has(activeConversation.other_user_id)}
+        <ContactDetailModal
+          contact={{
+            id: activeConversation.other_user_id,
+            display_name: activeConversation.other_user_display_name || activeConversation.other_user_name,
+            full_name: activeConversation.other_user_name,
+            avatar_url: activeConversation.other_user_avatar,
+          }}
           darkMode={darkMode}
           onClose={() => setShowProfileModal(false)}
-          onCallStart={onCallStart}
+          onChat={() => setShowProfileModal(false)}
+          onCall={(type) => { setShowProfileModal(false); onCallStart?.(type) }}
         />
       )}
 

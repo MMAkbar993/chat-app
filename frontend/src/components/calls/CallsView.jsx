@@ -32,8 +32,11 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
   }, [])
 
   const filtered = calls.filter((c) => {
-    const other = c.caller_id === user?.id ? c.callee_name : c.caller_name
-    if (search && !(other || '').toLowerCase().includes(search.toLowerCase())) return false
+    const isMe = c.caller_id === user?.id
+    const other = c.conversation_type === 'group'
+      ? (c.conversation_name || '')
+      : (isMe ? c.callee_name : c.caller_name) || ''
+    if (search && !other.toLowerCase().includes(search.toLowerCase())) return false
     if (filter === 'missed') return c.status === 'missed'
     if (filter === 'incoming') return c.callee_id === user?.id
     if (filter === 'outgoing') return c.caller_id === user?.id
@@ -94,8 +97,13 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
       <div className="flex-1 overflow-y-auto">
         {filtered.map((c) => {
           const isMe = c.caller_id === user?.id
-          const otherName = isMe ? c.callee_name : c.caller_name
-          const otherAvatar = isMe ? c.callee_avatar : c.caller_avatar
+          const isGroup = c.conversation_type === 'group'
+          const otherName = isGroup
+            ? (c.conversation_name || 'Group')
+            : (isMe ? c.callee_name : c.caller_name) || 'Unknown'
+          const otherAvatar = isGroup
+            ? c.conversation_avatar
+            : (isMe ? c.callee_avatar : c.caller_avatar)
           const { color, label } = STATUS_ICON[c.status] || STATUS_ICON.missed
 
           return (

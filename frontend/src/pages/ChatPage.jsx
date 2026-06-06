@@ -14,6 +14,7 @@ import SettingsView from '../components/settings/SettingsView'
 import ChatWindow from '../components/chat/ChatWindow'
 import WelcomeScreen from '../components/chat/WelcomeScreen'
 import CallModal from '../components/calls/CallModal'
+import GroupCallModal from '../components/calls/GroupCallModal'
 import CallingCard from '../components/calls/CallingCard'
 import IncomingCallModal from '../components/calls/IncomingCallModal'
 
@@ -80,8 +81,10 @@ export default function ChatPage() {
           ...call,
           calleeId: null,
           calleeName: activeConversation.name || 'Group',
-          calleeAvatar: activeConversation.avatar_url || null,
+          conversationId: activeConversation.id,
           isCaller: true,
+          isGroup: true,
+          status: 'connected',  // skip CallingCard, go straight to GroupCallModal
         })
       })
       return
@@ -117,7 +120,12 @@ export default function ChatPage() {
   function handleAcceptCall() {
     if (!incomingCall) return
     socket?.emit('call-accept', { callId: incomingCall.callId, callerId: incomingCall.callerId })
-    setActiveCall({ ...incomingCall, isCaller: false, status: 'connected' })
+    setActiveCall({
+      ...incomingCall,
+      isCaller: false,
+      status: 'connected',
+      ...(incomingCall.isGroup && { isGroup: true, calleeId: null }),
+    })
     setIncomingCall(null)
   }
 
@@ -170,12 +178,9 @@ export default function ChatPage() {
 
       {/* Active call (connected) */}
       {activeCall && activeCall.status === 'connected' && (
-        <CallModal
-          call={activeCall}
-          darkMode={darkMode}
-          isCaller={activeCall.isCaller}
-          onEnd={() => setActiveCall(null)}
-        />
+        activeCall.isGroup
+          ? <GroupCallModal call={activeCall} darkMode={darkMode} onEnd={() => setActiveCall(null)} />
+          : <CallModal call={activeCall} darkMode={darkMode} isCaller={activeCall.isCaller} onEnd={() => setActiveCall(null)} />
       )}
     </div>
   )
