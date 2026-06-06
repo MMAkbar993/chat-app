@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
-import { getNotifications, markNotificationsRead } from '../../api/users'
+import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
 import UserProfileModal from '../ui/UserProfileModal'
 
 const NAV = [
@@ -58,8 +58,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
   const [notifications, setNotifications] = useState([])
   const [showPanel, setShowPanel] = useState(false)
   const [showOwnProfile, setShowOwnProfile] = useState(false)
-  const panelRef = useRef(null)
-
+  const [clearing, setClearing] = useState(false)
   const unread = notifications.filter((n) => !n.read).length
 
   useEffect(() => {
@@ -77,16 +76,6 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
     return () => socket.off('notification', onNotif)
   }, [socket])
 
-  useEffect(() => {
-    if (!showPanel) return
-    function handleClick(e) {
-      if (panelRef.current && !panelRef.current.contains(e.target)) {
-        setShowPanel(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [showPanel])
 
   function handleOpenPanel() {
     setShowPanel((v) => !v)
@@ -94,6 +83,15 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
       markNotificationsRead().catch(() => {})
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
     }
+  }
+
+  async function handleClear() {
+    setClearing(true)
+    try {
+      await clearNotifications()
+      setNotifications([])
+    } catch {}
+    setClearing(false)
   }
 
   return (
@@ -126,55 +124,23 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
       <div className="flex-1" />
 
       {/* Notification bell */}
-      <div className="relative" ref={panelRef}>
-        <button
-          title="Notifications"
-          onClick={handleOpenPanel}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors mb-1 relative ${
-            darkMode ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
-          }`}
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          {unread > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-              {unread > 9 ? '9+' : unread}
-            </span>
-          )}
-        </button>
-
-        {showPanel && (
-          <div className={`absolute bottom-12 left-14 w-80 rounded-2xl shadow-2xl border overflow-hidden z-50 ${
-            darkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-100 text-gray-900'
-          }`}>
-            <div className={`px-4 py-3 border-b font-semibold text-sm ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-              Notifications
-            </div>
-            <div className="max-h-80 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <p className={`text-xs text-center py-8 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>No notifications yet</p>
-              ) : notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`px-4 py-3 border-b last:border-0 flex gap-3 items-start ${
-                    darkMode ? 'border-gray-800' : 'border-gray-50'
-                  } ${!n.read ? (darkMode ? 'bg-violet-900/20' : 'bg-violet-50') : ''}`}
-                >
-                  <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-violet-500' : 'bg-transparent'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                      {formatNotif(n)}
-                    </p>
-                    <p className={`text-[10px] mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{timeAgo(n.created_at)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      <button
+        title="Notifications"
+        onClick={handleOpenPanel}
+        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors mb-1 relative ${
+          darkMode ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        {unread > 0 && (
+          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+            {unread > 9 ? '9+' : unread}
+          </span>
         )}
-      </div>
+      </button>
 
       {/* Dark mode */}
       <button
@@ -214,6 +180,76 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
         onClose={() => setShowOwnProfile(false)}
         onNav={(key) => { onNav(key); setShowOwnProfile(false) }}
       />
+    )}
+
+    {/* Notifications modal */}
+    {showPanel && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) setShowPanel(false) }}
+      >
+        <div className={`w-96 max-h-[80vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden ${
+          darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
+        }`}>
+          {/* Header */}
+          <div className={`flex items-center justify-between px-5 py-4 border-b shrink-0 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <h2 className="font-bold text-base">Notifications</h2>
+            <div className="flex items-center gap-2">
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleClear}
+                  disabled={clearing}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                    darkMode ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
+                >
+                  {clearing ? 'Clearing…' : 'Clear feed'}
+                </button>
+              )}
+              <button
+                onClick={() => setShowPanel(false)}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-400 hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Feed */}
+          <div className="flex-1 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <svg className={`w-10 h-10 ${darkMode ? 'text-gray-700' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <p className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={`px-5 py-4 border-b last:border-0 flex gap-3 items-start ${
+                    darkMode ? 'border-gray-800' : 'border-gray-50'
+                  } ${!n.read ? (darkMode ? 'bg-violet-900/20' : 'bg-violet-50') : ''}`}
+                >
+                  <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-violet-500' : 'bg-transparent'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      {formatNotif(n)}
+                    </p>
+                    <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{timeAgo(n.created_at)}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     )}
     </>
   )

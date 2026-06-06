@@ -1,9 +1,16 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import CreateGroupModal from './CreateGroupModal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import client from '../../api/client'
+
+const FILTERS = [
+  { key: 'all',      label: 'All Groups' },
+  { key: 'pinned',   label: 'Pinned Groups' },
+  { key: 'archived', label: 'Archived Groups' },
+  { key: 'muted',    label: 'Muted Groups' },
+]
 
 function formatDate(ts) {
   if (!ts) return ''
@@ -16,30 +23,40 @@ function formatDate(ts) {
   return d.toLocaleDateString()
 }
 
-function GroupMenu({ darkMode, onClose, onArchive, onMute, onPin, onMarkUnread, onLeave, onDelete }) {
+function GroupMenu({ darkMode, onClose, onArchive, onMute, onPin, onMarkUnread, onLeave, onDelete, isArchived, isMuted, isPinned }) {
+  const menuRef = useRef(null)
   const dm = darkMode
   const item = `w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors ${dm ? 'hover:bg-gray-700 text-gray-200' : 'hover:bg-gray-50 text-gray-700'}`
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [onClose])
+
   function wrap(fn) { return () => { fn(); onClose() } }
 
   return (
-    <div className={`absolute right-2 top-10 z-50 w-48 rounded-xl shadow-xl border py-1 ${dm ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div ref={menuRef} className={`absolute right-2 top-10 z-50 w-52 rounded-xl shadow-xl border py-1 ${dm ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
       <button onClick={wrap(onArchive)} className={item}>
         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2L19 8m-9 4v4m4-4v4" />
         </svg>
-        Archive Group
+        {isArchived ? 'Unarchive Group' : 'Archive Group'}
       </button>
       <button onClick={wrap(onMute)} className={item}>
         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        Mute Notification
+        {isMuted ? 'Unmute Notifications' : 'Mute Notifications'}
       </button>
       <button onClick={wrap(onPin)} className={item}>
         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
         </svg>
-        Pin Group
+        {isPinned ? 'Unpin Group' : 'Pin Group'}
       </button>
       <button onClick={wrap(onMarkUnread)} className={item}>
         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,6 +80,43 @@ function GroupMenu({ darkMode, onClose, onArchive, onMute, onPin, onMarkUnread, 
   )
 }
 
+function FilterMenu({ darkMode, currentFilter, onSelect, onClose }) {
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    function handler(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div
+      ref={menuRef}
+      className={`absolute right-0 top-full mt-1 w-48 rounded-2xl shadow-xl py-1 z-50 ${
+        darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
+      }`}
+    >
+      {FILTERS.map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => { onSelect(key); onClose() }}
+          className={`w-full text-left px-4 py-2.5 text-sm transition-colors rounded-lg ${
+            currentFilter === key
+              ? 'bg-violet-600 text-white'
+              : darkMode
+              ? 'text-gray-200 hover:bg-gray-700'
+              : 'text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function GroupsView({ darkMode }) {
   const {
     conversations, openConversation, activeConversation, loadConversations,
@@ -70,13 +124,24 @@ export default function GroupsView({ darkMode }) {
   } = useChat()
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
+  const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [menuGroupId, setMenuGroupId] = useState(null)
   const [hoveredId, setHoveredId] = useState(null)
   const [confirm, setConfirm] = useState(null)
 
+  const currentFilterLabel = FILTERS.find((f) => f.key === filter)?.label || 'All Groups'
+
   const groups = conversations
     .filter((c) => c.type === 'group' && !c.is_deleted)
+    .filter((g) => {
+      if (filter === 'all')      return !g.is_archived
+      if (filter === 'pinned')   return g.is_pinned && !g.is_archived
+      if (filter === 'archived') return g.is_archived
+      if (filter === 'muted')    return g.is_muted && !g.is_archived
+      return true
+    })
     .filter((g) => (g.name || '').toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (a.is_pinned === b.is_pinned) return 0
@@ -122,8 +187,34 @@ export default function GroupsView({ darkMode }) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 mb-2">
-          <span className={`text-xs font-semibold uppercase tracking-wide ${dm ? 'text-gray-500' : 'text-gray-400'}`}>All Groups</span>
+        {/* Filter header */}
+        <div className="px-4 mb-2 flex items-center justify-between">
+          <span className={`text-xs font-semibold uppercase tracking-wide ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+            {currentFilterLabel}
+          </span>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilterMenu((v) => !v)}
+              className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${
+                filter !== 'all'
+                  ? 'text-violet-500'
+                  : dm ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+              }`}
+              title="Filter groups"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+              </svg>
+            </button>
+            {showFilterMenu && (
+              <FilterMenu
+                darkMode={dm}
+                currentFilter={filter}
+                onSelect={setFilter}
+                onClose={() => setShowFilterMenu(false)}
+              />
+            )}
+          </div>
         </div>
 
         {groups.map((g) => {
@@ -141,7 +232,7 @@ export default function GroupsView({ darkMode }) {
                   isActive
                     ? dm ? 'bg-gray-800' : 'bg-violet-50'
                     : dm ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
-                } ${(g.is_archived || g.is_muted) ? 'opacity-60' : ''}`}
+                } ${g.is_muted ? 'opacity-60' : ''}`}
               >
                 <div className="relative w-11 h-11 shrink-0">
                   <div className="w-full h-full rounded-full overflow-hidden">
@@ -189,6 +280,9 @@ export default function GroupsView({ darkMode }) {
               {menuGroupId === g.id && (
                 <GroupMenu
                   darkMode={dm}
+                  isArchived={g.is_archived}
+                  isMuted={g.is_muted}
+                  isPinned={g.is_pinned}
                   onClose={() => setMenuGroupId(null)}
                   onArchive={() => {
                     toggleConversationFlag(g.id, 'is_archived')
@@ -228,7 +322,7 @@ export default function GroupsView({ darkMode }) {
 
         {groups.length === 0 && (
           <p className={`text-sm text-center py-8 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
-            {search ? 'No matches found.' : 'No groups yet'}
+            {search ? 'No matches found.' : filter === 'all' ? 'No groups yet' : `No ${currentFilterLabel.toLowerCase()}`}
           </p>
         )}
       </div>

@@ -31,7 +31,18 @@ export async function getProfile(req, res, next) {
       [req.user.id]
     )
     const extra = ext.rows[0] || {}
-    res.json({ user: { ...user, ...extra } })
+    const [websitesResult, repWebsitesResult] = await Promise.all([
+      query(`SELECT id, url FROM verified_websites WHERE user_id = $1 AND verified = true ORDER BY created_at`, [req.user.id]),
+      query(`SELECT website_url AS url FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`, [req.user.id]),
+    ])
+    res.json({
+      user: {
+        ...user,
+        ...extra,
+        verified_websites: websitesResult.rows,
+        rep_websites: repWebsitesResult.rows,
+      },
+    })
   } catch (err) {
     next(err)
   }
@@ -272,7 +283,7 @@ export async function deleteAllChats(req, res, next) {
       [req.user.id]
     )
     await query(
-      `UPDATE messages SET is_deleted = true, content = NULL, updated_at = NOW()
+      `UPDATE messages SET is_deleted = true, content = NULL
        WHERE sender_id = $1 AND is_deleted = false`,
       [req.user.id]
     )
@@ -758,6 +769,15 @@ export async function markNotificationsRead(req, res, next) {
       `UPDATE notifications SET read = true WHERE user_id = $1`,
       [req.user.id]
     )
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function clearNotifications(req, res, next) {
+  try {
+    await query(`DELETE FROM notifications WHERE user_id = $1`, [req.user.id])
     res.json({ success: true })
   } catch (err) {
     next(err)
