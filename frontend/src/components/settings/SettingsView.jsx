@@ -564,7 +564,6 @@ export default function SettingsView({ darkMode }) {
           title="Profile Info"
           darkMode={dm}
           icon={icon('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z')}
-          defaultOpen
         >
           <ProfileInfoForm profile={profile} darkMode={dm} onSaved={() => showToast('Profile saved.')} />
         </CollapsibleBox>
@@ -582,7 +581,7 @@ export default function SettingsView({ darkMode }) {
           darkMode={dm}
           icon={icon('M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1')}
         >
-          <SocialLinksSection darkMode={dm} onToast={showToast} />
+          <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
         </CollapsibleBox>
 
         {/* ── SECURITY ── */}
@@ -606,22 +605,26 @@ export default function SettingsView({ darkMode }) {
 
         {/* ── CHAT ── */}
         <SectionLabel darkMode={dm}>Chat</SectionLabel>
-        <p className={`text-xs px-1 mb-3 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
-          Chat preferences: clear or delete all conversations, and backup.
-        </p>
-        <div className={`rounded-2xl overflow-hidden mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
-          <div className="px-4">
-            <ChatSection darkMode={dm} />
-          </div>
-        </div>
+        <CollapsibleBox
+          title="Chat"
+          darkMode={dm}
+          icon={icon('M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z')}
+        >
+          <p className={`text-xs mb-3 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+            Chat preferences: clear or delete all conversations, and backup.
+          </p>
+          <ChatSection darkMode={dm} />
+        </CollapsibleBox>
 
         {/* ── NOTIFICATIONS ── */}
         <SectionLabel darkMode={dm}>Notifications</SectionLabel>
-        <div className={`rounded-2xl overflow-hidden mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
-          <div className="px-4">
-            <NotificationsSection darkMode={dm} />
-          </div>
-        </div>
+        <CollapsibleBox
+          title="Notifications"
+          darkMode={dm}
+          icon={icon('M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9')}
+        >
+          <NotificationsSection darkMode={dm} />
+        </CollapsibleBox>
 
         {/* ── MANAGE DEVICE ── */}
         <SectionLabel darkMode={dm}>Manage Device</SectionLabel>
@@ -636,7 +639,12 @@ export default function SettingsView({ darkMode }) {
 
         {/* ── OTHERS ── */}
         <SectionLabel darkMode={dm}>Others</SectionLabel>
-        <div className={`rounded-2xl overflow-hidden mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <CollapsibleBox
+          title="Others"
+          darkMode={dm}
+          icon={icon('M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z')}
+        >
+        <div className="-mx-4 -mt-4 -mb-4">
 
           <ArrowRow
             darkMode={dm}
@@ -703,6 +711,7 @@ export default function SettingsView({ darkMode }) {
             </svg>
           </button>
         </div>
+        </CollapsibleBox>
 
       </div>
 

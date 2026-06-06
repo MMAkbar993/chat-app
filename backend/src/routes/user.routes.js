@@ -11,7 +11,7 @@ import {
   requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
   getApprovedRepresentatives, revokeRepresentative,
   getWebsiteRepresentatives, transferWebsiteOwnership,
-  getNotifications, markNotificationsRead, getMyVerifiedWebsites, revokeRepresentation,
+  getNotifications, markNotificationsRead, clearNotifications, getMyVerifiedWebsites, revokeRepresentation,
   getMyRepresentationStatus, cancelRepresentationRequest,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
@@ -61,6 +61,7 @@ userRouter.get('/me/website/my-requests', getMyRepresentationStatus)
 userRouter.delete('/me/website/my-requests/:id', cancelRepresentationRequest)
 userRouter.get('/me/notifications', getNotifications)
 userRouter.patch('/me/notifications/read-all', markNotificationsRead)
+userRouter.delete('/me/notifications', clearNotifications)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)

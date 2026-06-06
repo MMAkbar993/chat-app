@@ -321,7 +321,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       {myPendingRequests.length > 0 && (
         <div className={`rounded-xl border p-3 space-y-2 ${darkMode ? 'border-yellow-800 bg-yellow-900/20' : 'border-yellow-200 bg-yellow-50'}`}>
           <p className={`text-xs font-semibold ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
-            My Sent Requests — Awaiting Approval
+            Awaiting Approval
           </p>
           {myPendingRequests.map((r) => {
             const ownerName = r.owner_display_name || r.owner_full_name || 'the site owner'

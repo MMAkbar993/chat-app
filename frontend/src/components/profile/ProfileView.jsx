@@ -16,6 +16,22 @@ const PLATFORMS = [
   { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true },
 ]
 
+const ROLE_LABELS = {
+  affiliate_publisher:  'Affiliate Publisher',
+  casino_operator:      'Casino Operator',
+  affiliate_manager:    'Affiliate Manager',
+  game_provider:        'Game Provider',
+  payment_provider:     'Payment Provider',
+  platform_provider:    'Platform Provider',
+  media_seo_agency:     'Media / SEO Agency',
+  event_organizer:      'Event Organizer',
+  influencer_streamer:  'Influencer / Streamer',
+  investor_advisor:     'Investor / Advisor',
+  compliance_legal:     'Compliance & Legal',
+  kyc_aml_provider:     'KYC / AML Provider',
+  other:                'Other',
+}
+
 function Toggle({ on, onClick, disabled }) {
   return (
     <button
@@ -84,15 +100,27 @@ export default function ProfileView({ darkMode }) {
 
   const hasVerified = connections.some((c) => c.platform !== 'linkedin' && c.platform !== 'affiliate_roulette')
 
+  const verifiedWebsites = profile?.verified_websites || []
+  const repWebsites = profile?.rep_websites || []
+  const allWebsites = [
+    ...verifiedWebsites.map((w) => ({ ...w, isOwner: true })),
+    ...repWebsites.map((w) => ({ ...w, isOwner: false })),
+  ]
+
   const infoRows = [
-    { label: 'Name',      value: profile?.display_name || profile?.full_name },
-    { label: 'Username',  value: profile?.username ? `@${profile.username}` : null },
-    { label: 'Role',      value: profile?.primary_role },
-    { label: 'Phone',     value: profile?.phone },
-    { label: 'Gender',    value: profile?.gender },
-    { label: 'Bio',       value: profile?.bio },
-    { label: 'Location',  value: profile?.location || profile?.country },
-    { label: 'Join Date', value: profile?.created_at
+    { label: 'Name',          value: profile?.display_name || profile?.full_name },
+    { label: 'Username',      value: profile?.username ? `@${profile.username}` : null },
+    { label: 'Email',         value: profile?.email },
+    { label: 'Role',          value: ROLE_LABELS[profile?.primary_role] || profile?.primary_role },
+    { label: 'Job Title',     value: profile?.job_title },
+    { label: 'Company',       value: profile?.company_name },
+    { label: 'Phone',         value: profile?.phone },
+    { label: 'Gender',        value: profile?.gender },
+    { label: 'Date of Birth', value: profile?.date_of_birth
+        ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : null },
+    { label: 'Location',      value: profile?.location || profile?.country },
+    { label: 'Join Date',     value: profile?.created_at
         ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : null },
   ]
@@ -150,6 +178,33 @@ export default function ProfileView({ darkMode }) {
           </div>
         </div>
 
+        {/* Websites */}
+        {allWebsites.length > 0 && (
+          <>
+            <h3 className={head}>Websites</h3>
+            <div className={`${card} p-4`}>
+              <div className="space-y-1.5">
+                {allWebsites.map((w, i) => (
+                  <a
+                    key={i}
+                    href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm font-medium text-violet-500 hover:underline break-all"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {w.url.replace(/^https?:\/\//, '')}
+                    {!w.isOwner && <span className={`text-xs ml-1 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>(rep)</span>}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Social Media — only show connected/verified accounts */}
         <h3 className={head}>Social Media</h3>
         <div className={`${card} p-4`}>
@@ -193,8 +248,8 @@ export default function ProfileView({ darkMode }) {
           )}
         </div>
 
-        {/* Authorized Users */}
-        <h3 className={head}>Authorized Users</h3>
+        {/* Authorized Website Reps */}
+        <h3 className={head}>Authorized Website Reps</h3>
         <div className={`${card} p-4`}>
           {representatives.length === 0 ? (
             <p className={`text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`}>

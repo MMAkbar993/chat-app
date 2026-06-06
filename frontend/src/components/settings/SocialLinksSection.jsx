@@ -3,6 +3,14 @@ import client, { getAccessToken } from '../../api/client'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import SocialIcon from '../ui/SocialIcon'
 
+const AFFILIATE_ROULETTE_ROLES = [
+  'affiliate_publisher',
+  'casino_operator',
+  'affiliate_manager',
+  'influencer_streamer',
+  'event_organizer',
+]
+
 const PLATFORMS = [
   { key: 'facebook',           label: 'Facebook' },
   { key: 'instagram',          label: 'Instagram' },
@@ -14,7 +22,7 @@ const PLATFORMS = [
   { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true, affiliateRoulette: true },
 ]
 
-export default function SocialLinksSection({ darkMode, onToast }) {
+export default function SocialLinksSection({ darkMode, onToast, profile }) {
   const [connections, setConnections] = useState([])
   const [loading, setLoading] = useState(true)
   const [disconnecting, setDisconnecting] = useState(null)
@@ -23,6 +31,7 @@ export default function SocialLinksSection({ darkMode, onToast }) {
   const [affiliateRouletteUrl, setAffiliateRouletteUrl] = useState('')
   const [savingAffiliateRoulette, setSavingAffiliateRoulette] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState(null)
+  const [editing, setEditing] = useState(null) // 'linkedin' | 'affiliate_roulette'
 
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
   const text = darkMode ? 'text-white' : 'text-gray-900'
@@ -85,6 +94,7 @@ export default function SocialLinksSection({ darkMode, onToast }) {
         return filtered
       })
       onToast?.('Affiliate Roulette URL saved.')
+      setEditing(null)
     } catch (err) {
       onToast?.(err.response?.data?.error || 'Failed to save Affiliate Roulette URL', 'error')
     }
@@ -101,6 +111,7 @@ export default function SocialLinksSection({ darkMode, onToast }) {
         return filtered
       })
       onToast?.('LinkedIn profile URL saved.')
+      setEditing(null)
     } catch (err) {
       onToast?.(err.response?.data?.error || 'Failed to save LinkedIn URL', 'error')
     }
@@ -108,6 +119,9 @@ export default function SocialLinksSection({ darkMode, onToast }) {
   }
 
   if (loading) return null
+
+  const userRole = profile?.primary_role
+  const showAffiliateRoulette = AFFILIATE_ROULETTE_ROLES.includes(userRole)
 
   const confirmLabel = PLATFORMS.find((p) => p.key === confirmDisconnect)?.label || ''
 
@@ -120,6 +134,8 @@ export default function SocialLinksSection({ darkMode, onToast }) {
 
       <div className="space-y-2">
         {PLATFORMS.map((p) => {
+          if (p.affiliateRoulette && !showAffiliateRoulette) return null
+
           const conn = connections.find((c) => c.platform === p.key)
           const isConnected = !!conn
 
@@ -132,48 +148,84 @@ export default function SocialLinksSection({ darkMode, onToast }) {
             const placeholder = isAR
               ? 'https://affiliateroulette.com/your-listing'
               : 'https://linkedin.com/in/yourname'
-            const hint = isAR
-              ? 'Your Affiliate Roulette listing URL.'
-              : 'Your LinkedIn profile URL (e.g. https://www.linkedin.com/in/yourname).'
-            const tooltipText = isAR
-              ? 'Paste your Affiliate Roulette listing URL to display it on your profile.'
-              : 'LinkedIn does not allow OAuth to verify profile.'
+            const isEditingThis = editing === p.key
+            const savedUrl = conn?.profile_url
 
             return (
-              <div key={p.key} className={`rounded-xl p-3 border ${darkMode ? 'border-gray-600' : 'border-gray-200'} ${rowBg}`}>
-                <div className="flex items-center gap-3 mb-2">
+              <div key={p.key} className={`rounded-xl border ${darkMode ? 'border-gray-600' : 'border-gray-200'} ${rowBg} overflow-hidden`}>
+                {/* Main row — always visible */}
+                <div className="flex items-center gap-3 p-3">
                   <SocialIcon platform={p.key} size={32} />
                   <p className={`text-sm font-medium flex-1 ${text}`}>{p.label}</p>
-                  {isConnected && (
-                    <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Connected</span>
+
+                  {savedUrl && !isEditingThis ? (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Connected</span>
+                      {/* Open URL arrow */}
+                      <a
+                        href={savedUrl.startsWith('http') ? savedUrl : `https://${savedUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-100 text-gray-500'}`}
+                        title={`Open ${p.label}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                      {/* Edit pencil */}
+                      <button
+                        onClick={() => setEditing(p.key)}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-600 text-gray-400' : 'hover:bg-gray-100 text-gray-400'}`}
+                        title="Edit URL"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : !isEditingThis ? (
+                    <button
+                      onClick={() => setEditing(p.key)}
+                      className="text-xs bg-violet-600 hover:bg-violet-700 text-white rounded-lg px-3 py-1 font-medium shrink-0 transition-colors"
+                    >
+                      Add URL
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setEditing(null)}
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-600 text-gray-400' : 'hover:bg-gray-100 text-gray-400'}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   )}
-                  <div className="relative group">
-                    <svg className={`w-3.5 h-3.5 cursor-help ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div className={`absolute right-0 bottom-5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
-                      {tooltipText}
+                </div>
+
+                {/* Inline edit form — only when editing */}
+                {isEditingThis && (
+                  <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-600' : 'border-gray-100'}`}>
+                    <div className="flex gap-2 mt-3">
+                      <input
+                        value={urlValue}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder={placeholder}
+                        autoFocus
+                        className={`flex-1 min-w-0 rounded-xl px-3 py-1.5 text-xs outline-none border focus:ring-2 focus:ring-violet-400 transition-colors ${
+                          darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+                        }`}
+                      />
+                      <button
+                        onClick={saveFn}
+                        disabled={saving}
+                        className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 shrink-0 transition-colors"
+                      >
+                        {saving ? '…' : 'Save'}
+                      </button>
                     </div>
                   </div>
-                </div>
-                <p className={`text-xs mb-2 ${sub}`}>{hint}</p>
-                <div className="flex gap-2">
-                  <input
-                    value={urlValue}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder={placeholder}
-                    className={`flex-1 min-w-0 rounded-xl px-3 py-1.5 text-xs outline-none border ${
-                      darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
-                    }`}
-                  />
-                  <button
-                    onClick={saveFn}
-                    disabled={saving}
-                    className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 shrink-0 transition-colors"
-                  >
-                    {saving ? '…' : 'Save'}
-                  </button>
-                </div>
+                )}
               </div>
             )
           }

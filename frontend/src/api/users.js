@@ -33,6 +33,7 @@ export const getMyRepresentationStatus = () => client.get('/users/me/website/my-
 export const cancelRepresentationRequest = (id) => client.delete(`/users/me/website/my-requests/${id}`).then((r) => r.data)
 export const getNotifications = () => client.get('/users/me/notifications').then((r) => r.data)
 export const markNotificationsRead = () => client.patch('/users/me/notifications/read-all').then((r) => r.data)
+export const clearNotifications = () => client.delete('/users/me/notifications').then((r) => r.data)
 export const uploadFile  = (file) => {
   const form = new FormData()
   form.append('file', file)
