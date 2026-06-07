@@ -81,10 +81,12 @@ export default function ChatPage() {
           ...call,
           calleeId: null,
           calleeName: activeConversation.name || 'Group',
+          calleeAvatar: activeConversation.avatar_url || null,
           conversationId: activeConversation.id,
           isCaller: true,
           isGroup: true,
-          status: 'connected',  // skip CallingCard, go straight to GroupCallModal
+          // no status: 'connected' — CallingCard shows while members ring
+          // GroupCallModal opens when first member accepts (onCallAccepted sets status:'connected')
         })
       })
       return

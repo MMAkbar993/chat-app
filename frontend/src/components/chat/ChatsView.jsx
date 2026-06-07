@@ -154,25 +154,27 @@ export default function ChatsView({ darkMode }) {
         {/* Recent */}
         {!search && conversationFilter === 'all' && recent.length > 0 && (
           <div className="mb-3">
-            <div className="px-4 flex items-center justify-between mb-2">
-              <span className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Recent Chats</span>
+            <div className="px-4 flex items-center justify-between mb-3">
+              <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Recent Chats</span>
             </div>
-            <div className="flex gap-3 px-4 overflow-x-auto pb-2">
+            <div className="flex gap-4 px-4 overflow-x-auto pb-3">
               {recent.map((c) => {
-                const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Unknown')
+                const fullName = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Unknown')
+                const firstName = fullName.split(' ')[0]
                 const avatar = c.other_user_avatar || c.avatar_url
                 return (
                   <button key={c.id} onClick={() => openConversation(c)}
-                    className="flex flex-col items-center gap-1 min-w-13">
-                    <div className="relative shrink-0 w-12 h-12">
-                      <div className="w-full h-full rounded-full overflow-hidden">
+                    className="flex flex-col items-center gap-1.5 min-w-14">
+                    <div className="relative shrink-0 w-14 h-14">
+                      <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-gray-100">
                         {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                          : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold">{(name || '?')[0].toUpperCase()}</div>}
+                          : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-lg">{(fullName || '?')[0].toUpperCase()}</div>}
                       </div>
                       {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                        <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                       )}
                     </div>
+                    <span className={`text-xs font-medium truncate max-w-14 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{firstName}</span>
                   </button>
                 )
               })}
@@ -183,7 +185,7 @@ export default function ChatsView({ darkMode }) {
         {/* All chats */}
         <div>
           <div className="px-4 flex items-center justify-between mb-2">
-            <span className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               {FILTER_LABELS[conversationFilter] || 'All Chats'}
             </span>
             <div className="relative">
