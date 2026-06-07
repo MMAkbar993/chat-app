@@ -1,6 +1,7 @@
 import { Server } from 'socket.io'
 import jwt from 'jsonwebtoken'
 import { config } from '../config/env.js'
+import { query } from '../config/database.js'
 import { createMessage, markMessagesDelivered, markMessagesRead, getMessageById } from '../db/queries/messages.js'
 import { getParticipants, isParticipant, unhideParticipants } from '../db/queries/conversations.js'
 import { createCall, updateCallStatus } from '../db/queries/calls.js'
