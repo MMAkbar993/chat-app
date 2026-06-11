@@ -195,7 +195,23 @@ export async function socialCallback(req, res) {
     }
 
     let tokenData
-    if (platform === 'instagram') {
+    if (platform === 'twitter') {
+      // Twitter OAuth 2.0 Confidential Client requires Basic Auth for token exchange
+      const bodyParams = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: cfg.redirectUri(),
+        code_verifier: pkceVerifier,
+      })
+      const credentials = Buffer.from(`${cfg.clientId()}:${cfg.clientSecret()}`).toString('base64')
+      const response = await axios.post(cfg.tokenUrl, bodyParams.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${credentials}`,
+        },
+      })
+      tokenData = response.data
+    } else if (platform === 'instagram') {
       const form = new URLSearchParams(tokenParams)
       const response = await axios.post(cfg.tokenUrl, form.toString(), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
