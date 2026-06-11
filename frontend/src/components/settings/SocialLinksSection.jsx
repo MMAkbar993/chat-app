@@ -66,7 +66,7 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
   }, [onToast])
 
   function connectPlatform(key) {
-    const apiBase = import.meta.env.VITE_API_URL || window.location.origin.replace(':5173', ':3001')
+    const apiBase = import.meta.env.VITE_API_URL || window.location.origin
     const token = getAccessToken()
     const url = `${apiBase}/api/social/${key}/connect${token ? `?token=${encodeURIComponent(token)}` : ''}`
     window.open(url, 'oauth-connect', 'width=600,height=700,menubar=no,toolbar=no')
