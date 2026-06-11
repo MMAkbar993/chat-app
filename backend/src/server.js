@@ -45,6 +45,8 @@ export function createApp() {
   app.use('/api/calls', callRouter)
   app.use('/api/users', userRouter)
   app.use('/api/social', socialRouter)
+  // OAuth providers redirect to /connect/{platform}/callback (configured in .env redirect URIs)
+  app.use('/connect', socialRouter)
   app.use('/api/upload', uploadRouter)
 
   app.use(errorHandler)

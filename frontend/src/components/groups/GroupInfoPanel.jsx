@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
+import { useSocket } from '../../context/SocketContext'
 import { getGroup, updateGroup, addMember, removeMember, uploadGroupAvatar } from '../../api/groups'
 import { getContacts, searchUsers } from '../../api/contacts'
 import ConfirmDialog from '../ui/ConfirmDialog'
@@ -39,6 +40,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const { user } = useAuth()
   const { messages, toggleConversationFlag, removeConversation, dropConversation } = useChat()
   const { showToast } = useToast()
+  const { socket } = useSocket()
 
   const [participants, setParticipants] = useState([])
   const [groupData, setGroupData] = useState(null)
@@ -71,6 +73,15 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [conversation?.id])
+
+  useEffect(() => {
+    if (!socket || !conversation?.id) return
+    const onMembersUpdated = ({ conversationId, participants: updated }) => {
+      if (conversationId === conversation.id) setParticipants(updated)
+    }
+    socket.on('group-members-updated', onMembersUpdated)
+    return () => socket.off('group-members-updated', onMembersUpdated)
+  }, [socket, conversation?.id])
 
   const me = participants.find((p) => p.id === user?.id)
   const isAdmin = me?.role === 'admin'

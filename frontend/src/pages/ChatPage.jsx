@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSocket } from '../context/SocketContext'
 import { useAuth } from '../context/AuthContext'
 import { useChat } from '../context/ChatContext'
+import { useToast } from '../context/ToastContext'
 import { getOrCreateDirect } from '../api/conversations'
 import { playRingtone, stopRingtone } from '../utils/sounds'
 import Sidebar from '../components/chat/Sidebar'
@@ -26,11 +27,27 @@ export default function ChatPage() {
   const { socket } = useSocket()
   const { user, refreshUser } = useAuth()
   const { activeConversation, openConversation } = useChat()
+  const { showToast } = useToast()
+  const activeCallRef = useRef(null)
+
+  useEffect(() => { activeCallRef.current = activeCall }, [activeCall])
 
   useEffect(() => {
     if (!socket) return
 
-    const onIncoming = (data) => setIncomingCall(data)
+    const onIncoming = (data) => {
+      if (activeCallRef.current) {
+        // Already on a call — silently reject so no ringtone plays
+        socket?.emit('call-reject', { callId: data.callId, callerId: data.callerId })
+        return
+      }
+      setIncomingCall(data)
+    }
+
+    const onCallBusy = () => {
+      showToast('User is currently on another call', 'info')
+      setActiveCall(null)
+    }
 
     const onCallAccepted = ({ callId }) => {
       setActiveCall((prev) => {
@@ -53,6 +70,7 @@ export default function ChatPage() {
     socket.on('call-accepted', onCallAccepted)
     socket.on('call-ended', onCallEnded)
     socket.on('call-rejected', onCallRejected)
+    socket.on('call-busy', onCallBusy)
     socket.on('rep-request-update', onRepUpdate)
 
     return () => {
@@ -60,6 +78,7 @@ export default function ChatPage() {
       socket.off('call-accepted', onCallAccepted)
       socket.off('call-ended', onCallEnded)
       socket.off('call-rejected', onCallRejected)
+      socket.off('call-busy', onCallBusy)
       socket.off('rep-request-update', onRepUpdate)
     }
   }, [socket])

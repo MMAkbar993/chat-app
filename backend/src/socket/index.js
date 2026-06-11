@@ -11,6 +11,7 @@ import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.
 let io = null
 const onlineUsers = new Map()     // userId → socket count
 const groupCallRooms = new Map()  // callId → Map<userId, { name, avatar }>
+const activeCalls = new Map()     // userId → callId (users currently on a live call)
 
 function groupBySender(rows) {
   const map = {}
@@ -147,7 +148,7 @@ export function initSocket(httpServer) {
     socket.on('call-initiate', async ({ targetUserId, callType, conversationId }) => {
       try {
         if (!targetUserId && conversationId) {
-          // Group call: ring all participants
+          // Group call: ring all available participants
           const [participants, convResult, caller] = await Promise.all([
             getParticipants(conversationId),
             query('SELECT name FROM conversations WHERE id = $1', [conversationId]),
@@ -155,10 +156,12 @@ export function initSocket(httpServer) {
           ])
           const conversationName = convResult.rows[0]?.name || 'Group'
           const call = await createCall({ callerId: userId, calleeId: null, conversationId, callType })
+          activeCalls.set(userId, call.id)
           socket.emit('call-created', { call })
           participants
             .filter((p) => p.id !== userId)
             .forEach((p) => {
+              if (activeCalls.has(p.id)) return // skip busy members
               io.to(`user:${p.id}`).emit('incoming-call', {
                 callId: call.id,
                 callerId: userId,
@@ -172,7 +175,18 @@ export function initSocket(httpServer) {
             })
           return
         }
+
+        // Direct call — check if target is busy
+        if (activeCalls.has(targetUserId)) {
+          const call = await createCall({ callerId: userId, calleeId: targetUserId, conversationId, callType })
+          await updateCallStatus(call.id, 'busy', new Date())
+          socket.emit('call-created', { call })
+          socket.emit('call-busy', { callId: call.id, targetUserId })
+          return
+        }
+
         const call = await createCall({ callerId: userId, calleeId: targetUserId, conversationId, callType })
+        activeCalls.set(userId, call.id)
         const caller = await findUserById(userId)
         socket.emit('call-created', { call })
         io.to(`user:${targetUserId}`).emit('incoming-call', {
@@ -191,6 +205,7 @@ export function initSocket(httpServer) {
     socket.on('call-accept', async ({ callId, callerId }) => {
       try {
         await updateCallStatus(callId, 'answered')
+        activeCalls.set(userId, callId)
         io.to(`user:${callerId}`).emit('call-accepted', { callId })
       } catch (err) {
         console.error('call-accept error:', err)
@@ -200,6 +215,7 @@ export function initSocket(httpServer) {
     socket.on('call-reject', async ({ callId, callerId }) => {
       try {
         const call = await updateCallStatus(callId, 'declined', new Date())
+        activeCalls.delete(callerId)
         io.to(`user:${callerId}`).emit('call-rejected', { callId })
         if (call?.conversation_id) {
           const content = JSON.stringify({ call_type: call.call_type, status: 'missed' })
@@ -216,10 +232,13 @@ export function initSocket(httpServer) {
     socket.on('call-end', async ({ callId, targetUserId, conversationId, durationSeconds }) => {
       try {
         const call = await updateCallStatus(callId, 'answered', new Date(), durationSeconds)
+        activeCalls.delete(userId)
+        if (targetUserId) activeCalls.delete(targetUserId)
         const convId = call?.conversation_id || conversationId
         if (convId) {
           const participants = await getParticipants(convId)
           participants.forEach((p) => {
+            activeCalls.delete(p.id)
             if (p.id !== userId) io.to(`user:${p.id}`).emit('call-ended', { callId })
           })
           const content = JSON.stringify({ call_type: call?.call_type, status: 'ended', duration: durationSeconds || 0 })
@@ -310,11 +329,14 @@ export function initSocket(httpServer) {
       socket.emit('online-users', { userIds: Array.from(onlineUsers.keys()) })
     })
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       const count = onlineUsers.get(userId) || 0
       if (count <= 1) {
         onlineUsers.delete(userId)
-        io.emit('user-presence', { userId, online: false })
+        activeCalls.delete(userId)
+        const lastSeenAt = new Date().toISOString()
+        await query('UPDATE users SET last_seen_at = NOW() WHERE id = $1', [userId]).catch(() => {})
+        io.emit('user-presence', { userId, online: false, lastSeenAt })
       } else {
         onlineUsers.set(userId, count - 1)
       }

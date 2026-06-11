@@ -1,8 +1,15 @@
+import crypto from 'crypto'
 import axios from 'axios'
 import { upsertSocialConnection, deleteSocialConnection } from '../db/queries/auth_extras.js'
 import { config } from '../config/env.js'
 
 const FRONTEND = config.frontendUrl
+
+function generatePKCE() {
+  const verifier = crypto.randomBytes(32).toString('base64url')
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url')
+  return { verifier, challenge }
+}
 
 const PLATFORMS = {
   linkedin: {
@@ -116,7 +123,7 @@ const PLATFORMS = {
   },
 }
 
-// Store OAuth state -> userId in memory (fine for single-instance; use Redis in prod)
+// Store OAuth state -> { userId, pkceVerifier } in memory
 const oauthStateMap = new Map()
 
 export function socialConnect(req, res) {
@@ -129,9 +136,8 @@ export function socialConnect(req, res) {
     return res.redirect(`${FRONTEND}/social-error?reason=${encodeURIComponent(reason)}`)
   }
 
-  const state = `${req.user.id}:${Date.now()}:${Math.random().toString(36).slice(2)}`
-  oauthStateMap.set(state, req.user.id)
-  setTimeout(() => oauthStateMap.delete(state), 10 * 60 * 1000)
+  const state = `${req.user.id}:${Date.now()}:${crypto.randomBytes(8).toString('hex')}`
+  const entry = { userId: req.user.id, pkceVerifier: null }
 
   const params = new URLSearchParams({
     client_id: cfg.clientId(),
@@ -141,11 +147,22 @@ export function socialConnect(req, res) {
     state,
   })
 
+  if (cfg.pkce) {
+    const { verifier, challenge } = generatePKCE()
+    entry.pkceVerifier = verifier
+    params.set('code_challenge', challenge)
+    params.set('code_challenge_method', 'S256')
+  }
+
+  oauthStateMap.set(state, entry)
+  setTimeout(() => oauthStateMap.delete(state), 10 * 60 * 1000)
+
   res.redirect(`${cfg.authUrl}?${params}`)
 }
 
 export async function socialCallback(req, res) {
-  const { platform } = req.params
+  // 'x' is the URL alias for the twitter platform (matches TWITTER_REDIRECT_URI path)
+  const platform = req.params.platform === 'x' ? 'twitter' : req.params.platform
   const { code, state, error } = req.query
   const cfg = PLATFORMS[platform]
 
@@ -156,14 +173,15 @@ export async function socialCallback(req, res) {
       ? 'Access was denied or the authorization expired. Try connecting again.'
       : 'Could not connect account. Please try again.'
     return res.send(`<html><body><script>
-      if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(reason)}},'${FRONTEND}');window.close();}
+      if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(reason)}},'*');window.close();}
       else{window.location.href='${FRONTEND}/social-error?reason=${encodeURIComponent(reason)}';}
     </script></body></html>`)
   }
 
-  const userId = oauthStateMap.get(state)
-  if (!userId) return res.redirect(`${FRONTEND}/social-error?reason=invalid_state`)
+  const stateEntry = oauthStateMap.get(state)
+  if (!stateEntry) return res.redirect(`${FRONTEND}/social-error?reason=invalid_state`)
   oauthStateMap.delete(state)
+  const { userId, pkceVerifier } = stateEntry
 
   try {
     // Exchange code for token
@@ -173,6 +191,7 @@ export async function socialCallback(req, res) {
       redirect_uri: cfg.redirectUri(),
       client_id: cfg.clientId(),
       client_secret: cfg.clientSecret(),
+      ...(pkceVerifier && { code_verifier: pkceVerifier }),
     }
 
     let tokenData
@@ -226,7 +245,7 @@ export async function socialCallback(req, res) {
     res.send(`
       <html><body><script>
         if (window.opener) {
-          window.opener.postMessage({type:'social-connect-success',platform:'${platform}'}, '${FRONTEND}');
+          window.opener.postMessage({type:'social-connect-success',platform:'${platform}'}, '*');
           window.close();
         } else {
           window.location.href = '${FRONTEND}/chat';
@@ -237,7 +256,7 @@ export async function socialCallback(req, res) {
     console.error(`Social auth error (${platform}):`, err.message)
     const reason = 'Could not connect account. Please try again.'
     res.send(`<html><body><script>
-      if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(reason)}},'${FRONTEND}');window.close();}
+      if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(reason)}},'*');window.close();}
       else{window.location.href='${FRONTEND}/social-error?reason=${encodeURIComponent(reason)}';}
     </script></body></html>`)
   }

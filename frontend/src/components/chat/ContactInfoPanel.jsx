@@ -238,7 +238,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
 
         {/* Others */}
         <div className={`rounded-xl overflow-hidden ${cardBg}`}>
-          <p className={`text-xs font-semibold uppercase tracking-wide px-3 pt-3 mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Others</p>
+          <p className={`text-xs font-semibold uppercase tracking-wide px-3 pt-3 mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Other</p>
           {[
             {
               label: isFavorite ? 'Remove Favourite' : 'Favourites',
