@@ -21,6 +21,7 @@ export function ChatProvider({ children }) {
   const [replyTo, setReplyToState] = useState(null)
   const [conversationFilter, setConversationFilter] = useState('all')
   const [onlineUsers, setOnlineUsers] = useState(new Set())
+  const [lastSeenMap, setLastSeenMap] = useState({})
   const activeConvRef = useRef(null)
   const conversationsRef = useRef([])
 
@@ -50,7 +51,17 @@ export function ChatProvider({ children }) {
   const loadConversations = useCallback(async () => {
     try {
       const data = await getConversations()
-      setConversations(data.conversations || [])
+      const convs = data.conversations || []
+      setConversations(convs)
+      setLastSeenMap((prev) => {
+        const next = { ...prev }
+        convs.forEach((c) => {
+          if (c.other_user_id && c.other_user_last_seen_at) {
+            next[c.other_user_id] = c.other_user_last_seen_at
+          }
+        })
+        return next
+      })
     } catch {}
   }, [])
 
@@ -242,13 +253,16 @@ export function ChatProvider({ children }) {
       )
     }
 
-    const onPresence = ({ userId, online }) => {
+    const onPresence = ({ userId, online, lastSeenAt }) => {
       setOnlineUsers((prev) => {
         const next = new Set(prev)
         if (online) next.add(userId)
         else next.delete(userId)
         return next
       })
+      if (!online && lastSeenAt) {
+        setLastSeenMap((prev) => ({ ...prev, [userId]: lastSeenAt }))
+      }
     }
 
     const onOnlineList = ({ userIds }) => setOnlineUsers(new Set(userIds))
@@ -297,7 +311,7 @@ export function ChatProvider({ children }) {
       typingUsers,
       replyTo, setReplyTo, clearReply,
       toggleConversationFlag, removeConversation, dropConversation, clearConversationMessages, markConversationUnread,
-      onlineUsers,
+      onlineUsers, lastSeenMap,
     }}>
       {children}
     </ChatContext.Provider>

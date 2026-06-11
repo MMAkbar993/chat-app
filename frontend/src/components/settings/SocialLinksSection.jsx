@@ -52,7 +52,7 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
     const onMessage = (e) => {
       if (e.data?.type === 'social-connect-success') {
         const label = PLATFORMS.find((p) => p.key === e.data.platform)?.label || e.data.platform
-        onToast?.(`${label} account connected successfully.`)
+        onToast?.(`${label} account connected successfully.`, 'success')
         client.get('/users/me/social')
           .then(({ data }) => setConnections(data.connections))
           .catch(() => {})

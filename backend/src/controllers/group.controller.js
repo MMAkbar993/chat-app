@@ -77,8 +77,14 @@ export async function addMember(req, res, next) {
   try {
     const { userId } = req.body
     await addParticipant(req.params.id, userId)
+    const participants = await getParticipants(req.params.id)
     const io = getIo()
-    if (io) io.to(`user:${userId}`).emit('reload-conversations')
+    if (io) {
+      io.to(`user:${userId}`).emit('reload-conversations')
+      participants.forEach((p) =>
+        io.to(`user:${p.id}`).emit('group-members-updated', { conversationId: req.params.id, participants })
+      )
+    }
     res.json({ ok: true })
   } catch (err) {
     next(err)
@@ -90,8 +96,14 @@ export async function removeMember(req, res, next) {
     const conversationId = req.params.id
     const userId = req.params.userId
     await removeParticipant(conversationId, userId)
+    const participants = await getParticipants(conversationId)
     const io = getIo()
-    if (io) io.to(`user:${userId}`).emit('conversation-removed', { conversationId })
+    if (io) {
+      io.to(`user:${userId}`).emit('conversation-removed', { conversationId })
+      participants.forEach((p) =>
+        io.to(`user:${p.id}`).emit('group-members-updated', { conversationId, participants })
+      )
+    }
     res.json({ ok: true })
   } catch (err) {
     next(err)

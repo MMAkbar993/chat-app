@@ -334,7 +334,6 @@ export default function ContactDetailModal({
           {/* Personal Information */}
           <div className={`rounded-xl p-4 ${sectionBg}`}>
             <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
-            <p className={noteCls}>This profile includes information verified through KYC, website verification, approved company representation, and connected social accounts.</p>
             <Row label="Local Time" value={localTime}
               icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" /></svg>}
             />
@@ -385,7 +384,6 @@ export default function ContactDetailModal({
           {socials.some((s) => s.url) && (
           <div className={`rounded-xl p-4 ${sectionBg}`}>
             <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
-            <p className={noteCls}>OAuth-connected profiles are verified. Affiliate Roulette links are user-provided.</p>
             <div className="space-y-3">
               {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
                 <div key={sname} className="flex items-center gap-3">

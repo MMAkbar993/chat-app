@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
+import { useSocket } from '../../context/SocketContext'
 import { useToast } from '../../context/ToastContext'
 import { deleteMessageApi, deleteMessageForMeApi } from '../../api/conversations'
 import { blockUser, unblockUser, getBlockedUsers, reportUser } from '../../api/users'
@@ -18,6 +19,22 @@ function formatDuration(secs) {
   const m = Math.floor(secs / 60)
   const s = secs % 60
   return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function formatLastSeen(ts) {
+  if (!ts) return 'Offline'
+  const date = new Date(ts)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return 'last seen just now'
+  if (diffMins < 60) return `last seen ${diffMins}m ago`
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const today = new Date(); today.setHours(0,0,0,0)
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1)
+  if (date >= today) return `last seen today at ${timeStr}`
+  if (date >= yesterday) return `last seen yesterday at ${timeStr}`
+  return `last seen ${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}`
 }
 
 function CallEventPill({ msg, userId, darkMode }) {
@@ -76,12 +93,13 @@ function groupByDate(messages) {
 
 export default function ChatWindow({ darkMode, onCallStart }) {
   const { user } = useAuth()
+  const { socket } = useSocket()
   const {
     activeConversation, messages, setMessages, loadingMessages,
     sendMessage, typingUsers,
     replyTo, setReplyTo, clearReply,
     toggleConversationFlag, removeConversation, clearConversationMessages,
-    onlineUsers,
+    onlineUsers, lastSeenMap,
   } = useChat()
   const { showToast } = useToast()
   const bottomRef = useRef(null)
@@ -154,6 +172,15 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       }
     }
   }, [activeConversation?.id])
+
+  useEffect(() => {
+    if (!socket || activeConversation?.type !== 'group') return
+    const onMembersUpdated = ({ conversationId, participants }) => {
+      if (conversationId === activeConversation.id) setGroupParticipants(participants)
+    }
+    socket.on('group-members-updated', onMembersUpdated)
+    return () => socket.off('group-members-updated', onMembersUpdated)
+  }, [socket, activeConversation?.id, activeConversation?.type])
 
   async function handleHeaderBlock() {
     const otherId = activeConversation?.other_user_id
@@ -268,7 +295,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                   ? <p className="text-xs text-green-500">typing...</p>
                   : onlineUsers?.has(activeConversation.other_user_id)
                     ? <p className="text-xs text-green-500">Online</p>
-                    : <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Offline</p>
+                    : <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatLastSeen(lastSeenMap[activeConversation.other_user_id])}</p>
               )}
             </div>
           </div>
