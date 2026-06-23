@@ -1,8 +1,15 @@
+import { useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 
 export default function SocialConnectErrorPage() {
   const [params] = useSearchParams()
   const reason = params.get('reason') || 'An unexpected error occurred.'
+
+  useEffect(() => {
+    if (window.opener) {
+      window.opener.postMessage({ type: 'social-connect-error', reason }, '*')
+    }
+  }, [reason])
 
   function close() {
     if (window.opener) {

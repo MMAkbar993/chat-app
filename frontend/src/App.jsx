@@ -18,6 +18,15 @@ import SocialConnectErrorPage from './pages/SocialConnectErrorPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import PaymentCancelPage from './pages/PaymentCancelPage'
 import SigningInPage from './pages/SigningInPage'
+import { AdminAuthProvider, useAdminAuth } from './admin/context/AdminAuthContext'
+import AdminLoginPage from './admin/pages/AdminLoginPage'
+import AdminDashboardPage from './admin/pages/AdminDashboardPage'
+import AdminUsersPage from './admin/pages/AdminUsersPage'
+import AdminGroupsPage from './admin/pages/AdminGroupsPage'
+import AdminChatPage from './admin/pages/AdminChatPage'
+import AdminCallsPage from './admin/pages/AdminCallsPage'
+import AdminSettingsPage from './admin/pages/AdminSettingsPage'
+import AdminLayout from './admin/components/AdminLayout'
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-lavender">
@@ -49,6 +58,20 @@ function ChatApp() {
       </SocketProvider>
     </ToastProvider>
   )
+}
+
+function AdminProtectedRoute({ children }) {
+  const { admin, loading } = useAdminAuth()
+  if (loading) return <Spinner />
+  if (!admin) return <Navigate to="/admin/login" replace />
+  return <AdminLayout>{children}</AdminLayout>
+}
+
+function AdminGuestRoute({ children }) {
+  const { admin, loading } = useAdminAuth()
+  if (loading) return <Spinner />
+  if (admin) return <Navigate to="/admin/dashboard" replace />
+  return children
 }
 
 export default function App() {
@@ -89,6 +112,23 @@ export default function App() {
           <Route path="/my-status" element={<Navigate to="/chat" replace />} />
           <Route path="/user-status" element={<Navigate to="/chat" replace />} />
           <Route path="/all-calls" element={<Navigate to="/chat" replace />} />
+
+          {/* Admin panel — separate auth context */}
+          <Route path="/admin/*" element={
+            <AdminAuthProvider>
+              <Routes>
+                <Route path="login" element={<AdminGuestRoute><AdminLoginPage /></AdminGuestRoute>} />
+                <Route path="dashboard" element={<AdminProtectedRoute><AdminDashboardPage /></AdminProtectedRoute>} />
+                <Route path="users" element={<AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>} />
+                <Route path="groups" element={<AdminProtectedRoute><AdminGroupsPage /></AdminProtectedRoute>} />
+                <Route path="chat" element={<AdminProtectedRoute><AdminChatPage /></AdminProtectedRoute>} />
+                <Route path="calls" element={<AdminProtectedRoute><AdminCallsPage /></AdminProtectedRoute>} />
+                <Route path="settings" element={<AdminProtectedRoute><AdminSettingsPage /></AdminProtectedRoute>} />
+                <Route path="*" element={<Navigate to="/admin/login" replace />} />
+              </Routes>
+            </AdminAuthProvider>
+          } />
+
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>
