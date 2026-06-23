@@ -6,6 +6,9 @@ import { config } from '../config/env.js'
 
 const FRONTEND = config.frontendUrl
 
+// X rejects state values over 500 chars — use short opaque state for PKCE platforms
+const oauthStateMap = new Map()
+
 // Twitter uses /api/social/x/callback in provider dashboards
 const CALLBACK_PATH_ALIASES = { twitter: 'x' }
 
@@ -110,14 +113,15 @@ const PLATFORMS = {
     }),
   },
   twitter: {
-    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    authUrl: 'https://x.com/i/oauth2/authorize',
     tokenUrl: 'https://api.twitter.com/2/oauth2/token',
     profileUrl: 'https://api.twitter.com/2/users/me?user.fields=username,name',
     clientId: () => process.env.TWITTER_CLIENT_ID,
     clientSecret: () => process.env.TWITTER_CLIENT_SECRET,
     redirectUri: () => getRedirectUri('twitter', 'TWITTER_REDIRECT_URI'),
-    scope: 'users.read tweet.read offline.access',
+    scope: 'users.read offline.access',
     pkce: true,
+    shortState: true,
     extractProfile: (data) => ({
       platformUserId: data.data?.id,
       username: data.data?.username,
@@ -152,6 +156,7 @@ const PLATFORMS = {
     redirectUri: () => getRedirectUri('kick', 'KICK_REDIRECT_URI'),
     scope: 'user:read',
     pkce: true,
+    shortState: true,
     extractProfile: (data) => {
       const u = data.data?.[0]
       return {
@@ -211,15 +216,23 @@ export function socialConnect(req, res) {
   }
 
   const pkce = cfg.pkce ? generatePKCE() : null
-  const state = jwt.sign(
-    {
-      sub: req.user.id,
-      platform,
-      ...(pkce && { pv: pkce.verifier }),
-    },
-    config.jwtSecret,
-    { expiresIn: '10m' },
-  )
+
+  let state
+  if (cfg.shortState) {
+    state = crypto.randomBytes(16).toString('hex')
+    oauthStateMap.set(state, { userId: req.user.id, platform, pkceVerifier: pkce?.verifier || null })
+    setTimeout(() => oauthStateMap.delete(state), 10 * 60 * 1000)
+  } else {
+    state = jwt.sign(
+      {
+        sub: req.user.id,
+        platform,
+        ...(pkce && { pv: pkce.verifier }),
+      },
+      config.jwtSecret,
+      { expiresIn: '10m' },
+    )
+  }
 
   const params = new URLSearchParams({
     client_id: cfg.clientId(),
@@ -240,7 +253,12 @@ export function socialConnect(req, res) {
     }
   }
 
-  res.redirect(`${cfg.authUrl}?${params}`)
+  // X expects space-encoded scopes (%20), not +
+  const query = platform === 'twitter'
+    ? params.toString().replace(/\+/g, '%20')
+    : params.toString()
+
+  res.redirect(`${cfg.authUrl}?${query}`)
 }
 
 export async function socialCallback(req, res) {
@@ -259,19 +277,30 @@ export async function socialCallback(req, res) {
     return sendOAuthPopupResponse(res, { reason })
   }
 
-  let stateEntry
-  try {
-    stateEntry = jwt.verify(state, config.jwtSecret)
-  } catch {
-    return sendOAuthPopupResponse(res, { reason: 'Session expired. Close this window and try connecting again.' })
+  let userId
+  let pkceVerifier = null
+
+  const mapEntry = oauthStateMap.get(state)
+  if (mapEntry) {
+    oauthStateMap.delete(state)
+    if (mapEntry.platform !== platform) {
+      return sendOAuthPopupResponse(res, { reason: 'Invalid OAuth state. Please try again.' })
+    }
+    userId = mapEntry.userId
+    pkceVerifier = mapEntry.pkceVerifier
+  } else {
+    try {
+      const stateEntry = jwt.verify(state, config.jwtSecret)
+      if (stateEntry.platform !== platform) {
+        return sendOAuthPopupResponse(res, { reason: 'Invalid OAuth state. Please try again.' })
+      }
+      userId = stateEntry.sub
+      pkceVerifier = stateEntry.pv || null
+    } catch {
+      return sendOAuthPopupResponse(res, { reason: 'Session expired. Close this window and try connecting again.' })
+    }
   }
 
-  if (stateEntry.platform !== platform) {
-    return sendOAuthPopupResponse(res, { reason: 'Invalid OAuth state. Please try again.' })
-  }
-
-  const userId = stateEntry.sub
-  const pkceVerifier = stateEntry.pv || null
   const redirectUri = cfg.redirectUri()
 
   try {
