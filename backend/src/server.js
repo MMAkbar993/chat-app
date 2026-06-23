@@ -16,6 +16,7 @@ import { callRouter } from './routes/call.routes.js'
 import { userRouter } from './routes/user.routes.js'
 import { socialRouter } from './routes/social.routes.js'
 import { uploadRouter } from './routes/upload.routes.js'
+import { adminRouter } from './routes/admin.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -48,6 +49,7 @@ export function createApp() {
   // OAuth providers redirect to /connect/{platform}/callback (configured in .env redirect URIs)
   app.use('/connect', socialRouter)
   app.use('/api/upload', uploadRouter)
+  app.use('/api/admin', adminRouter)
 
   app.use(errorHandler)
 
