@@ -4,13 +4,16 @@ import jwt from 'jsonwebtoken'
 import { upsertSocialConnection, deleteSocialConnection } from '../db/queries/auth_extras.js'
 import { config } from '../config/env.js'
 
-const FRONTEND = config.frontendUrl
-
 // X rejects state values over 500 chars — use short opaque state for PKCE platforms
 const oauthStateMap = new Map()
 
 // Twitter uses /api/social/x/callback in provider dashboards
 const CALLBACK_PATH_ALIASES = { twitter: 'x' }
+
+function resolveSocialPlatform(platform) {
+  if (platform === 'x') return 'twitter'
+  return platform
+}
 
 function callbackPath(platform) {
   const segment = CALLBACK_PATH_ALIASES[platform] || platform
@@ -31,23 +34,71 @@ function generatePKCE() {
   return { verifier, challenge }
 }
 
+const OAUTH_RESULT_STORAGE_KEY = 'social-oauth-result'
+
+const PLATFORM_LABELS = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  twitter: 'X (Twitter)',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
+  kick: 'Kick',
+  twitch: 'Twitch',
+}
+
+function platformLabel(platform) {
+  return PLATFORM_LABELS[platform] || (platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : 'Account')
+}
+
+function oauthPopupStyles() {
+  return `body{font-family:system-ui,sans-serif;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f9fafb;padding:24px}
+.card{background:#fff;border-radius:16px;padding:32px;max-width:360px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #f3f4f6}
+.icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.icon.ok{background:#dcfce7}.icon.err{background:#fee2e2}
+h1{font-size:20px;margin:0 0 8px;color:#111}p{font-size:14px;color:#6b7280;margin:0 0 24px;line-height:1.5}
+button{background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;width:100%}
+button:hover{background:#6d28d9}`
+}
+
+function notifyOpenerAndStore(payload) {
+  const json = JSON.stringify(payload)
+  return `(function(){
+  var msg=${json};
+  try{localStorage.setItem(${JSON.stringify(OAUTH_RESULT_STORAGE_KEY)},JSON.stringify(msg));}catch(e){}
+  if(window.opener){try{window.opener.postMessage(msg,'*');}catch(e){}}
+  setTimeout(function(){try{window.close();}catch(e){}},400);
+})();`
+}
+
 function sendOAuthPopupResponse(res, { success, platform, reason }) {
+  const label = platformLabel(platform)
+
   if (success) {
-    return res.send(`<html><body><script>
-      if (window.opener) {
-        window.opener.postMessage({type:'social-connect-success',platform:'${platform}'}, '*');
-        window.close();
-      } else {
-        window.location.href = '${FRONTEND}/chat';
-      }
-    </script></body></html>`)
+    const payload = { type: 'social-connect-success', platform, ts: Date.now() }
+    return res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Connected</title>
+<style>${oauthPopupStyles()}</style></head><body>
+<div class="card">
+  <div class="icon ok"><svg width="28" height="28" fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+  <h1>${label} connected!</h1>
+  <p>Your ${label} account was linked successfully. You can close this window and return to Settings.</p>
+  <button type="button" onclick="window.close()">Close window</button>
+</div>
+<script>${notifyOpenerAndStore(payload)}</script>
+</body></html>`)
   }
 
   const safeReason = reason || 'Could not connect account. Please try again.'
-  return res.send(`<html><body><script>
-    if(window.opener){window.opener.postMessage({type:'social-connect-error',reason:${JSON.stringify(safeReason)}},'*');window.close();}
-    else{window.location.href='${FRONTEND}/social-error?reason=${encodeURIComponent(safeReason)}';}
-  </script></body></html>`)
+  const payload = { type: 'social-connect-error', reason: safeReason, ts: Date.now() }
+  return res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Connection failed</title>
+<style>${oauthPopupStyles()}</style></head><body>
+<div class="card">
+  <div class="icon err"><svg width="28" height="28" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>
+  <h1>Connection failed</h1>
+  <p>${safeReason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+  <button type="button" onclick="window.close()">Close window</button>
+</div>
+<script>${notifyOpenerAndStore(payload)}</script>
+</body></html>`)
 }
 
 const PLATFORMS = {
@@ -113,13 +164,13 @@ const PLATFORMS = {
     }),
   },
   twitter: {
-    authUrl: 'https://x.com/i/oauth2/authorize',
-    tokenUrl: 'https://api.twitter.com/2/oauth2/token',
-    profileUrl: 'https://api.twitter.com/2/users/me?user.fields=username,name',
+    authUrl: 'https://twitter.com/i/oauth2/authorize',
+    tokenUrl: 'https://api.x.com/2/oauth2/token',
+    profileUrl: 'https://api.x.com/2/users/me?user.fields=username,name',
     clientId: () => process.env.TWITTER_CLIENT_ID,
     clientSecret: () => process.env.TWITTER_CLIENT_SECRET,
     redirectUri: () => getRedirectUri('twitter', 'TWITTER_REDIRECT_URI'),
-    scope: 'users.read offline.access',
+    scope: () => process.env.TWITTER_SCOPE || 'users.read offline.access',
     pkce: true,
     shortState: true,
     extractProfile: (data) => ({
@@ -205,14 +256,14 @@ async function fetchYoutubeProfile(accessToken, baseProfile) {
 }
 
 export function socialConnect(req, res) {
-  const { platform } = req.params
+  const platform = resolveSocialPlatform(req.params.platform)
   const cfg = PLATFORMS[platform]
   if (!cfg) return res.status(404).json({ error: 'Unknown platform' })
 
   const redirectUri = cfg.redirectUri()
   if (!cfg.clientId() || !redirectUri) {
-    const reason = `${platform.charAt(0).toUpperCase() + platform.slice(1)} OAuth is not configured. Set the client ID, secret and redirect URL (or BACKEND_URL).`
-    return sendOAuthPopupResponse(res, { reason })
+    const reason = `${platformLabel(platform)} OAuth is not configured. Set the client ID, secret and redirect URL (or BACKEND_URL).`
+    return sendOAuthPopupResponse(res, { reason, platform })
   }
 
   const pkce = cfg.pkce ? generatePKCE() : null
@@ -234,10 +285,12 @@ export function socialConnect(req, res) {
     )
   }
 
+  const scope = typeof cfg.scope === 'function' ? cfg.scope() : cfg.scope
+
   const params = new URLSearchParams({
     client_id: cfg.clientId(),
     redirect_uri: redirectUri,
-    scope: cfg.scope,
+    scope,
     response_type: 'code',
     state,
   })
@@ -262,7 +315,7 @@ export function socialConnect(req, res) {
 }
 
 export async function socialCallback(req, res) {
-  const platform = req.params.platform === 'x' ? 'twitter' : req.params.platform
+  const platform = resolveSocialPlatform(req.params.platform)
   const { code, state, error, error_description: errorDescription } = req.query
   const cfg = PLATFORMS[platform]
 
@@ -271,10 +324,13 @@ export async function socialCallback(req, res) {
   }
 
   if (error) {
-    const reason = error === 'access_denied'
+    let reason = error === 'access_denied'
       ? 'Access was denied or the authorization expired. Try connecting again.'
       : (errorDescription || 'Could not connect account. Please try again.')
-    return sendOAuthPopupResponse(res, { reason })
+    if (platform === 'twitter' && !errorDescription) {
+      reason = 'X could not authorize the app. In the X Developer Portal, set Type of App to Web App, enable OAuth 2.0, and add callback URL exactly: ' + (cfg.redirectUri() || 'your TWITTER_REDIRECT_URI') + ' — with scopes users.read and offline.access enabled.'
+    }
+    return sendOAuthPopupResponse(res, { reason, platform })
   }
 
   let userId
@@ -312,6 +368,7 @@ export async function socialCallback(req, res) {
         code,
         redirect_uri: redirectUri,
         code_verifier: pkceVerifier,
+        client_id: cfg.clientId(),
       })
       const credentials = Buffer.from(`${cfg.clientId()}:${cfg.clientSecret()}`).toString('base64')
       const response = await axios.post(cfg.tokenUrl, bodyParams.toString(), {
@@ -479,7 +536,7 @@ export async function saveAffiliateRouletteUrl(req, res, next) {
 
 export async function socialDisconnect(req, res, next) {
   try {
-    const { platform } = req.params
+    const platform = resolveSocialPlatform(req.params.platform)
     if (!PLATFORMS[platform]) return res.status(404).json({ error: 'Unknown platform' })
     await deleteSocialConnection(req.user.id, platform)
     res.json({ message: `${platform} disconnected` })

@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react'
-import client, { getAccessToken } from '../../api/client'
+import { useState, useEffect, useCallback } from 'react'
+import client from '../../api/client'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import SocialIcon from '../ui/SocialIcon'
+import {
+  openSocialOAuthPopup,
+  reportSocialOAuthSuccess,
+  subscribeSocialOAuthResults,
+} from '../../utils/socialOAuth'
 
 const AFFILIATE_ROULETTE_ROLES = [
   'affiliate_publisher',
@@ -14,7 +19,7 @@ const AFFILIATE_ROULETTE_ROLES = [
 const PLATFORMS = [
   { key: 'facebook',           label: 'Facebook' },
   { key: 'instagram',          label: 'Instagram' },
-  { key: 'twitter',            label: 'X (Twitter)' },
+  { key: 'twitter',            label: 'X (Twitter)',        connectKey: 'x' },
   { key: 'linkedin',           label: 'LinkedIn',           urlOnly: true },
   { key: 'youtube',            label: 'YouTube' },
   { key: 'kick',               label: 'Kick' },
@@ -37,39 +42,48 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
   const text = darkMode ? 'text-white' : 'text-gray-900'
   const rowBg = darkMode ? 'bg-gray-700' : 'bg-white'
 
-  useEffect(() => {
-    client.get('/users/me/social')
+  const refreshConnections = useCallback(() => {
+    return client.get('/users/me/social')
       .then(({ data }) => {
         setConnections(data.connections)
-        const li = data.connections.find((c) => c.platform === 'linkedin')
+        return data.connections
+      })
+      .catch(() => [])
+  }, [])
+
+  useEffect(() => {
+    refreshConnections()
+      .then((conns) => {
+        const li = conns.find((c) => c.platform === 'linkedin')
         if (li?.profile_url) setLinkedinUrl(li.profile_url)
-        const ar = data.connections.find((c) => c.platform === 'affiliate_roulette')
+        const ar = conns.find((c) => c.platform === 'affiliate_roulette')
         if (ar?.profile_url) setAffiliateRouletteUrl(ar.profile_url)
       })
-      .catch(() => {})
       .finally(() => setLoading(false))
 
-    const onMessage = (e) => {
-      if (e.data?.type === 'social-connect-success') {
-        const label = PLATFORMS.find((p) => p.key === e.data.platform)?.label || e.data.platform
-        onToast?.(`${label} account connected successfully.`, 'success')
-        client.get('/users/me/social')
-          .then(({ data }) => setConnections(data.connections))
-          .catch(() => {})
+    return subscribeSocialOAuthResults((data) => {
+      if (data.type === 'social-connect-success') {
+        refreshConnections()
       }
-      if (e.data?.type === 'social-connect-error') {
-        onToast?.(e.data.reason || 'Could not connect account. Please try again.', 'error')
-      }
-    }
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [onToast])
+    })
+  }, [refreshConnections])
 
   function connectPlatform(key) {
-    const apiBase = import.meta.env.VITE_API_URL || window.location.origin
-    const token = getAccessToken()
-    const url = `${apiBase}/api/social/${key}/connect${token ? `?token=${encodeURIComponent(token)}` : ''}`
-    window.open(url, 'oauth-connect', 'width=600,height=700,menubar=no,toolbar=no')
+    const wasConnected = connections.some((c) => c.platform === key)
+    const connectKey = PLATFORMS.find((p) => p.key === key)?.connectKey || key
+    const { blocked } = openSocialOAuthPopup(connectKey, {
+      wasConnected,
+      onPopupClosed: () => {
+        refreshConnections().then((conns) => {
+          if (conns.some((c) => c.platform === key)) {
+            reportSocialOAuthSuccess(key)
+          }
+        })
+      },
+    })
+    if (blocked) {
+      onToast?.('Popup was blocked. Allow popups for this site and try again.', 'error')
+    }
   }
 
   async function disconnectPlatform(key) {
