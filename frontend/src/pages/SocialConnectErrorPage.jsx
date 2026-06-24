@@ -1,20 +1,17 @@
 import { useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
+import { publishSocialOAuthError } from '../utils/socialOAuth'
 
 export default function SocialConnectErrorPage() {
   const [params] = useSearchParams()
   const reason = params.get('reason') || 'An unexpected error occurred.'
 
   useEffect(() => {
-    if (window.opener) {
-      window.opener.postMessage({ type: 'social-connect-error', reason }, '*')
-    }
+    publishSocialOAuthError(reason)
   }, [reason])
 
   function close() {
-    if (window.opener) {
-      window.close()
-    }
+    window.close()
   }
 
   return (
@@ -32,21 +29,18 @@ export default function SocialConnectErrorPage() {
         <p className="text-gray-500 text-sm mb-6">{reason}</p>
 
         <div className="flex flex-col gap-2">
-          {window.opener ? (
-            <button
-              onClick={close}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors"
-            >
-              Close this window
-            </button>
-          ) : (
-            <Link
-              to="/chat"
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors flex items-center justify-center"
-            >
-              Go to app
-            </Link>
-          )}
+          <button
+            onClick={close}
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-3 font-semibold text-sm transition-colors"
+          >
+            Close this window
+          </button>
+          <Link
+            to="/chat"
+            className="w-full border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl py-3 font-semibold text-sm transition-colors flex items-center justify-center"
+          >
+            Go to app
+          </Link>
         </div>
       </div>
     </div>

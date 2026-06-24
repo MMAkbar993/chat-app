@@ -11,6 +11,11 @@ import NotificationsSection from './NotificationsSection'
 import DeviceSection from './DeviceSection'
 import BlockedContactsModal from '../contacts/BlockedContactsModal'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import {
+  ensureSocialOAuthListeners,
+  getPlatformLabel,
+  subscribeSocialOAuthResults,
+} from '../../utils/socialOAuth'
 
 const INDUSTRY_ROLES = [
   { value: 'affiliate_publisher',  label: 'Affiliate Publisher' },
@@ -503,6 +508,7 @@ export default function SettingsView({ darkMode }) {
   const [showDoc, setShowDoc] = useState(null) // 'terms' | 'privacy'
   const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState(null)
+  const showToastRef = useRef(null)
   const dm = darkMode
 
   useEffect(() => {
@@ -513,6 +519,19 @@ export default function SettingsView({ darkMode }) {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
   }
+  showToastRef.current = showToast
+
+  useEffect(() => {
+    ensureSocialOAuthListeners()
+    return subscribeSocialOAuthResults((data) => {
+      if (data.type === 'social-connect-success') {
+        const label = getPlatformLabel(data.platform)
+        showToastRef.current?.(`${label} account connected successfully.`, 'success')
+      } else if (data.type === 'social-connect-error') {
+        showToastRef.current?.(data.reason || 'Could not connect account. Please try again.', 'error')
+      }
+    })
+  }, [])
 
   async function handleDeleteAccount() {
     setShowDeleteConfirm(false)
