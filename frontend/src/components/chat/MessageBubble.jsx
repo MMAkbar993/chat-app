@@ -5,6 +5,7 @@ import MessageContextMenu from './MessageContextMenu'
 import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
 import { forwardMessageApi } from '../../api/conversations'
+import { getReplyPreviewText, getReplyImageUrl, hasReplyPreview } from '../../utils/replyPreview'
 
 
 function formatTime(ts) {
@@ -55,6 +56,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState(null)
   const [pickerDir, setPickerDir] = useState('up')
   const reactionBtnRef = useRef(null)
 
@@ -124,12 +126,27 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
         )}
 
         {/* Reply preview */}
-        {msg.reply_to_message_id && msg.reply_content && (
-          <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-4 border-violet-400 text-xs ${
+        {hasReplyPreview(msg) && (
+          <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-4 border-violet-400 text-xs flex items-center gap-2 ${
             darkMode ? 'bg-gray-700 text-gray-300' : 'bg-violet-50 text-gray-600'
           }`}>
-            <p className="font-semibold text-violet-600 text-xs">{msg.reply_sender_name || 'Unknown'}</p>
-            <p className="truncate">{msg.reply_content?.slice(0, 80)}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-violet-600 text-xs">{msg.reply_sender_name || 'Unknown'}</p>
+              <p className="truncate">
+                {getReplyPreviewText({
+                  content: msg.reply_content,
+                  messageType: msg.reply_message_type,
+                  mediaUrl: msg.reply_media_url,
+                })}
+              </p>
+            </div>
+            {getReplyImageUrl({ messageType: msg.reply_message_type, mediaUrl: msg.reply_media_url }) && (
+              <img
+                src={getReplyImageUrl({ messageType: msg.reply_message_type, mediaUrl: msg.reply_media_url })}
+                alt=""
+                className="w-10 h-10 rounded object-cover shrink-0"
+              />
+            )}
           </div>
         )}
 
@@ -147,7 +164,14 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
               if (msg.message_type === 'image' && src)
                 return (
                   <div className="relative">
-                    <img src={src} alt="media" className={`rounded-lg max-w-full ${msg.uploading ? 'opacity-60' : ''}`} />
+                    <button
+                      type="button"
+                      onClick={() => !msg.uploading && setLightboxUrl(src)}
+                      disabled={msg.uploading}
+                      className={`block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-zoom-in'}`}
+                    >
+                      <img src={src} alt="media" className={`rounded-lg max-w-full ${msg.uploading ? 'opacity-60' : ''}`} />
+                    </button>
                     {msg.uploading && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
                         <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -273,6 +297,29 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
           onClose={() => setShowForward(false)}
           onForward={handleForward}
         />
+      )}
+
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   )

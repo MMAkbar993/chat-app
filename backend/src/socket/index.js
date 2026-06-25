@@ -106,6 +106,8 @@ export function initSocket(httpServer) {
           sender_display_name: sender?.display_name || null,
           sender_avatar: sender?.avatar_url || null,
           reply_content: replyMsg?.content || null,
+          reply_message_type: replyMsg?.message_type || null,
+          reply_media_url: replyMsg?.media_url || null,
           reply_sender_name: replyMsg?.sender_display_name || replyMsg?.sender_name || null,
         }
 
