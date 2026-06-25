@@ -4,6 +4,7 @@ import { uploadFile } from '../../api/users'
 import AttachmentMenu from './AttachmentMenu'
 import EmojiPicker from './EmojiPicker'
 import { playSentSound } from '../../utils/sounds'
+import { getReplyPreviewText, getReplyImageUrl } from '../../utils/replyPreview'
 
 function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
@@ -102,7 +103,8 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   }
 
   function handleAttach(fileUrl, messageType) {
-    onSend(fileUrl, messageType, null)
+    onSend(fileUrl, messageType, replyTo?.id || null)
+    onClearReply?.()
     setShowAttachMenu(false)
   }
 
@@ -169,9 +171,24 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
         <div className={`flex items-center justify-between px-4 py-2 border-l-4 border-violet-500 ${
           darkMode ? 'bg-gray-800 text-gray-300' : 'bg-violet-50 text-gray-600'
         }`}>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-violet-600">Replying to {replyTo.senderName}</p>
-            <p className="text-xs truncate">{replyTo.content?.slice(0, 80)}</p>
+          <div className="min-w-0 flex items-center gap-2 flex-1">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-violet-600">Replying to {replyTo.senderName}</p>
+              <p className="text-xs truncate">
+                {getReplyPreviewText({
+                  content: replyTo.content,
+                  messageType: replyTo.messageType,
+                  mediaUrl: replyTo.mediaUrl,
+                })}
+              </p>
+            </div>
+            {getReplyImageUrl({ messageType: replyTo.messageType, mediaUrl: replyTo.mediaUrl }) && (
+              <img
+                src={getReplyImageUrl({ messageType: replyTo.messageType, mediaUrl: replyTo.mediaUrl })}
+                alt=""
+                className="w-10 h-10 rounded object-cover shrink-0"
+              />
+            )}
           </div>
           <button onClick={onClearReply} className="ml-2 shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

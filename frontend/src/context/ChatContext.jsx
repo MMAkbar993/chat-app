@@ -112,7 +112,13 @@ export function ChatProvider({ children }) {
   }, [socket, loadConversations])
 
   const setReplyTo = useCallback((msg) => {
-    setReplyToState(msg ? { id: msg.id, content: msg.content, senderName: msg.sender_display_name || msg.sender_name } : null)
+    setReplyToState(msg ? {
+      id: msg.id,
+      content: msg.content,
+      messageType: msg.message_type,
+      mediaUrl: msg.media_url,
+      senderName: msg.sender_display_name || msg.sender_name,
+    } : null)
   }, [])
 
   const clearReply = useCallback(() => {
