@@ -374,7 +374,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                   }}
                   onClear={() => setConfirm({
                     title: 'Clear Messages',
-                    message: 'All messages in this chat will be permanently deleted.',
+                    message: 'This removes all messages from your device only. The other person keeps their history and won\'t be notified.',
                     confirmLabel: 'Clear',
                     onConfirm: () => {
                       clearConversationMessages(activeConversation.id)

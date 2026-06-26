@@ -183,8 +183,9 @@ export function ChatProvider({ children }) {
       if (activeConvRef.current?.id === id) {
         setMessages([])
       }
+      await loadConversations()
     } catch {}
-  }, [])
+  }, [loadConversations])
 
   useEffect(() => {
     if (!socket) return
