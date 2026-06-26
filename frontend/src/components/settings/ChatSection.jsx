@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { deleteAllChats } from '../../api/users'
+import { clearAllChats } from '../../api/users'
+import { useChat } from '../../context/ChatContext'
 import ConfirmDialog from '../ui/ConfirmDialog'
 
 function Toggle({ on, onClick }) {
@@ -18,9 +19,10 @@ function Toggle({ on, onClick }) {
 }
 
 export default function ChatSection({ darkMode }) {
+  const { loadConversations, closeConversation, setMessages } = useChat()
   const [backup, setBackup] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [clearing, setClearing] = useState(false)
   const [toast, setToast] = useState(null)
 
   const text    = darkMode ? 'text-white'    : 'text-gray-900'
@@ -32,16 +34,19 @@ export default function ChatSection({ darkMode }) {
     setTimeout(() => setToast(null), 3000)
   }
 
-  async function handleDeleteConfirm() {
-    setShowDeleteConfirm(false)
-    setDeleting(true)
+  async function handleClearConfirm() {
+    setShowClearConfirm(false)
+    setClearing(true)
     try {
-      await deleteAllChats()
-      showToast('All chats have been permanently deleted.')
+      await clearAllChats()
+      closeConversation()
+      setMessages([])
+      await loadConversations()
+      showToast('All chat history cleared on this device.')
     } catch {
-      showToast('Could not delete chats.', 'error')
+      showToast('Could not clear chats.', 'error')
     }
-    setDeleting(false)
+    setClearing(false)
   }
 
   return (
@@ -57,10 +62,10 @@ export default function ChatSection({ darkMode }) {
       <div className={divider}>
         <div className="flex items-start justify-between gap-3 py-3">
           <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${text}`}>Delete All Chat</p>
-            <p className={`text-xs mt-0.5 ${sub}`}>Permanently delete all messages and media.</p>
+            <p className={`text-sm font-medium ${text}`}>Clear All Chats</p>
+            <p className={`text-xs mt-0.5 ${sub}`}>Remove all messages from your device only. Others keep their history.</p>
           </div>
-          <Toggle on={false} onClick={() => setShowDeleteConfirm(true)} />
+          <Toggle on={false} onClick={() => setShowClearConfirm(true)} />
         </div>
       </div>
 
@@ -73,14 +78,14 @@ export default function ChatSection({ darkMode }) {
       </div>
 
       <ConfirmDialog
-        open={showDeleteConfirm}
+        open={showClearConfirm}
         darkMode={darkMode}
-        title="Delete All Chats?"
-        message="This will permanently delete all messages, images, videos and documents in all chats. This cannot be undone."
-        confirmLabel={deleting ? 'Deleting…' : 'Delete'}
-        variant="danger"
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setShowDeleteConfirm(false)}
+        title="Clear All Chats?"
+        message="This removes all messages from your device only. Other participants keep the conversation intact and won't be notified."
+        confirmLabel={clearing ? 'Clearing…' : 'Clear'}
+        variant="warning"
+        onConfirm={handleClearConfirm}
+        onCancel={() => setShowClearConfirm(false)}
       />
     </>
   )

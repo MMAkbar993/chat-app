@@ -22,13 +22,18 @@ export async function getConversationsForUser(userId) {
      FROM conversations c
      JOIN conversation_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1 AND NOT cp.is_hidden
      LEFT JOIN LATERAL (
-       SELECT * FROM messages WHERE conversation_id = c.id AND is_deleted = false
-       ORDER BY created_at DESC LIMIT 1
+       SELECT * FROM messages m2
+       WHERE m2.conversation_id = c.id AND m2.is_deleted = false
+         AND NOT ($1::uuid = ANY(COALESCE(m2.deleted_for, '{}')))
+         AND (cp.messages_cleared_at IS NULL OR m2.created_at > cp.messages_cleared_at)
+       ORDER BY m2.created_at DESC LIMIT 1
      ) m ON true
      LEFT JOIN users sender ON sender.id = m.sender_id
      LEFT JOIN conversation_participants cp2 ON cp2.conversation_id = c.id AND cp2.user_id != $1 AND c.type = 'direct'
      LEFT JOIN users other_user ON other_user.id = cp2.user_id
      LEFT JOIN messages unread ON unread.conversation_id = c.id AND unread.sender_id != $1
+       AND (cp.messages_cleared_at IS NULL OR unread.created_at > cp.messages_cleared_at)
+       AND NOT ($1::uuid = ANY(COALESCE(unread.deleted_for, '{}')))
      WHERE (c.type != 'direct' OR NOT EXISTS (
        SELECT 1 FROM blocked_users WHERE blocker_id = $1 AND blocked_id = other_user.id
      ))
