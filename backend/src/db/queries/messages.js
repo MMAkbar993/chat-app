@@ -16,8 +16,12 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
        u.display_name AS sender_display_name,
        rm.content AS reply_content,
        rm.message_type AS reply_message_type,
-       rm.media_url AS reply_media_url,
-       ru.full_name AS reply_sender_name
+       CASE
+         WHEN rm.message_type IS NOT NULL AND rm.message_type <> 'text'
+         THEN COALESCE(rm.media_url, rm.content)
+         ELSE rm.media_url
+       END AS reply_media_url,
+       COALESCE(ru.display_name, ru.full_name) AS reply_sender_name
      FROM messages m
      LEFT JOIN users u ON u.id = m.sender_id
      LEFT JOIN messages rm ON rm.id = m.reply_to_message_id

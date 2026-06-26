@@ -99,15 +99,20 @@ export function initSocket(httpServer) {
           replyToMessageId ? getMessageById(replyToMessageId) : Promise.resolve(null),
         ])
 
+        const replyMediaUrl =
+          replyMsg?.media_url ||
+          (replyMsg?.message_type && replyMsg.message_type !== 'text' ? replyMsg.content : null) ||
+          null
+
         const fullMsg = {
           ...msg,
           sender_id: userId,
           sender_name: sender?.full_name || null,
           sender_display_name: sender?.display_name || null,
           sender_avatar: sender?.avatar_url || null,
-          reply_content: replyMsg?.content || null,
+          reply_content: replyMsg?.message_type === 'text' ? (replyMsg?.content || null) : null,
           reply_message_type: replyMsg?.message_type || null,
-          reply_media_url: replyMsg?.media_url || null,
+          reply_media_url: replyMediaUrl,
           reply_sender_name: replyMsg?.sender_display_name || replyMsg?.sender_name || null,
         }
 

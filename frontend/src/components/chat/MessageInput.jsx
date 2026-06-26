@@ -182,9 +182,9 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
                 })}
               </p>
             </div>
-            {getReplyImageUrl({ messageType: replyTo.messageType, mediaUrl: replyTo.mediaUrl }) && (
+            {getReplyImageUrl({ messageType: replyTo.messageType, mediaUrl: replyTo.mediaUrl, content: replyTo.content }) && (
               <img
-                src={getReplyImageUrl({ messageType: replyTo.messageType, mediaUrl: replyTo.mediaUrl })}
+                src={getReplyImageUrl({ messageType: replyTo.messageType, mediaUrl: replyTo.mediaUrl, content: replyTo.content })}
                 alt=""
                 className="w-10 h-10 rounded object-cover shrink-0"
               />
