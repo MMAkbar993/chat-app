@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, us
 import { useSocket } from './SocketContext'
 import { useAuth } from './AuthContext'
 import { playReceivedSound } from '../utils/sounds'
+import { enrichMessagesWithReplyMeta, enrichMessageReplyMeta } from '../utils/replyPreview'
 import {
   getConversations, getMessages, sendMessageApi, markReadApi, markUnreadApi,
   archiveConversation, pinConversation, favoriteConversation, muteConversation,
@@ -80,7 +81,7 @@ export function ChatProvider({ children }) {
     try {
       socket?.emit('join-conversation', conv.id)
       const data = await getMessages(conv.id)
-      setMessages(data.messages || [])
+      setMessages(enrichMessagesWithReplyMeta(data.messages || []))
       await markReadApi(conv.id)
       socket?.emit('mark-read', { conversationId: conv.id })
       setConversations((prev) =>
@@ -112,11 +113,12 @@ export function ChatProvider({ children }) {
   }, [socket, loadConversations])
 
   const setReplyTo = useCallback((msg) => {
+    const mediaUrl = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
     setReplyToState(msg ? {
       id: msg.id,
-      content: msg.content,
+      content: msg.message_type === 'text' ? msg.content : null,
       messageType: msg.message_type,
-      mediaUrl: msg.media_url,
+      mediaUrl,
       senderName: msg.sender_display_name || msg.sender_name,
     } : null)
   }, [])
@@ -214,13 +216,16 @@ export function ChatProvider({ children }) {
       if (activeConvRef.current?.id === msg.conversation_id) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev
+          let next
           const uploadingIdx = prev.findIndex((m) => m.uploading && m.sender_id === msg.sender_id)
           if (uploadingIdx !== -1) {
-            const next = [...prev]
+            next = [...prev]
             next[uploadingIdx] = msg
-            return next
+          } else {
+            next = [...prev, msg]
           }
-          return [...prev, msg]
+          const byId = new Map(next.map((m) => [m.id, m]))
+          return next.map((m) => enrichMessageReplyMeta(m, byId))
         })
         markReadApi(msg.conversation_id).catch(() => {})
         socket?.emit('mark-read', { conversationId: msg.conversation_id })

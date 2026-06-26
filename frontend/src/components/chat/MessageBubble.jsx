@@ -93,6 +93,12 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
   }
 
   const hasReactions = reactions.length > 0
+  const replyImageUrl = getReplyImageUrl({
+    messageType: msg.reply_message_type,
+    mediaUrl: msg.reply_media_url,
+    content: msg.reply_content,
+  })
+  const showReply = hasReplyPreview(msg)
 
   return (
     <div
@@ -125,31 +131,6 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
           </p>
         )}
 
-        {/* Reply preview */}
-        {hasReplyPreview(msg) && (
-          <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-4 border-violet-400 text-xs flex items-center gap-2 ${
-            darkMode ? 'bg-gray-700 text-gray-300' : 'bg-violet-50 text-gray-600'
-          }`}>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-violet-600 text-xs">{msg.reply_sender_name || 'Unknown'}</p>
-              <p className="truncate">
-                {getReplyPreviewText({
-                  content: msg.reply_content,
-                  messageType: msg.reply_message_type,
-                  mediaUrl: msg.reply_media_url,
-                })}
-              </p>
-            </div>
-            {getReplyImageUrl({ messageType: msg.reply_message_type, mediaUrl: msg.reply_media_url }) && (
-              <img
-                src={getReplyImageUrl({ messageType: msg.reply_message_type, mediaUrl: msg.reply_media_url })}
-                alt=""
-                className="w-10 h-10 rounded object-cover shrink-0"
-              />
-            )}
-          </div>
-        )}
-
         <div className="relative">
           {/* Bubble */}
           <div className={`px-4 py-2 rounded-2xl text-sm ${
@@ -159,6 +140,37 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
               ? 'bg-gray-700 text-white rounded-bl-sm'
               : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
           }`}>
+            {showReply && (
+              <div className={`mb-2 px-2 py-1.5 rounded-lg border-l-4 flex items-center gap-2 ${
+                isMe
+                  ? 'border-violet-300 bg-white/15'
+                  : darkMode
+                  ? 'border-violet-400 bg-black/20'
+                  : 'border-violet-400 bg-violet-50'
+              }`}>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-xs font-semibold truncate ${
+                    isMe ? 'text-violet-200' : 'text-violet-600'
+                  }`}>
+                    {msg.reply_sender_name || 'Unknown'}
+                  </p>
+                  <p className={`text-xs truncate ${isMe ? 'text-white/80' : darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {getReplyPreviewText({
+                      content: msg.reply_content,
+                      messageType: msg.reply_message_type,
+                      mediaUrl: msg.reply_media_url,
+                    })}
+                  </p>
+                </div>
+                {replyImageUrl && (
+                  <img
+                    src={replyImageUrl}
+                    alt=""
+                    className="w-10 h-10 rounded object-cover shrink-0"
+                  />
+                )}
+              </div>
+            )}
             {(() => {
               const src = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
               if (msg.message_type === 'image' && src)
