@@ -127,7 +127,8 @@ export async function getUserById(req, res, next) {
     ])
     const socialMap = {}
     socialResult.rows.forEach((s) => {
-      socialMap[`${s.platform}_url`] = s.profile_url || (s.social_username ? `https://${s.platform}.com/${s.social_username}` : null)
+      socialMap[`${s.platform}_url`] = s.profile_url
+        || (s.social_username && s.platform !== 'youtube' ? `https://${s.platform}.com/${s.social_username}` : null)
     })
 
     res.json({ user: { ...user, ...socialMap, verified_websites: websitesResult.rows, rep_websites: repWebsitesResult.rows } })

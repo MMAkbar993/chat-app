@@ -68,6 +68,14 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
     })
   }, [refreshConnections])
 
+  useEffect(() => {
+    function onWindowFocus() {
+      refreshConnections()
+    }
+    window.addEventListener('focus', onWindowFocus)
+    return () => window.removeEventListener('focus', onWindowFocus)
+  }, [refreshConnections])
+
   function connectPlatform(key) {
     const wasConnected = connections.some((c) => c.platform === key)
     const connectKey = PLATFORMS.find((p) => p.key === key)?.connectKey || key
@@ -75,7 +83,7 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
       wasConnected,
       onPopupClosed: () => {
         refreshConnections().then((conns) => {
-          if (conns.some((c) => c.platform === key)) {
+          if (!wasConnected && conns.some((c) => c.platform === key)) {
             reportSocialOAuthSuccess(key)
           }
         })
