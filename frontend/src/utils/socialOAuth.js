@@ -21,6 +21,18 @@ export function getPlatformLabel(platform) {
 const handledKeys = new Set()
 const listeners = new Set()
 let globalListenersAttached = false
+let activeOAuthPopup = null
+
+function closeOAuthPopup() {
+  try {
+    if (activeOAuthPopup && !activeOAuthPopup.closed) {
+      activeOAuthPopup.close()
+    }
+  } catch {
+    // ignore — popup may already be gone
+  }
+  activeOAuthPopup = null
+}
 
 function dedupe(key, ttl = 5000) {
   if (handledKeys.has(key)) return true
@@ -34,8 +46,13 @@ function ingestOAuthResult(data) {
 
   if (data.type === 'social-connect-success') {
     if (dedupe(`ok:${data.platform}`)) return
+    closeOAuthPopup()
   } else if (data.type === 'social-connect-error') {
     if (dedupe(`err:${data.reason}:${data.ts || ''}`)) return
+    closeOAuthPopup()
+  } else if (data.type === 'social-oauth-request-close') {
+    closeOAuthPopup()
+    return
   }
 
   listeners.forEach((fn) => fn(data))
@@ -51,7 +68,11 @@ export function ensureSocialOAuthListeners() {
   globalListenersAttached = true
 
   window.addEventListener('message', (e) => {
-    if (e.data?.type === 'social-connect-success' || e.data?.type === 'social-connect-error') {
+    if (
+      e.data?.type === 'social-connect-success'
+      || e.data?.type === 'social-connect-error'
+      || e.data?.type === 'social-oauth-request-close'
+    ) {
       ingestOAuthResult(e.data)
     }
   })
@@ -97,10 +118,13 @@ export function openSocialOAuthPopup(platform, { wasConnected, onPopupClosed } =
 
   if (!popup) return { blocked: true }
 
+  activeOAuthPopup = popup
+
   const poll = setInterval(() => {
     if (!popup.closed) return
     clearInterval(poll)
-    if (!wasConnected) onPopupClosed?.()
+    if (activeOAuthPopup === popup) activeOAuthPopup = null
+    onPopupClosed?.()
   }, 500)
 
   return { blocked: false }

@@ -60,13 +60,32 @@ button{background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:12px
 button:hover{background:#6d28d9}`
 }
 
+function oauthCloseHandler() {
+  return `(function(){
+  function requestClose(){
+    try{window.close();}catch(e){}
+    if(window.opener){
+      try{window.opener.postMessage({type:'social-oauth-request-close',ts:Date.now()},'*');}catch(e){}
+    }
+    setTimeout(function(){
+      if(window.closed)return;
+      var btn=document.getElementById('oauth-close-btn');
+      var hint=document.getElementById('oauth-close-hint');
+      if(btn)btn.textContent='Return to Settings';
+      if(hint)hint.textContent='You can close this tab manually, or click the button to ask the main window to close it.';
+    },200);
+  }
+  window.requestOAuthClose=requestClose;
+})();`
+}
+
 function notifyOpenerAndStore(payload) {
   const json = JSON.stringify(payload)
   return `(function(){
   var msg=${json};
   try{localStorage.setItem(${JSON.stringify(OAUTH_RESULT_STORAGE_KEY)},JSON.stringify(msg));}catch(e){}
   if(window.opener){try{window.opener.postMessage(msg,'*');}catch(e){}}
-  setTimeout(function(){try{window.close();}catch(e){}},400);
+  setTimeout(function(){requestOAuthClose();},400);
 })();`
 }
 
@@ -80,10 +99,10 @@ function sendOAuthPopupResponse(res, { success, platform, reason }) {
 <div class="card">
   <div class="icon ok"><svg width="28" height="28" fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
   <h1>${label} connected!</h1>
-  <p>Your ${label} account was linked successfully. You can close this window and return to Settings.</p>
-  <button type="button" onclick="window.close()">Close window</button>
+  <p id="oauth-close-hint">Your ${label} account was linked successfully. This window should close automatically.</p>
+  <button id="oauth-close-btn" type="button" onclick="requestOAuthClose()">Close window</button>
 </div>
-<script>${notifyOpenerAndStore(payload)}</script>
+<script>${oauthCloseHandler()}${notifyOpenerAndStore(payload)}</script>
 </body></html>`)
   }
 
@@ -94,10 +113,10 @@ function sendOAuthPopupResponse(res, { success, platform, reason }) {
 <div class="card">
   <div class="icon err"><svg width="28" height="28" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>
   <h1>Connection failed</h1>
-  <p>${safeReason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-  <button type="button" onclick="window.close()">Close window</button>
+  <p id="oauth-close-hint">${safeReason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+  <button id="oauth-close-btn" type="button" onclick="requestOAuthClose()">Close window</button>
 </div>
-<script>${notifyOpenerAndStore(payload)}</script>
+<script>${oauthCloseHandler()}${notifyOpenerAndStore(payload)}</script>
 </body></html>`)
 }
 
@@ -127,10 +146,10 @@ const PLATFORMS = {
     scope: 'openid email profile https://www.googleapis.com/auth/youtube.readonly',
     extraAuthParams: { access_type: 'offline', prompt: 'consent' },
     extractProfile: (data) => ({
-      platformUserId: data.sub,
-      username: data.channelHandle || data.email,
+      platformUserId: data.channelId || data.sub,
+      username: data.channelHandle || data.channelTitle || data.name,
       displayName: data.channelTitle || data.name,
-      profileUrl: data.channelUrl || `https://youtube.com/channel/${data.channelId || data.sub}`,
+      profileUrl: data.channelUrl || (data.channelId ? `https://youtube.com/channel/${data.channelId}` : null),
     }),
   },
   facebook: {
@@ -232,26 +251,36 @@ async function exchangeInstagramLongLivedToken(shortLivedToken, clientSecret) {
 }
 
 async function fetchYoutubeProfile(accessToken, baseProfile) {
+  let response
   try {
-    const response = await axios.get('https://www.googleapis.com/youtube/v3/channels', {
+    response = await axios.get('https://www.googleapis.com/youtube/v3/channels', {
       params: { part: 'snippet', mine: true },
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-    const channel = response.data.items?.[0]
-    if (!channel) return baseProfile
+  } catch (err) {
+    const apiMessage = err.response?.data?.error?.message
+    console.error('YouTube channels API error:', err.response?.data || err.message)
+    throw new Error(
+      apiMessage || 'Could not fetch your YouTube channel. Ensure YouTube Data API v3 is enabled in Google Cloud Console.',
+    )
+  }
 
-    const handle = channel.snippet?.customUrl?.replace(/^@/, '')
-    return {
-      ...baseProfile,
-      channelId: channel.id,
-      channelTitle: channel.snippet?.title || baseProfile.name,
-      channelHandle: handle || channel.snippet?.title,
-      channelUrl: handle
-        ? `https://youtube.com/@${handle}`
-        : `https://youtube.com/channel/${channel.id}`,
-    }
-  } catch {
-    return baseProfile
+  const channel = response.data.items?.[0]
+  if (!channel) {
+    throw new Error('No YouTube channel found on this Google account. Create a channel at youtube.com, then try connecting again.')
+  }
+
+  const handle = channel.snippet?.customUrl?.replace(/^@/, '')
+  const channelUrl = handle
+    ? `https://youtube.com/@${handle}`
+    : `https://youtube.com/channel/${channel.id}`
+
+  return {
+    ...baseProfile,
+    channelId: channel.id,
+    channelTitle: channel.snippet?.title || baseProfile.name,
+    channelHandle: handle || null,
+    channelUrl,
   }
 }
 
@@ -458,6 +487,12 @@ export async function socialCallback(req, res) {
     }
 
     const profile = cfg.extractProfile(profileData)
+    if (platform === 'youtube' && !profile.profileUrl) {
+      return sendOAuthPopupResponse(res, {
+        reason: 'Could not determine your YouTube channel URL. Please try again.',
+        platform,
+      })
+    }
     await upsertSocialConnection(userId, platform, {
       ...profile,
       accessToken,
@@ -471,7 +506,9 @@ export async function socialCallback(req, res) {
     console.error(`Social auth error (${platform}):`, detail || err.message)
 
     let reason = 'Could not connect account. Please try again.'
-    if (platform === 'facebook' && detail?.error?.message) {
+    if (err.message && !detail?.error?.message && !detail?.error_message && !detail?.error_description) {
+      reason = err.message
+    } else if (platform === 'facebook' && detail?.error?.message) {
       reason = detail.error.message
     } else if (platform === 'instagram' && detail?.error_message) {
       reason = detail.error_message

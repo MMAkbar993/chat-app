@@ -9,9 +9,10 @@ import { findUserById } from '../db/queries/users.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 
 let io = null
-const onlineUsers = new Map()     // userId → socket count
-const groupCallRooms = new Map()  // callId → Map<userId, { name, avatar }>
-const activeCalls = new Map()     // userId → callId (users currently on a live call)
+const onlineUsers = new Map()       // userId → socket count
+const groupCallRooms = new Map()    // callId → Map<userId, { name, avatar }>
+const activeCalls = new Map()       // userId → callId (users currently on a live call)
+const pendingGroupCalls = new Map() // callId → { callerId, pending: Set<userId> }
 
 function groupBySender(rows) {
   const map = {}
@@ -165,10 +166,12 @@ export function initSocket(httpServer) {
           const call = await createCall({ callerId: userId, calleeId: null, conversationId, callType })
           activeCalls.set(userId, call.id)
           socket.emit('call-created', { call })
+          const invitedIds = new Set()
           participants
             .filter((p) => p.id !== userId)
             .forEach((p) => {
               if (activeCalls.has(p.id)) return // skip busy members
+              invitedIds.add(p.id)
               io.to(`user:${p.id}`).emit('incoming-call', {
                 callId: call.id,
                 callerId: userId,
@@ -180,6 +183,9 @@ export function initSocket(httpServer) {
                 callerAvatar: caller?.avatar_url || null,
               })
             })
+          if (invitedIds.size > 0) {
+            pendingGroupCalls.set(call.id, { callerId: userId, pending: invitedIds })
+          }
           return
         }
 
@@ -213,6 +219,7 @@ export function initSocket(httpServer) {
       try {
         await updateCallStatus(callId, 'answered')
         activeCalls.set(userId, callId)
+        pendingGroupCalls.delete(callId) // call is now live; remaining declines don't affect caller
         io.to(`user:${callerId}`).emit('call-accepted', { callId })
       } catch (err) {
         console.error('call-accept error:', err)
@@ -221,6 +228,27 @@ export function initSocket(httpServer) {
 
     socket.on('call-reject', async ({ callId, callerId }) => {
       try {
+        const groupPending = pendingGroupCalls.get(callId)
+        if (groupPending) {
+          // Group call — one person declining should not end the call for everyone
+          groupPending.pending.delete(userId)
+          if (groupPending.pending.size === 0) {
+            // Everyone has declined — now it's truly missed
+            pendingGroupCalls.delete(callId)
+            activeCalls.delete(groupPending.callerId)
+            const call = await updateCallStatus(callId, 'declined', new Date())
+            io.to(`user:${groupPending.callerId}`).emit('call-rejected', { callId })
+            if (call?.conversation_id) {
+              const content = JSON.stringify({ call_type: call.call_type, status: 'missed' })
+              const msg = await createMessage({ conversationId: call.conversation_id, senderId: groupPending.callerId, content, messageType: 'call', status: 'delivered' })
+              const participants = await getParticipants(call.conversation_id)
+              const fullMsg = { ...msg, sender_id: groupPending.callerId }
+              participants.forEach((p) => io.to(`user:${p.id}`).emit('new-message', fullMsg))
+            }
+          }
+          return
+        }
+        // Direct call
         const call = await updateCallStatus(callId, 'declined', new Date())
         activeCalls.delete(callerId)
         io.to(`user:${callerId}`).emit('call-rejected', { callId })
@@ -238,7 +266,14 @@ export function initSocket(httpServer) {
 
     socket.on('call-end', async ({ callId, targetUserId, conversationId, durationSeconds }) => {
       try {
-        const call = await updateCallStatus(callId, 'answered', new Date(), durationSeconds)
+        // If a group call was ended before anyone accepted, dismiss ringers and mark missed
+        const groupPending = pendingGroupCalls.get(callId)
+        if (groupPending) {
+          pendingGroupCalls.delete(callId)
+          groupPending.pending.forEach((uid) => io.to(`user:${uid}`).emit('call-ended', { callId }))
+        }
+        const callStatus = groupPending ? 'declined' : 'answered'
+        const call = await updateCallStatus(callId, callStatus, new Date(), durationSeconds)
         activeCalls.delete(userId)
         if (targetUserId) activeCalls.delete(targetUserId)
         const convId = call?.conversation_id || conversationId
@@ -248,7 +283,8 @@ export function initSocket(httpServer) {
             activeCalls.delete(p.id)
             if (p.id !== userId) io.to(`user:${p.id}`).emit('call-ended', { callId })
           })
-          const content = JSON.stringify({ call_type: call?.call_type, status: 'ended', duration: durationSeconds || 0 })
+          const msgStatus = groupPending ? 'missed' : 'ended'
+          const content = JSON.stringify({ call_type: call?.call_type, status: msgStatus, duration: durationSeconds || 0 })
           const msg = await createMessage({ conversationId: convId, senderId: call?.caller_id || userId, content, messageType: 'call', status: 'delivered' })
           const fullMsg = { ...msg, sender_id: call?.caller_id || userId }
           participants.forEach((p) => io.to(`user:${p.id}`).emit('new-message', fullMsg))
@@ -347,6 +383,16 @@ export function initSocket(httpServer) {
       } else {
         onlineUsers.set(userId, count - 1)
       }
+      // Clean up any pending group calls this user started (caller disconnected)
+      pendingGroupCalls.forEach((pending, callId) => {
+        if (pending.callerId === userId) {
+          pendingGroupCalls.delete(callId)
+          pending.pending.forEach((uid) => io.to(`user:${uid}`).emit('call-ended', { callId }))
+        } else {
+          // Remove disconnected user from any group calls they were invited to
+          pending.pending.delete(userId)
+        }
+      })
       // Clean up any group call rooms this user was in
       groupCallRooms.forEach((room, callId) => {
         if (room.has(userId)) {
