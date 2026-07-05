@@ -1,4 +1,37 @@
-import heroImg from '../../assets/hero.png'
+function ChatMockup() {
+  return (
+    <svg viewBox="0 0 320 220" className="w-full h-auto rounded-xl" role="img" aria-label="Chat app preview">
+      <rect width="320" height="220" rx="16" fill="#ffffff" />
+
+      {/* Header */}
+      <circle cx="30" cy="30" r="12" fill="#7C3AED" />
+      <rect x="50" y="22" width="90" height="7" rx="3.5" fill="#4C1D95" opacity="0.85" />
+      <rect x="50" y="34" width="50" height="5" rx="2.5" fill="#22C55E" opacity="0.8" />
+      <circle cx="290" cy="28" r="3" fill="#D1D5DB" />
+      <circle cx="278" cy="28" r="3" fill="#D1D5DB" />
+      <circle cx="266" cy="28" r="3" fill="#D1D5DB" />
+      <line x1="16" y1="52" x2="304" y2="52" stroke="#F3F4F6" strokeWidth="2" />
+
+      {/* Incoming bubble */}
+      <rect x="16" y="66" width="150" height="26" rx="13" fill="#F3F4F6" />
+      <rect x="28" y="75" width="90" height="6" rx="3" fill="#9CA3AF" />
+
+      {/* Outgoing bubble */}
+      <rect x="154" y="100" width="150" height="34" rx="16" fill="#7C3AED" />
+      <rect x="168" y="110" width="80" height="6" rx="3" fill="#EDE9FE" />
+      <rect x="168" y="120" width="110" height="6" rx="3" fill="#EDE9FE" opacity="0.8" />
+
+      {/* Incoming bubble with avatar */}
+      <circle cx="26" cy="152" r="10" fill="#A78BFA" />
+      <rect x="44" y="142" width="120" height="26" rx="13" fill="#F3F4F6" />
+      <rect x="56" y="151" width="70" height="6" rx="3" fill="#9CA3AF" />
+
+      {/* Outgoing short bubble */}
+      <rect x="220" y="176" width="84" height="24" rx="12" fill="#A78BFA" />
+      <rect x="232" y="184" width="50" height="6" rx="3" fill="#EDE9FE" />
+    </svg>
+  )
+}
 
 export default function AuthLayout({ children, footerLink }) {
   return (
@@ -8,7 +41,7 @@ export default function AuthLayout({ children, footerLink }) {
         <div className="w-full max-w-md mx-auto flex flex-col min-h-full">
           {/* Logo */}
           <div className="mb-8 flex justify-start">
-            <img src="/full-logo.png" alt="Connect" className="h-9" />
+            <img src="/full-logo.png" alt="Pulse" className="h-9" />
           </div>
 
           {/* Form content */}
@@ -47,15 +80,11 @@ export default function AuthLayout({ children, footerLink }) {
         <div className="relative z-10 flex flex-col items-center px-10 text-center">
           {/* App screenshot card */}
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 shadow-2xl border border-white/20 mb-8 w-full max-w-sm">
-            <img
-              src={heroImg}
-              alt="App preview"
-              className="rounded-xl w-full object-cover"
-            />
+            <ChatMockup />
           </div>
 
           <h2 className="text-white text-2xl font-bold mb-3 leading-tight">
-            Connect. Collaborate.<br />Succeed.
+            Pulse. Collaborate.<br />Succeed.
           </h2>
           <p className="text-violet-200 text-sm leading-relaxed max-w-xs">
             Join thousands of professionals on the platform built for real connections and real results.

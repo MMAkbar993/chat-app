@@ -94,10 +94,11 @@ git pull origin main
 npm run db:migrate
 pm2 restart all
 
-php artisan optimize:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+cd /home/deploy/chat
+git pull origin main
+cd backend && npm install && npm run db:migrate && cd ..
+pm2 reload chat-backend --update-env
+
 
 Create a non-root user (recommended):
 

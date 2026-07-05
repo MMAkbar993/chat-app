@@ -206,7 +206,7 @@ export async function twoFactorSetup(req, res, next) {
 
     const user = await findUserById(req.user.id)
     const secret = speakeasy.generateSecret({
-      name: `ConnectAR (${user.email})`,
+      name: `Pulse (${user.email})`,
       length: 20,
     })
 

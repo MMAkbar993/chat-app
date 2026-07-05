@@ -57,7 +57,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onMouseDown={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
-      <div className={`relative w-80 rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+      <div className={`relative w-80 max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
 
         {/* Close */}
         <button
@@ -69,8 +69,9 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
           </svg>
         </button>
 
+        <div className="max-h-[85vh] overflow-y-auto">
         {/* Banner + avatar */}
-        <div className={`h-20 ${dm ? 'bg-gradient-to-r from-violet-900 to-violet-700' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
+        <div className={`h-16 ${dm ? 'bg-gradient-to-r from-violet-900 to-violet-700' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
         <div className="px-5 pb-4">
           <div className="-mt-10 mb-3 flex items-end justify-between">
             <div className="relative">
@@ -124,11 +125,11 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
 
           {/* Info rows */}
           {infoRows.length > 0 && (
-            <div className={`rounded-2xl px-4 py-3 mb-3 space-y-2 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
+            <div className={`grid grid-cols-2 gap-x-3 gap-y-2 rounded-2xl px-4 py-3 mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
               {infoRows.map(({ label, value }) => (
-                <div key={label}>
+                <div key={label} className={`min-w-0 ${label === 'Bio' ? 'col-span-2' : ''}`}>
                   <p className={`text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{label}</p>
-                  <p className={`text-sm ${dm ? 'text-gray-200' : 'text-gray-800'}`}>{value}</p>
+                  <p className={`text-sm line-clamp-2 ${label !== 'Bio' ? 'truncate' : ''} ${dm ? 'text-gray-200' : 'text-gray-800'}`}>{value}</p>
                 </div>
               ))}
             </div>
@@ -163,6 +164,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
               <div className="w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

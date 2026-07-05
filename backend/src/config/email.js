@@ -15,7 +15,7 @@ if (smtpConfigured) {
 }
 
 const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@connectar.online'
-const APP_NAME = process.env.APP_NAME || 'ConnectAR'
+const APP_NAME = process.env.APP_NAME || 'Pulse'
 
 export async function sendPasswordResetOtp(email, otp) {
   if (!transporter) {

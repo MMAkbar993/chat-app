@@ -16,7 +16,7 @@ export default function TermsPage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/">
-            <img src="/full-logo.png" alt="ConnectAR" className="h-8" />
+            <img src="/full-logo.png" alt="Pulse" className="h-8" />
           </Link>
           <Link to="/login" className="text-sm text-violet-600 hover:underline font-medium">
             Back to Sign In
@@ -29,7 +29,7 @@ export default function TermsPage() {
         <p className="text-gray-500 text-sm mb-10">Last updated: January 2025</p>
 
         <Section title="1. Acceptance of Terms">
-          <p>By creating an account or using ConnectAR ("the Service"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, you may not use the Service.</p>
+          <p>By creating an account or using Pulse ("the Service"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, you may not use the Service.</p>
         </Section>
 
         <Section title="2. Eligibility">
@@ -62,7 +62,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="8. Intellectual Property">
-          <p>The Service, including its design, features, and underlying technology, is owned by ConnectAR and protected by intellectual property laws. You may not copy, modify, or distribute any part of the Service without our written permission.</p>
+          <p>The Service, including its design, features, and underlying technology, is owned by Pulse and protected by intellectual property laws. You may not copy, modify, or distribute any part of the Service without our written permission.</p>
         </Section>
 
         <Section title="9. Disclaimers">
@@ -70,7 +70,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="10. Limitation of Liability">
-          <p>To the maximum extent permitted by law, ConnectAR shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service. Our total liability shall not exceed the amount you paid in the 12 months preceding the claim.</p>
+          <p>To the maximum extent permitted by law, Pulse shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service. Our total liability shall not exceed the amount you paid in the 12 months preceding the claim.</p>
         </Section>
 
         <Section title="11. Termination">

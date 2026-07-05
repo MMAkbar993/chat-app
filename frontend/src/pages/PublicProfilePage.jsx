@@ -80,7 +80,7 @@ export default function PublicProfilePage() {
   if (notFound || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
-        <img src="/full-logo.png" alt="ConnectAR" className="h-8 mb-4" />
+        <img src="/full-logo.png" alt="Pulse" className="h-8 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900">Profile not found</h1>
         <p className="text-gray-500">The user @{username} doesn't exist or their profile is private.</p>
         <Link to="/login" className="text-violet-600 hover:underline text-sm font-medium">Go to Sign In</Link>
@@ -96,7 +96,7 @@ export default function PublicProfilePage() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/">
-            <img src="/full-logo.png" alt="ConnectAR" className="h-8" />
+            <img src="/full-logo.png" alt="Pulse" className="h-8" />
           </Link>
           {authUser
             ? <Link to="/chat" className="text-sm text-violet-600 hover:underline font-medium">Go to App</Link>
@@ -158,7 +158,7 @@ export default function PublicProfilePage() {
                 </span>
               )}
               {user.website_representation_approved && (
-                <span title="This user has been approved to represent a company on ConnectAR." className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 rounded-full px-3 py-1 text-xs font-medium">
+                <span title="This user has been approved to represent a company on Pulse." className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 rounded-full px-3 py-1 text-xs font-medium">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
@@ -270,7 +270,7 @@ export default function PublicProfilePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
                   )}
-                  {authUser ? 'Connect on Pulse' : 'Sign in to Connect'}
+                  {authUser ? 'Connect on Pulse' : 'Sign in to Pulse'}
                 </button>
               )}
               {addStatus === 'error' && (

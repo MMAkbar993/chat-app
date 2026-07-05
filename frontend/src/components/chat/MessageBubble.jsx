@@ -15,7 +15,7 @@ function formatTime(ts) {
 function Ticks({ status }) {
   if (status === 'read') {
     return (
-      <svg className="inline-block ml-1 text-green-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
+      <svg className="inline-block ml-1 text-blue-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
         <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>

@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/">
-            <img src="/full-logo.png" alt="ConnectAR" className="h-8" />
+            <img src="/full-logo.png" alt="Pulse" className="h-8" />
           </Link>
           <Link to="/login" className="text-sm text-violet-600 hover:underline font-medium">
             Back to Sign In

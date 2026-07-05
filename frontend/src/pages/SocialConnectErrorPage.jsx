@@ -16,7 +16,7 @@ export default function SocialConnectErrorPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6">
-      <img src="/full-logo.png" alt="ConnectAR" className="h-8 mb-8" />
+      <img src="/full-logo.png" alt="Pulse" className="h-8 mb-8" />
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-sm w-full text-center">
         <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
