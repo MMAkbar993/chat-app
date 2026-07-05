@@ -132,7 +132,7 @@ export default function ProfileView({ darkMode }) {
   const head = `text-sm font-bold mb-2 ${dm ? 'text-white' : 'text-gray-900'}`
 
   return (
-    <div className={`w-80 flex flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-96 flex flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Title */}
       <div className="px-4 pt-5 pb-3 shrink-0">
         <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Profile</h2>

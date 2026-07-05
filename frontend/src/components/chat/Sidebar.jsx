@@ -3,9 +3,10 @@ import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
 import UserProfileModal from '../ui/UserProfileModal'
+import PaymentModal from '../../features/payment/PaymentModal'
 
 const NAV = [
-  { key: 'chats', label: 'Chats', icon: (
+  { key: 'chats', label: 'Chats', color: 'blue', icon: (
     <>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
         d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -13,16 +14,14 @@ const NAV = [
         d="M12 9c-.6-1.2-2.2-1.2-2.8 0-.3.7-.1 1.5.6 2.1L12 13l2.2-1.9c.7-.6.9-1.4.6-2.1-.6-1.2-2.2-1.2-2.8 0z" />
     </>
   )},
-  { key: 'contacts', label: 'Contacts', icon: (
+  { key: 'contacts', label: 'Contacts', color: 'green', icon: (
     <>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-      <circle cx="12" cy="7" r="4" strokeWidth={1.75} fill="none" stroke="currentColor" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M16 3.5l1.5 1.5L20 2.5" />
+        d="M15 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" strokeWidth={1.75} fill="none" stroke="currentColor" />
     </>
   )},
-  { key: 'groups', label: 'Groups', icon: (
+  { key: 'groups', label: 'Groups', color: 'orange', icon: (
     <>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
         d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -31,15 +30,15 @@ const NAV = [
         d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
     </>
   )},
-  { key: 'calls', label: 'Calls', icon: (
+  { key: 'calls', label: 'Calls', color: 'pink', icon: (
     <>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M15.05 5A5 5 0 0119 8.95M15.05 1A9 9 0 0123 8.94" />
+        d="M16.05 6A4 4 0 0119 9M16.05 3A7 7 0 0122 8.95" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.22 1.2 2 2 0 012.22 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.85 7.91A16 16 0 0016.15 17.2l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 18z" />
+        d="M21 16.42v2.5a1.5 1.5 0 01-1.64 1.5 15.3 15.3 0 01-6.67-2.37 15.1 15.1 0 01-4.64-4.64A15.3 15.3 0 015.68 6.64 1.5 1.5 0 017.17 5h2.5a1.5 1.5 0 011.5 1.29c.096.72.273 1.43.53 2.11a1.5 1.5 0 01-.34 1.58l-1.06 1.06a12.3 12.3 0 004.64 4.64l1.06-1.06a1.5 1.5 0 011.58-.34c.68.257 1.39.434 2.11.53A1.5 1.5 0 0121 16.42z" />
     </>
   )},
-  { key: 'profile', label: 'Profile', icon: (
+  { key: 'profile', label: 'Profile', color: 'red', icon: (
     <>
       <circle cx="12" cy="12" r="10" strokeWidth={1.75} fill="none" stroke="currentColor" />
       <circle cx="12" cy="10" r="3" strokeWidth={1.75} fill="none" stroke="currentColor" />
@@ -47,7 +46,7 @@ const NAV = [
         d="M7 20.662V19a2 2 0 012-2h6a2 2 0 012 2v1.662" />
     </>
   )},
-  { key: 'settings', label: 'Settings', icon: (
+  { key: 'settings', label: 'Settings', color: 'slate', icon: (
     <>
       <circle cx="12" cy="12" r="3" strokeWidth={1.75} fill="none" stroke="currentColor" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
@@ -55,6 +54,16 @@ const NAV = [
     </>
   )},
 ]
+
+// Tailwind needs full class names statically present to generate them — spell each variant out.
+const NAV_COLORS = {
+  blue:   { text: 'text-blue-500',   bg: 'bg-blue-500' },
+  green:  { text: 'text-green-500',  bg: 'bg-green-500' },
+  orange: { text: 'text-orange-500', bg: 'bg-orange-500' },
+  pink:   { text: 'text-pink-500',   bg: 'bg-pink-500' },
+  red:    { text: 'text-red-500',    bg: 'bg-red-500' },
+  slate:  { text: 'text-slate-500',  bg: 'bg-slate-500' },
+}
 
 function formatNotif(n) {
   if (n.type === 'rep_request') {
@@ -83,6 +92,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
   const [notifications, setNotifications] = useState([])
   const [showPanel, setShowPanel] = useState(false)
   const [showOwnProfile, setShowOwnProfile] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [clearing, setClearing] = useState(false)
   const unread = notifications.filter((n) => !n.read).length
 
@@ -127,26 +137,40 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
         <img src="/Icon.png" alt="logo" className="w-9 h-9" />
       </div>
 
-      {NAV.map(({ key, label, icon }) => (
-        <button
-          key={key}
-          title={label}
-          onClick={() => onNav(key)}
-          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
-            active === key
-              ? 'bg-violet-600 text-white'
-              : darkMode
-              ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
-              : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
-          }`}
-        >
-          <svg className="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {icon}
-          </svg>
-        </button>
-      ))}
+      {NAV.map(({ key, label, icon, color }) => {
+        const c = NAV_COLORS[color]
+        return (
+          <button
+            key={key}
+            title={label}
+            onClick={() => onNav(key)}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+              active === key
+                ? `${c.bg} text-white`
+                : darkMode
+                ? `${c.text} hover:bg-gray-800`
+                : `${c.text} hover:bg-gray-100`
+            }`}
+          >
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {icon}
+            </svg>
+          </button>
+        )
+      })}
 
       <div className="flex-1" />
+
+      {/* Upgrade */}
+      <button
+        title="Upgrade to Premium"
+        onClick={() => setShowUpgrade(true)}
+        className="w-10 h-10 rounded-xl flex items-center justify-center mb-1 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+      >
+        <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+        </svg>
+      </button>
 
       {/* Notification bell */}
       <button
@@ -197,6 +221,8 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
         )}
       </button>
     </aside>
+
+    <PaymentModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
 
     {showOwnProfile && (
       <UserProfileModal

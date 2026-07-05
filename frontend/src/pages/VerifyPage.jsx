@@ -80,7 +80,7 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen bg-lavender flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
-        <img src="/full-logo.png" alt="Connect" className="h-8 mx-auto mb-8" />
+        <img src="/full-logo.png" alt="Pulse" className="h-8 mx-auto mb-8" />
 
         {status === 'pending' && (
           <>

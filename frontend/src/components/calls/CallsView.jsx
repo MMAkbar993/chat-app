@@ -123,18 +123,23 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName || 'Unknown'}</p>
-                <div className="flex items-center gap-1">
-                  <svg className={`w-3 h-3 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{label} · {timeAgo(c.started_at)}</span>
-                </div>
+                <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{label} · {timeAgo(c.started_at)}</span>
               </div>
-              <svg className={`w-5 h-5 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
+              <button
+                type="button"
+                title="Open chat"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const targetId = isMe ? c.callee_id : c.caller_id
+                  if (targetId) onOpenChat?.(targetId)
+                }}
+                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+              >
+                <svg className={`w-4.5 h-4.5 ${color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </button>
             </div>
           )
         })}

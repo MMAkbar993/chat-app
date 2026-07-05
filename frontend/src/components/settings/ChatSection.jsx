@@ -61,18 +61,28 @@ export default function ChatSection({ darkMode }) {
 
       <div className={divider}>
         <div className="flex items-start justify-between gap-3 py-3">
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${text}`}>Clear All Chats</p>
-            <p className={`text-xs mt-0.5 ${sub}`}>Remove all messages from your device only. Others keep their history.</p>
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <svg className={`w-4 h-4 mt-0.5 shrink-0 ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${text}`}>Clear All Chats</p>
+              <p className={`text-xs mt-0.5 ${sub}`}>Remove all messages from your device only. Others keep their history.</p>
+            </div>
           </div>
           <Toggle on={false} onClick={() => setShowClearConfirm(true)} />
         </div>
       </div>
 
       <div className="flex items-start justify-between gap-3 py-3">
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium ${text}`}>Chat Backup</p>
-          <p className={`text-xs mt-0.5 ${sub}`}>Save a copy of your chats.</p>
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <svg className={`w-4 h-4 mt-0.5 shrink-0 ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium ${text}`}>Chat Backup</p>
+            <p className={`text-xs mt-0.5 ${sub}`}>Save a copy of your chats.</p>
+          </div>
         </div>
         <Toggle on={backup} onClick={() => setBackup((b) => !b)} />
       </div>

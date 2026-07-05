@@ -304,7 +304,7 @@ export default function ContactDetailModal({
             {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
               <div className={`flex flex-wrap gap-1.5 mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                 {profile.kyc_status === 'verified' && (
-                  <span title="This user has completed identity verification before joining Connect." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium cursor-help">
+                  <span title="This user has completed identity verification before joining Pulse." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium cursor-help">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     KYC Verified
                   </span>
@@ -316,7 +316,7 @@ export default function ContactDetailModal({
                   </span>
                 )}
                 {profile.website_representation_approved && (
-                  <span title="This user has been approved to represent this company on Connect." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium cursor-help">
+                  <span title="This user has been approved to represent this company on Pulse." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium cursor-help">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                     Approved Rep
                   </span>

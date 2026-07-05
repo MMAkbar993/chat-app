@@ -56,7 +56,7 @@ function formatDate(ts) {
 function SidebarTicks({ status }) {
   if (status === 'read') {
     return (
-      <svg className="ml-1 shrink-0 text-green-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
+      <svg className="ml-1 shrink-0 text-blue-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
         <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
@@ -166,12 +166,12 @@ export default function ChatsView({ darkMode }) {
                   <button key={c.id} onClick={() => openConversation(c)}
                     className="flex flex-col items-center gap-1.5 min-w-14">
                     <div className="relative shrink-0 w-14 h-14">
-                      <div className="w-full h-full rounded-full overflow-hidden ring-2 ring-gray-100">
+                      <div className={`w-full h-full rounded-full overflow-hidden ring-2 ${darkMode ? 'ring-gray-800' : 'ring-gray-100'}`}>
                         {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                           : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-lg">{(fullName || '?')[0].toUpperCase()}</div>}
                       </div>
                       {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
-                        <span className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                        <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
                       )}
                     </div>
                     <span className={`text-xs font-medium truncate max-w-14 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{firstName}</span>
@@ -243,20 +243,25 @@ export default function ChatsView({ darkMode }) {
                         : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(name || '?')[0].toUpperCase()}</div>}
                     </div>
                     {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
-                    )}
-                    {c.is_pinned && (
-                      <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-amber-400 rounded-full flex items-center justify-center">
-                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                        </svg>
-                      </span>
+                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 pr-6">
                     <div className="flex items-center justify-between">
                       <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</span>
-                      <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        {c.is_favorite && (
+                          <svg className="w-3 h-3 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        )}
+                        {c.is_pinned && (
+                          <svg className={`w-3 h-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        )}
+                        <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
@@ -281,9 +286,9 @@ export default function ChatsView({ darkMode }) {
                         setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
                         setMenuConvId((id) => id === c.id ? null : c.id)
                       }}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                        darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-500 hover:bg-gray-100'
-                      } shadow-sm`}
+                      className={`w-6 h-6 flex items-center justify-center transition-colors ${
+                        darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'
+                      }`}
                     >
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
