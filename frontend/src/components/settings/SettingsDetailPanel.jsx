@@ -486,23 +486,29 @@ export default function SettingsDetailPanel({ darkMode, section }) {
           <div className="flex justify-center py-8">
             <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : section === 'website' ? (
+          // Website Verification builds its own full-width card layout — no outer box.
+          <div className="max-w-4xl mx-auto">
+            <WebsiteVerificationSection darkMode={dm} profile={profile} />
+          </div>
         ) : (
           <div className="max-w-xl mx-auto">
-            {section === 'profile' && <ProfileInfoForm profile={profile} darkMode={dm} onSaved={() => showToast('Profile saved.')} />}
-            {section === 'website' && <WebsiteVerificationSection darkMode={dm} profile={profile} />}
-            {section === 'social' && <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />}
-            {section === 'password' && <PasswordSection darkMode={dm} />}
-            {section === 'twofa' && <TwoFactorSection darkMode={dm} />}
-            {section === 'chat' && (
-              <>
-                <p className={`text-xs mb-3 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
-                  Chat preferences: clear history on your device, and backup.
-                </p>
-                <ChatSection darkMode={dm} />
-              </>
-            )}
-            {section === 'notifications' && <NotificationsSection darkMode={dm} />}
-            {section === 'devices' && <DeviceSection darkMode={dm} />}
+            <div className={`rounded-2xl p-6 shadow-sm ${dm ? 'bg-gray-900' : 'bg-white'}`}>
+              {section === 'profile' && <ProfileInfoForm profile={profile} darkMode={dm} onSaved={() => showToast('Profile saved.')} />}
+              {section === 'social' && <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />}
+              {section === 'password' && <PasswordSection darkMode={dm} />}
+              {section === 'twofa' && <TwoFactorSection darkMode={dm} />}
+              {section === 'chat' && (
+                <>
+                  <p className={`text-xs mb-3 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+                    Chat preferences: clear history on your device, and backup.
+                  </p>
+                  <ChatSection darkMode={dm} />
+                </>
+              )}
+              {section === 'notifications' && <NotificationsSection darkMode={dm} />}
+              {section === 'devices' && <DeviceSection darkMode={dm} />}
+            </div>
           </div>
         )}
       </div>

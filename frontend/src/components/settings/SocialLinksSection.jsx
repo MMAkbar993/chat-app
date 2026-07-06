@@ -149,10 +149,19 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
 
   return (
     <>
-      <p className={`text-xs mb-4 ${sub}`}>
-        All social profiles are verified via OAuth unless otherwise stated.
-        Verified links are shown with a badge. Other links are displayed as provided.
-      </p>
+      <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm mb-4 ${
+        darkMode ? 'bg-blue-900/20 border border-blue-800/40 text-blue-300' : 'bg-blue-50 border border-blue-100 text-blue-700'
+      }`}>
+        <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p className="leading-relaxed">
+          Connecting a social account adds a "Verified" badge to your profile, so other members
+          know you're a real person. We use secure sign-in (OAuth) to confirm it's really you —
+          we only read your public profile info and never post on your behalf. LinkedIn and
+          Affiliate Roulette don't support secure sign-in, so those are added as a plain link instead.
+        </p>
+      </div>
 
       <div className="space-y-2">
         {PLATFORMS.map((p) => {
