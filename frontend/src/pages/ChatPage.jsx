@@ -11,6 +11,7 @@ import ContactsView from '../components/contacts/ContactsView'
 import GroupsView from '../components/groups/GroupsView'
 import CallsView from '../components/calls/CallsView'
 import ProfileView from '../components/profile/ProfileView'
+import ProfileDetailPanel from '../components/profile/ProfileDetailPanel'
 import SettingsView from '../components/settings/SettingsView'
 import SettingsDetailPanel from '../components/settings/SettingsDetailPanel'
 import ChatWindow from '../components/chat/ChatWindow'
@@ -22,6 +23,7 @@ import IncomingCallModal from '../components/calls/IncomingCallModal'
 
 export default function ChatPage() {
   const [section, setSection] = useState('chats')
+  const [profileSection, setProfileSection] = useState('info')
   const [settingsSection, setSettingsSection] = useState(null)
   const [darkMode, setDarkMode] = useState(false)
   const [activeCall, setActiveCall] = useState(null)
@@ -167,13 +169,17 @@ export default function ChatPage() {
       {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} />}
       {section === 'groups' && <GroupsView darkMode={darkMode} />}
       {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} />}
-      {section === 'profile' && <ProfileView darkMode={darkMode} />}
+      {section === 'profile' && (
+        <ProfileView darkMode={darkMode} activeSection={profileSection} onSelect={setProfileSection} />
+      )}
       {section === 'settings' && (
         <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} />
       )}
 
-      {/* Right panel — settings detail on the settings tab, chat window on chats/groups, welcome screen otherwise */}
-      {section === 'settings' ? (
+      {/* Right panel — profile / settings detail on those tabs, chat window on chats/groups, welcome screen otherwise */}
+      {section === 'profile' ? (
+        <ProfileDetailPanel darkMode={darkMode} section={profileSection} />
+      ) : section === 'settings' ? (
         <SettingsDetailPanel darkMode={darkMode} section={settingsSection} />
       ) : (section === 'chats' || section === 'groups') && activeConversation ? (
         <ChatWindow darkMode={darkMode} onCallStart={handleCallStart} />
