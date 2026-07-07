@@ -9,7 +9,7 @@ import StripeCardForm from './StripeCardForm'
 import { stripePromise } from '../../stripe/stripeLoader'
 import client from '../../api/client'
 
-export default function PaymentModal({ isOpen, onClose }) {
+export default function PaymentModal({ isOpen, onClose, standalone = false }) {
   const navigate = useNavigate()
   const [step, setStep] = useState('plan')  // 'plan' | 'card'
   const [selectedPlan, setSelectedPlan] = useState('monthly')
@@ -24,7 +24,11 @@ export default function PaymentModal({ isOpen, onClose }) {
       const res = await client.post('/payment/create-subscription', { planType: selectedPlan })
       if (!res.data.clientSecret) {
         // Stripe not configured — subscription activated directly on backend
-        navigate('/verify')
+        if (standalone) {
+          onClose()
+        } else {
+          navigate('/verify')
+        }
         return
       }
       setClientSecret(res.data.clientSecret)
@@ -46,7 +50,7 @@ export default function PaymentModal({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md">
       <div className="p-7">
-        <StepIndicator currentStep={step === 'card' ? 2 : 1} />
+        {!standalone && <StepIndicator currentStep={step === 'card' ? 2 : 1} />}
 
         {step === 'plan' && (
           <div className="flex flex-col gap-5">
@@ -54,12 +58,14 @@ export default function PaymentModal({ isOpen, onClose }) {
               <h2 className="text-xl font-bold text-gray-900">Choose Your Plan</h2>
             </div>
 
-            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700 flex items-start gap-2">
-              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Don't worry — you won't be charged until your identity is verified.
-            </div>
+            {!standalone && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700 flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Don't worry — you won't be charged until your identity is verified.
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <PlanCard plan="monthly" selected={selectedPlan === 'monthly'} onSelect={setSelectedPlan} />

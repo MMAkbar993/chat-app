@@ -247,7 +247,7 @@ export default function GroupsView({ darkMode }) {
           return (
             <div
               key={g.id}
-              className="relative"
+              className={`relative border-b ${dm ? 'border-gray-800' : 'border-gray-50'}`}
               onMouseEnter={() => setHoveredId(g.id)}
               onMouseLeave={() => setHoveredId(null)}
             >

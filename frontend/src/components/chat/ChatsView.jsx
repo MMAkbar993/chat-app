@@ -56,7 +56,7 @@ function formatDate(ts) {
 function SidebarTicks({ status }) {
   if (status === 'read') {
     return (
-      <svg className="ml-1 shrink-0 text-blue-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
+      <svg className="shrink-0 text-blue-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
         <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
@@ -64,7 +64,7 @@ function SidebarTicks({ status }) {
   }
   if (status === 'delivered') {
     return (
-      <svg className="ml-1 shrink-0 text-gray-400" width="16" height="10" viewBox="0 0 16 10" fill="none">
+      <svg className="shrink-0 text-gray-400" width="16" height="10" viewBox="0 0 16 10" fill="none">
         <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
@@ -72,7 +72,7 @@ function SidebarTicks({ status }) {
   }
   // sent — single tick
   return (
-    <svg className="ml-1 shrink-0 text-gray-400" width="9" height="10" viewBox="0 0 9 10" fill="none">
+    <svg className="shrink-0 text-gray-400" width="9" height="10" viewBox="0 0 9 10" fill="none">
       <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
@@ -225,7 +225,7 @@ export default function ChatsView({ darkMode }) {
             return (
               <div
                 key={c.id}
-                className="relative"
+                className={`relative border-b ${darkMode ? 'border-gray-800' : 'border-gray-50'}`}
                 onMouseEnter={() => setHoveredConvId(c.id)}
                 onMouseLeave={() => setHoveredConvId(null)}
               >
@@ -260,18 +260,19 @@ export default function ChatsView({ darkMode }) {
                             <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                           </svg>
                         )}
+                        {c.last_message && c.last_message_sender_id === user?.id && (
+                          <SidebarTicks status={c.last_message_status || 'sent'} />
+                        )}
                         <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
-                      {c.unread_count > 0 ? (
+                      {c.unread_count > 0 && (
                         <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                           {c.unread_count}
                         </span>
-                      ) : (c.last_message && c.last_message_sender_id === user?.id) ? (
-                        <SidebarTicks status={c.last_message_status || 'sent'} />
-                      ) : null}
+                      )}
                     </div>
                   </div>
                 </button>

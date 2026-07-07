@@ -30,6 +30,22 @@ function getTagline(profile) {
   return industryRole
 }
 
+function InfoCell({ darkMode, icon, label, value, full }) {
+  if (!value) return null
+  const iconBg   = darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-100 text-violet-600'
+  const labelCls = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
+  const valueCls = `text-sm font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`
+  return (
+    <div className={`flex items-start gap-3 ${full ? 'col-span-2' : ''}`}>
+      <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>{icon}</span>
+      <div className="min-w-0">
+        <p className={labelCls}>{label}</p>
+        <p className={`${valueCls} truncate`}>{value}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function ContactDetailModal({
   contact,
   darkMode,
@@ -144,26 +160,10 @@ export default function ContactDetailModal({
   const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const overlay   = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50'
-  const modal     = `w-[440px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
+  const modal     = `w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
   const sectionBg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
   const labelCls  = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
-  const valueCls  = `text-sm font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`
-  const noteCls   = `text-xs italic mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`
-
-  function Row({ icon, label, value, link }) {
-    if (!value) return null
-    return (
-      <div className="flex items-start gap-3 py-2">
-        <span className="mt-0.5 text-gray-400">{icon}</span>
-        <div>
-          <p className={labelCls}>{label}</p>
-          {link
-            ? <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-violet-500 hover:underline break-all">{value}</a>
-            : <p className={valueCls}>{value}</p>}
-        </div>
-      </div>
-    )
-  }
+  const iconBg    = darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-100 text-violet-600'
 
   const socials = [
     { name: 'Facebook',          key: 'facebook',          url: profile?.facebook_url },
@@ -331,81 +331,81 @@ export default function ContactDetailModal({
             )}
           </div>
 
-          {/* Personal Information */}
+          {/* Personal Information — compact 2-column grid */}
           <div className={`rounded-xl p-4 ${sectionBg}`}>
-            <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
-            <Row label="Local Time" value={localTime}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" /></svg>}
-            />
-            <Row label="Date of Birth" value={dob}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2} /><path strokeLinecap="round" strokeWidth={2} d="M16 2v4M8 2v4M3 10h18" /></svg>}
-            />
-            <Row label="Company" value={profile?.company_name}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
-            />
-            <Row label="Job Title" value={profile?.job_title}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
-            />
-            {allWebsites.length > 0 && (
-              <div className="flex items-start gap-3 py-2">
-                <span className="mt-0.5 text-gray-400">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                </span>
-                <div>
-                  <p className={labelCls}>Websites</p>
-                  <div className="space-y-0.5 mt-0.5">
-                    {allWebsites.map((w, i) => (
-                      <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm font-medium text-violet-500 hover:underline break-all">
-                        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                          style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {w.url.replace(/^https?:\/\//, '')}
-                        {!w.isOwner && <span className="text-xs text-gray-400 ml-1">(rep)</span>}
-                      </a>
-                    ))}
+            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+              <InfoCell darkMode={darkMode} label="Local Time" value={localTime}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" /></svg>}
+              />
+              <InfoCell darkMode={darkMode} label="Company" value={profile?.company_name}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
+              />
+              <InfoCell darkMode={darkMode} label="Job Title" value={profile?.job_title}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+              />
+              <InfoCell darkMode={darkMode} label="Location" value={location}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+              />
+              <InfoCell darkMode={darkMode} label="Date of Birth" value={dob}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2} /><path strokeLinecap="round" strokeWidth={2} d="M16 2v4M8 2v4M3 10h18" /></svg>}
+              />
+              <InfoCell darkMode={darkMode} label="Join Date" value={joinDate}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+              />
+
+              {allWebsites.length > 0 && (
+                <div className="flex items-start gap-3 col-span-2">
+                  <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                  </span>
+                  <div className="min-w-0">
+                    <p className={labelCls}>Websites</p>
+                    <div className="space-y-0.5 mt-0.5">
+                      {allWebsites.map((w, i) => (
+                        <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm font-medium text-violet-500 hover:underline break-all">
+                          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {w.url.replace(/^https?:\/\//, '')}
+                          {!w.isOwner && <span className="text-xs text-gray-400 ml-1">(rep)</span>}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <Row label="Bio" value={bio}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-            />
-            <Row label="Location" value={location}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-            />
-            <Row label="Join Date" value={joinDate}
-              icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-            />
+              )}
+
+              <InfoCell darkMode={darkMode} full label="Bio" value={bio}
+                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
+              />
+            </div>
           </div>
 
-          {/* Social Information — only render if contact has at least one link */}
+          {/* Social Information — compact icon grid, only render if contact has at least one link */}
           {socials.some((s) => s.url) && (
           <div className={`rounded-xl p-4 ${sectionBg}`}>
-            <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
-            <div className="space-y-3">
+            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
-                <div key={sname} className="flex items-center gap-3">
-                  <SocialIcon platform={key} size={32} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <p className={labelCls}>{sname}</p>
-                      {linkedinWarning && (
-                        <div className="relative group">
-                          <svg className="w-3 h-3 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <circle cx="12" cy="12" r="10" strokeWidth={2} />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16v-4M12 8h.01" />
-                          </svg>
-                          <div className="absolute left-4 bottom-4 w-52 bg-gray-900 text-white text-xs rounded-lg px-2 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none z-20 leading-tight">
-                            LinkedIn does not allow full profile verification through third-party apps.
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-violet-500 hover:underline break-all">{url}</a>
-                  </div>
-                </div>
+                <a
+                  key={sname}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={linkedinWarning ? 'LinkedIn does not allow full profile verification through third-party apps.' : sname}
+                  className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-colors hover:border-violet-300 ${
+                    darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-white'
+                  }`}
+                >
+                  <SocialIcon platform={key} size={28} />
+                  <span className={`text-xs font-medium truncate max-w-full ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{sname}</span>
+                  {linkedinWarning && (
+                    <span className={`text-[10px] -mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Unverified</span>
+                  )}
+                </a>
               ))}
             </div>
           </div>
