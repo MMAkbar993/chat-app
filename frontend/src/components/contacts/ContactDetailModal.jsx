@@ -40,7 +40,7 @@ function InfoCell({ darkMode, icon, label, value, full }) {
       <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>{icon}</span>
       <div className="min-w-0">
         <p className={labelCls}>{label}</p>
-        <p className={`${valueCls} truncate`}>{value}</p>
+        <p className={`${valueCls} ${full ? 'break-words' : 'truncate'}`}>{value}</p>
       </div>
     </div>
   )
@@ -160,7 +160,7 @@ export default function ContactDetailModal({
   const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const overlay   = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50'
-  const modal     = `w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
+  const modal     = `w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
   const sectionBg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
   const labelCls  = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
   const iconBg    = darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-100 text-violet-600'
@@ -388,7 +388,7 @@ export default function ContactDetailModal({
           {socials.some((s) => s.url) && (
           <div className={`rounded-xl p-4 ${sectionBg}`}>
             <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
                 <a
                   key={sname}

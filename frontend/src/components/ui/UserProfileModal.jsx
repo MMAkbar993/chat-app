@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getUserById, getMyProfile } from '../../api/users'
 import client from '../../api/client'
+import SocialIcon from './SocialIcon'
 
 const SOCIALS = [
   { key: 'facebook_url',  label: 'Facebook',  color: 'text-blue-600',  svg: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /> },
@@ -11,7 +12,34 @@ const SOCIALS = [
   { key: 'youtube_url',   label: 'YouTube',   color: 'text-red-600',   svg: <><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z" /><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" /></> },
 ]
 
-export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, onClose, onCallStart, onNav }) {
+const PLATFORMS = [
+  { key: 'facebook',          label: 'Facebook' },
+  { key: 'twitter',           label: 'X (Twitter)' },
+  { key: 'linkedin',          label: 'LinkedIn',          noVerify: true },
+  { key: 'instagram',         label: 'Instagram' },
+  { key: 'youtube',           label: 'YouTube' },
+  { key: 'kick',              label: 'Kick' },
+  { key: 'twitch',            label: 'Twitch' },
+  { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true },
+]
+
+const ROLE_LABELS = {
+  affiliate_publisher:  'Affiliate Publisher',
+  casino_operator:      'Casino Operator',
+  affiliate_manager:    'Affiliate Manager',
+  game_provider:        'Game Provider',
+  payment_provider:     'Payment Provider',
+  platform_provider:    'Platform Provider',
+  media_seo_agency:     'Media / SEO Agency',
+  event_organizer:      'Event Organizer',
+  influencer_streamer:  'Influencer / Streamer',
+  investor_advisor:     'Investor / Advisor',
+  compliance_legal:     'Compliance & Legal',
+  kyc_aml_provider:     'KYC / AML Provider',
+  other:                'Other',
+}
+
+export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, onClose, onCallStart, onEditProfile }) {
   const { user: authUser } = useAuth()
   const [profile, setProfile] = useState(null)
   const [selfSocials, setSelfSocials] = useState([])
@@ -30,14 +58,43 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
   const name = profile?.display_name || profile?.full_name || profile?.username || authUser?.username || '?'
   const avatar = profile?.avatar_url
 
-  const infoRows = [
-    { label: 'Username',  value: profile?.username ? `@${profile.username}` : null },
-    { label: 'Location',  value: profile?.location || profile?.country },
-    { label: 'Bio',       value: profile?.bio },
-    { label: 'Joined',    value: profile?.created_at
-        ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-        : null },
-  ].filter((r) => r.value)
+  const lbl = `text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`
+  const val = `text-sm ${dm ? 'text-gray-200' : 'text-gray-800'}`
+  const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
+
+  // Self view gets the full detail set; viewing someone else stays a lighter public-style card.
+  const infoRows = isSelf
+    ? [
+        { label: 'Username',      value: profile?.username ? `@${profile.username}` : null },
+        { label: 'Email',         value: profile?.email },
+        { label: 'Role',          value: ROLE_LABELS[profile?.primary_role] || profile?.primary_role },
+        { label: 'Job Title',     value: profile?.job_title },
+        { label: 'Company',       value: profile?.company_name },
+        { label: 'Phone',         value: profile?.phone },
+        { label: 'Gender',        value: profile?.gender },
+        { label: 'Date of Birth', value: profile?.date_of_birth
+            ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            : null },
+        { label: 'Location',      value: profile?.location || profile?.country },
+        { label: 'Join Date',     value: profile?.created_at
+            ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            : null },
+      ].filter((r) => r.value)
+    : [
+        { label: 'Username',  value: profile?.username ? `@${profile.username}` : null },
+        { label: 'Location',  value: profile?.location || profile?.country },
+        { label: 'Bio',       value: profile?.bio },
+        { label: 'Joined',    value: profile?.created_at
+            ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            : null },
+      ].filter((r) => r.value)
+
+  const verifiedWebsites = profile?.verified_websites || []
+  const repWebsites = profile?.rep_websites || []
+  const allWebsites = [
+    ...verifiedWebsites.map((w) => ({ ...w, isOwner: true })),
+    ...repWebsites.map((w) => ({ ...w, isOwner: false })),
+  ]
 
   const visibleSocials = isSelf
     ? SOCIALS.filter(({ key }) => selfSocials.some((c) => c.platform === key.replace('_url', '') && (c.profile_url || c.username)))
@@ -57,7 +114,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onMouseDown={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
-      <div className={`relative w-80 max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+      <div className={`relative w-96 max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
 
         {/* Close */}
         <button
@@ -72,7 +129,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
         <div className="max-h-[85vh] overflow-y-auto">
         {/* Banner + avatar */}
         <div className={`h-16 ${dm ? 'bg-gradient-to-r from-violet-900 to-violet-700' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
-        <div className="px-5 pb-4">
+        <div className="px-5 pb-5">
           <div className="-mt-10 mb-3 flex items-end justify-between">
             <div className="relative">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
@@ -104,9 +161,9 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
                 </button>
               </div>
             )}
-            {isSelf && onNav && (
+            {isSelf && onEditProfile && (
               <button
-                onClick={() => { onNav('profile'); onClose() }}
+                onClick={() => { onEditProfile(); onClose() }}
                 className={`mb-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${dm ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
                 Edit Profile
@@ -117,46 +174,110 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
           {/* Name + status */}
           <p className="font-bold text-lg leading-tight">{name}</p>
           {isSelf
-            ? <p className="text-xs text-green-500 mb-3">Online</p>
-            : <p className={`text-xs mb-3 ${isOnline ? 'text-green-500' : dm ? 'text-gray-500' : 'text-gray-400'}`}>
+            ? <p className="text-xs text-green-500 mb-1">Online</p>
+            : <p className={`text-xs mb-1 ${isOnline ? 'text-green-500' : dm ? 'text-gray-500' : 'text-gray-400'}`}>
                 {isOnline ? 'Online' : 'Offline'}
               </p>
           }
+          {isSelf && profile?.bio && (
+            <p className={`text-sm mt-2 mb-1 ${dm ? 'text-gray-300' : 'text-gray-600'}`}>{profile.bio}</p>
+          )}
 
           {/* Info rows */}
           {infoRows.length > 0 && (
-            <div className={`grid grid-cols-2 gap-x-3 gap-y-2 rounded-2xl px-4 py-3 mb-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
-              {infoRows.map(({ label, value }) => (
-                <div key={label} className={`min-w-0 ${label === 'Bio' ? 'col-span-2' : ''}`}>
-                  <p className={`text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{label}</p>
-                  <p className={`text-sm line-clamp-2 ${label !== 'Bio' ? 'truncate' : ''} ${dm ? 'text-gray-200' : 'text-gray-800'}`}>{value}</p>
-                </div>
-              ))}
+            <div className={`rounded-2xl px-4 py-3 mt-3 mb-3 ${cardBg}`}>
+              <div className={isSelf ? 'grid grid-cols-2 gap-x-3 gap-y-2' : 'space-y-2'}>
+                {infoRows.map(({ label, value }) => (
+                  <div key={label} className="min-w-0">
+                    <p className={lbl}>{label}</p>
+                    <p className={`${val} ${label === 'Bio' ? 'line-clamp-2' : 'truncate'}`}>{value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Social profiles */}
-          {visibleSocials.length > 0 && (
-            <div className={`rounded-2xl px-4 py-3 ${dm ? 'bg-gray-800' : 'bg-gray-50'}`}>
-              <p className={`text-[10px] uppercase tracking-wide font-semibold mb-2 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Social</p>
-              <div className="flex flex-wrap gap-2">
-                {visibleSocials.map((s) => {
-                  const url = getSocialUrl(s)
-                  return url ? (
-                    <a
-                      key={s.key}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={s.label}
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm hover:opacity-75 transition-opacity ${dm ? 'bg-gray-700' : 'bg-white'} ${s.color}`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{s.svg}</svg>
-                    </a>
-                  ) : null
-                })}
+          {/* Websites — self only */}
+          {isSelf && allWebsites.length > 0 && (
+            <div className={`rounded-2xl px-4 py-3 mb-3 ${cardBg}`}>
+              <p className={`${lbl} mb-2`}>Websites</p>
+              <div className="space-y-1">
+                {allWebsites.map((w, i) => (
+                  <a
+                    key={i}
+                    href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-sm font-medium text-violet-500 hover:underline break-all"
+                  >
+                    <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {w.url.replace(/^https?:\/\//, '')}
+                    {!w.isOwner && <span className={`text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`}>(rep)</span>}
+                  </a>
+                ))}
               </div>
             </div>
+          )}
+
+          {/* Social profiles — self gets the full branded platform list, others get the compact icon row */}
+          {isSelf ? (
+            selfSocials.length > 0 && (
+              <div className={`rounded-2xl px-4 py-3 ${cardBg}`}>
+                <p className={`${lbl} mb-2`}>Social Media</p>
+                <div className="space-y-2">
+                  {PLATFORMS.map((p) => {
+                    const conn = selfSocials.find((c) => c.platform === p.key)
+                    if (!conn) return null
+                    return (
+                      <div key={p.key} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${dm ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
+                        <SocialIcon platform={p.key} size={26} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className={`text-sm font-medium whitespace-nowrap ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
+                            {p.urlOnly ? (
+                              <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">Connected</span>
+                            ) : p.noVerify ? (
+                              <span className={`text-xs rounded-full px-1.5 py-0.5 font-medium leading-none ${dm ? 'bg-gray-600 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Unverified</span>
+                            ) : (
+                              <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">Verified</span>
+                            )}
+                          </div>
+                          {conn.username && (
+                            <p className={`text-xs truncate mt-0.5 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>@{conn.username}</p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          ) : (
+            visibleSocials.length > 0 && (
+              <div className={`rounded-2xl px-4 py-3 ${cardBg}`}>
+                <p className={`${lbl} mb-2`}>Social</p>
+                <div className="flex flex-wrap gap-2">
+                  {visibleSocials.map((s) => {
+                    const url = getSocialUrl(s)
+                    return url ? (
+                      <a
+                        key={s.key}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={s.label}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm hover:opacity-75 transition-opacity ${dm ? 'bg-gray-700' : 'bg-white'} ${s.color}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{s.svg}</svg>
+                      </a>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )
           )}
 
           {!profile && (

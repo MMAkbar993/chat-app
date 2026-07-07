@@ -72,7 +72,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
+export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDarkMode }) {
   const { user } = useAuth()
   const { socket } = useSocket()
   const [notifications, setNotifications] = useState([])
@@ -127,7 +127,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
         <button
           key={key}
           title={label}
-          onClick={() => onNav(key)}
+          onClick={() => key === 'profile' ? setShowOwnProfile(true) : onNav(key)}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
             active === key
               ? 'bg-violet-600 text-white'
@@ -212,7 +212,7 @@ export default function Sidebar({ active, onNav, darkMode, onDarkMode }) {
         isSelf
         darkMode={darkMode}
         onClose={() => setShowOwnProfile(false)}
-        onNav={(key) => { onNav(key); setShowOwnProfile(false) }}
+        onEditProfile={onEditProfile}
       />
     )}
 
