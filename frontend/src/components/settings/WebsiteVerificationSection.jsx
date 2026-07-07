@@ -3,6 +3,7 @@ import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
   requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
   getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus, cancelRepresentationRequest,
+  getApprovedRepresentatives, revokeRepresentative,
 } from '../../api/users'
 import { useSocket } from '../../context/SocketContext'
 
@@ -56,15 +57,25 @@ function InfoTile({ darkMode, icon, color, title, desc }) {
 function StepTile({ darkMode, number, title, desc, icon }) {
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
   return (
-    <div className="flex-1 min-w-0 text-center">
-      <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-2 ${darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-violet-100 text-violet-600'}`}>
+    <div className={`relative flex-1 min-w-0 text-center rounded-2xl border pt-7 pb-5 px-3 ${
+      darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-gray-50/70 shadow-sm'
+    }`}>
+      <span className={`absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-violet-600 shadow-md ring-4 ${darkMode ? 'ring-gray-800' : 'ring-white'}`}>
         {number}
-      </div>
-      <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-2 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      </span>
+      <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-3 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
         {icon}
       </div>
       <p className={`text-xs font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</p>
       <p className={`text-[11px] mt-0.5 leading-snug ${sub}`}>{desc}</p>
+    </div>
+  )
+}
+
+function StepConnector({ darkMode }) {
+  return (
+    <div className="hidden sm:flex items-center px-1 shrink-0">
+      <div className={`w-6 border-t-2 border-dashed ${darkMode ? 'border-gray-700' : 'border-violet-200'}`} />
     </div>
   )
 }
@@ -94,6 +105,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [loadingList, setLoadingList] = useState(true)
   const [pendingRequests, setPendingRequests] = useState([])
   const [myPendingRequests, setMyPendingRequests] = useState([])
+  const [representatives, setRepresentatives] = useState([])
+  const [revokingRep, setRevokingRep] = useState(null)
 
   // Add-website form state
   const [addOpen, setAddOpen] = useState(false)
@@ -130,6 +143,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     // Load pending requests this user has sent as a requester (persists across refreshes)
     getMyRepresentationStatus()
       .then((d) => setMyPendingRequests(d.requests || []))
+      .catch(() => {})
+    getApprovedRepresentatives()
+      .then((d) => setRepresentatives(d.representatives || []))
       .catch(() => {})
   }, [])
 
@@ -168,6 +184,27 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       socket.off('rep-request-update', onRepUpdate)
     }
   }, [socket])
+
+  // Real-time: remove rep from approved list when they revoke themselves
+  useEffect(() => {
+    if (!socket) return
+    function onRepRevoked({ requesterId }) {
+      setRepresentatives((prev) => prev.filter((r) => r.user_id !== requesterId))
+    }
+    socket.on('rep-revoked', onRepRevoked)
+    return () => socket.off('rep-revoked', onRepRevoked)
+  }, [socket])
+
+  async function handleRevokeRep(userId) {
+    if (!window.confirm("Remove this user's representative access?")) return
+    setRevokingRep(userId)
+    try {
+      await revokeRepresentative(userId)
+      setRepresentatives((prev) => prev.filter((r) => r.user_id !== userId))
+      window.dispatchEvent(new CustomEvent('rep-status-changed', { detail: { userId } }))
+    } catch {}
+    setRevokingRep(null)
+  }
 
   function resetAddForm() {
     setUrl('')
@@ -307,27 +344,43 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
 
   if ((approved && websites.length === 0) && !reprRevoked) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Authorized Representative</span>
-        </div>
-        <div className={`rounded-xl border p-3 ${darkMode ? 'border-violet-800 bg-violet-900/20' : 'border-violet-100 bg-violet-50'}`}>
-          <p className={`text-xs ${darkMode ? 'text-violet-300' : 'text-violet-700'}`}>
-            You have been approved as an authorized representative
-            {profile?.company_name ? ` of ${profile.company_name}` : ''}. Your profile now shows your company affiliation.
-          </p>
-        </div>
+      <div className="space-y-4">
         {error && <p className="text-xs text-red-500">{error}</p>}
-        <button
-          onClick={handleRevokeRepr}
-          disabled={revokingRepr}
-          className="text-xs text-red-500 hover:text-red-700 underline disabled:opacity-50"
-        >
-          {revokingRepr ? 'Removing…' : 'Remove representative status'}
-        </button>
+
+        <div className={`${card} p-6 flex items-center gap-6 flex-wrap`}>
+          <Illustration
+            darkMode={darkMode}
+            badgeColor={darkMode ? 'bg-indigo-900/50 text-indigo-300' : 'bg-indigo-100 text-indigo-600'}
+            badge={
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 3a4 4 0 10-8 0" />
+              </svg>
+            }
+          />
+          <div className="flex-1 min-w-[220px]">
+            <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>You're an Authorized Representative</h3>
+            <p className={`text-sm mt-1 ${sub}`}>
+              You have been approved as an authorized representative
+              {profile?.company_name ? ` of ${profile.company_name}` : ''}. Your profile now shows your company affiliation.
+            </p>
+          </div>
+        </div>
+
+        <div className={`${card} p-5 flex items-center justify-between gap-4 flex-wrap`}>
+          <div>
+            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Remove representative status</p>
+            <p className={`text-xs mt-0.5 ${sub}`}>This will unlink your profile from the company.</p>
+          </div>
+          <button
+            onClick={handleRevokeRepr}
+            disabled={revokingRepr}
+            className="text-xs font-semibold text-red-500 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50 transition-colors shrink-0 disabled:opacity-50"
+          >
+            {revokingRepr ? 'Removing…' : 'Remove'}
+          </button>
+        </div>
+
+        <HelpCard darkMode={darkMode} />
       </div>
     )
   }
@@ -637,6 +690,44 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             </div>
           )}
 
+          {/* Approved representatives */}
+          {websites.length > 0 && (
+            <div className={`${card} p-5`}>
+              <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Authorized Representatives</h4>
+              {representatives.length === 0 ? (
+                <p className={`text-xs ${sub}`}>
+                  No authorized representatives yet. Approve requests above to add one.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {representatives.map((r) => {
+                    const name = r.display_name || r.full_name || r.username || 'Unknown'
+                    return (
+                      <div key={r.user_id} className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-sm font-bold">
+                          {r.avatar_url
+                            ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
+                            : name[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{name}</p>
+                          <p className={`text-xs truncate ${sub}`}>{r.website_url}</p>
+                        </div>
+                        <button
+                          onClick={() => handleRevokeRep(r.user_id)}
+                          disabled={revokingRep === r.user_id}
+                          className="text-xs text-red-500 hover:text-red-700 shrink-0 disabled:opacity-50"
+                        >
+                          {revokingRep === r.user_id ? 'Removing…' : 'Remove'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Why verification matters — already-verified state */}
           {websites.length > 0 && (
             <div className={`${card} p-5`}>
@@ -664,18 +755,20 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           {/* How it works — first-time / empty state only */}
           {websites.length === 0 && (
             <div className={`${card} p-5`}>
-              <h4 className={`text-sm font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>How it works</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <h4 className={`text-sm font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>How it works</h4>
+              <div className="flex flex-col sm:flex-row items-stretch gap-y-6">
                 <StepTile darkMode={darkMode}
                   number={1} title="Add Meta Tag"
                   desc="Copy the meta tag below and paste it into the <head> section of your website."
                   icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16M6 8l-4 4 4 4m12-8l4 4-4 4" /></svg>}
                 />
+                <StepConnector darkMode={darkMode} />
                 <StepTile darkMode={darkMode}
                   number={2} title="Confirm Placement"
                   desc="Once the tag is added, click the button below to let us check your website."
                   icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>}
                 />
+                <StepConnector darkMode={darkMode} />
                 <StepTile darkMode={darkMode}
                   number={3} title="You're Verified!"
                   desc="If everything is correct, your website will be verified and you'll get a confirmation."

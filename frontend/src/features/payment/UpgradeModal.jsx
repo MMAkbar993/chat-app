@@ -14,6 +14,11 @@ const ACCENT = {
   amber:  { bg: 'bg-amber-500',  tabActive: 'bg-amber-500 text-white',  hero: 'from-amber-400 to-orange-600' },
 }
 
+const PRICE = {
+  pro:      { monthly: '€6.99', yearly: '€70.00' },
+  business: { monthly: '€6.99', yearly: '€70.00' },
+}
+
 const FEATURES = {
   free: [
     { title: 'Chat', desc: 'Stay connected with verified industry professionals in real time.',
@@ -71,6 +76,7 @@ export default function UpgradeModal({ isOpen, onClose }) {
     return (
       <PaymentModal
         isOpen={isOpen}
+        standalone
         onClose={() => { setShowPayment(false); handleClose() }}
       />
     )
@@ -133,12 +139,20 @@ export default function UpgradeModal({ isOpen, onClose }) {
         {tab === 'free' ? (
           <div className="text-center text-sm text-gray-400 py-2.5">This is your current plan.</div>
         ) : (
-          <button
-            onClick={() => setShowPayment(true)}
-            className={`w-full py-3 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 bg-gradient-to-br ${accent.hero}`}
-          >
-            Upgrade to {TIERS.find((t) => t.key === tab).label}
-          </button>
+          <>
+            <div className="flex items-baseline justify-center gap-1.5 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{PRICE[tab].monthly}</span>
+              <span className="text-sm text-gray-500">/month</span>
+              <span className="text-xs text-gray-400">· or {PRICE[tab].yearly}/year</span>
+            </div>
+            <button
+              onClick={() => setShowPayment(true)}
+              className={`w-full py-3 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 bg-gradient-to-br ${accent.hero}`}
+            >
+              Upgrade to {TIERS.find((t) => t.key === tab).label}
+            </button>
+            <p className="text-center text-xs text-gray-400 mt-2">Auto-renewal. Cancel anytime.</p>
+          </>
         )}
       </div>
     </Modal>

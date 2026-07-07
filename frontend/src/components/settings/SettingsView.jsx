@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { deleteAccount } from '../../api/users'
+import { deleteAccount, deactivateAccount } from '../../api/users'
 import { useAuth } from '../../context/AuthContext'
 import BlockedContactsModal from '../contacts/BlockedContactsModal'
 import ConfirmDialog from '../ui/ConfirmDialog'
@@ -78,9 +78,11 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
   const { logout } = useAuth()
   const [showBlocked, setShowBlocked] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showDoc, setShowDoc] = useState(null) // 'terms' | 'privacy'
   const [deleting, setDeleting] = useState(false)
+  const [deactivating, setDeactivating] = useState(false)
   const [toast, setToast] = useState(null)
   const dm = darkMode
 
@@ -111,6 +113,18 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
       showToast('Could not delete account. Please try again.', 'error')
     }
     setDeleting(false)
+  }
+
+  async function handleDeactivateAccount() {
+    setShowDeactivateConfirm(false)
+    setDeactivating(true)
+    try {
+      await deactivateAccount()
+      logout()
+    } catch {
+      showToast('Could not deactivate account. Please try again.', 'error')
+    }
+    setDeactivating(false)
   }
 
   // Icon helper — colored rounded-square badge (Telegram-style)
@@ -165,6 +179,17 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
           onClick={() => onSelect('social')}
           icon={icon('M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1', 'bg-pink-500')}
           label="Social Profiles"
+        />
+
+        {/* ── BILLING ── */}
+        <SectionLabel darkMode={dm}>Billing</SectionLabel>
+        <ListRow
+          darkMode={dm}
+          active={activeSection === 'billing'}
+          onClick={() => onSelect('billing')}
+          icon={icon('M3 10h18M7 15h1m4 0h1M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', 'bg-cyan-600')}
+          label="Billing"
+          description="Plan, payment method, invoices"
         />
 
         {/* ── SECURITY ── */}
@@ -245,6 +270,14 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
 
         <ListRow
           darkMode={dm}
+          icon={icon('M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'bg-orange-500')}
+          label="Deactivate Account"
+          description="Temporarily hide your profile from others"
+          onClick={() => setShowDeactivateConfirm(true)}
+        />
+
+        <ListRow
+          darkMode={dm}
           danger
           icon={icon('M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', 'bg-red-500')}
           label="Delete Account"
@@ -280,6 +313,18 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
       {showDoc === 'privacy' && (
         <DocModal title="Privacy Policy" content={PRIVACY} darkMode={dm} onClose={() => setShowDoc(null)} />
       )}
+
+      {/* Deactivate account confirmation */}
+      <ConfirmDialog
+        open={showDeactivateConfirm}
+        darkMode={dm}
+        title="Deactivate Account?"
+        message="You will be signed out and your profile will no longer appear to others. You can reactivate by logging back in."
+        confirmLabel={deactivating ? 'Deactivating…' : 'Deactivate Account'}
+        variant="warning"
+        onConfirm={handleDeactivateAccount}
+        onCancel={() => setShowDeactivateConfirm(false)}
+      />
 
       {/* Delete account confirmation */}
       <ConfirmDialog

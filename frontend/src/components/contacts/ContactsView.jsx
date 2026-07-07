@@ -186,7 +186,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
                 const isOnline = onlineUsers.has(c.id)
                 return (
                   <button key={c.id} onClick={() => setSelectedContact(c)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${rowHov}`}>
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b ${darkMode ? 'border-gray-800' : 'border-gray-50'} ${rowHov}`}>
                     <div className="relative shrink-0">
                       <div className="w-11 h-11 rounded-full overflow-hidden">
                         {c.avatar_url

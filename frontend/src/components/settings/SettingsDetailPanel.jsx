@@ -6,6 +6,7 @@ import TwoFactorSection from './TwoFactorSection'
 import SocialLinksSection from './SocialLinksSection'
 import PasswordSection from './PasswordSection'
 import WebsiteVerificationSection from './WebsiteVerificationSection'
+import BillingSection from './BillingSection'
 import ChatSection from './ChatSection'
 import NotificationsSection from './NotificationsSection'
 import DeviceSection from './DeviceSection'
@@ -41,6 +42,11 @@ const META = {
     title: 'Social Profiles',
     color: 'bg-pink-500',
     path: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
+  },
+  billing: {
+    title: 'Billing',
+    color: 'bg-cyan-600',
+    path: 'M3 10h18M7 15h1m4 0h1M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   },
   password: {
     title: 'Password',
@@ -490,6 +496,11 @@ export default function SettingsDetailPanel({ darkMode, section }) {
           // Website Verification builds its own full-width card layout — no outer box.
           <div className="max-w-4xl mx-auto">
             <WebsiteVerificationSection darkMode={dm} profile={profile} />
+          </div>
+        ) : section === 'billing' ? (
+          // Billing builds its own full-width card layout — no outer box.
+          <div className="max-w-4xl mx-auto">
+            <BillingSection darkMode={dm} />
           </div>
         ) : (
           <div className="max-w-xl mx-auto">
