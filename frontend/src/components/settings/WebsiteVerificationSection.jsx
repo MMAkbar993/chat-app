@@ -316,6 +316,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     try {
       await handleRepresentationRequest(id, action)
       setPendingRequests((prev) => prev.filter((r) => r.id !== id))
+      if (action === 'approve') {
+        getApprovedRepresentatives()
+          .then((d) => setRepresentatives(d.representatives || []))
+          .catch(() => {})
+      }
     } catch {}
   }
 
@@ -388,11 +393,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   return (
     <div className="space-y-4">
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
-
       {/* STATE A — this website is already claimed by someone else */}
       {claimedInfo && (
         <>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+
           <button
             onClick={() => { setClaimedInfo(null); setReprRequested(false); setError('') }}
             className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700"
@@ -573,6 +578,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               <p className={`text-xs font-semibold ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
                 Awaiting Approval
               </p>
+              {error && <p className="text-xs text-red-500">{error}</p>}
               {myPendingRequests.map((r) => {
                 const ownerName = r.owner_display_name || r.owner_full_name || 'the site owner'
                 return (
@@ -612,6 +618,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                   Verify a Website
                 </button>
               </div>
+              {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
               <div className="space-y-2">
                 {websites.map((w) => (
                   <div
@@ -791,6 +798,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                   </button>
                 )}
               </div>
+
+              {error && (
+                <p className="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mb-3">{error}</p>
+              )}
 
               {step === 1 && (
                 <>

@@ -118,7 +118,7 @@ export default function ChatsView({ darkMode }) {
     return name.toLowerCase().includes(search.toLowerCase())
   })
 
-  const recent = conversations.filter((c) => !c.is_archived).slice(0, 3)
+  const recent = conversations.filter((c) => !c.is_archived).slice(0, 4)
 
   return (
     <div className={`w-80 flex flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>

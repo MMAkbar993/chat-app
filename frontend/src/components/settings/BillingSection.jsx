@@ -49,12 +49,19 @@ export default function BillingSection({ darkMode }) {
     )
   }
 
+  // A subscription only counts as "paid" once it's actually active (or was, and
+  // is now at-risk). 'incomplete' means the first payment never went through —
+  // that's effectively still the Free plan, not a plan that's about to renew.
+  const isPaid = billing?.status === 'active' || billing?.status === 'past_due'
+  const showBadge = isPaid || billing?.status === 'cancelled'
   const status = STATUS_STYLE[billing?.status] || STATUS_STYLE.inactive
-  const planLabel = billing?.plan
+  const planLabel = isPaid && billing?.plan
     ? billing.plan.charAt(0).toUpperCase() + billing.plan.slice(1)
     : 'Free'
-  const price = billing?.plan === 'yearly' ? '€70.00/year' : billing?.plan === 'monthly' ? '€6.99/month' : null
-  const renewalDate = billing?.currentPeriodEnd
+  const price = isPaid
+    ? (billing?.plan === 'yearly' ? '€70.00/year' : billing?.plan === 'monthly' ? '€6.99/month' : null)
+    : null
+  const renewalDate = isPaid && billing?.currentPeriodEnd
     ? new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
 
@@ -67,7 +74,9 @@ export default function BillingSection({ darkMode }) {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className={`text-base font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>{planLabel} Plan</h3>
-              <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${status.bg}`}>{status.label}</span>
+              {showBadge && (
+                <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${status.bg}`}>{status.label}</span>
+              )}
             </div>
             {price && <p className={`text-sm mt-1 ${sub}`}>{price}</p>}
             {renewalDate && (
@@ -75,7 +84,7 @@ export default function BillingSection({ darkMode }) {
                 {billing.cancelAtPeriodEnd ? 'Cancels on' : 'Renews on'} {renewalDate}
               </p>
             )}
-            {!billing?.plan && (
+            {!isPaid && (
               <p className={`text-sm mt-1 ${sub}`}>You're not currently subscribed to a paid plan.</p>
             )}
           </div>
@@ -83,7 +92,7 @@ export default function BillingSection({ darkMode }) {
             onClick={() => setShowUpgrade(true)}
             className="text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl px-4 py-2 transition-colors shrink-0"
           >
-            {billing?.status === 'active' ? 'Manage Plan' : 'Upgrade'}
+            {isPaid ? 'Manage Plan' : 'Upgrade'}
           </button>
         </div>
       </div>

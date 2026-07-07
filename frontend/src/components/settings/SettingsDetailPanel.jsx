@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getMyProfile, updateProfile, uploadAvatar } from '../../api/users'
 import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
+import { useSocket } from '../../context/SocketContext'
 import TwoFactorSection from './TwoFactorSection'
 import SocialLinksSection from './SocialLinksSection'
 import PasswordSection from './PasswordSection'
@@ -437,6 +438,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
 export default function SettingsDetailPanel({ darkMode, section }) {
   const dm = darkMode
+  const { socket } = useSocket()
   const [profile, setProfile] = useState(null)
   const [toast, setToast] = useState(null)
 
@@ -445,6 +447,17 @@ export default function SettingsDetailPanel({ darkMode, section }) {
     setProfile(null)
     getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
   }, [section])
+
+  // Real-time: a representation request of ours was approved/rejected, or our
+  // rep status was revoked — refetch so website_representation_approved / rep_websites stay live.
+  useEffect(() => {
+    if (!socket) return
+    function refreshProfile() {
+      getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
+    }
+    socket.on('rep-request-update', refreshProfile)
+    return () => socket.off('rep-request-update', refreshProfile)
+  }, [socket])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -502,11 +515,15 @@ export default function SettingsDetailPanel({ darkMode, section }) {
           <div className="max-w-4xl mx-auto">
             <BillingSection darkMode={dm} />
           </div>
+        ) : section === 'social' ? (
+          // Social Profiles builds its own full-width card layout — no outer box.
+          <div className="max-w-4xl mx-auto">
+            <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
+          </div>
         ) : (
           <div className="max-w-xl mx-auto">
             <div className={`rounded-2xl p-6 shadow-sm ${dm ? 'bg-gray-900' : 'bg-white'}`}>
               {section === 'profile' && <ProfileInfoForm profile={profile} darkMode={dm} onSaved={() => showToast('Profile saved.')} />}
-              {section === 'social' && <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />}
               {section === 'password' && <PasswordSection darkMode={dm} />}
               {section === 'twofa' && <TwoFactorSection darkMode={dm} />}
               {section === 'chat' && (
