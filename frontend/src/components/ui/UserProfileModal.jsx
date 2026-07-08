@@ -12,17 +12,6 @@ const SOCIALS = [
   { key: 'youtube_url',   label: 'YouTube',   color: 'text-red-600',   svg: <><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z" /><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" /></> },
 ]
 
-const PLATFORMS = [
-  { key: 'facebook',          label: 'Facebook' },
-  { key: 'twitter',           label: 'X (Twitter)' },
-  { key: 'linkedin',          label: 'LinkedIn',          noVerify: true },
-  { key: 'instagram',         label: 'Instagram' },
-  { key: 'youtube',           label: 'YouTube' },
-  { key: 'kick',              label: 'Kick' },
-  { key: 'twitch',            label: 'Twitch' },
-  { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true },
-]
-
 const ROLE_LABELS = {
   affiliate_publisher:  'Affiliate Publisher',
   casino_operator:      'Casino Operator',
@@ -114,7 +103,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onMouseDown={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
-      <div className={`relative w-96 max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+      <div className={`relative w-[440px] max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
 
         {/* Close */}
         <button
@@ -130,7 +119,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
         {/* Banner + avatar */}
         <div className={`h-16 ${dm ? 'bg-gradient-to-r from-violet-900 to-violet-700' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
         <div className="px-5 pb-5">
-          <div className="-mt-10 mb-3 flex items-end justify-between">
+          <div className="-mt-10 mb-3 flex items-start justify-between">
             <div className="relative">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                 {avatar
@@ -142,7 +131,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
 
             {/* Action buttons */}
             {!isSelf && onCallStart && (
-              <div className="flex gap-2 mb-1">
+              <div className="flex gap-2 mt-12">
                 <button
                   onClick={() => { onCallStart('audio'); onClose() }}
                   className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shadow"
@@ -164,7 +153,7 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
             {isSelf && onEditProfile && (
               <button
                 onClick={() => { onEditProfile(); onClose() }}
-                className={`mb-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${dm ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                className={`mt-12 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${dm ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
                 Edit Profile
               </button>
@@ -222,62 +211,28 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
             </div>
           )}
 
-          {/* Social profiles — self gets the full branded platform list, others get the compact icon row */}
-          {isSelf ? (
-            selfSocials.length > 0 && (
-              <div className={`rounded-2xl px-4 py-3 ${cardBg}`}>
-                <p className={`${lbl} mb-2`}>Social Media</p>
-                <div className="space-y-2">
-                  {PLATFORMS.map((p) => {
-                    const conn = selfSocials.find((c) => c.platform === p.key)
-                    if (!conn) return null
-                    return (
-                      <div key={p.key} className={`flex items-center gap-3 rounded-xl px-3 py-2 ${dm ? 'bg-gray-700' : 'bg-white border border-gray-100'}`}>
-                        <SocialIcon platform={p.key} size={26} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className={`text-sm font-medium whitespace-nowrap ${dm ? 'text-white' : 'text-gray-800'}`}>{p.label}</p>
-                            {p.urlOnly ? (
-                              <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">Connected</span>
-                            ) : p.noVerify ? (
-                              <span className={`text-xs rounded-full px-1.5 py-0.5 font-medium leading-none ${dm ? 'bg-gray-600 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>Unverified</span>
-                            ) : (
-                              <span className="text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5 font-medium leading-none">Verified</span>
-                            )}
-                          </div>
-                          {conn.username && (
-                            <p className={`text-xs truncate mt-0.5 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>@{conn.username}</p>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+          {/* Social profiles — icon-only row, same for self and others */}
+          {visibleSocials.length > 0 && (
+            <div className={`rounded-2xl px-4 py-3 ${cardBg}`}>
+              <p className={`${lbl} mb-2`}>Social</p>
+              <div className="flex flex-wrap gap-2">
+                {visibleSocials.map((s) => {
+                  const url = getSocialUrl(s)
+                  return url ? (
+                    <a
+                      key={s.key}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={s.label}
+                      className="hover:scale-105 transition-transform"
+                    >
+                      <SocialIcon platform={s.key.replace('_url', '')} size={40} />
+                    </a>
+                  ) : null
+                })}
               </div>
-            )
-          ) : (
-            visibleSocials.length > 0 && (
-              <div className={`rounded-2xl px-4 py-3 ${cardBg}`}>
-                <p className={`${lbl} mb-2`}>Social</p>
-                <div className="flex flex-wrap gap-2">
-                  {visibleSocials.map((s) => {
-                    const url = getSocialUrl(s)
-                    return url ? (
-                      <a
-                        key={s.key}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={s.label}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm hover:opacity-75 transition-opacity ${dm ? 'bg-gray-700' : 'bg-white'} ${s.color}`}
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{s.svg}</svg>
-                      </a>
-                    ) : null
-                  })}
-                </div>
-              </div>
-            )
+            </div>
           )}
 
           {!profile && (

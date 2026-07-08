@@ -160,7 +160,7 @@ export default function ContactDetailModal({
   const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const overlay   = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50'
-  const modal     = `w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
+  const modal     = `relative w-[650px] max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
   const sectionBg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
   const labelCls  = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
   const iconBg    = darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-100 text-violet-600'
@@ -200,109 +200,98 @@ export default function ContactDetailModal({
     <div className={overlay} onClick={onClose}>
       <div className={modal} onClick={(e) => e.stopPropagation()}>
 
-        {/* Header */}
-        <div className={`flex items-center justify-between px-5 py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-          <h2 className="font-semibold text-base">Contact Detail</h2>
-          <div className="flex items-center gap-1">
-            {/* Three-dot menu */}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen((o) => !o)}
-                className={`p-1.5 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
-                </svg>
-              </button>
-              {menuOpen && (
-                <div className={`absolute right-0 top-8 w-44 rounded-xl shadow-lg z-10 py-1 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'}`}>
-                  <button
-                    onClick={() => { setMenuOpen(false); onEdit?.(contact) }}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
-                  >
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Contact
-                  </button>
-                  <button
-                    onClick={() => { setMenuOpen(false); setConfirm({ type: blocked ? 'unblock' : 'block' }) }}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left ${blocked ? 'text-green-500' : 'text-orange-500'} ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <circle cx="12" cy="12" r="10" strokeWidth={2} />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.93 4.93l14.14 14.14" />
-                    </svg>
-                    {blocked ? 'Unblock' : 'Block'}
-                  </button>
-                  <button
-                    onClick={() => { setMenuOpen(false); setConfirm({ type: 'delete' }) }}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-500 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-            {/* Close */}
-            <button onClick={onClose} className={`p-1 rounded-lg ${darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        {/* Menu + close — floating over the banner */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
               </svg>
             </button>
+            {menuOpen && (
+              <div className={`absolute right-0 top-10 w-44 rounded-xl shadow-lg z-10 py-1 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'}`}>
+                <button
+                  onClick={() => { setMenuOpen(false); onEdit?.(contact) }}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                >
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Contact
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); setConfirm({ type: blocked ? 'unblock' : 'block' }) }}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left ${blocked ? 'text-green-500' : 'text-orange-500'} ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10" strokeWidth={2} />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.93 4.93l14.14 14.14" />
+                  </svg>
+                  {blocked ? 'Unblock' : 'Block'}
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); setConfirm({ type: 'delete' }) }}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-500 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
+          <button onClick={onClose} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        <div className="px-5 py-5 space-y-5">
+        <div className="max-h-[90vh] overflow-y-auto">
 
-          {/* Toast */}
-          {toast && (
-            <div className={`px-3 py-2 rounded-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-              {toast.msg}
-            </div>
-          )}
-
-          {/* Contact card */}
-          <div className={`rounded-xl p-4 ${sectionBg}`}>
-            <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white font-bold text-xl">
-              {avatar
-                ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                : displayName[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-base truncate">{displayName}</p>
-              {tagline && <p className={`text-sm truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
-              {blocked && <span className="text-xs text-orange-500 font-medium">Blocked</span>}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={onChat} title="Chat"
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-100'} shadow-sm text-violet-500 transition-colors`}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </button>
-              <button onClick={() => onCall?.('audio')} title="Voice call"
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-100'} shadow-sm text-violet-500 transition-colors`}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-              </button>
-              <button onClick={() => onCall?.('video')} title="Video call"
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-100'} shadow-sm text-violet-500 transition-colors`}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
-            </div>
+          {/* Banner + avatar */}
+          <div className={`h-16 ${darkMode ? 'bg-gradient-to-r from-violet-900 to-violet-700' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
+          <div className="px-5 pb-5">
+            <div className="-mt-10 mb-3 flex items-start justify-between">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                {avatar
+                  ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                  : displayName[0].toUpperCase()}
+              </div>
+              <div className="flex items-center gap-2 mt-12">
+                <button onClick={onChat} title="Chat"
+                  className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shadow">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </button>
+                <button onClick={() => onCall?.('audio')} title="Voice call"
+                  className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shadow">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </button>
+                <button onClick={() => onCall?.('video')} title="Video call"
+                  className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shadow">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            {/* Verification badges — dedicated row below the header */}
+            {/* Name + tagline */}
+            <p className="font-bold text-lg leading-tight">{displayName}</p>
+            {tagline && <p className={`text-sm mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
+            {blocked && <span className="text-xs text-orange-500 font-medium">Blocked</span>}
+
+            {/* Verification badges */}
             {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
-              <div className={`flex flex-wrap gap-1.5 mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <div className="flex flex-wrap gap-1.5 mt-2">
                 {profile.kyc_status === 'verified' && (
                   <span title="This user has completed identity verification before joining Pulse." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium cursor-help">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -329,7 +318,13 @@ export default function ContactDetailModal({
                 )}
               </div>
             )}
-          </div>
+
+          {/* Toast */}
+          {toast && (
+            <div className={`px-3 py-2 rounded-xl text-sm font-medium mt-3 ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+              {toast.msg}
+            </div>
+          )}
 
           {/* Personal Information — compact 2-column grid */}
           <div className={`rounded-xl p-4 ${sectionBg}`}>
@@ -384,11 +379,11 @@ export default function ContactDetailModal({
             </div>
           </div>
 
-          {/* Social Information — compact icon grid, only render if contact has at least one link */}
+          {/* Social — icon-only row, only render if contact has at least one link */}
           {socials.some((s) => s.url) && (
           <div className={`rounded-xl p-4 ${sectionBg}`}>
-            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Information</p>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social</p>
+            <div className="flex flex-wrap gap-2">
               {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
                 <a
                   key={sname}
@@ -396,20 +391,15 @@ export default function ContactDetailModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   title={linkedinWarning ? 'LinkedIn does not allow full profile verification through third-party apps.' : sname}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-colors hover:border-violet-300 ${
-                    darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-white'
-                  }`}
+                  className="hover:scale-105 transition-transform"
                 >
-                  <SocialIcon platform={key} size={28} />
-                  <span className={`text-xs font-medium truncate max-w-full ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{sname}</span>
-                  {linkedinWarning && (
-                    <span className={`text-[10px] -mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Unverified</span>
-                  )}
+                  <SocialIcon platform={key} size={40} />
                 </a>
               ))}
             </div>
           </div>
           )}
+          </div>
         </div>
       </div>
 
