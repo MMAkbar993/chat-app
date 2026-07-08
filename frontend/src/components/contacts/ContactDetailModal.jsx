@@ -30,18 +30,14 @@ function getTagline(profile) {
   return industryRole
 }
 
-function InfoCell({ darkMode, icon, label, value, full }) {
+function InfoCell({ darkMode, label, value, full }) {
   if (!value) return null
-  const iconBg   = darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-100 text-violet-600'
   const labelCls = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
   const valueCls = `text-sm font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`
   return (
-    <div className={`flex items-start gap-3 ${full ? 'col-span-2' : ''}`}>
-      <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>{icon}</span>
-      <div className="min-w-0">
-        <p className={labelCls}>{label}</p>
-        <p className={`${valueCls} ${full ? 'break-words' : 'truncate'}`}>{value}</p>
-      </div>
+    <div className={`min-w-0 ${full ? 'col-span-2' : ''}`}>
+      <p className={labelCls}>{label}</p>
+      <p className={`${valueCls} ${full ? 'break-words' : 'truncate'}`}>{value}</p>
     </div>
   )
 }
@@ -160,10 +156,9 @@ export default function ContactDetailModal({
   const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const overlay   = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50'
-  const modal     = `relative w-[650px] max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
+  const modal     = `relative w-[440px] max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
   const sectionBg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
   const labelCls  = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
-  const iconBg    = darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-100 text-violet-600'
 
   const socials = [
     { name: 'Facebook',          key: 'facebook',          url: profile?.facebook_url },
@@ -288,117 +283,99 @@ export default function ContactDetailModal({
             <p className="font-bold text-lg leading-tight">{displayName}</p>
             {tagline && <p className={`text-sm mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
             {blocked && <span className="text-xs text-orange-500 font-medium">Blocked</span>}
+            {bio && <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{bio}</p>}
 
-            {/* Verification badges */}
-            {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {profile.kyc_status === 'verified' && (
-                  <span title="This user has completed identity verification before joining Pulse." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium cursor-help">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    KYC Verified
-                  </span>
-                )}
-                {profile.website_verified && (
-                  <span title="This website was verified through a meta tag or approved company representation." className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium cursor-help">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Website Verified
-                  </span>
-                )}
-                {profile.website_representation_approved && (
-                  <span title="This user has been approved to represent this company on Pulse." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium cursor-help">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                    Approved Rep
-                  </span>
-                )}
-                {oauthSocials.some((s) => s.url) && (
-                  <span title="This social profile was verified through secure OAuth login." className="inline-flex items-center gap-1 text-xs bg-pink-100 text-pink-700 rounded-full px-2 py-0.5 font-medium cursor-help">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                    Social Verified
-                  </span>
-                )}
-              </div>
-            )}
-
-          {/* Toast */}
-          {toast && (
-            <div className={`px-3 py-2 rounded-xl text-sm font-medium mt-3 ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-              {toast.msg}
-            </div>
-          )}
-
-          {/* Personal Information — compact 2-column grid */}
-          <div className={`rounded-xl p-4 ${sectionBg}`}>
-            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-4">
-              <InfoCell darkMode={darkMode} label="Local Time" value={localTime}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" /></svg>}
-              />
-              <InfoCell darkMode={darkMode} label="Company" value={profile?.company_name}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
-              />
-              <InfoCell darkMode={darkMode} label="Job Title" value={profile?.job_title}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
-              />
-              <InfoCell darkMode={darkMode} label="Location" value={location}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-              />
-              <InfoCell darkMode={darkMode} label="Date of Birth" value={dob}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth={2} /><path strokeLinecap="round" strokeWidth={2} d="M16 2v4M8 2v4M3 10h18" /></svg>}
-              />
-              <InfoCell darkMode={darkMode} label="Join Date" value={joinDate}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-              />
-
-              {allWebsites.length > 0 && (
-                <div className="flex items-start gap-3 col-span-2">
-                  <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                  </span>
-                  <div className="min-w-0">
-                    <p className={labelCls}>Websites</p>
-                    <div className="space-y-0.5 mt-0.5">
-                      {allWebsites.map((w, i) => (
-                        <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-sm font-medium text-violet-500 hover:underline break-all">
-                          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {w.url.replace(/^https?:\/\//, '')}
-                          {!w.isOwner && <span className="text-xs text-gray-400 ml-1">(rep)</span>}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+            <div className="mt-4 space-y-4">
+              {/* Verification badges */}
+              {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.kyc_status === 'verified' && (
+                    <span title="This user has completed identity verification before joining Pulse." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      KYC Verified
+                    </span>
+                  )}
+                  {profile.website_verified && (
+                    <span title="This website was verified through a meta tag or approved company representation." className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      Website Verified
+                    </span>
+                  )}
+                  {profile.website_representation_approved && (
+                    <span title="This user has been approved to represent this company on Pulse." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                      Approved Rep
+                    </span>
+                  )}
+                  {oauthSocials.some((s) => s.url) && (
+                    <span title="This social profile was verified through secure OAuth login." className="inline-flex items-center gap-1 text-xs bg-pink-100 text-pink-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                      Social Verified
+                    </span>
+                  )}
                 </div>
               )}
 
-              <InfoCell darkMode={darkMode} full label="Bio" value={bio}
-                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
-              />
-            </div>
-          </div>
+              {/* Toast */}
+              {toast && (
+                <div className={`px-3 py-2 rounded-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                  {toast.msg}
+                </div>
+              )}
 
-          {/* Social — icon-only row, only render if contact has at least one link */}
-          {socials.some((s) => s.url) && (
-          <div className={`rounded-xl p-4 ${sectionBg}`}>
-            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social</p>
-            <div className="flex flex-wrap gap-2">
-              {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
-                <a
-                  key={sname}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={linkedinWarning ? 'LinkedIn does not allow full profile verification through third-party apps.' : sname}
-                  className="hover:scale-105 transition-transform"
-                >
-                  <SocialIcon platform={key} size={40} />
-                </a>
-              ))}
+              {/* Personal Information — plain label/value pairs, no icons */}
+              <div className={`rounded-xl p-4 ${sectionBg}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+                  <InfoCell darkMode={darkMode} label="Local Time" value={localTime} />
+                  <InfoCell darkMode={darkMode} label="Company" value={profile?.company_name} />
+                  <InfoCell darkMode={darkMode} label="Job Title" value={profile?.job_title} />
+                  <InfoCell darkMode={darkMode} label="Location" value={location} />
+                  <InfoCell darkMode={darkMode} label="Date of Birth" value={dob} />
+                  <InfoCell darkMode={darkMode} label="Join Date" value={joinDate} />
+
+                  {allWebsites.length > 0 && (
+                    <div className="col-span-2">
+                      <p className={labelCls}>Websites</p>
+                      <div className="space-y-1 mt-1">
+                        {allWebsites.map((w, i) => (
+                          <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-sm font-medium text-violet-500 hover:underline break-all">
+                            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                              style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {w.url.replace(/^https?:\/\//, '')}
+                            {!w.isOwner && <span className={`text-xs ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>(rep)</span>}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Social — icon-only row, only render if contact has at least one link */}
+              {socials.some((s) => s.url) && (
+              <div className={`rounded-xl p-4 ${sectionBg}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social</p>
+                <div className="flex flex-wrap gap-2">
+                  {socials.filter((s) => s.url).map(({ name: sname, key, url, linkedinWarning }) => (
+                    <a
+                      key={sname}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={linkedinWarning ? 'LinkedIn does not allow full profile verification through third-party apps.' : sname}
+                      className="hover:scale-105 transition-transform"
+                    >
+                      <SocialIcon platform={key} size={40} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+              )}
             </div>
-          </div>
-          )}
           </div>
         </div>
       </div>
