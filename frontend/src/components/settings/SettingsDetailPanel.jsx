@@ -521,7 +521,7 @@ export default function SettingsDetailPanel({ darkMode, section }) {
             <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
           </div>
         ) : (
-          <div className="max-w-xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className={`rounded-2xl p-6 shadow-sm ${dm ? 'bg-gray-900' : 'bg-white'}`}>
               {section === 'profile' && <ProfileInfoForm profile={profile} darkMode={dm} onSaved={() => showToast('Profile saved.')} />}
               {section === 'password' && <PasswordSection darkMode={dm} />}
