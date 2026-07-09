@@ -332,6 +332,17 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
         </div>
       </div>
 
+      {/* OAuth info */}
+      <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs ${darkMode ? 'bg-violet-900/20 text-violet-300' : 'bg-violet-50 text-violet-700'}`}>
+        <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>
+          We use secure sign-in (OAuth) to confirm ownership. We never see your passwords and cannot post on your behalf.
+          LinkedIn and Affiliate Roulette don't support secure sign-in, so those are added as a plain link instead.
+        </span>
+      </div>
+
       {/* Why connect */}
       <div className={`${card} grid grid-cols-1 sm:grid-cols-3 gap-4 p-5`}>
         <InfoTile
@@ -374,14 +385,6 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
           </>
         )}
       </div>
-
-      <p className={`flex items-center gap-1.5 text-xs ${sub}`}>
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-        We use secure sign-in (OAuth) to confirm ownership. We never see your passwords and cannot post on your behalf.
-        LinkedIn and Affiliate Roulette don't support secure sign-in, so those are added as a plain link instead.
-      </p>
 
       <ConfirmDialog
         open={!!confirmDisconnect}

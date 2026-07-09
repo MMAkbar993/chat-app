@@ -128,6 +128,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [dialogLoading, setDialogLoading] = useState(false)
 
   const approved = profile?.website_representation_approved || false
+  // `websites` includes pending (unverified) rows too — only `.verified` rows count as actually owned.
+  const verifiedWebsites = websites.filter((w) => w.verified)
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
   const inp = `w-full rounded-xl px-4 py-2.5 text-sm outline-none border ${
     darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
@@ -150,12 +152,12 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   }, [])
 
   useEffect(() => {
-    if (websites.length > 0) {
+    if (verifiedWebsites.length > 0) {
       getRepresentationRequests()
         .then((d) => setPendingRequests(d.requests || []))
         .catch(() => {})
     }
-  }, [websites.length])
+  }, [verifiedWebsites.length])
 
   // Real-time: refresh owner's pending list when a new rep request arrives
   useEffect(() => {
@@ -347,7 +349,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setRevokingRepr(false)
   }
 
-  if ((approved && websites.length === 0) && !reprRevoked) {
+  if ((approved && verifiedWebsites.length === 0) && !reprRevoked) {
     return (
       <div className="space-y-4">
         {error && <p className="text-xs text-red-500">{error}</p>}
@@ -522,7 +524,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       {!claimedInfo && (
         <>
           {/* Hero */}
-          {websites.length > 0 ? (
+          {verifiedWebsites.length > 0 ? (
             <div className={`${card} p-6 flex items-center gap-6 flex-wrap`}>
               <Illustration darkMode={darkMode}
                 badgeColor="bg-green-500 text-white"
@@ -558,7 +560,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* Benefit tiles — first-time / empty state only */}
-          {websites.length === 0 && (
+          {verifiedWebsites.length === 0 && (
             <div className={`${card} grid grid-cols-1 sm:grid-cols-3 gap-4 p-5`}>
               <InfoTile darkMode={darkMode}
                 color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
@@ -610,7 +612,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* Verified websites list */}
-          {!loadingList && websites.length > 0 && (
+          {!loadingList && verifiedWebsites.length > 0 && (
             <div className={`${card} p-5`}>
               <div className="flex items-center justify-between mb-3">
                 <h4 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Verified Websites</h4>
@@ -626,7 +628,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               </div>
               {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
               <div className="space-y-2">
-                {websites.map((w) => (
+                {verifiedWebsites.map((w) => (
                   <div
                     key={w.id}
                     className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border ${darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-gray-50'}`}
@@ -670,7 +672,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* Pending representation requests (only shown when owner has verified websites) */}
-          {websites.length > 0 && pendingRequests.length > 0 && (
+          {verifiedWebsites.length > 0 && pendingRequests.length > 0 && (
             <div className={`${card} p-4 space-y-3`}>
               <p className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 Pending Representation Requests
@@ -704,7 +706,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* Approved representatives */}
-          {websites.length > 0 && (
+          {verifiedWebsites.length > 0 && (
             <div className={`${card} p-5`}>
               <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Authorized Representatives</h4>
               {representatives.length === 0 ? (
@@ -742,7 +744,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* Why verification matters — already-verified state */}
-          {websites.length > 0 && (
+          {verifiedWebsites.length > 0 && (
             <div className={`${card} p-5`}>
               <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Why Verification Matters</h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -766,7 +768,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* How it works — first-time / empty state only */}
-          {websites.length === 0 && (
+          {verifiedWebsites.length === 0 && (
             <div className={`${card} p-5`}>
               <h4 className={`text-sm font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>How it works</h4>
               <div className="flex flex-col sm:flex-row items-stretch gap-y-6">
@@ -792,13 +794,13 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           )}
 
           {/* Add-website form (step 1 / step 2) */}
-          {(websites.length === 0 || addOpen) && (
+          {(verifiedWebsites.length === 0 || addOpen) && (
             <div className={`${card} p-5`}>
               <div className="flex items-center justify-between mb-3">
                 <h4 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {websites.length === 0 ? 'Verify a Website You Own' : 'Verify Another Website'}
+                  {verifiedWebsites.length === 0 ? 'Verify a Website You Own' : 'Verify Another Website'}
                 </h4>
-                {websites.length > 0 && (
+                {verifiedWebsites.length > 0 && (
                   <button onClick={() => { resetAddForm(); setAddOpen(false) }} className={`text-xs ${sub} hover:text-gray-700`}>
                     Cancel
                   </button>
