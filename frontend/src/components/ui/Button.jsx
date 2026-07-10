@@ -9,6 +9,7 @@ export default function Button({
   const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl px-6 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-60 disabled:cursor-not-allowed'
   const variants = {
     primary: 'bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white shadow-md hover:shadow-lg',
+    gradient: 'bg-gradient-to-r from-sky-400 to-violet-600 hover:brightness-105 active:scale-[0.98] text-white shadow-md hover:shadow-lg',
     outline: 'border-2 border-violet-600 text-violet-600 hover:bg-violet-50 active:scale-[0.98]',
     ghost: 'text-violet-600 hover:bg-violet-50 active:scale-[0.98]',
   }
