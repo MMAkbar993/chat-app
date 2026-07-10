@@ -9,6 +9,7 @@ export default function SignupPage() {
 
   return (
     <AuthLayout
+      wide
       footerLink={
         <span>
           Already have an account?{' '}
