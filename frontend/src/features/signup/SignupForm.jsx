@@ -6,6 +6,22 @@ import CountrySelect from './CountrySelect'
 import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 
+function MailIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  )
+}
+
+function UserIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  )
+}
+
 export default function SignupForm({ onSuccess }) {
   const { login } = useAuth()
   const [serverError, setServerError] = useState('')
@@ -39,7 +55,7 @@ export default function SignupForm({ onSuccess }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Register</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
         <p className="text-sm text-gray-500 mt-1">Personal Information &amp; Primary Role</p>
       </div>
 
@@ -54,6 +70,8 @@ export default function SignupForm({ onSuccess }) {
         placeholder="John Doe"
         error={errors.full_name?.message}
         required
+        iconPosition="right"
+        icon={UserIcon}
         {...register('full_name', {
           required: 'Full name is required',
           minLength: { value: 2, message: 'At least 2 characters' },
@@ -66,6 +84,8 @@ export default function SignupForm({ onSuccess }) {
         placeholder="johndoe123"
         error={errors.username?.message}
         required
+        iconPosition="right"
+        icon={UserIcon}
         {...register('username', {
           required: 'Username is required',
           minLength: { value: 3, message: 'At least 3 characters' },
@@ -98,6 +118,8 @@ export default function SignupForm({ onSuccess }) {
         placeholder="john@example.com"
         error={errors.email?.message}
         required
+        iconPosition="right"
+        icon={MailIcon}
         {...register('email', {
           required: 'Email is required',
           pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email address' },
@@ -228,8 +250,11 @@ export default function SignupForm({ onSuccess }) {
 
       <p className="text-xs text-gray-400">2FA can be set up under Settings once logged in.</p>
 
-      <Button type="submit" loading={isSubmitting} className="w-full mt-1">
-        Create Account →
+      <Button type="submit" loading={isSubmitting} variant="gradient" className="w-full mt-1">
+        Create Account
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
       </Button>
     </form>
   )

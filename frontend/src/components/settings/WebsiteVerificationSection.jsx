@@ -174,6 +174,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       if (action === 'revoked') {
         // Owner removed us — hide the "Authorized Representative" panel immediately
         setReprRevoked(true)
+        // Also clear any stale "already claimed / request sent" lookup state so the
+        // tab falls back to the default Website Verification view, not a stuck page.
+        setClaimedInfo(null)
+        setReprRequested(false)
       }
       getMyRepresentationStatus()
         .then((d) => setMyPendingRequests(d.requests || []))

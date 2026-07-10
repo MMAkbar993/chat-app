@@ -91,8 +91,9 @@ ssh root@5.189.143.148
 fijnar-geZrub-7buzsy
 cd /var/www/chat  
 git pull origin main
-npm run db:migrate
+
 pm2 restart all
+npm run db:migrate
 
 cd /home/deploy/chat
 git pull origin main

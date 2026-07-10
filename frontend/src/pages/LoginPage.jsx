@@ -7,6 +7,14 @@ import Button from '../components/ui/Button'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
 
+function MailIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  )
+}
+
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -48,14 +56,14 @@ export default function LoginPage() {
       footerLink={
         <span>
           Don't have an account?{' '}
-          <Link to="/signup" className="text-violet-600 hover:underline font-medium">Register</Link>
+          <Link to="/signup" className="text-violet-600 hover:underline font-medium">Create an account</Link>
         </span>
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sign In</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back! Please sign in.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+          <p className="text-sm text-gray-500 mt-1">Please enter your details to sign in.</p>
         </div>
 
         {serverError && (
@@ -65,11 +73,13 @@ export default function LoginPage() {
         )}
 
         <Input
-          label="Email Address"
+          label="Email address"
           type="email"
-          placeholder="john@example.com"
+          placeholder="Enter your email"
           error={errors.email?.message}
           required
+          iconPosition="right"
+          icon={MailIcon}
           {...register('email', {
             required: 'Email is required',
             pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email' },
@@ -109,14 +119,25 @@ export default function LoginPage() {
           {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
         </div>
 
-        <div className="flex justify-end -mt-2">
+        <div className="flex items-center justify-between -mt-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-400"
+              {...register('remember')}
+            />
+            <span className="text-xs text-gray-600">Remember for 30 days</span>
+          </label>
           <Link to="/forgot-password" className="text-xs text-violet-600 hover:underline">
             Forgot password?
           </Link>
         </div>
 
-        <Button type="submit" loading={isSubmitting} className="w-full mt-1">
-          Sign In
+        <Button type="submit" loading={isSubmitting} variant="gradient" className="w-full mt-1">
+          Sign in
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
         </Button>
 
         <p className="text-center text-xs text-gray-400">
