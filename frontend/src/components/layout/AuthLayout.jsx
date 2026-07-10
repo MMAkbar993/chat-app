@@ -75,13 +75,13 @@ function ChatMockup() {
           </div>
           <div className="flex-1 px-3 py-3 flex flex-col gap-2 overflow-hidden">
             <div className="self-start max-w-[75%] bg-white rounded-xl rounded-tl-sm px-2.5 py-1.5 text-[10px] text-gray-700 shadow-sm">
-              Hi there! I'm interested in your services.
+              Hi there! I'm interested in adding our casino to your website.
             </div>
             <div className="self-start max-w-[75%] bg-white rounded-xl rounded-tl-sm px-2.5 py-1.5 text-[10px] text-gray-700 shadow-sm">
               Can you tell me more about what you offer?
             </div>
             <div className="self-end max-w-[75%] bg-gradient-to-r from-sky-400 to-violet-600 rounded-xl rounded-tr-sm px-2.5 py-1.5 text-[10px] text-white shadow-sm">
-              Absolutely — could you specify what you're looking for?
+              Absolutely, you can see our verified websites in my bio — we work on a hybrid model.
             </div>
           </div>
           <div className="px-3 py-2 border-t border-gray-100 bg-white">
@@ -93,12 +93,12 @@ function ChatMockup() {
   )
 }
 
-export default function AuthLayout({ children, footerLink }) {
+export default function AuthLayout({ children, footerLink, wide = false }) {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Left panel — form */}
       <div className="flex flex-col w-full lg:w-1/2 bg-white px-6 py-10 overflow-y-auto">
-        <div className="w-full max-w-md mx-auto flex flex-col min-h-full">
+        <div className={`w-full mx-auto flex flex-col min-h-full ${wide ? 'max-w-xl' : 'max-w-md'}`}>
           {/* Logo */}
           <div className="mb-8 flex justify-start">
             <img src="/full-logo.png" alt="Pulse" className="h-9" />
@@ -136,11 +136,11 @@ export default function AuthLayout({ children, footerLink }) {
           </div>
 
           <h1 className="text-4xl font-extrabold text-[#1B1533] leading-tight">
-            The Ultimate iGaming<br />Messaging Web App
+            The <span className="bg-gradient-to-r from-sky-400 to-violet-600 bg-clip-text text-transparent">Ultimate</span> iGaming<br />Messaging Web App
           </h1>
 
           <p className="text-sm text-gray-600 max-w-md">
-            Connect verified affiliates, casino operators, and industry professionals in one secure messaging platform. Experience the future of B2B communication in iGaming.
+            Connecting verified professionals from across the iGaming industry in one secure messaging platform. Experience the future of B2B networking and communication.
           </p>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-white/70 rounded-full px-4 py-2.5 w-fit">
@@ -156,7 +156,9 @@ export default function AuthLayout({ children, footerLink }) {
               label="No Anonymous Users"
               icon={
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                  <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth={2} />
+                  <circle cx="9" cy="10.5" r="1.75" strokeWidth={2} />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 16c0-1.66 1.34-3 3-3s3 1.34 3 3M13.5 9.5h4M13.5 13h4" />
                 </svg>
               }
             />
