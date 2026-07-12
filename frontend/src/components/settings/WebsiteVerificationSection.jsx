@@ -540,7 +540,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               />
               <div className="flex-1 min-w-[220px]">
                 <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Your Websites Are Verified!</h3>
-                <p className={`text-sm mt-1 ${sub}`}>Thank you for verifying your websites. You can manage your verified websites below.</p>
+                <p className={`text-sm mt-1 ${sub}`}>Thank you for verifying your websites, they now appear on your public profile. You can manage your verified websites below.</p>
               </div>
             </div>
           ) : (

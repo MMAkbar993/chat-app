@@ -12,22 +12,6 @@ const SOCIALS = [
   { key: 'youtube_url',   label: 'YouTube',   color: 'text-red-600',   svg: <><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z" /><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" /></> },
 ]
 
-const ROLE_LABELS = {
-  affiliate_publisher:  'Affiliate Publisher',
-  casino_operator:      'Casino Operator',
-  affiliate_manager:    'Affiliate Manager',
-  game_provider:        'Game Provider',
-  payment_provider:     'Payment Provider',
-  platform_provider:    'Platform Provider',
-  media_seo_agency:     'Media / SEO Agency',
-  event_organizer:      'Event Organizer',
-  influencer_streamer:  'Influencer / Streamer',
-  investor_advisor:     'Investor / Advisor',
-  compliance_legal:     'Compliance & Legal',
-  kyc_aml_provider:     'KYC / AML Provider',
-  other:                'Other',
-}
-
 export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, onClose, onCallStart, onEditProfile }) {
   const { user: authUser } = useAuth()
   const [profile, setProfile] = useState(null)
@@ -51,32 +35,14 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
   const val = `text-sm ${dm ? 'text-gray-200' : 'text-gray-800'}`
   const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
 
-  // Self view gets the full detail set; viewing someone else stays a lighter public-style card.
-  const infoRows = isSelf
-    ? [
-        { label: 'Username',      value: profile?.username ? `@${profile.username}` : null },
-        { label: 'Email',         value: profile?.email },
-        { label: 'Role',          value: ROLE_LABELS[profile?.primary_role] || profile?.primary_role },
-        { label: 'Job Title',     value: profile?.job_title },
-        { label: 'Company',       value: profile?.company_name },
-        { label: 'Phone',         value: profile?.phone },
-        { label: 'Gender',        value: profile?.gender },
-        { label: 'Date of Birth', value: profile?.date_of_birth
-            ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : null },
-        { label: 'Location',      value: profile?.location || profile?.country },
-        { label: 'Join Date',     value: profile?.created_at
-            ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : null },
-      ].filter((r) => r.value)
-    : [
-        { label: 'Username',  value: profile?.username ? `@${profile.username}` : null },
-        { label: 'Location',  value: profile?.location || profile?.country },
-        { label: 'Bio',       value: profile?.bio },
-        { label: 'Joined',    value: profile?.created_at
-            ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : null },
-      ].filter((r) => r.value)
+  // Self view now mirrors exactly what other users see on this popup — no email or username.
+  const infoRows = [
+    { label: 'Location', value: profile?.location || profile?.country },
+    { label: 'Bio',      value: profile?.bio },
+    { label: 'Joined',   value: profile?.created_at
+        ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : null },
+  ].filter((r) => r.value)
 
   const verifiedWebsites = profile?.verified_websites || []
   const repWebsites = profile?.rep_websites || []
@@ -168,14 +134,10 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
                 {isOnline ? 'Online' : 'Offline'}
               </p>
           }
-          {isSelf && profile?.bio && (
-            <p className={`text-sm mt-2 mb-1 ${dm ? 'text-gray-300' : 'text-gray-600'}`}>{profile.bio}</p>
-          )}
-
           {/* Info rows */}
           {infoRows.length > 0 && (
             <div className={`rounded-2xl px-4 py-3 mt-3 mb-3 ${cardBg}`}>
-              <div className={isSelf ? 'grid grid-cols-2 gap-x-3 gap-y-2' : 'space-y-2'}>
+              <div className="space-y-2">
                 {infoRows.map(({ label, value }) => (
                   <div key={label} className="min-w-0">
                     <p className={lbl}>{label}</p>

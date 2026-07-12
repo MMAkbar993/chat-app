@@ -191,7 +191,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const creatorName = groupData?.created_by_display_name || groupData?.created_by_name
 
   return (
-    <div className={`w-72 border-l flex flex-col h-full ${bg}`}>
+    <div className={`fixed inset-0 z-40 md:static md:z-auto md:w-72 border-l flex flex-col h-full ${bg}`}>
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-3 border-b ${divider} sticky top-0 z-10 ${dm ? 'bg-gray-900' : 'bg-white'}`}>
         <span className={`font-semibold text-sm ${txt}`}>Group Info</span>

@@ -37,3 +37,14 @@
 * {
   box-sizing: border-box;
 }
+
+/* Safari on iOS auto-zooms the page when focusing a form control with a
+   font-size under 16px — force 16px on small screens so typing doesn't
+   trigger an unwanted zoom (desktop keeps each component's own text size). */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

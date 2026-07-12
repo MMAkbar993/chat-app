@@ -23,22 +23,22 @@ function formatLastMessage(content, type) {
     try {
       const d = JSON.parse(content || '{}')
       const kind = d.call_type === 'video' ? 'Video' : 'Audio'
-      if (d.status === 'missed') return `📵 Missed ${kind.toLowerCase()} call`
+      if (d.status === 'missed') return `Missed ${kind.toLowerCase()} call`
       if (d.status === 'ended' && d.duration) {
         const m = Math.floor(d.duration / 60)
         const s = d.duration % 60
         const dur = m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `0:${String(s).padStart(2, '0')}`
-        return `📞 ${kind} call · ${dur}`
+        return `${kind} call · ${dur}`
       }
-      return `📞 ${kind} call`
+      return `${kind} call`
     } catch {
-      return '📞 Call'
+      return 'Call'
     }
   }
-  if (type === 'image') return '📷 Photo'
-  if (type === 'video') return '🎥 Video'
-  if (type === 'audio') return '🎤 Voice message'
-  if (type === 'file') return '📎 File'
+  if (type === 'image') return 'Photo'
+  if (type === 'video') return 'Video'
+  if (type === 'audio') return 'Voice message'
+  if (type === 'file') return 'File'
   return content || ' '
 }
 
@@ -55,30 +55,20 @@ function formatDate(ts) {
 
 function SidebarTicks({ status }) {
   if (status === 'read') {
-    return (
-      <svg className="shrink-0 text-blue-500" width="16" height="10" viewBox="0 0 16 10" fill="none">
-        <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )
+    return <img src="/checkmark-read.png" alt="Read" className="shrink-0 h-2.5 w-auto" />
   }
   if (status === 'delivered') {
-    return (
-      <svg className="shrink-0 text-gray-400" width="16" height="10" viewBox="0 0 16 10" fill="none">
-        <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M6 5l3 3.5L14.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )
+    return <img src="/checkmark-unread.png" alt="Delivered" className="shrink-0 h-2.5 w-auto" />
   }
   // sent — single tick
   return (
-    <svg className="shrink-0 text-gray-400" width="9" height="10" viewBox="0 0 9 10" fill="none">
-      <path d="M1 5l3 3.5L8.5 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg className="shrink-0 text-[#D9D9D9]" width="9" height="10" viewBox="0 0 9 10" fill="none">
+      <path d="M1 5.2l2.6 3.1L8.5 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }
 
-export default function ChatsView({ darkMode }) {
+export default function ChatsView({ darkMode, mobileHidden }) {
   const { user } = useAuth()
   const {
     filteredConversations, conversations, activeConversation, openConversation,
@@ -121,7 +111,7 @@ export default function ChatsView({ darkMode }) {
   const recent = conversations.filter((c) => !c.is_archived).slice(0, 4)
 
   return (
-    <div className={`w-80 flex flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Chats</h2>
@@ -255,11 +245,6 @@ export default function ChatsView({ darkMode }) {
                             <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
                         )}
-                        {c.is_pinned && (
-                          <svg className={`w-3 h-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                          </svg>
-                        )}
                         {c.last_message && c.last_message_sender_id === user?.id && (
                           <SidebarTicks status={c.last_message_status || 'sent'} />
                         )}
@@ -268,11 +253,17 @@ export default function ChatsView({ darkMode }) {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
-                      {c.unread_count > 0 && (
+                      {c.unread_count > 0 ? (
                         <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                           {c.unread_count}
                         </span>
-                      )}
+                      ) : c.is_pinned ? (
+                        <span className={`ml-2 shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path transform="rotate(45 12 12)" d="M14 4v5c0 1.12.37 2.16 1 3H9c.65-.86 1-1.9 1-3V4h4m3-2H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3V4h1c.55 0 1-.45 1-1s-.45-1-1-1z" />
+                          </svg>
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </button>

@@ -55,8 +55,8 @@ export default function SignupForm({ onSuccess }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
-        <p className="text-sm text-gray-500 mt-1">Personal Information &amp; Primary Role</p>
+        <h1 className="text-3xl font-bold text-gray-900">Create an account</h1>
+        <p className="text-base text-gray-500 mt-1">Personal Information &amp; Primary Role</p>
       </div>
 
       {serverError && (
@@ -131,30 +131,35 @@ export default function SignupForm({ onSuccess }) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-base font-medium text-gray-700">
           Primary Role <span className="text-red-500">*</span>
         </label>
-        <select
-          className={`w-full border rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
-            ${errors.primary_role ? 'border-red-400' : 'border-gray-200'}`}
-          {...register('primary_role', { required: 'Primary role is required' })}
-          defaultValue=""
-        >
-          <option value="" disabled>Select role</option>
-          <option value="affiliate_publisher">Affiliate (Publisher)</option>
-          <option value="casino_operator">Casino / Operator</option>
-          <option value="affiliate_manager">Affiliate Manager</option>
-          <option value="game_provider">Game Provider</option>
-          <option value="payment_provider">Payment Provider</option>
-          <option value="platform_provider">Platform Provider (White Label / Turnkey)</option>
-          <option value="media_seo_agency">Media / SEO Agency</option>
-          <option value="event_organizer">Event Organizer</option>
-          <option value="influencer_streamer">Influencer / Streamer</option>
-          <option value="investor_advisor">Investor / Advisor</option>
-          <option value="compliance_legal">Compliance / Legal</option>
-          <option value="kyc_aml_provider">KYC / AML Provider</option>
-          <option value="other">Other</option>
-        </select>
+        <div className="relative">
+          <select
+            className={`w-full appearance-none border rounded-xl px-4 py-3.5 pr-10 text-base leading-tight bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
+              ${errors.primary_role ? 'border-red-400' : 'border-gray-200'}`}
+            {...register('primary_role', { required: 'Primary role is required' })}
+            defaultValue=""
+          >
+            <option value="" disabled>Select role</option>
+            <option value="affiliate_publisher">Affiliate (Publisher)</option>
+            <option value="casino_operator">Casino / Operator</option>
+            <option value="affiliate_manager">Affiliate Manager</option>
+            <option value="game_provider">Game Provider</option>
+            <option value="payment_provider">Payment Provider</option>
+            <option value="platform_provider">Platform Provider (White Label / Turnkey)</option>
+            <option value="media_seo_agency">Media / SEO Agency</option>
+            <option value="event_organizer">Event Organizer</option>
+            <option value="influencer_streamer">Influencer / Streamer</option>
+            <option value="investor_advisor">Investor / Advisor</option>
+            <option value="compliance_legal">Compliance / Legal</option>
+            <option value="kyc_aml_provider">KYC / AML Provider</option>
+            <option value="other">Other</option>
+          </select>
+          <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
         {errors.primary_role && <p className="text-xs text-red-500">{errors.primary_role.message}</p>}
       </div>
 
@@ -174,14 +179,14 @@ export default function SignupForm({ onSuccess }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-base font-medium text-gray-700">
             Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              className={`w-full border rounded-xl px-4 py-3 pr-10 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
+              className={`w-full border rounded-xl px-4 py-3.5 pr-10 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
                 ${errors.password ? 'border-red-400' : 'border-gray-200'}`}
               {...register('password', {
                 required: 'Password is required',

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
+import { useAuth } from '../../context/AuthContext'
 import { playCallConnected, playCallEnded } from '../../utils/sounds'
+import UpgradeModal from '../../features/payment/UpgradeModal'
 
 const ICE_SERVERS = {
   iceServers: [
@@ -11,11 +13,13 @@ const ICE_SERVERS = {
 
 export default function CallModal({ call, darkMode, isCaller, onEnd }) {
   const { socket } = useSocket()
+  const { user } = useAuth()
   const localVideoRef = useRef(null)
   const remoteVideoRef = useRef(null)
   const remoteAudioRef = useRef(null)
   const pcRef = useRef(null)
   const localStreamRef = useRef(null)
+  const screenStreamRef = useRef(null)
   const startTimeRef = useRef(Date.now())
   const pendingOfferRef = useRef(null)
   const pendingCandidatesRef = useRef([])
@@ -26,6 +30,10 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
   const [videoOff, setVideoOff] = useState(false)
   const [speakerOn, setSpeakerOn] = useState(false)
   const [elapsed, setElapsed] = useState(0)
+  const [sharingScreen, setSharingScreen] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
+
+  const canScreenShare = user?.subscription_status === 'active'
 
   const targetUserId = isCaller ? call.calleeId || call.callee_id : call.callerId || call.caller_id
   const isVideo = call.callType === 'video' || call.call_type === 'video'
@@ -150,6 +158,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
 
   function cleanup() {
     localStreamRef.current?.getTracks().forEach((t) => t.stop())
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop())
     pcRef.current?.close()
   }
 
@@ -173,6 +182,41 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
   function toggleVideo() {
     localStreamRef.current?.getVideoTracks().forEach((t) => { t.enabled = !t.enabled })
     setVideoOff((v) => !v)
+  }
+
+  async function stopScreenShare() {
+    const camTrack = localStreamRef.current?.getVideoTracks()[0]
+    const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === 'video')
+    if (sender && camTrack) {
+      try { await sender.replaceTrack(camTrack) } catch {}
+    }
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop())
+    screenStreamRef.current = null
+    if (localVideoRef.current && localStreamRef.current) localVideoRef.current.srcObject = localStreamRef.current
+    setSharingScreen(false)
+  }
+
+  async function toggleScreenShare() {
+    if (!canScreenShare) {
+      setShowUpgrade(true)
+      return
+    }
+    if (sharingScreen) {
+      await stopScreenShare()
+      return
+    }
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const screenTrack = screenStream.getVideoTracks()[0]
+      screenStreamRef.current = screenStream
+      const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === 'video')
+      if (sender) await sender.replaceTrack(screenTrack)
+      if (localVideoRef.current) localVideoRef.current.srcObject = screenStream
+      screenTrack.onended = stopScreenShare
+      setSharingScreen(true)
+    } catch {
+      // user cancelled the share picker — no-op
+    }
   }
 
   function formatTime(s) {
@@ -288,7 +332,31 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
               </button>
               <span className="text-white/70 text-xs">{videoOff ? 'Start Cam' : 'Stop Cam'}</span>
             </div>
-          ) : (
+          ) : null}
+
+          {/* Screen share (video calls only) */}
+          {isVideo && (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={toggleScreenShare}
+                title={canScreenShare ? undefined : 'Upgrade to Pro or Business to share your screen'}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors relative ${
+                  sharingScreen ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {!canScreenShare && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-gray-900 text-[9px] font-bold flex items-center justify-center">★</span>
+                )}
+              </button>
+              <span className="text-white/70 text-xs">{sharingScreen ? 'Stop Share' : 'Share Screen'}</span>
+            </div>
+          )}
+
+          {!isVideo && (
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={() => setSpeakerOn((s) => !s)}
@@ -310,6 +378,8 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
 
       {/* Hidden local video element needed for track setup even on audio calls */}
       {!isVideo && <video ref={localVideoRef} autoPlay muted playsInline className="hidden" />}
+
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </div>
   )
 }

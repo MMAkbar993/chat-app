@@ -1,7 +1,7 @@
 function FeatureBadge({ icon, label }) {
   return (
-    <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-      <span className="w-5 h-5 rounded-full flex items-center justify-center bg-violet-100 text-violet-600">
+    <div className="flex items-center gap-2 text-sm font-medium text-gray-700 whitespace-nowrap">
+      <span className="w-6 h-6 rounded-full flex items-center justify-center bg-violet-100 text-violet-600 shrink-0">
         {icon}
       </span>
       {label}
@@ -95,10 +95,10 @@ function ChatMockup() {
 
 export default function AuthLayout({ children, footerLink, wide = false }) {
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-dvh flex overflow-hidden">
       {/* Left panel — form */}
       <div className="flex flex-col w-full lg:w-1/2 bg-white px-6 py-10 overflow-y-auto">
-        <div className={`w-full mx-auto flex flex-col min-h-full ${wide ? 'max-w-xl' : 'max-w-md'}`}>
+        <div className={`w-full mx-auto flex flex-col min-h-full ${wide ? 'max-w-2xl' : 'max-w-lg'}`}>
           {/* Logo */}
           <div className="mb-8 flex justify-start">
             <img src="/full-logo.png" alt="Pulse" className="h-9" />
@@ -127,27 +127,27 @@ export default function AuthLayout({ children, footerLink, wide = false }) {
         {/* Decorative dashed ring */}
         <div className="absolute w-[560px] h-[560px] rounded-full border border-dashed border-violet-300/60" />
 
-        <div className="relative w-full max-w-xl flex flex-col gap-6 m-auto">
+        <div className="relative w-full max-w-2xl flex flex-col gap-6 m-auto">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-[11px] font-semibold text-violet-600 shadow-sm">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-sm font-semibold text-violet-600 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
               FOR IGAMING PROFESSIONALS
             </span>
           </div>
 
-          <h1 className="text-4xl font-extrabold text-[#1B1533] leading-tight">
+          <h1 className="text-5xl font-extrabold text-[#1B1533] leading-tight">
             The <span className="bg-gradient-to-r from-sky-400 to-violet-600 bg-clip-text text-transparent">Ultimate</span> iGaming<br />Messaging Web App
           </h1>
 
-          <p className="text-sm text-gray-600 max-w-md">
+          <p className="text-base text-gray-600 max-w-lg">
             Connecting verified professionals from across the iGaming industry in one secure messaging platform. Experience the future of B2B networking and communication.
           </p>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-white/70 rounded-full px-4 py-2.5 w-fit">
+          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 bg-white/70 rounded-full px-5 py-3 w-full">
             <FeatureBadge
               label="No Fake Accounts"
               icon={
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z" />
                 </svg>
               }
@@ -155,7 +155,7 @@ export default function AuthLayout({ children, footerLink, wide = false }) {
             <FeatureBadge
               label="No Anonymous Users"
               icon={
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth={2} />
                   <circle cx="9" cy="10.5" r="1.75" strokeWidth={2} />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 16c0-1.66 1.34-3 3-3s3 1.34 3 3M13.5 9.5h4M13.5 13h4" />
@@ -165,7 +165,7 @@ export default function AuthLayout({ children, footerLink, wide = false }) {
             <FeatureBadge
               label="Only Verified Professionals"
               icon={
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               }

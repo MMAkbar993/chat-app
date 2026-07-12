@@ -99,7 +99,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     sendMessage, typingUsers,
     replyTo, setReplyTo, clearReply,
     toggleConversationFlag, removeConversation, clearConversationMessages,
-    onlineUsers, lastSeenMap,
+    onlineUsers, lastSeenMap, closeConversation,
   } = useChat()
   const { showToast } = useToast()
   const bottomRef = useRef(null)
@@ -256,6 +256,14 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         {/* Header */}
         <div className={`flex items-center justify-between px-5 py-3 border-b ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={closeConversation}
+              className={`md:hidden w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
             <button
               onClick={() => setShowProfileModal(true)}
               className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0 hover:ring-2 hover:ring-violet-400 transition-all"

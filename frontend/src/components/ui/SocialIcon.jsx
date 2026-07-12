@@ -43,15 +43,23 @@ const BRANDS = {
   },
   affiliate_roulette: {
     bg: '#7C3AED',
-    svg: (
-      <text x="12" y="16" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold" fontFamily="sans-serif">AR</text>
-    ),
+    img: '/affiliate-roulette-icon.png',
   },
 }
 
 export default function SocialIcon({ platform, size = 28, className = '' }) {
   const brand = BRANDS[platform]
   if (!brand) return null
+  if (brand.img) {
+    return (
+      <img
+        src={brand.img}
+        alt=""
+        className={`rounded-lg shrink-0 object-cover ${className}`}
+        style={{ width: size, height: size }}
+      />
+    )
+  }
   return (
     <div
       className={`rounded-lg flex items-center justify-center shrink-0 ${className}`}

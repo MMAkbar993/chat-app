@@ -58,13 +58,13 @@ export default function CountrySelect({ value, onChange, error }) {
 
   return (
     <div className="flex flex-col gap-1" ref={containerRef}>
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-base font-medium text-gray-700">
         Country <span className="text-red-500">*</span>
       </label>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full border rounded-xl px-4 py-3 text-sm text-left flex items-center justify-between bg-white transition-colors
+        className={`w-full border rounded-xl px-4 py-3.5 text-base text-left flex items-center justify-between bg-white transition-colors
           ${error ? 'border-red-400' : 'border-gray-200'}
           ${value ? 'text-gray-800' : 'text-gray-400'}
           focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400`}

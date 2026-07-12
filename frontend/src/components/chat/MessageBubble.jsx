@@ -14,25 +14,15 @@ function formatTime(ts) {
 
 function Ticks({ status }) {
   if (status === 'read') {
-    return (
-      <svg className="inline-block ml-1 text-blue-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
-        <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )
+    return <img src="/checkmark-read.png" alt="Read" className="inline-block ml-1 h-2.5 w-auto align-middle" />
   }
   if (status === 'delivered') {
-    return (
-      <svg className="inline-block ml-1 text-gray-400" width="15" height="9" viewBox="0 0 15 9" fill="none">
-        <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M5.5 4.5l2.5 3L13 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )
+    return <img src="/checkmark-unread.png" alt="Delivered" className="inline-block ml-1 h-2.5 w-auto align-middle" />
   }
   // sent — single tick
   return (
-    <svg className="inline-block ml-1 text-gray-400" width="9" height="9" viewBox="0 0 9 9" fill="none">
-      <path d="M1 4.5l2.5 3L8 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg className="inline-block ml-1 text-[#D9D9D9]" width="9" height="9" viewBox="0 0 9 9" fill="none">
+      <path d="M1 4.7l2.4 2.8L8 1.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }
@@ -135,7 +125,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
           {/* Bubble */}
           <div className={`px-4 py-2 rounded-2xl text-sm ${
             isMe
-              ? 'bg-violet-600 text-white rounded-br-sm'
+              ? 'bg-gradient-to-r from-sky-400 to-violet-600 text-white rounded-br-sm'
               : darkMode
               ? 'bg-gray-700 text-white rounded-bl-sm'
               : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'

@@ -142,7 +142,7 @@ function FilterMenu({ darkMode, currentFilter, onSelect, onClose }) {
   )
 }
 
-export default function GroupsView({ darkMode }) {
+export default function GroupsView({ darkMode, mobileHidden }) {
   const {
     conversations, openConversation, activeConversation, loadConversations,
     toggleConversationFlag, removeConversation, dropConversation, markConversationUnread,
@@ -186,9 +186,9 @@ export default function GroupsView({ darkMode }) {
   const dm = darkMode
 
   return (
-    <div className={`w-80 flex flex-col border-r ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
-        <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Group</h2>
+        <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Groups</h2>
         <button onClick={() => setShowCreate(true)}
           className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
