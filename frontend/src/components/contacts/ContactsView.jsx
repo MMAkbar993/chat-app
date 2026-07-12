@@ -24,7 +24,7 @@ import EditContactModal from './EditContactModal'
 import BlockedContactsModal from './BlockedContactsModal'
 import InviteOthersModal from './InviteOthersModal'
 
-export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
+export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHidden }) {
   const [contacts, setContacts] = useState([])
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
@@ -103,7 +103,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall }) {
   const rowHov = darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
 
   return (
-    <div className={`w-80 flex flex-col border-r ${bg}`}>
+    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${bg}`}>
 
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">

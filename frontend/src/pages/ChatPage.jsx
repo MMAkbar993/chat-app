@@ -33,6 +33,11 @@ export default function ChatPage() {
 
   useEffect(() => { activeCallRef.current = activeCall }, [activeCall])
 
+  // Mobile: only one panel (list vs. detail) is shown at a time, Telegram-style.
+  const mobileDetail = section === 'settings'
+    ? !!settingsSection
+    : (section === 'chats' || section === 'groups') && !!activeConversation
+
   useEffect(() => {
     if (!socket) return
 
@@ -158,32 +163,36 @@ export default function ChatPage() {
   }
 
   return (
-    <div className={`h-screen flex overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+    <div className={`h-dvh flex overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
       <Sidebar
         active={section}
         onNav={setSection}
         onEditProfile={() => { setSection('settings'); setSettingsSection('profile') }}
         darkMode={darkMode}
         onDarkMode={() => setDarkMode((d) => !d)}
+        mobileHidden={mobileDetail}
       />
 
       {/* Left panel */}
-      {section === 'chats' && <ChatsView darkMode={darkMode} />}
-      {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} />}
-      {section === 'groups' && <GroupsView darkMode={darkMode} />}
-      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} />}
+      {section === 'chats' && <ChatsView darkMode={darkMode} mobileHidden={mobileDetail} />}
+      {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} mobileHidden={mobileDetail} />}
+      {section === 'groups' && <GroupsView darkMode={darkMode} mobileHidden={mobileDetail} />}
+      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} mobileHidden={mobileDetail} />}
       {section === 'settings' && (
-        <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} />
+        <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} />
       )}
 
-      {/* Right panel — settings detail on that tab, chat window on chats/groups, welcome screen otherwise */}
+      {/* Right panel — settings detail on that tab, chat window on chats/groups, welcome screen otherwise.
+          Hidden on mobile until a chat/setting is actually opened, since the list fills the screen until then. */}
+      <div className={`${mobileDetail ? 'flex' : 'hidden md:flex'} flex-1 overflow-hidden`}>
       {section === 'settings' ? (
-        <SettingsDetailPanel darkMode={darkMode} section={settingsSection} />
+        <SettingsDetailPanel darkMode={darkMode} section={settingsSection} onBack={() => setSettingsSection(null)} />
       ) : (section === 'chats' || section === 'groups') && activeConversation ? (
         <ChatWindow darkMode={darkMode} onCallStart={handleCallStart} />
       ) : (
         <WelcomeScreen darkMode={darkMode} />
       )}
+      </div>
 
       {/* Incoming call */}
       {incomingCall && !activeCall && (

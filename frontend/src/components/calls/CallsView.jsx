@@ -20,7 +20,7 @@ const STATUS_ICON = {
   busy: { color: 'text-yellow-500', label: 'Busy' },
 }
 
-export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat }) {
+export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat, mobileHidden }) {
   const { user } = useAuth()
   const [calls, setCalls] = useState([])
   const [filter, setFilter] = useState('all')
@@ -49,7 +49,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
   }
 
   return (
-    <div className={`w-80 flex flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
         <div className="flex gap-2">

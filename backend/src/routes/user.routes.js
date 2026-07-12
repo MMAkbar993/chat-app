@@ -14,7 +14,7 @@ import {
   getNotifications, markNotificationsRead, clearNotifications, getMyVerifiedWebsites, revokeRepresentation,
   getMyRepresentationStatus, cancelRepresentationRequest,
 } from '../controllers/user.controller.js'
-import { blockUserHandler, unblockUserHandler, reportUserHandler } from '../controllers/user_actions.controller.js'
+import { blockUserHandler, unblockUserHandler, reportUserHandler, submitFeedback } from '../controllers/user_actions.controller.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.join(__dirname, '../../uploads')
@@ -63,6 +63,7 @@ userRouter.get('/me/notifications', getNotifications)
 userRouter.patch('/me/notifications/read-all', markNotificationsRead)
 userRouter.delete('/me/notifications', clearNotifications)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
+userRouter.post('/me/feedback', submitFeedback)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)
 userRouter.delete('/:id/block', unblockUserHandler)

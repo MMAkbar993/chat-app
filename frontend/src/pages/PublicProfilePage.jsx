@@ -12,7 +12,7 @@ const PLATFORM_META = {
   twitter:            { label: 'X (Twitter)',        color: '#000000', icon: '𝕏' },
   twitch:             { label: 'Twitch',             color: '#9147FF', icon: '◈' },
   kick:               { label: 'Kick',               color: '#53FC18', icon: '▸' },
-  affiliate_roulette: { label: 'Affiliate Roulette', color: '#7C3AED', icon: 'AR' },
+  affiliate_roulette: { label: 'Affiliate Roulette', color: '#7C3AED', img: '/affiliate-roulette-icon.png' },
 }
 
 const ROLE_LABELS = {
@@ -219,12 +219,16 @@ export default function PublicProfilePage() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-violet-300 transition-colors text-sm text-gray-700 hover:text-gray-900"
                       >
-                        <span
-                          className="w-5 h-5 rounded flex items-center justify-center text-white font-bold"
-                          style={{ backgroundColor: meta.color, fontSize: meta.icon.length > 1 ? '7px' : '' }}
-                        >
-                          {meta.icon}
-                        </span>
+                        {meta.img ? (
+                          <img src={meta.img} alt="" className="w-5 h-5 rounded object-cover" />
+                        ) : (
+                          <span
+                            className="w-5 h-5 rounded flex items-center justify-center text-white font-bold"
+                            style={{ backgroundColor: meta.color, fontSize: meta.icon.length > 1 ? '7px' : '' }}
+                          >
+                            {meta.icon}
+                          </span>
+                        )}
                         <span className="font-medium">{meta.label}</span>
                         {sc.username && <span className="text-gray-400 text-xs">@{sc.username}</span>}
                       </a>

@@ -74,7 +74,7 @@ const TERMS = `These Terms & Conditions govern your use of this platform. By usi
 
 const PRIVACY = `Your privacy is important to us. We collect only the information necessary to operate the service, including your name, email, and usage data. We do not sell your personal information to third parties. Data is stored securely and you may request deletion of your account and associated data at any time. Cookies may be used to improve your experience and are governed by our Cookie Policy.`
 
-export default function SettingsView({ darkMode, activeSection, onSelect }) {
+export default function SettingsView({ darkMode, activeSection, onSelect, mobileHidden }) {
   const { logout } = useAuth()
   const [showBlocked, setShowBlocked] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -137,7 +137,7 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
   )
 
   return (
-    <div className={`w-96 flex flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-full md:w-96 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
 
       {/* Toast */}
       {toast && (
@@ -258,6 +258,15 @@ export default function SettingsView({ darkMode, activeSection, onSelect }) {
           icon={icon('M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'bg-green-500')}
           label="Privacy Policy"
           onClick={() => setShowDoc('privacy')}
+        />
+
+        <ListRow
+          darkMode={dm}
+          active={activeSection === 'feedback'}
+          onClick={() => onSelect('feedback')}
+          icon={icon('M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', 'bg-violet-500')}
+          label="Feedback & Support"
+          description="Report an issue or request a feature"
         />
 
         <ListRow

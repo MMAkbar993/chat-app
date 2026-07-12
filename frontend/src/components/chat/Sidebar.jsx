@@ -72,7 +72,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDarkMode }) {
+export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDarkMode, mobileHidden }) {
   const { user } = useAuth()
   const { socket } = useSocket()
   const [notifications, setNotifications] = useState([])
@@ -117,7 +117,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
 
   return (
     <>
-    <aside className={`w-20 flex flex-col items-center py-5 gap-1 border-r relative ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <aside className={`w-16 md:w-20 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col items-center py-4 md:py-5 gap-1 border-r relative ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Logo */}
       <div className="mb-5">
         <img src="/Icon.png" alt="logo" className="w-9 h-9" />

@@ -11,6 +11,11 @@ import BillingSection from './BillingSection'
 import ChatSection from './ChatSection'
 import NotificationsSection from './NotificationsSection'
 import DeviceSection from './DeviceSection'
+import FeedbackSection from './FeedbackSection'
+
+function firstNameOf(fullName) {
+  return (fullName || '').trim().split(/\s+/)[0] || fullName || ''
+}
 
 const INDUSTRY_ROLES = [
   { value: 'affiliate_publisher',  label: 'Affiliate Publisher' },
@@ -73,6 +78,11 @@ const META = {
     title: 'Device History',
     color: 'bg-amber-500',
     path: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  },
+  feedback: {
+    title: 'Feedback & Support',
+    color: 'bg-violet-500',
+    path: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
   },
 }
 
@@ -203,7 +213,8 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     company_name:  profile.company_name || '',
   })
   const [displayMode, setDisplayMode] = useState(() => {
-    return profile.display_name === profile.username ? 'username' : 'fullname'
+    const first = firstNameOf(profile.full_name)
+    return profile.display_name && profile.display_name === first && first !== profile.full_name ? 'firstname' : 'fullname'
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -246,7 +257,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     setSaving(true)
     try {
       const payload = {
-        display_name:  displayMode === 'username' ? profile.username : profile.full_name,
+        display_name:  displayMode === 'firstname' ? firstNameOf(profile.full_name) : profile.full_name,
         bio:           form.bio,
         gender:        form.gender,
         phone:         form.phone,
@@ -312,8 +323,8 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         <label className={lbl}>Display Name</label>
         <div className="relative">
           <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={`${inp} pr-14 appearance-none`}>
-            <option value="fullname">Full name</option>
-            <option value="username">Username</option>
+            <option value="fullname">Full Name</option>
+            <option value="firstname">First Name</option>
           </select>
           <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -436,7 +447,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
 
 // ─── main panel ──────────────────────────────────────────────────────────────
 
-export default function SettingsDetailPanel({ darkMode, section }) {
+export default function SettingsDetailPanel({ darkMode, section, onBack }) {
   const dm = darkMode
   const { socket } = useSocket()
   const [profile, setProfile] = useState(null)
@@ -491,6 +502,14 @@ export default function SettingsDetailPanel({ darkMode, section }) {
 
       {/* Header */}
       <div className={`flex items-center gap-3 px-6 py-4 border-b shrink-0 ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+        <button
+          onClick={onBack}
+          className={`md:hidden w-8 h-8 rounded-full flex items-center justify-center shrink-0 -ml-1 transition-colors ${dm ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
         <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${meta.color}`}>
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={meta.path} />
@@ -519,6 +538,12 @@ export default function SettingsDetailPanel({ darkMode, section }) {
           // Social Profiles builds its own full-width card layout — no outer box.
           <div className="max-w-4xl mx-auto">
             <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
+          </div>
+        ) : section === 'feedback' ? (
+          <div className="max-w-4xl mx-auto">
+            <div className={`rounded-2xl p-6 shadow-sm ${dm ? 'bg-gray-900' : 'bg-white'}`}>
+              <FeedbackSection darkMode={dm} onToast={showToast} />
+            </div>
           </div>
         ) : (
           <div className="max-w-4xl mx-auto">

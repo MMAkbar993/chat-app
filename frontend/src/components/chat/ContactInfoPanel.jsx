@@ -97,7 +97,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const cardBg  = darkMode ? 'bg-gray-800' : 'bg-gray-50'
 
   return (
-    <div className={`w-72 border-l flex flex-col h-full overflow-y-auto ${panelBg}`}>
+    <div className={`fixed inset-0 z-40 md:static md:z-auto md:w-72 border-l flex flex-col h-full overflow-y-auto ${panelBg}`}>
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} sticky top-0 z-10 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <span className="font-semibold text-sm">Contact Info</span>

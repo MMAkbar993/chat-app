@@ -4,7 +4,7 @@ const Input = forwardRef(function Input({ label, error, icon: Icon, iconPosition
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-base font-medium text-gray-700">
           {label}
           {props.required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
@@ -17,7 +17,7 @@ const Input = forwardRef(function Input({ label, error, icon: Icon, iconPosition
         )}
         <input
           ref={ref}
-          className={`w-full border rounded-xl px-4 py-3 text-sm text-gray-800 bg-white placeholder-gray-400
+          className={`w-full border rounded-xl px-4 py-3.5 text-base text-gray-800 bg-white placeholder-gray-400
             focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400
             transition-colors duration-150
             ${Icon && iconPosition === 'left' ? 'pl-10' : ''}

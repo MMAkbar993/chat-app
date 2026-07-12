@@ -62,8 +62,8 @@ export default function LoginPage() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">Please enter your details to sign in.</p>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
+          <p className="text-base text-gray-500 mt-1">Please enter your details to sign in.</p>
         </div>
 
         {serverError && (
@@ -87,14 +87,14 @@ export default function LoginPage() {
         />
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-base font-medium text-gray-700">
             Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              className={`w-full border rounded-xl px-4 py-3 pr-10 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
+              className={`w-full border rounded-xl px-4 py-3.5 pr-10 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
                 ${errors.password ? 'border-red-400' : 'border-gray-200'}`}
               {...register('password', { required: 'Password is required' })}
             />

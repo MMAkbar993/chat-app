@@ -196,7 +196,15 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
           {/* Main row — always visible */}
           <div className="flex items-center gap-3 p-3">
             <SocialIcon platform={p.key} size={32} />
-            <p className={`text-sm font-medium flex-1 ${text}`}>{p.label}</p>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <p className={`text-sm font-medium ${text}`}>{p.label}</p>
+              <span
+                title={`${p.label} can't be verified with OAuth, so this is added as a plain link instead.`}
+                className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 cursor-help ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'}`}
+              >
+                i
+              </span>
+            </div>
 
             {savedUrl && !isEditingThis ? (
               <div className="flex items-center gap-2 shrink-0">
@@ -338,8 +346,7 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span>
-          We use secure sign-in (OAuth) to confirm ownership. We never see your passwords and cannot post on your behalf.
-          LinkedIn and Affiliate Roulette don't support secure sign-in, so those are added as a plain link instead.
+          We use secure sign-in (OAuth) to confirm ownership, unless otherwise stated. We never see your passwords and cannot post on your behalf.
         </span>
       </div>
 
