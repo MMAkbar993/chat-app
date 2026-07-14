@@ -16,15 +16,8 @@ function Ticks({ status }) {
   if (status === 'read') {
     return <img src="/checkmark-read.png" alt="Read" className="inline-block ml-1 h-2.5 w-auto align-middle" />
   }
-  if (status === 'delivered') {
-    return <img src="/checkmark-unread.png" alt="Delivered" className="inline-block ml-1 h-2.5 w-auto align-middle" />
-  }
-  // sent — single tick
-  return (
-    <svg className="inline-block ml-1 text-[#D9D9D9]" width="9" height="9" viewBox="0 0 9 9" fill="none">
-      <path d="M1 4.7l2.4 2.8L8 1.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
+  // sent or delivered — unread
+  return <img src="/checkmark-unread.png" alt="Unread" className="inline-block ml-1 h-2.5 w-auto align-middle" />
 }
 
 function highlightText(text, query) {

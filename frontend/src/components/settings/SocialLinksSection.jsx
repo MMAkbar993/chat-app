@@ -198,11 +198,15 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
             <SocialIcon platform={p.key} size={32} />
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <p className={`text-sm font-medium ${text}`}>{p.label}</p>
-              <span
-                title={`${p.label} can't be verified with OAuth, so this is added as a plain link instead.`}
-                className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 cursor-help ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'}`}
-              >
-                i
+              <span className="relative group shrink-0">
+                <span
+                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'}`}
+                >
+                  i
+                </span>
+                <span className={`absolute left-0 top-full mt-1.5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
+                  {p.label} can't be verified with OAuth, so this is added as a plain link instead.
+                </span>
               </span>
             </div>
 

@@ -4,44 +4,6 @@ import ConfirmDialog from '../ui/ConfirmDialog'
 import SocialIcon from '../ui/SocialIcon'
 import { useSocket } from '../../context/SocketContext'
 
-const ROLE_LABELS = {
-  affiliate_publisher:  'Affiliate Publisher',
-  casino_operator:      'Casino Operator',
-  affiliate_manager:    'Affiliate Manager',
-  game_provider:        'Game Provider',
-  payment_provider:     'Payment Provider',
-  platform_provider:    'Platform Provider',
-  media_seo_agency:     'Media / SEO Agency',
-  event_organizer:      'Event Organizer',
-  influencer_streamer:  'Influencer / Streamer',
-  investor_advisor:     'Investor / Advisor',
-  compliance_legal:     'Compliance & Legal',
-  kyc_aml_provider:     'KYC / AML Provider',
-  other:                'Other',
-}
-
-function getTagline(profile) {
-  if (!profile) return null
-  const industryRole = ROLE_LABELS[profile.primary_role] || profile.primary_role || null
-  const hasCompanyAccess = profile.website_verified || profile.website_representation_approved
-  if (hasCompanyAccess) {
-    return profile.job_title || profile.company_name || industryRole
-  }
-  return industryRole
-}
-
-function InfoCell({ darkMode, label, value, full }) {
-  if (!value) return null
-  const labelCls = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
-  const valueCls = `text-sm font-medium ${darkMode ? 'text-gray-100' : 'text-gray-800'}`
-  return (
-    <div className={`min-w-0 ${full ? 'col-span-2' : ''}`}>
-      <p className={labelCls}>{label}</p>
-      <p className={`${valueCls} ${full ? 'break-words' : 'truncate'}`}>{value}</p>
-    </div>
-  )
-}
-
 export default function ContactDetailModal({
   contact,
   darkMode,
@@ -138,7 +100,6 @@ export default function ContactDetailModal({
     ? `${contact.custom_first_name} ${contact.custom_last_name || ''}`.trim()
     : contact.display_name || contact.full_name || contact.username || 'Unknown'
   const avatar   = contact.avatar_url || profile?.avatar_url
-  const tagline  = getTagline(profile || contact)
   const verifiedWebsites = profile?.verified_websites || []
   const repWebsites = profile?.rep_websites || []
   const allWebsites = [
@@ -148,17 +109,21 @@ export default function ContactDetailModal({
   const bio      = contact.bio || profile?.bio
   const location = profile?.location || profile?.country
   const joinDate = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
-  const dob = profile?.date_of_birth
-    ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null
-  const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  // Same field set/labels as the self-view profile popup (UserProfileModal), so the two never drift apart.
+  const infoRows = [
+    { label: 'Location', value: location },
+    { label: 'Bio',      value: bio },
+    { label: 'Joined',   value: joinDate },
+  ].filter((r) => r.value)
 
   const overlay   = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50'
   const modal     = `relative w-[440px] max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`
   const sectionBg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
-  const labelCls  = `text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
+  const lbl = `text-[10px] uppercase tracking-wide font-semibold ${darkMode ? 'text-gray-500' : 'text-gray-400'}`
+  const val = `text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`
 
   const socials = [
     { name: 'Facebook',          key: 'facebook',          url: profile?.facebook_url },
@@ -170,7 +135,6 @@ export default function ContactDetailModal({
     { name: 'Twitch',            key: 'twitch',            url: profile?.twitch_url },
     { name: 'Affiliate Roulette', key: 'affiliate_roulette', url: profile?.affiliate_roulette_url, urlOnly: true },
   ]
-  const oauthSocials = socials.filter((s) => !s.urlOnly)
 
   const confirmMessages = {
     block: {
@@ -279,43 +243,11 @@ export default function ContactDetailModal({
               </div>
             </div>
 
-            {/* Name + tagline */}
+            {/* Name */}
             <p className="font-bold text-lg leading-tight">{displayName}</p>
-            {tagline && <p className={`text-sm mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
             {blocked && <span className="text-xs text-orange-500 font-medium">Blocked</span>}
-            {bio && <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{bio}</p>}
 
             <div className="mt-4 space-y-4">
-              {/* Verification badges */}
-              {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.kyc_status === 'verified' && (
-                    <span title="This user has completed identity verification before joining Pulse." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2.5 py-1 font-medium cursor-help">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      KYC Verified
-                    </span>
-                  )}
-                  {profile.website_verified && (
-                    <span title="This website was verified through a meta tag or approved company representation." className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 rounded-full px-2.5 py-1 font-medium cursor-help">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      Website Verified
-                    </span>
-                  )}
-                  {profile.website_representation_approved && (
-                    <span title="This user has been approved to represent this company on Pulse." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2.5 py-1 font-medium cursor-help">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                      Approved Rep
-                    </span>
-                  )}
-                  {oauthSocials.some((s) => s.url) && (
-                    <span title="This social profile was verified through secure OAuth login." className="inline-flex items-center gap-1 text-xs bg-pink-100 text-pink-700 rounded-full px-2.5 py-1 font-medium cursor-help">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                      Social Verified
-                    </span>
-                  )}
-                </div>
-              )}
-
               {/* Toast */}
               {toast && (
                 <div className={`px-3 py-2 rounded-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
@@ -323,37 +255,39 @@ export default function ContactDetailModal({
                 </div>
               )}
 
-              {/* Personal Information — plain label/value pairs, no icons */}
-              <div className={`rounded-xl p-4 ${sectionBg}`}>
-                <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Information</p>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-                  <InfoCell darkMode={darkMode} label="Local Time" value={localTime} />
-                  <InfoCell darkMode={darkMode} label="Company" value={profile?.company_name} />
-                  <InfoCell darkMode={darkMode} label="Job Title" value={profile?.job_title} />
-                  <InfoCell darkMode={darkMode} label="Location" value={location} />
-                  <InfoCell darkMode={darkMode} label="Date of Birth" value={dob} />
-                  <InfoCell darkMode={darkMode} label="Join Date" value={joinDate} />
-
-                  {allWebsites.length > 0 && (
-                    <div className="col-span-2">
-                      <p className={labelCls}>Websites</p>
-                      <div className="space-y-1 mt-1">
-                        {allWebsites.map((w, i) => (
-                          <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-sm font-medium text-violet-500 hover:underline break-all">
-                            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                              style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {w.url.replace(/^https?:\/\//, '')}
-                            {!w.isOwner && <span className={`text-xs ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>(rep)</span>}
-                          </a>
-                        ))}
+              {/* Info — same field set/labels as the self-view profile popup */}
+              {infoRows.length > 0 && (
+                <div className={`rounded-xl p-4 ${sectionBg}`}>
+                  <div className="space-y-2">
+                    {infoRows.map(({ label, value }) => (
+                      <div key={label} className="min-w-0">
+                        <p className={lbl}>{label}</p>
+                        <p className={`${val} ${label === 'Bio' ? 'line-clamp-2' : 'truncate'}`}>{value}</p>
                       </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Websites */}
+              {allWebsites.length > 0 && (
+                <div className={`rounded-xl p-4 ${sectionBg}`}>
+                  <p className={`${lbl} mb-2`}>Websites</p>
+                  <div className="space-y-1">
+                    {allWebsites.map((w, i) => (
+                      <a key={i} href={w.url.startsWith('http') ? w.url : `https://${w.url}`} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-sm font-medium text-violet-500 hover:underline break-all">
+                        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                          style={{ color: w.isOwner ? '#22c55e' : '#7C3AED' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {w.url.replace(/^https?:\/\//, '')}
+                        {!w.isOwner && <span className={`text-xs ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>(rep)</span>}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Social — icon-only row, only render if contact has at least one link */}
               {socials.some((s) => s.url) && (

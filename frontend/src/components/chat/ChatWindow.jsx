@@ -12,7 +12,7 @@ import MessageInput from './MessageInput'
 import ContactInfoPanel from './ContactInfoPanel'
 import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
-import ContactDetailModal from '../contacts/ContactDetailModal'
+import UserProfileModal from '../ui/UserProfileModal'
 
 function formatDuration(secs) {
   if (!secs) return ''
@@ -523,19 +523,14 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         />
       )}
 
-      {/* Profile popup modal */}
+      {/* Profile popup modal — same component used for viewing your own profile, so the two always match */}
       {showProfileModal && !isGroup && (
-        <ContactDetailModal
-          contact={{
-            id: activeConversation.other_user_id,
-            display_name: activeConversation.other_user_display_name || activeConversation.other_user_name,
-            full_name: activeConversation.other_user_name,
-            avatar_url: activeConversation.other_user_avatar,
-          }}
+        <UserProfileModal
+          userId={activeConversation.other_user_id}
+          isOnline={onlineUsers?.has(activeConversation.other_user_id)}
           darkMode={darkMode}
           onClose={() => setShowProfileModal(false)}
-          onChat={() => setShowProfileModal(false)}
-          onCall={(type) => { setShowProfileModal(false); onCallStart?.(type) }}
+          onCallStart={(type) => { setShowProfileModal(false); onCallStart?.(type) }}
         />
       )}
 
