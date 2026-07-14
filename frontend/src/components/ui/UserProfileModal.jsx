@@ -148,8 +148,8 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
             </div>
           )}
 
-          {/* Websites — self only */}
-          {isSelf && allWebsites.length > 0 && (
+          {/* Websites */}
+          {allWebsites.length > 0 && (
             <div className={`rounded-2xl px-4 py-3 mb-3 ${cardBg}`}>
               <p className={`${lbl} mb-2`}>Websites</p>
               <div className="space-y-1">

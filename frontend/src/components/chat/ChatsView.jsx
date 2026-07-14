@@ -57,15 +57,8 @@ function SidebarTicks({ status }) {
   if (status === 'read') {
     return <img src="/checkmark-read.png" alt="Read" className="shrink-0 h-2.5 w-auto" />
   }
-  if (status === 'delivered') {
-    return <img src="/checkmark-unread.png" alt="Delivered" className="shrink-0 h-2.5 w-auto" />
-  }
-  // sent — single tick
-  return (
-    <svg className="shrink-0 text-[#D9D9D9]" width="9" height="10" viewBox="0 0 9 10" fill="none">
-      <path d="M1 5.2l2.6 3.1L8.5 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
+  // sent or delivered — unread
+  return <img src="/checkmark-unread.png" alt="Unread" className="shrink-0 h-2.5 w-auto" />
 }
 
 export default function ChatsView({ darkMode, mobileHidden }) {
