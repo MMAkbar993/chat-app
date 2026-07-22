@@ -5,12 +5,17 @@ import { createGroup } from '../../api/groups'
 export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
   const [name, setName] = useState('')
   const [contacts, setContacts] = useState([])
+  const [search, setSearch] = useState('')
   const [selected, setSelected] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     getContacts().then((d) => setContacts(d.contacts || [])).catch(() => {})
   }, [])
+
+  const filteredContacts = contacts.filter((c) =>
+    (c.display_name || c.full_name || c.username || '').toLowerCase().includes(search.toLowerCase())
+  )
 
   function toggle(id) {
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
@@ -45,8 +50,21 @@ export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
           className={`w-full rounded-xl px-4 py-2 mb-4 outline-none text-sm ${darkMode ? 'bg-gray-800 text-white placeholder-gray-500' : 'bg-gray-100 placeholder-gray-400'}`}
         />
         <p className={`text-xs mb-2 font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Add Members</p>
+        {contacts.length > 0 && (
+          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search contacts"
+              className={`bg-transparent flex-1 outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
+            />
+          </div>
+        )}
         <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
-          {contacts.map((c) => (
+          {filteredContacts.map((c) => (
             <label key={c.id} className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
               <input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} className="accent-violet-600" />
               <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
@@ -56,6 +74,7 @@ export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
             </label>
           ))}
           {contacts.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No contacts to add</p>}
+          {contacts.length > 0 && filteredContacts.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No matches found</p>}
         </div>
         <button
           onClick={handleCreate}
