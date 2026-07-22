@@ -4,13 +4,55 @@ import { getUserById, getMyProfile } from '../../api/users'
 import client from '../../api/client'
 import SocialIcon from './SocialIcon'
 
-const SOCIALS = [
-  { key: 'facebook_url',  label: 'Facebook',  color: 'text-blue-600',  svg: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /> },
-  { key: 'twitter_url',   label: 'Twitter',   color: 'text-sky-500',   svg: <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /> },
-  { key: 'instagram_url', label: 'Instagram', color: 'text-pink-500',  svg: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></> },
-  { key: 'linkedin_url',  label: 'LinkedIn',  color: 'text-blue-700',  svg: <><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></> },
-  { key: 'youtube_url',   label: 'YouTube',   color: 'text-red-600',   svg: <><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z" /><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" /></> },
+const ROLE_LABELS = {
+  affiliate_publisher:  'Affiliate Publisher',
+  casino_operator:      'Casino Operator',
+  affiliate_manager:    'Affiliate Manager',
+  game_provider:        'Game Provider',
+  payment_provider:     'Payment Provider',
+  platform_provider:    'Platform Provider',
+  media_seo_agency:     'Media / SEO Agency',
+  event_organizer:      'Event Organizer',
+  influencer_streamer:  'Influencer / Streamer',
+  investor_advisor:     'Investor / Advisor',
+  compliance_legal:     'Compliance & Legal',
+  kyc_aml_provider:     'KYC / AML Provider',
+  other:                'Other',
+}
+
+const SOCIAL_PLATFORMS = [
+  { name: 'Facebook',  key: 'facebook' },
+  { name: 'Twitter',   key: 'twitter' },
+  { name: 'Instagram', key: 'instagram' },
+  { name: 'LinkedIn',  key: 'linkedin' },
+  { name: 'YouTube',   key: 'youtube' },
+  { name: 'Kick',      key: 'kick' },
+  { name: 'Twitch',    key: 'twitch' },
+  { name: 'Affiliate Roulette', key: 'affiliate_roulette' },
 ]
+const OAUTH_KEYS = ['facebook', 'twitter', 'instagram', 'youtube', 'kick', 'twitch']
+
+function getTagline(profile) {
+  if (!profile) return null
+  const industryRole = ROLE_LABELS[profile.primary_role] || profile.primary_role || null
+  const hasCompanyAccess = profile.website_verified || profile.website_representation_approved
+  if (hasCompanyAccess) {
+    return profile.job_title || profile.company_name || industryRole
+  }
+  return industryRole
+}
+
+function InfoCell({ darkMode, label, value, full }) {
+  if (!value) return null
+  const labelCls = `text-[10px] uppercase tracking-wide font-semibold ${darkMode ? 'text-gray-500' : 'text-gray-400'}`
+  const valueCls = `text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`
+  return (
+    <div className={`min-w-0 ${full ? 'col-span-2' : ''}`}>
+      <p className={labelCls}>{label}</p>
+      <p className={`${valueCls} ${full ? 'break-words' : 'truncate'}`}>{value}</p>
+    </div>
+  )
+}
 
 export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, onClose, onCallStart, onEditProfile }) {
   const { user: authUser } = useAuth()
@@ -30,19 +72,18 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
   const dm = darkMode
   const name = profile?.display_name || profile?.full_name || profile?.username || authUser?.username || '?'
   const avatar = profile?.avatar_url
-
-  const lbl = `text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`
-  const val = `text-sm ${dm ? 'text-gray-200' : 'text-gray-800'}`
+  const tagline = getTagline(profile)
   const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
+  const lbl = `text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`
 
-  // Self view now mirrors exactly what other users see on this popup — no email or username.
-  const infoRows = [
-    { label: 'Location', value: profile?.location || profile?.country },
-    { label: 'Bio',      value: profile?.bio },
-    { label: 'Joined',   value: profile?.created_at
-        ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-        : null },
-  ].filter((r) => r.value)
+  const location = profile?.location || profile?.country
+  const joinDate = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : null
+  const dob = profile?.date_of_birth
+    ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+  const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const verifiedWebsites = profile?.verified_websites || []
   const repWebsites = profile?.rep_websites || []
@@ -51,17 +92,14 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
     ...repWebsites.map((w) => ({ ...w, isOwner: false })),
   ]
 
-  const visibleSocials = isSelf
-    ? SOCIALS.filter(({ key }) => selfSocials.some((c) => c.platform === key.replace('_url', '') && (c.profile_url || c.username)))
-    : SOCIALS.filter(({ key }) => profile?.[key])
-
-  function getSocialUrl(s) {
-    if (isSelf) {
-      const c = selfSocials.find((c) => c.platform === s.key.replace('_url', ''))
-      return c?.profile_url || (c?.username ? `https://${c.platform}.com/${c.username}` : null)
-    }
-    return profile?.[s.key]
-  }
+  // Same social data, normalized whether we're looking at our own connections or another user's public columns.
+  const socials = isSelf
+    ? SOCIAL_PLATFORMS.map((s) => {
+        const c = selfSocials.find((conn) => conn.platform === s.key)
+        return { ...s, url: c?.profile_url || (c?.username ? `https://${s.key}.com/${c.username}` : null) }
+      })
+    : SOCIAL_PLATFORMS.map((s) => ({ ...s, url: profile?.[`${s.key}_url`] }))
+  const oauthSocials = socials.filter((s) => OAUTH_KEYS.includes(s.key))
 
   return (
     <div
@@ -126,31 +164,65 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
             )}
           </div>
 
-          {/* Name + status */}
+          {/* Name + tagline */}
           <p className="font-bold text-lg leading-tight">{name}</p>
+          {tagline && <p className={`text-sm mb-1 ${dm ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
           {isSelf
             ? <p className="text-xs text-green-500 mb-1">Online</p>
             : <p className={`text-xs mb-1 ${isOnline ? 'text-green-500' : dm ? 'text-gray-500' : 'text-gray-400'}`}>
                 {isOnline ? 'Online' : 'Offline'}
               </p>
           }
-          {/* Info rows */}
-          {infoRows.length > 0 && (
-            <div className={`rounded-2xl px-4 py-3 mt-3 mb-3 ${cardBg}`}>
-              <div className="space-y-2">
-                {infoRows.map(({ label, value }) => (
-                  <div key={label} className="min-w-0">
-                    <p className={lbl}>{label}</p>
-                    <p className={`${val} ${label === 'Bio' ? 'line-clamp-2' : 'truncate'}`}>{value}</p>
-                  </div>
-                ))}
-              </div>
+          {profile?.bio && (
+            <p className={`text-sm mt-2 ${dm ? 'text-gray-300' : 'text-gray-600'}`}>{profile.bio}</p>
+          )}
+
+          {/* Verification badges */}
+          {profile && (profile.kyc_status === 'verified' || profile.website_verified || profile.website_representation_approved || oauthSocials.some((s) => s.url)) && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {profile.kyc_status === 'verified' && (
+                <span title="This user has completed identity verification before joining Pulse." className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  KYC Verified
+                </span>
+              )}
+              {profile.website_verified && (
+                <span title="This website was verified through a meta tag or approved company representation." className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Website Verified
+                </span>
+              )}
+              {profile.website_representation_approved && (
+                <span title="This user has been approved to represent this company on Pulse." className="inline-flex items-center gap-1 text-xs bg-violet-100 text-violet-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                  Approved Rep
+                </span>
+              )}
+              {oauthSocials.some((s) => s.url) && (
+                <span title="This social profile was verified through secure OAuth login." className="inline-flex items-center gap-1 text-xs bg-pink-100 text-pink-700 rounded-full px-2.5 py-1 font-medium cursor-help">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                  Social Verified
+                </span>
+              )}
             </div>
           )}
 
+          {/* Personal Information — no email or username, ever */}
+          <div className={`rounded-xl p-4 mt-3 mb-3 ${cardBg}`}>
+            <p className={`${lbl} mb-3`}>Personal Information</p>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+              <InfoCell darkMode={dm} label="Local Time" value={localTime} />
+              <InfoCell darkMode={dm} label="Company" value={profile?.company_name} />
+              <InfoCell darkMode={dm} label="Job Title" value={profile?.job_title} />
+              <InfoCell darkMode={dm} label="Location" value={location} />
+              <InfoCell darkMode={dm} label="Date of Birth" value={dob} />
+              <InfoCell darkMode={dm} label="Join Date" value={joinDate} />
+            </div>
+          </div>
+
           {/* Websites */}
           {allWebsites.length > 0 && (
-            <div className={`rounded-2xl px-4 py-3 mb-3 ${cardBg}`}>
+            <div className={`rounded-xl p-4 mb-3 ${cardBg}`}>
               <p className={`${lbl} mb-2`}>Websites</p>
               <div className="space-y-1">
                 {allWebsites.map((w, i) => (
@@ -173,26 +245,23 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
             </div>
           )}
 
-          {/* Social profiles — icon-only row, same for self and others */}
-          {visibleSocials.length > 0 && (
-            <div className={`rounded-2xl px-4 py-3 ${cardBg}`}>
+          {/* Social profiles — icon-only row, only render if at least one link exists */}
+          {socials.some((s) => s.url) && (
+            <div className={`rounded-xl p-4 ${cardBg}`}>
               <p className={`${lbl} mb-2`}>Social</p>
               <div className="flex flex-wrap gap-2">
-                {visibleSocials.map((s) => {
-                  const url = getSocialUrl(s)
-                  return url ? (
-                    <a
-                      key={s.key}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={s.label}
-                      className="hover:scale-105 transition-transform"
-                    >
-                      <SocialIcon platform={s.key.replace('_url', '')} size={40} />
-                    </a>
-                  ) : null
-                })}
+                {socials.filter((s) => s.url).map((s) => (
+                  <a
+                    key={s.key}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={s.name}
+                    className="hover:scale-105 transition-transform"
+                  >
+                    <SocialIcon platform={s.key} size={40} />
+                  </a>
+                ))}
               </div>
             </div>
           )}
