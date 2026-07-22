@@ -192,7 +192,7 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
       const savedUrl = conn?.profile_url
 
       return (
-        <div key={p.key} className={`rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-100'} ${rowBg} overflow-hidden`}>
+        <div key={p.key} className={`rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-100'} ${rowBg}`}>
           {/* Main row — always visible */}
           <div className="flex items-center gap-3 p-3">
             <SocialIcon platform={p.key} size={32} />

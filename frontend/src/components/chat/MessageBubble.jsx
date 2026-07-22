@@ -118,7 +118,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
           {/* Bubble */}
           <div className={`px-4 py-2 rounded-2xl text-sm ${
             isMe
-              ? 'bg-gradient-to-r from-sky-400 to-violet-600 text-white rounded-br-sm'
+              ? 'bg-violet-600 text-white rounded-br-sm'
               : darkMode
               ? 'bg-gray-700 text-white rounded-bl-sm'
               : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
