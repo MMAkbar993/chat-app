@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSocket } from '../../context/SocketContext'
+import { useToast } from '../../context/ToastContext'
 import { uploadFile } from '../../api/users'
 import AttachmentMenu from './AttachmentMenu'
 import EmojiPicker from './EmojiPicker'
@@ -11,6 +12,7 @@ function formatSecs(s) {
 }
 
 export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview }) {
+  const { showToast } = useToast()
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
@@ -160,7 +162,9 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       onSend(fileUrl, messageType || 'audio', replyTo?.id || null)
       onClearReply?.()
       discardPreview()
-    } catch {}
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Upload failed. Please try again.', 'error')
+    }
     setSending(false)
   }
 

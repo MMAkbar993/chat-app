@@ -5,3 +5,4 @@ export const initiateCall = (calleeId, callType, conversationId) =>
   client.post('/calls', { calleeId, callType, conversationId }).then((r) => r.data)
 export const endCall = (callId, status, durationSeconds) =>
   client.patch(`/calls/${callId}`, { status, durationSeconds }).then((r) => r.data)
+export const getCallUsage = () => client.get('/calls/usage').then((r) => r.data)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { searchUsers, addContact } from '../../api/contacts'
 
 export default function AddContactModal({ darkMode, onClose, onAdded }) {
@@ -14,18 +14,20 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
     setTimeout(() => setToast(null), 3000)
   }
 
-  async function handleSearch(val) {
-    setQ(val)
-    if (val.length < 4) { setResults([]); return }
+  useEffect(() => {
+    if (q.length < 4) { setResults([]); setLoading(false); return }
     setLoading(true)
-    try {
-      const data = await searchUsers(val)
-      setResults(data.users || [])
-    } catch {
-      showToast('Search failed. Please try again.', 'error')
-    }
-    setLoading(false)
-  }
+    const t = setTimeout(async () => {
+      try {
+        const data = await searchUsers(q)
+        setResults(data.users || [])
+      } catch {
+        showToast('Search failed. Please try again.', 'error')
+      }
+      setLoading(false)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [q])
 
   async function handleAdd(user) {
     setAdding(user.id)
@@ -84,7 +86,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
           </svg>
           <input
             value={q}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setQ(e.target.value)}
             placeholder="Search by Username or Name"
             className={`flex-1 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
             autoFocus

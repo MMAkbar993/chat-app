@@ -127,6 +127,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
         <button
           key={key}
           title={label}
+          data-tour={`sidebar-${key}`}
           onClick={() => key === 'profile' ? setShowOwnProfile(true) : onNav(key)}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
             active === key
@@ -147,6 +148,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
       {/* Upgrade */}
       <button
         title="Upgrade to Premium"
+        data-tour="sidebar-upgrade"
         onClick={() => setShowUpgrade(true)}
         className="w-10 h-10 rounded-xl flex items-center justify-center mb-1 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm hover:shadow-md hover:brightness-105 transition-all"
       >
@@ -194,7 +196,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
       </button>
 
       {/* Avatar */}
-      <button onClick={() => setShowOwnProfile(true)} className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 hover:border-violet-400 transition-colors">
+      <button onClick={() => setShowOwnProfile(true)} data-tour="sidebar-avatar" className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-200 hover:border-violet-400 transition-colors">
         {user?.avatar_url ? (
           <img src={user.avatar_url} alt="me" className="w-full h-full object-cover" />
         ) : (

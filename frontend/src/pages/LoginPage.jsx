@@ -38,8 +38,8 @@ export default function LoginPage() {
         return
       }
       login(res.data.user, res.data.accessToken)
-      const { subscription_status, kyc_status } = res.data.user
-      if (subscription_status !== 'active' || kyc_status !== 'verified') {
+      const { kyc_status } = res.data.user
+      if (kyc_status !== 'verified') {
         navigate('/verify')
       } else if (nextPath) {
         navigate(nextPath)

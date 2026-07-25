@@ -17,7 +17,7 @@ export default function SignupPage() {
         </span>
       }
     >
-      <SignupForm onSuccess={() => navigate(nextPath || '/chat')} />
+      <SignupForm onSuccess={() => navigate('/verify')} />
     </AuthLayout>
   )
 }

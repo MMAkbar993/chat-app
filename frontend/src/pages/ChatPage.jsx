@@ -18,6 +18,8 @@ import CallModal from '../components/calls/CallModal'
 import GroupCallModal from '../components/calls/GroupCallModal'
 import CallingCard from '../components/calls/CallingCard'
 import IncomingCallModal from '../components/calls/IncomingCallModal'
+import UpgradeModal from '../features/payment/UpgradeModal'
+import ProductTour from '../components/onboarding/ProductTour'
 
 export default function ChatPage() {
   const [section, setSection] = useState('chats')
@@ -25,6 +27,8 @@ export default function ChatPage() {
   const [darkMode, setDarkMode] = useState(false)
   const [activeCall, setActiveCall] = useState(null)
   const [incomingCall, setIncomingCall] = useState(null)
+  const [showCallLimitUpgrade, setShowCallLimitUpgrade] = useState(false)
+  const [tourRestartCount, setTourRestartCount] = useState(0)
   const { socket } = useSocket()
   const { user, refreshUser } = useAuth()
   const { activeConversation, openConversation } = useChat()
@@ -70,6 +74,12 @@ export default function ChatPage() {
 
     const onCallRejected = () => setActiveCall(null)
 
+    const onCallBlocked = () => {
+      setActiveCall(null)
+      showToast("You've used your free monthly call minutes", 'info')
+      setShowCallLimitUpgrade(true)
+    }
+
     const onRepUpdate = () => refreshUser()
 
     socket.on('incoming-call', onIncoming)
@@ -77,6 +87,7 @@ export default function ChatPage() {
     socket.on('call-ended', onCallEnded)
     socket.on('call-rejected', onCallRejected)
     socket.on('call-busy', onCallBusy)
+    socket.on('call-blocked', onCallBlocked)
     socket.on('rep-request-update', onRepUpdate)
 
     return () => {
@@ -85,6 +96,7 @@ export default function ChatPage() {
       socket.off('call-ended', onCallEnded)
       socket.off('call-rejected', onCallRejected)
       socket.off('call-busy', onCallBusy)
+      socket.off('call-blocked', onCallBlocked)
       socket.off('rep-request-update', onRepUpdate)
     }
   }, [socket])
@@ -179,7 +191,7 @@ export default function ChatPage() {
       {section === 'groups' && <GroupsView darkMode={darkMode} mobileHidden={mobileDetail} />}
       {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} mobileHidden={mobileDetail} />}
       {section === 'settings' && (
-        <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} />
+        <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} onStartTour={() => setTourRestartCount((c) => c + 1)} />
       )}
 
       {/* Right panel — settings detail on that tab, chat window on chats/groups, welcome screen otherwise.
@@ -220,8 +232,18 @@ export default function ChatPage() {
       {activeCall && activeCall.status === 'connected' && (
         activeCall.isGroup
           ? <GroupCallModal call={activeCall} darkMode={darkMode} onEnd={() => setActiveCall(null)} />
-          : <CallModal call={activeCall} darkMode={darkMode} isCaller={activeCall.isCaller} onEnd={() => setActiveCall(null)} />
+          : <CallModal
+              call={activeCall}
+              darkMode={darkMode}
+              isCaller={activeCall.isCaller}
+              onEnd={() => setActiveCall(null)}
+              onLimitReached={() => setShowCallLimitUpgrade(true)}
+            />
       )}
+
+      <UpgradeModal isOpen={showCallLimitUpgrade} onClose={() => setShowCallLimitUpgrade(false)} />
+
+      <ProductTour userId={user?.id} setSection={setSection} darkMode={darkMode} restartSignal={tourRestartCount} />
     </div>
   )
 }

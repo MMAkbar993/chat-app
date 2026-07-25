@@ -41,6 +41,18 @@ export async function updateCallStatus(callId, status, endedAt = null, durationS
   return result.rows[0] || null
 }
 
+export async function getMonthlyCallSecondsUsed(userId) {
+  const result = await query(
+    `SELECT COALESCE(SUM(duration_seconds), 0) AS seconds
+     FROM calls
+     WHERE (caller_id = $1 OR callee_id = $1)
+       AND status = 'answered'
+       AND started_at >= date_trunc('month', now())`,
+    [userId]
+  )
+  return parseInt(result.rows[0].seconds, 10)
+}
+
 export async function getCallById(callId) {
   const result = await query(
     `SELECT * FROM calls WHERE id = $1`,

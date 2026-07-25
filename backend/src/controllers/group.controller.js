@@ -5,10 +5,12 @@ import {
   isParticipant,
   updateConversation,
   removeParticipant,
+  setParticipantRole,
   getConversationById,
   getConversationsForUser,
 } from '../db/queries/conversations.js'
 import { getIo } from '../socket/index.js'
+import { isProUser } from '../utils/plan.js'
 
 export async function listGroups(req, res, next) {
   try {
@@ -21,6 +23,9 @@ export async function listGroups(req, res, next) {
 
 export async function createGroup(req, res, next) {
   try {
+    if (!isProUser(req.user)) {
+      return res.status(403).json({ error: 'Groups are a Pro feature', code: 'PRO_REQUIRED' })
+    }
     const { name, memberIds } = req.body
     if (!name) return res.status(400).json({ error: 'name required' })
 
@@ -112,7 +117,27 @@ export async function removeMember(req, res, next) {
 
 export async function leaveGroup(req, res, next) {
   try {
-    await removeParticipant(req.params.id, req.user.id)
+    const conversationId = req.params.id
+    const participants = await getParticipants(conversationId)
+    const me = participants.find((p) => p.id === req.user.id)
+    const others = participants.filter((p) => p.id !== req.user.id)
+
+    // If I'm the only admin and other members remain, hand off admin before I go —
+    // otherwise the group is left with no one able to manage it.
+    if (me?.role === 'admin' && others.length > 0 && !others.some((p) => p.role === 'admin')) {
+      const successor = [...others].sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at))[0]
+      await setParticipantRole(conversationId, successor.id, 'admin')
+    }
+
+    await removeParticipant(conversationId, req.user.id)
+
+    const io = getIo()
+    if (io && others.length > 0) {
+      const remaining = await getParticipants(conversationId)
+      remaining.forEach((p) =>
+        io.to(`user:${p.id}`).emit('group-members-updated', { conversationId, participants: remaining })
+      )
+    }
     res.json({ ok: true })
   } catch (err) {
     next(err)

@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../context/AuthContext'
+import { isProUser } from '../../utils/plan'
 import CreateGroupModal from './CreateGroupModal'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import UpgradeModal from '../../features/payment/UpgradeModal'
 import client from '../../api/client'
 
 const FILTERS = [
@@ -18,22 +21,22 @@ function formatLastMessage(content, type) {
     try {
       const d = JSON.parse(content || '{}')
       const kind = d.call_type === 'video' ? 'Video' : 'Audio'
-      if (d.status === 'missed') return `📵 Missed ${kind.toLowerCase()} call`
+      if (d.status === 'missed') return `Missed ${kind.toLowerCase()} call`
       if (d.status === 'ended' && d.duration) {
         const m = Math.floor(d.duration / 60)
         const s = d.duration % 60
         const dur = m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `0:${String(s).padStart(2, '0')}`
-        return `📞 ${kind} call · ${dur}`
+        return `${kind} call · ${dur}`
       }
-      return `📞 ${kind} call`
+      return `${kind} call`
     } catch {
-      return '📞 Call'
+      return 'Call'
     }
   }
-  if (type === 'image') return '📷 Photo'
-  if (type === 'video') return '🎥 Video'
-  if (type === 'audio') return '🎤 Voice message'
-  if (type === 'file') return '📎 File'
+  if (type === 'image') return 'Photo'
+  if (type === 'video') return 'Video'
+  if (type === 'audio') return 'Voice message'
+  if (type === 'file') return 'File'
   return content || ' '
 }
 
@@ -148,10 +151,12 @@ export default function GroupsView({ darkMode, mobileHidden }) {
     toggleConversationFlag, removeConversation, dropConversation, markConversationUnread,
   } = useChat()
   const { showToast } = useToast()
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [menuGroupId, setMenuGroupId] = useState(null)
   const [hoveredId, setHoveredId] = useState(null)
   const [confirm, setConfirm] = useState(null)
@@ -189,7 +194,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Groups</h2>
-        <button onClick={() => setShowCreate(true)}
+        <button onClick={() => (isProUser(user) ? setShowCreate(true) : setShowUpgrade(true))}
           className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -265,13 +270,6 @@ export default function GroupsView({ darkMode, mobileHidden }) {
                       ? <img src={g.avatar_url} alt="" className="w-full h-full object-cover" />
                       : <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white font-bold text-sm">{(g.name || '?')[0].toUpperCase()}</div>}
                   </div>
-                  {g.is_pinned && (
-                    <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-amber-400 rounded-full flex items-center justify-center">
-                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                      </svg>
-                    </span>
-                  )}
                 </div>
                 <div className="flex-1 min-w-0 pr-6">
                   <div className="flex items-center justify-between">
@@ -280,11 +278,17 @@ export default function GroupsView({ darkMode, mobileHidden }) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`text-xs truncate ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(g.last_message, g.last_message_type)}</span>
-                    {g.unread_count > 0 && (
+                    {g.unread_count > 0 ? (
                       <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                         {g.unread_count}
                       </span>
-                    )}
+                    ) : g.is_pinned ? (
+                      <span className={`ml-2 shrink-0 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path transform="rotate(45 12 12)" d="M14 4v5c0 1.12.37 2.16 1 3H9c.65-.86 1-1.9 1-3V4h4m3-2H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3V4h1c.55 0 1-.45 1-1s-.45-1-1-1z" />
+                        </svg>
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </button>
@@ -359,6 +363,8 @@ export default function GroupsView({ darkMode, mobileHidden }) {
           onCreated={() => { loadConversations(); setShowCreate(false) }}
         />
       )}
+
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
 
       <ConfirmDialog
         open={!!confirm}

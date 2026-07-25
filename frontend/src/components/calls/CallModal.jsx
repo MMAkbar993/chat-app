@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
 import { useAuth } from '../../context/AuthContext'
 import { playCallConnected, playCallEnded } from '../../utils/sounds'
+import { isProUser } from '../../utils/plan'
+import { getCallUsage } from '../../api/calls'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 
 const ICE_SERVERS = {
@@ -11,7 +13,7 @@ const ICE_SERVERS = {
   ],
 }
 
-export default function CallModal({ call, darkMode, isCaller, onEnd }) {
+export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReached }) {
   const { socket } = useSocket()
   const { user } = useAuth()
   const localVideoRef = useRef(null)
@@ -32,8 +34,9 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
   const [elapsed, setElapsed] = useState(0)
   const [sharingScreen, setSharingScreen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const remainingSecondsRef = useRef(null) // null = unlimited (Pro) or not yet loaded
 
-  const canScreenShare = user?.subscription_status === 'active'
+  const canScreenShare = isProUser(user)
 
   const targetUserId = isCaller ? call.calleeId || call.callee_id : call.callerId || call.caller_id
   const isVideo = call.callType === 'video' || call.call_type === 'video'
@@ -45,10 +48,27 @@ export default function CallModal({ call, darkMode, isCaller, onEnd }) {
     : call.callerAvatar || call.calleeAvatar
 
   useEffect(() => {
+    if (isProUser(user)) return
+    getCallUsage()
+      .then((usage) => { remainingSecondsRef.current = usage.remainingSeconds })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     let timer
     if (status === 'connected') {
       playCallConnected()
-      timer = setInterval(() => setElapsed((e) => e + 1), 1000)
+      timer = setInterval(() => {
+        setElapsed((e) => {
+          const next = e + 1
+          const limit = remainingSecondsRef.current
+          if (limit != null && next >= limit && !endedRef.current) {
+            onLimitReached?.()
+            endCall(true)
+          }
+          return next
+        })
+      }, 1000)
     }
     return () => clearInterval(timer)
   }, [status])
