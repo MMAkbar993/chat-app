@@ -1,8 +1,12 @@
+import axios from 'axios'
 import { createKycSession } from '../services/kyc.service.js'
 import { findUserById, updateKycStatus } from '../db/queries/users.js'
-import { stripe } from '../config/stripe.js'
 import { config } from '../config/env.js'
-import { handleIdentityWebhook } from '../webhooks/stripeIdentityWebhook.js'
+import { verifyDiditSignature, handleDiditWebhook } from '../webhooks/diditWebhook.js'
+
+const DIDIT_BASE_URL = 'https://verification.didit.me/v3'
+const APPROVED_STATUSES = ['Approved']
+const FAILED_STATUSES = ['Declined', 'Expired', 'Not Finished']
 
 export async function createSessionHandler(req, res, next) {
   try {
@@ -18,19 +22,22 @@ export async function statusHandler(req, res, next) {
     const user = await findUserById(req.user.id)
     if (!user) return res.status(404).json({ error: 'User not found' })
 
-    // Check Stripe directly when pending — handles cases where webhook hasn't fired yet
+    // Check Didit directly when pending — handles cases where the webhook hasn't fired yet
     if (user.kyc_status === 'pending' && user.kyc_session_id) {
       try {
-        const session = await stripe.identity.verificationSessions.retrieve(user.kyc_session_id)
-        if (session.status === 'verified') {
+        const { data } = await axios.get(
+          `${DIDIT_BASE_URL}/session/${user.kyc_session_id}/decision/`,
+          { headers: { 'x-api-key': config.diditApiKey } }
+        )
+        if (APPROVED_STATUSES.includes(data.status)) {
           await updateKycStatus(user.id, 'verified')
           user.kyc_status = 'verified'
-        } else if (session.status === 'requires_input') {
+        } else if (FAILED_STATUSES.includes(data.status)) {
           await updateKycStatus(user.id, 'failed')
           user.kyc_status = 'failed'
         }
       } catch {
-        // Stripe unreachable or key not set — use DB status as-is
+        // Didit unreachable or key not set — use DB status as-is
       }
     }
 
@@ -45,17 +52,23 @@ export async function statusHandler(req, res, next) {
 }
 
 export async function webhookHandler(req, res) {
-  const sig = req.headers['stripe-signature']
-  let event
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, config.stripeIdentityWebhookSecret)
-  } catch (err) {
-    console.error('KYC webhook signature failed:', err.message)
+  const signature = req.headers['x-signature-v2']
+  const timestamp = req.headers['x-timestamp']
+
+  if (!verifyDiditSignature(req.body, signature, timestamp, config.diditWebhookSecret)) {
+    console.error('KYC webhook signature failed')
     return res.status(400).json({ error: 'Webhook signature verification failed' })
   }
 
+  let payload
   try {
-    await handleIdentityWebhook(event)
+    payload = JSON.parse(req.body.toString())
+  } catch {
+    return res.status(400).json({ error: 'Invalid webhook payload' })
+  }
+
+  try {
+    await handleDiditWebhook(payload)
   } catch (err) {
     console.error('KYC webhook handler error:', err)
   }

@@ -31,7 +31,15 @@ client.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry && !original.url?.includes('/auth/refresh')) {
+    // Only treat a 401 as "my session expired" if this request actually carried an access
+    // token. Unauthenticated requests (login, register, etc.) never do — their 401s are real
+    // errors (e.g. wrong password) and must not trigger a refresh + redirect-to-login.
+    if (
+      error.response?.status === 401 &&
+      !original._retry &&
+      !original.url?.includes('/auth/refresh') &&
+      original.headers?.Authorization
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           refreshQueue.push({ resolve, reject })

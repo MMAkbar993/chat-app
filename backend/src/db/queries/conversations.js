@@ -194,6 +194,13 @@ export async function removeParticipant(conversationId, userId) {
   )
 }
 
+export async function setParticipantRole(conversationId, userId, role) {
+  await query(
+    `UPDATE conversation_participants SET role = $1 WHERE conversation_id = $2 AND user_id = $3`,
+    [role, conversationId, userId]
+  )
+}
+
 export async function updateConversation(id, { name, avatarUrl, description }) {
   const result = await query(
     `UPDATE conversations

@@ -19,7 +19,6 @@ const stripePublishable = process.env.STRIPE_PUBLISHABLE_KEY || process.env.STRI
 const stripeMonthlyPrice = process.env.STRIPE_MONTHLY_PRICE_ID || process.env.STRIPE_PRICE_ID_MONTHLY
 const stripeYearlyPrice = process.env.STRIPE_YEARLY_PRICE_ID || process.env.STRIPE_PRICE_ID_YEARLY
 const stripeWebhook = process.env.STRIPE_WEBHOOK_SECRET || ''
-const stripeIdentityWebhook = process.env.STRIPE_IDENTITY_WEBHOOK_SECRET || ''
 
 export const config = Object.freeze({
   port: parseInt(process.env.PORT || '3001', 10),
@@ -29,9 +28,11 @@ export const config = Object.freeze({
   stripeSecretKey: stripeSecret || '',
   stripePublishableKey: stripePublishable || '',
   stripeWebhookSecret: stripeWebhook,
-  stripeIdentityWebhookSecret: stripeIdentityWebhook,
   stripeMonthlyPriceId: stripeMonthlyPrice || '',
   stripeYearlyPriceId: stripeYearlyPrice || '',
+  diditApiKey: process.env.DIDIT_API_KEY || '',
+  diditWorkflowId: process.env.DIDIT_WORKFLOW_ID || '',
+  diditWebhookSecret: process.env.DIDIT_WEBHOOK_SECRET || '',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   nodeEnv: process.env.NODE_ENV || 'development',
 })

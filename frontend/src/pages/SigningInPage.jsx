@@ -9,8 +9,7 @@ export default function SigningInPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (user) {
-        const fullyVerified = user.subscription_status === 'active' && user.kyc_status === 'verified'
-        navigate(fullyVerified ? '/chat' : '/verify', { replace: true })
+        navigate(user.kyc_status === 'verified' ? '/chat' : '/verify', { replace: true })
       } else {
         navigate('/login', { replace: true })
       }

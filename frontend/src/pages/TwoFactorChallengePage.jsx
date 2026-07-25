@@ -48,8 +48,7 @@ export default function TwoFactorChallengePage() {
     try {
       const { data } = await client.post('/auth/2fa/verify', { tempToken, code })
       login(data.user, data.accessToken)
-      const fullyVerified = data.user.subscription_status === 'active' && data.user.kyc_status === 'verified'
-      navigate(fullyVerified ? '/chat' : '/verify', { replace: true })
+      navigate(data.user.kyc_status === 'verified' ? '/chat' : '/verify', { replace: true })
     } catch (err) {
       setError(err.response?.data?.error || 'Invalid code. Please try again.')
       setDigits(['', '', '', '', '', ''])

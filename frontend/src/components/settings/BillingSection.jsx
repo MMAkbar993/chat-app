@@ -50,9 +50,10 @@ export default function BillingSection({ darkMode }) {
   }
 
   // A subscription only counts as "paid" once it's actually active (or was, and
-  // is now at-risk). 'incomplete' means the first payment never went through —
-  // that's effectively still the Free plan, not a plan that's about to renew.
-  const isPaid = billing?.status === 'active' || billing?.status === 'past_due'
+  // is now at-risk) AND has a real plan attached. 'incomplete' means the first
+  // payment never went through, and a null plan means the account was only ever
+  // KYC-verified (which also flips status to 'active') — both are still Free.
+  const isPaid = Boolean(billing?.plan) && (billing?.status === 'active' || billing?.status === 'past_due')
   const showBadge = isPaid || billing?.status === 'cancelled'
   const status = STATUS_STYLE[billing?.status] || STATUS_STYLE.inactive
   const planLabel = isPaid && billing?.plan

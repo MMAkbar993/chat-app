@@ -43,11 +43,12 @@ function DocModal({ title, content, darkMode, onClose }) {
 
 // A flat, Telegram-style row: colored icon badge + label + chevron.
 // Highlights when it's the active/selected section.
-function ListRow({ icon, label, description, active, onClick, darkMode, danger = false }) {
+function ListRow({ icon, label, description, active, onClick, darkMode, danger = false, dataTour }) {
   const dm = darkMode
   return (
     <button
       onClick={onClick}
+      data-tour={dataTour}
       className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b transition-colors ${
         dm ? 'border-gray-700' : 'border-gray-100'
       } ${
@@ -74,7 +75,7 @@ const TERMS = `These Terms & Conditions govern your use of this platform. By usi
 
 const PRIVACY = `Your privacy is important to us. We collect only the information necessary to operate the service, including your name, email, and usage data. We do not sell your personal information to third parties. Data is stored securely and you may request deletion of your account and associated data at any time. Cookies may be used to improve your experience and are governed by our Cookie Policy.`
 
-export default function SettingsView({ darkMode, activeSection, onSelect, mobileHidden }) {
+export default function SettingsView({ darkMode, activeSection, onSelect, mobileHidden, onStartTour }) {
   const { logout } = useAuth()
   const [showBlocked, setShowBlocked] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -169,6 +170,7 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
           darkMode={dm}
           active={activeSection === 'website'}
           onClick={() => onSelect('website')}
+          dataTour="settings-website"
           icon={icon('M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'bg-blue-500')}
           label="Website Verification"
         />
@@ -268,6 +270,16 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
           label="Feedback & Support"
           description="Report an issue or request a feature"
         />
+
+        {onStartTour && (
+          <ListRow
+            darkMode={dm}
+            onClick={onStartTour}
+            icon={icon('M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'bg-teal-500')}
+            label="Take a Tour"
+            description="Replay the guided walkthrough"
+          />
+        )}
 
         <ListRow
           darkMode={dm}

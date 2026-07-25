@@ -71,6 +71,7 @@ export async function loginUser({ email, password }) {
     email: user.email,
     full_name: user.full_name,
     username: user.username,
+    subscription_plan: user.subscription_plan,
     subscription_status: user.subscription_status,
     kyc_status: user.kyc_status,
     is_active: user.is_active,

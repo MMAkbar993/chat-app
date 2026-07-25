@@ -11,7 +11,7 @@ import client from '../../api/client'
 
 export default function PaymentModal({ isOpen, onClose, standalone = false }) {
   const navigate = useNavigate()
-  const [step, setStep] = useState('plan')  // 'plan' | 'card'
+  const [step, setStep] = useState('plan')  // 'plan' | 'card' | 'success'
   const [selectedPlan, setSelectedPlan] = useState('monthly')
   const [clientSecret, setClientSecret] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -48,7 +48,7 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md" scroll>
       <div className="p-7">
         {!standalone && <StepIndicator currentStep={step === 'card' ? 2 : 1} />}
 
@@ -116,8 +116,29 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
                 },
               }}
             >
-              <StripeCardForm planType={selectedPlan} />
+              <StripeCardForm
+                planType={selectedPlan}
+                standalone={standalone}
+                onSuccess={() => setStep('success')}
+              />
             </Elements>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="flex flex-col items-center text-center gap-4 py-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">You're upgraded!</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Your {selectedPlan} plan is now active. Enjoy the new features.
+              </p>
+            </div>
+            <Button className="w-full" onClick={handleClose}>Done</Button>
           </div>
         )}
       </div>

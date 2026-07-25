@@ -1,4 +1,19 @@
-import { getCallHistory, createCall, updateCallStatus, getCallById } from '../db/queries/calls.js'
+import { getCallHistory, createCall, updateCallStatus, getCallById, getMonthlyCallSecondsUsed } from '../db/queries/calls.js'
+import { isProUser, FREE_CALL_SECONDS_PER_MONTH } from '../utils/plan.js'
+
+export async function getCallUsage(req, res, next) {
+  try {
+    const isPro = isProUser(req.user)
+    if (isPro) {
+      return res.json({ isPro, usedSeconds: 0, limitSeconds: null, remainingSeconds: null })
+    }
+    const usedSeconds = await getMonthlyCallSecondsUsed(req.user.id)
+    const remainingSeconds = Math.max(0, FREE_CALL_SECONDS_PER_MONTH - usedSeconds)
+    res.json({ isPro, usedSeconds, limitSeconds: FREE_CALL_SECONDS_PER_MONTH, remainingSeconds })
+  } catch (err) {
+    next(err)
+  }
+}
 
 export async function listCalls(req, res, next) {
   try {

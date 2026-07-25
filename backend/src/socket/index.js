@@ -4,9 +4,10 @@ import { config } from '../config/env.js'
 import { query } from '../config/database.js'
 import { createMessage, markMessagesDelivered, markMessagesRead, getMessageById } from '../db/queries/messages.js'
 import { getParticipants, isParticipant, unhideParticipants } from '../db/queries/conversations.js'
-import { createCall, updateCallStatus } from '../db/queries/calls.js'
+import { createCall, updateCallStatus, getMonthlyCallSecondsUsed } from '../db/queries/calls.js'
 import { findUserById } from '../db/queries/users.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
+import { isProUser, FREE_CALL_SECONDS_PER_MONTH } from '../utils/plan.js'
 
 let io = null
 const onlineUsers = new Map()       // userId → socket count
@@ -155,12 +156,20 @@ export function initSocket(httpServer) {
 
     socket.on('call-initiate', async ({ targetUserId, callType, conversationId }) => {
       try {
+        const caller = await findUserById(userId)
+        if (!isProUser(caller)) {
+          const usedSeconds = await getMonthlyCallSecondsUsed(userId)
+          if (usedSeconds >= FREE_CALL_SECONDS_PER_MONTH) {
+            socket.emit('call-blocked', { reason: 'limit_reached' })
+            return
+          }
+        }
+
         if (!targetUserId && conversationId) {
           // Group call: ring all available participants
-          const [participants, convResult, caller] = await Promise.all([
+          const [participants, convResult] = await Promise.all([
             getParticipants(conversationId),
             query('SELECT name FROM conversations WHERE id = $1', [conversationId]),
-            findUserById(userId),
           ])
           const conversationName = convResult.rows[0]?.name || 'Group'
           const call = await createCall({ callerId: userId, calleeId: null, conversationId, callType })
@@ -200,7 +209,6 @@ export function initSocket(httpServer) {
 
         const call = await createCall({ callerId: userId, calleeId: targetUserId, conversationId, callType })
         activeCalls.set(userId, call.id)
-        const caller = await findUserById(userId)
         socket.emit('call-created', { call })
         io.to(`user:${targetUserId}`).emit('incoming-call', {
           callId: call.id,

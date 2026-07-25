@@ -1,11 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 import Button from '../../components/ui/Button'
 import client from '../../api/client'
+import { useAuth } from '../../context/AuthContext'
 
-export default function StripeCardForm({ onSuccess, planType }) {
+export default function StripeCardForm({ onSuccess, planType, standalone = false }) {
   const stripe = useStripe()
   const elements = useElements()
+  const navigate = useNavigate()
+  const { refreshUser } = useAuth()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -40,7 +44,17 @@ export default function StripeCardForm({ onSuccess, planType }) {
     if (paymentIntent?.status === 'succeeded') {
       try {
         const res = await client.post('/kyc/create-session')
-        window.location.href = res.data.url
+        if (res.data.url) {
+          window.location.href = res.data.url
+          return
+        }
+        // No verification session needed (already verified, or KYC bypassed) — subscription is active.
+        await refreshUser()
+        if (standalone) {
+          onSuccess?.()
+        } else {
+          navigate('/verify')
+        }
       } catch (err) {
         setError(err.response?.data?.error || 'Could not start identity verification')
         setLoading(false)
