@@ -1,8 +1,9 @@
 import crypto from 'crypto'
-import { updateKycStatus } from '../db/queries/users.js'
+import axios from 'axios'
+import { config } from '../config/env.js'
+import { applyKycDecision } from '../services/kyc.service.js'
 
-const APPROVED_STATUSES = ['Approved']
-const FAILED_STATUSES = ['Declined', 'Expired', 'Not Finished']
+const DIDIT_BASE_URL = 'https://verification.didit.me/v3'
 
 function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize)
@@ -46,9 +47,12 @@ export async function handleDiditWebhook(payload) {
     return
   }
 
-  if (APPROVED_STATUSES.includes(payload.status)) {
-    await updateKycStatus(userId, 'verified')
-  } else if (FAILED_STATUSES.includes(payload.status)) {
-    await updateKycStatus(userId, 'failed')
-  }
+  // Fetch the full decision rather than trusting the webhook payload's own `decision` shape —
+  // this is the same endpoint/shape applyKycDecision already expects (incl. id_verifications
+  // for the verified name), so both the poll and webhook paths behave identically.
+  const { data } = await axios.get(
+    `${DIDIT_BASE_URL}/session/${payload.session_id}/decision/`,
+    { headers: { 'x-api-key': config.diditApiKey } }
+  )
+  await applyKycDecision(userId, data)
 }

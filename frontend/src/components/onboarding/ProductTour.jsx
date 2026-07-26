@@ -4,22 +4,46 @@ import Button from '../ui/Button'
 
 function buildSteps({ setSection }) {
   return [
-    { target: '[data-tour="sidebar-chats"]', title: 'Your Chats', body: 'All your conversations live here.' },
-    { target: '[data-tour="sidebar-contacts"]', title: 'Contacts', body: 'Add and manage your contacts.' },
-    { target: '[data-tour="sidebar-groups"]', title: 'Groups', body: 'Create group chats here. This is a Pro feature.' },
-    { target: '[data-tour="sidebar-calls"]', title: 'Calls', body: 'Your call history, and where you start new calls.' },
-    { target: '[data-tour="sidebar-upgrade"]', title: 'Go Pro', body: 'Upgrade your plan here — unlimited calls, Groups, and more.' },
-    { target: '[data-tour="sidebar-settings"]', title: 'Settings', before: () => setSection('settings'), body: 'All your account settings live here.' },
-    { target: '[data-tour="settings-website"]', title: 'Website Verification', body: "Here is where you verify your website's ownership." },
-    { target: '[data-tour="sidebar-avatar"]', title: 'Your Profile', before: () => setSection('chats'), body: 'Edit your profile anytime from here. Enjoy Pulse!' },
+    {
+      target: '[data-tour="sidebar-chats"]', title: 'Your Chats',
+      body: 'All your one-on-one and group conversations are here. Start chatting with verified industry professionals.',
+    },
+    {
+      target: '[data-tour="sidebar-contacts"]', title: 'Contacts',
+      body: 'Add, organize, and manage your professional contacts in one place.',
+    },
+    {
+      target: '[data-tour="sidebar-groups"]', title: 'Groups',
+      body: 'Create and manage group conversations for your team, partners, or projects. Available with Pulse Pro.',
+    },
+    {
+      target: '[data-tour="sidebar-calls"]', title: 'Calls',
+      body: 'View your call history and start secure voice or video calls with your contacts.',
+    },
+    {
+      target: '[data-tour="sidebar-upgrade"]', title: 'Go Pro',
+      body: 'Unlock unlimited calls, group chats, business tools, and other premium features by upgrading to Pulse Pro.',
+    },
+    {
+      target: '[data-tour="sidebar-settings"]', title: 'Settings', before: () => setSection('settings'),
+      body: 'Manage your account, notifications, privacy, security, and application preferences.',
+    },
+    {
+      target: '[data-tour="settings-website"]', title: 'Website Verification',
+      body: 'Verify ownership of your website or request to represent an existing website. Verified websites appear on your public profile, helping others trust who you are.',
+    },
+    {
+      target: '[data-tour="settings-social"]', title: 'Social Accounts',
+      body: 'Connect your social media accounts to display verified social links on your public profile, making it easier for others to find and connect with you.',
+    },
+    {
+      target: '[data-tour="sidebar-avatar"]', title: 'Your Profile', before: () => setSection('chats'),
+      body: "Customize your public profile, update your information, and showcase your verified websites and social accounts. You're all set, welcome to Pulse!",
+    },
   ]
 }
 
-function tourSeenKey(userId) {
-  return `pulse_tour_seen_${userId}`
-}
-
-export default function ProductTour({ userId, setSection, darkMode, restartSignal }) {
+export default function ProductTour({ hasSeenTour, onMarkSeen, setSection, darkMode, restartSignal }) {
   const [phase, setPhase] = useState('closed') // 'closed' | 'prompt' | 'running'
   const [stepIndex, setStepIndex] = useState(0)
   const [pos, setPos] = useState(null) // { top, left, spotlight: {top,left,width,height}, arrow }
@@ -38,17 +62,15 @@ export default function ProductTour({ userId, setSection, darkMode, restartSigna
   }
 
   useEffect(() => {
-    if (!userId) return
-    if (!localStorage.getItem(tourSeenKey(userId))) {
-      const t = setTimeout(() => setPhase('prompt'), 700)
-      return () => clearTimeout(t)
-    }
-  }, [userId])
+    if (hasSeenTour) return
+    const t = setTimeout(() => setPhase('prompt'), 700)
+    return () => clearTimeout(t)
+  }, [hasSeenTour])
 
   function finish() {
-    if (userId) localStorage.setItem(tourSeenKey(userId), '1')
     setPhase('closed')
     setPos(null)
+    onMarkSeen?.()
   }
 
   function startTour() {
@@ -152,7 +174,7 @@ export default function ProductTour({ userId, setSection, darkMode, restartSigna
   const isLast = stepIndex === steps.length - 1
 
   return (
-    <div className="fixed inset-0 z-100" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-100" onClick={finish}>
       {pos && (
         <div
           className="fixed rounded-xl pointer-events-none transition-all duration-200"
@@ -165,6 +187,7 @@ export default function ProductTour({ userId, setSection, darkMode, restartSigna
       )}
       <div
         ref={tooltipRef}
+        onClick={(e) => e.stopPropagation()}
         className={`fixed w-72 rounded-2xl shadow-2xl p-4 transition-opacity duration-150 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} ${pos ? 'opacity-100' : 'opacity-0'}`}
         style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
       >
@@ -180,7 +203,7 @@ export default function ProductTour({ userId, setSection, darkMode, restartSigna
 
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-bold">{step.title}</p>
-          <button onClick={finish} className={`shrink-0 -mt-1 -mr-1 p-1 rounded-lg ${darkMode ? 'text-gray-500 hover:bg-gray-800' : 'text-gray-400 hover:bg-gray-100'}`}>
+          <button onClick={finish} title="Don't show this again" className={`shrink-0 -mt-1 -mr-1 p-1 rounded-lg ${darkMode ? 'text-gray-500 hover:bg-gray-800' : 'text-gray-400 hover:bg-gray-100'}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -207,6 +230,13 @@ export default function ProductTour({ userId, setSection, darkMode, restartSigna
             </button>
           </div>
         </div>
+
+        <button
+          onClick={finish}
+          className={`w-full text-center text-xs mt-3 pt-3 border-t transition-colors ${darkMode ? 'border-gray-800 text-gray-500 hover:text-gray-300' : 'border-gray-100 text-gray-400 hover:text-gray-600'}`}
+        >
+          Don't show this again
+        </button>
       </div>
     </div>
   )

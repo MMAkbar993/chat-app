@@ -13,6 +13,7 @@ import {
   getWebsiteRepresentatives, transferWebsiteOwnership,
   getNotifications, markNotificationsRead, clearNotifications, getMyVerifiedWebsites, revokeRepresentation,
   getMyRepresentationStatus, cancelRepresentationRequest,
+  markTourSeenHandler,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler, submitFeedback } from '../controllers/user_actions.controller.js'
 
@@ -64,6 +65,7 @@ userRouter.patch('/me/notifications/read-all', markNotificationsRead)
 userRouter.delete('/me/notifications', clearNotifications)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.post('/me/feedback', submitFeedback)
+userRouter.patch('/me/tour-seen', markTourSeenHandler)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)
 userRouter.delete('/:id/block', unblockUserHandler)

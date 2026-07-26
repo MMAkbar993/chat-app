@@ -22,7 +22,9 @@ adminClient.interceptors.request.use((config) => {
 adminClient.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401) {
+    // A 401 from the login request itself is a real "wrong credentials" error, not an
+    // expired session — must not trigger the hard reload below, or the error never gets seen.
+    if (error.response?.status === 401 && !error.config?.url?.includes('/login')) {
       setAdminToken(null)
       window.location.href = '/admin/login'
     }

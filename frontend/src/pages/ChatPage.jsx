@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useChat } from '../context/ChatContext'
 import { useToast } from '../context/ToastContext'
 import { getOrCreateDirect } from '../api/conversations'
+import { markTourSeen } from '../api/users'
 import { playRingtone, stopRingtone } from '../utils/sounds'
 import Sidebar from '../components/chat/Sidebar'
 import ChatsView from '../components/chat/ChatsView'
@@ -243,7 +244,13 @@ export default function ChatPage() {
 
       <UpgradeModal isOpen={showCallLimitUpgrade} onClose={() => setShowCallLimitUpgrade(false)} />
 
-      <ProductTour userId={user?.id} setSection={setSection} darkMode={darkMode} restartSignal={tourRestartCount} />
+      <ProductTour
+        hasSeenTour={user?.has_seen_tour}
+        onMarkSeen={async () => { await markTourSeen().catch(() => {}); refreshUser() }}
+        setSection={setSection}
+        darkMode={darkMode}
+        restartSignal={tourRestartCount}
+      />
     </div>
   )
 }

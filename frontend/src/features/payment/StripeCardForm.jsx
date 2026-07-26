@@ -43,6 +43,9 @@ export default function StripeCardForm({ onSuccess, planType, standalone = false
 
     if (paymentIntent?.status === 'succeeded') {
       try {
+        // Reconcile subscription_status with Stripe now rather than waiting on a webhook —
+        // otherwise Billing/Sidebar/etc keep showing "Upgrade" until the webhook (if any) fires.
+        await client.get('/payment/billing').catch(() => {})
         const res = await client.post('/kyc/create-session')
         if (res.data.url) {
           window.location.href = res.data.url
