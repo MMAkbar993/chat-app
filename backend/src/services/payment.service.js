@@ -6,6 +6,29 @@ function isStripeConfigured(key) {
   return Boolean(key) && /^sk_(test|live)_[A-Za-z0-9]{20,}/.test(key)
 }
 
+// Maps Stripe's own subscription.status onto our internal status column. This exists because
+// subscription_status is otherwise only ever updated by the invoice/subscription webhook — if
+// that webhook isn't reachable (no STRIPE_WEBHOOK_SECRET / local dev), the DB silently drifts
+// out of sync with what actually happened on Stripe after a real payment.
+const STRIPE_STATUS_MAP = {
+  active: 'active',
+  trialing: 'active',
+  past_due: 'past_due',
+  unpaid: 'past_due',
+  canceled: 'cancelled',
+  incomplete: 'incomplete',
+  incomplete_expired: 'cancelled',
+}
+
+async function syncSubscriptionStatus(user, subscription) {
+  const mapped = STRIPE_STATUS_MAP[subscription.status]
+  if (mapped && mapped !== user.subscription_status) {
+    await updateSubscriptionStatus(user.id, mapped)
+    return mapped
+  }
+  return user.subscription_status
+}
+
 export async function createSubscription(userId, planType) {
   const user = await findUserById(userId)
   if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
@@ -83,6 +106,7 @@ export async function getBillingInfo(userId) {
       stripe.invoices.list({ customer: user.stripe_customer_id, limit: 12 }),
     ])
 
+    base.status = await syncSubscriptionStatus(user, subscription)
     base.currentPeriodEnd = subscription.current_period_end
       ? new Date(subscription.current_period_end * 1000).toISOString()
       : null

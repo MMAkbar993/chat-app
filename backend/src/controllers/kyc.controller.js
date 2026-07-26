@@ -1,12 +1,10 @@
 import axios from 'axios'
-import { createKycSession } from '../services/kyc.service.js'
-import { findUserById, updateKycStatus } from '../db/queries/users.js'
+import { createKycSession, applyKycDecision } from '../services/kyc.service.js'
+import { findUserById } from '../db/queries/users.js'
 import { config } from '../config/env.js'
 import { verifyDiditSignature, handleDiditWebhook } from '../webhooks/diditWebhook.js'
 
 const DIDIT_BASE_URL = 'https://verification.didit.me/v3'
-const APPROVED_STATUSES = ['Approved']
-const FAILED_STATUSES = ['Declined', 'Expired', 'Not Finished']
 
 export async function createSessionHandler(req, res, next) {
   try {
@@ -29,13 +27,8 @@ export async function statusHandler(req, res, next) {
           `${DIDIT_BASE_URL}/session/${user.kyc_session_id}/decision/`,
           { headers: { 'x-api-key': config.diditApiKey } }
         )
-        if (APPROVED_STATUSES.includes(data.status)) {
-          await updateKycStatus(user.id, 'verified')
-          user.kyc_status = 'verified'
-        } else if (FAILED_STATUSES.includes(data.status)) {
-          await updateKycStatus(user.id, 'failed')
-          user.kyc_status = 'failed'
-        }
+        const outcome = await applyKycDecision(user.id, data)
+        if (outcome) user.kyc_status = outcome
       } catch {
         // Didit unreachable or key not set — use DB status as-is
       }

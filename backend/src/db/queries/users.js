@@ -25,7 +25,7 @@ export async function findUserById(id) {
             subscription_status, kyc_status, kyc_session_id, is_active, created_at,
             avatar_url, display_name, bio, gender, website, date_of_birth,
             website_verified, website_verify_token,
-            job_title, company_name, website_representation_approved
+            job_title, company_name, website_representation_approved, has_seen_tour
      FROM users WHERE id = $1`,
     [id]
   )
@@ -73,6 +73,20 @@ export async function updateKycStatus(userId, status) {
   await query(
     `UPDATE users SET kyc_status = $1, is_active = $2 WHERE id = $3`,
     [status, isActive, userId]
+  )
+}
+
+export async function updateFullName(userId, fullName) {
+  await query(
+    `UPDATE users SET full_name = $1 WHERE id = $2`,
+    [fullName, userId]
+  )
+}
+
+export async function markTourSeen(userId) {
+  await query(
+    `UPDATE users SET has_seen_tour = true WHERE id = $1`,
+    [userId]
   )
 }
 

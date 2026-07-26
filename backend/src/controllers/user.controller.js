@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import axios from 'axios'
 import { query } from '../config/database.js'
-import { findUserById } from '../db/queries/users.js'
+import { findUserById, markTourSeen } from '../db/queries/users.js'
 import {
   getSocialConnections,
   getPublicSocialConnections,
@@ -20,6 +20,15 @@ async function createNotification(userId, type, data = {}) {
       io.to(`user:${userId}`).emit('notification', { id: result.rows[0].id, type, data })
     }
   } catch {}
+}
+
+export async function markTourSeenHandler(req, res, next) {
+  try {
+    await markTourSeen(req.user.id)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
 }
 
 export async function getProfile(req, res, next) {

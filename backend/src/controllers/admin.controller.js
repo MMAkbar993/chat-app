@@ -26,7 +26,7 @@ export async function adminLogin(req, res, next) {
     const { email, password } = req.body
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
 
-    const user = await findUserByEmail(email)
+    const user = await findUserByEmail(email.trim().toLowerCase())
     if (!user || !user.is_admin) {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
