@@ -13,7 +13,7 @@ import {
   refreshAccessToken,
   findUserById,
 } from '../services/auth.service.js'
-import { findUserByEmail } from '../db/queries/users.js'
+import { findUserByEmail, incrementLoginCount } from '../db/queries/users.js'
 import {
   saveOtp,
   findValidOtp,
@@ -82,6 +82,7 @@ export async function login(req, res, next) {
 
     const { accessToken, refreshToken } = signTokens(user.id, user.email)
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS(process.env.NODE_ENV))
+    await incrementLoginCount(user.id)
     res.json({ user, accessToken })
   } catch (err) {
     next(err)
@@ -313,6 +314,7 @@ export async function twoFactorVerify(req, res, next) {
     const user = await findUserById(payload.id)
     const { accessToken, refreshToken } = signTokens(user.id, user.email)
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS(process.env.NODE_ENV))
+    await incrementLoginCount(user.id)
     res.json({ user, accessToken })
   } catch (err) {
     next(err)

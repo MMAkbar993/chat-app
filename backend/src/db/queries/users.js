@@ -83,6 +83,13 @@ export async function updateFullName(userId, fullName) {
   )
 }
 
+export async function incrementLoginCount(userId) {
+  await query(
+    `UPDATE users SET login_count = login_count + 1 WHERE id = $1`,
+    [userId]
+  )
+}
+
 export async function markTourSeen(userId) {
   await query(
     `UPDATE users SET has_seen_tour = true WHERE id = $1`,

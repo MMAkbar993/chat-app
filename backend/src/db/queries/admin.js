@@ -1,4 +1,9 @@
 import { query } from '../../config/database.js'
+import { getOnlineUserCount } from '../../socket/index.js'
+import { getSalesTotals } from './payments.js'
+
+// Mirrors backend/src/utils/plan.js's isProUser() as SQL — keep in sync if that logic changes.
+const PRO_SQL = `subscription_plan IN ('monthly','yearly') AND subscription_status IN ('active','past_due')`
 
 export async function findAdminById(id) {
   const result = await query(
@@ -9,18 +14,183 @@ export async function findAdminById(id) {
 }
 
 export async function getDashboardStats() {
-  const [users, groups, chats, calls] = await Promise.all([
+  const [users, groups, chats, calls, newToday, mau, messagesToday, callSecondsToday, websites, proCount, sales] = await Promise.all([
     query(`SELECT COUNT(*) FROM users WHERE is_admin = false`),
     query(`SELECT COUNT(*) FROM conversations WHERE type = 'group'`),
     query(`SELECT COUNT(*) FROM conversations WHERE type = 'direct'`),
     query(`SELECT COUNT(*) FROM calls`),
+    query(`SELECT COUNT(*) FROM users WHERE is_admin = false AND created_at >= CURRENT_DATE`),
+    query(`SELECT COUNT(*) FROM users WHERE is_admin = false AND last_seen_at >= now() - interval '30 days'`),
+    query(`SELECT COUNT(*) FROM messages WHERE created_at >= CURRENT_DATE AND is_deleted = false`),
+    query(`SELECT COALESCE(SUM(duration_seconds), 0) AS seconds FROM calls WHERE status = 'answered' AND started_at >= CURRENT_DATE`),
+    query(`SELECT COUNT(*) FROM verified_websites`),
+    query(`SELECT COUNT(*) FROM users WHERE is_admin = false AND ${PRO_SQL}`),
+    getSalesTotals(),
   ])
   return {
     users: parseInt(users.rows[0].count),
     groups: parseInt(groups.rows[0].count),
     chats: parseInt(chats.rows[0].count),
     calls: parseInt(calls.rows[0].count),
+    onlineNow: getOnlineUserCount(),
+    newUsersToday: parseInt(newToday.rows[0].count),
+    monthlyActiveUsers: parseInt(mau.rows[0].count),
+    messagesToday: parseInt(messagesToday.rows[0].count),
+    callMinutesToday: Math.round(parseInt(callSecondsToday.rows[0].seconds, 10) / 60),
+    websiteRegistrations: parseInt(websites.rows[0].count),
+    proSubscribers: parseInt(proCount.rows[0].count),
+    sales,
   }
+}
+
+export async function getUserDetail(id) {
+  const userResult = await query(
+    `SELECT id, full_name, username, email, phone, country, avatar_url, is_active, blocked_at,
+            created_at, last_seen_at, login_count, kyc_status, subscription_plan, subscription_status
+     FROM users WHERE id = $1 AND is_admin = false`,
+    [id]
+  )
+  const user = userResult.rows[0]
+  if (!user) return null
+
+  const [websites, reports] = await Promise.all([
+    query(
+      `SELECT id, url, verified, created_at FROM verified_websites WHERE user_id = $1 ORDER BY created_at DESC`,
+      [id]
+    ),
+    query(
+      `SELECT r.id, r.reason, r.created_at, u.full_name AS reporter_name, u.email AS reporter_email
+       FROM reports r LEFT JOIN users u ON u.id = r.reporter_id
+       WHERE r.reported_user_id = $1 ORDER BY r.created_at DESC`,
+      [id]
+    ),
+  ])
+
+  return { ...user, verified_websites: websites.rows, reports: reports.rows }
+}
+
+export async function setUserPackage(userId, plan) {
+  const [subscription_plan, subscription_status] = plan === 'pro' ? ['monthly', 'active'] : [null, 'inactive']
+  const result = await query(
+    `UPDATE users SET subscription_plan = $1, subscription_status = $2 WHERE id = $3 AND is_admin = false
+     RETURNING id, subscription_plan, subscription_status`,
+    [subscription_plan, subscription_status, userId]
+  )
+  return result.rows[0]
+}
+
+export async function getAllReports({ page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit
+  const rows = await query(
+    `SELECT r.id, r.reason, r.created_at,
+            reporter.id AS reporter_id, reporter.full_name AS reporter_name, reporter.email AS reporter_email,
+            reported.id AS reported_id, reported.full_name AS reported_name, reported.email AS reported_email
+     FROM reports r
+     LEFT JOIN users reporter ON reporter.id = r.reporter_id
+     LEFT JOIN users reported ON reported.id = r.reported_user_id
+     ORDER BY r.created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  )
+  const total = await query(`SELECT COUNT(*) FROM reports`)
+  return { reports: rows.rows, total: parseInt(total.rows[0].count) }
+}
+
+export async function getBillingOverview() {
+  const [counts, sales] = await Promise.all([
+    query(
+      `SELECT COUNT(*) FILTER (WHERE ${PRO_SQL}) AS pro,
+              COUNT(*) FILTER (WHERE NOT (${PRO_SQL})) AS free
+       FROM users WHERE is_admin = false`
+    ),
+    getSalesTotals(),
+  ])
+  return {
+    free: parseInt(counts.rows[0].free, 10),
+    pro: parseInt(counts.rows[0].pro, 10),
+    sales,
+  }
+}
+
+export async function getAllVerifiedWebsites({ status = 'all', page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit
+  const statusClause = status === 'pending' ? 'AND vw.verified = false' : status === 'approved' ? 'AND vw.verified = true' : ''
+  const rows = await query(
+    `SELECT vw.id, vw.url, vw.verified, vw.created_at,
+            u.id AS user_id, u.full_name AS owner_name, u.email AS owner_email
+     FROM verified_websites vw
+     JOIN users u ON u.id = vw.user_id
+     WHERE true ${statusClause}
+     ORDER BY vw.created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  )
+  const total = await query(`SELECT COUNT(*) FROM verified_websites vw WHERE true ${statusClause}`)
+  return { websites: rows.rows, total: parseInt(total.rows[0].count) }
+}
+
+export async function getAllRepresentationRequests({ status = 'pending', page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit
+  const rows = await query(
+    `SELECT r.id, r.website_url, r.status, r.created_at,
+            requester.id AS requester_id, requester.full_name AS requester_name, requester.email AS requester_email,
+            owner.id AS owner_id, owner.full_name AS owner_name, owner.email AS owner_email
+     FROM website_representation_requests r
+     JOIN users requester ON requester.id = r.requester_id
+     JOIN users owner ON owner.id = r.owner_id
+     WHERE r.status = $1
+     ORDER BY r.created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [status, limit, offset]
+  )
+  const total = await query(`SELECT COUNT(*) FROM website_representation_requests WHERE status = $1`, [status])
+  return { requests: rows.rows, total: parseInt(total.rows[0].count) }
+}
+
+const REP_ACTION_STATUS = { approve: 'approved', reject: 'rejected', revoke: 'revoked' }
+
+export async function adminSetRepresentative(requestId, action) {
+  const status = REP_ACTION_STATUS[action]
+  if (!status) throw Object.assign(new Error('Invalid action'), { status: 400 })
+  const result = await query(
+    `UPDATE website_representation_requests SET status = $1 WHERE id = $2 RETURNING *`,
+    [status, requestId]
+  )
+  return result.rows[0]
+}
+
+export async function getBroadcastAudienceIds(audience) {
+  let where = 'is_admin = false'
+  if (audience === 'pro') where += ` AND ${PRO_SQL}`
+  else if (audience === 'free') where += ` AND NOT (${PRO_SQL})`
+  const result = await query(`SELECT id FROM users WHERE ${where}`)
+  return result.rows.map((r) => r.id)
+}
+
+export async function insertBroadcastNotifications(userIds, data) {
+  if (userIds.length === 0) return []
+  const values = userIds.map((_, i) => `($${i * 2 + 1}, 'broadcast', $${i * 2 + 2})`).join(', ')
+  const params = userIds.flatMap((uid) => [uid, JSON.stringify(data)])
+  const result = await query(
+    `INSERT INTO notifications (user_id, type, data) VALUES ${values} RETURNING id, user_id`,
+    params
+  )
+  return result.rows
+}
+
+export async function getBroadcastHistory({ page = 1, limit = 20 } = {}) {
+  const offset = (page - 1) * limit
+  const rows = await query(
+    `SELECT data->>'broadcastId' AS broadcast_id, data->>'title' AS title,
+            data->>'body' AS body, data->>'audience' AS audience,
+            MIN(created_at) AS created_at, COUNT(*)::int AS recipient_count
+     FROM notifications WHERE type = 'broadcast'
+     GROUP BY data->>'broadcastId', data->>'title', data->>'body', data->>'audience'
+     ORDER BY MIN(created_at) DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  )
+  return rows.rows
 }
 
 export async function getRecentUsers(limit = 5) {
