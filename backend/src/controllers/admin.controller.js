@@ -17,9 +17,52 @@ import {
   getAllConversations,
   getAllCalls,
   updateAdminProfile,
+  countAdmins,
+  createAdminUser,
 } from '../db/queries/admin.js'
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
+
+// Bootstrap-only: creates the very first admin account. Once any admin exists, this route
+// permanently refuses — otherwise it would be an unauthenticated "become admin" endpoint sitting
+// on a live server. Further admins have to be created by an existing admin, not self-service.
+export async function adminSignup(req, res, next) {
+  try {
+    const { full_name, email, password } = req.body
+    if (!full_name || !email || !password) {
+      return res.status(400).json({ error: 'Full name, email and password are required' })
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' })
+    }
+
+    const existingAdmins = await countAdmins()
+    if (existingAdmins > 0) {
+      return res.status(403).json({ error: 'An admin account already exists. Ask an existing admin to create your account.' })
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const existingUser = await findUserByEmail(normalizedEmail)
+    if (existingUser) {
+      return res.status(409).json({ error: 'An account with this email already exists' })
+    }
+
+    const password_hash = await bcrypt.hash(password, 12)
+    const admin = await createAdminUser({ full_name: full_name.trim(), email: normalizedEmail, password_hash })
+
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, isAdmin: true },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    )
+    res.status(201).json({
+      token,
+      admin: { id: admin.id, full_name: admin.full_name, email: admin.email, avatar_url: admin.avatar_url },
+    })
+  } catch (err) {
+    next(err)
+  }
+}
 
 export async function adminLogin(req, res, next) {
   try {

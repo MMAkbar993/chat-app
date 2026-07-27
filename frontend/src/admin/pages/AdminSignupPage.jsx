@@ -3,11 +3,13 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import adminClient from '../api/adminClient'
 
-export default function AdminLoginPage() {
+export default function AdminSignupPage() {
   const { login } = useAdminAuth()
   const navigate = useNavigate()
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,13 +17,19 @@ export default function AdminLoginPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
     setLoading(true)
     try {
-      const { data } = await adminClient.post('/login', { email, password })
+      const { data } = await adminClient.post('/signup', { full_name: fullName, email, password })
       login(data.admin, data.token)
       navigate('/admin/dashboard')
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed')
+      setError(err.response?.data?.error || 'Could not create admin account')
     } finally {
       setLoading(false)
     }
@@ -38,8 +46,8 @@ export default function AdminLoginPage() {
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-          <p className="text-slate-400 text-sm mt-1">Sign in to manage the platform</p>
+          <h1 className="text-2xl font-bold text-white">Create Admin Account</h1>
+          <p className="text-slate-400 text-sm mt-1">One-time setup for the first platform administrator</p>
         </div>
 
         {/* Card */}
@@ -50,6 +58,20 @@ export default function AdminLoginPage() {
                 {error}
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                placeholder="Jane Doe"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors"
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -75,7 +97,8 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="••••••••"
+                  minLength={8}
+                  placeholder="At least 8 characters"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors"
                 />
                 <button
@@ -101,23 +124,38 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Confirm Password
+              </label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="••••••••"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors"
+              />
+            </div>
+
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold rounded-xl px-6 py-3 transition-colors flex items-center justify-center gap-2"
             >
               {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              Sign In
+              Create Admin Account
             </button>
           </form>
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-6">
-          This area is restricted to platform administrators only.
+          Already have an admin account?{' '}
+          <Link to="/admin/login" className="text-violet-400 hover:underline">Sign in</Link>
         </p>
         <p className="text-center text-slate-600 text-xs mt-2">
-          Setting up for the first time?{' '}
-          <Link to="/admin/signup" className="text-violet-400 hover:underline">Create the admin account</Link>
+          This only works once — it's automatically disabled after the first admin account is created.
         </p>
       </div>
     </div>

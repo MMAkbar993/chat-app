@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { adminAuthMiddleware } from '../middleware/adminAuth.js'
 import {
+  adminSignup,
   adminLogin,
   adminMe,
   dashboard,
@@ -20,6 +21,7 @@ import {
 export const adminRouter = Router()
 
 // Public
+adminRouter.post('/signup', adminSignup)
 adminRouter.post('/login', adminLogin)
 
 // Protected — all routes below require admin token
