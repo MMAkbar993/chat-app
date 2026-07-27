@@ -68,6 +68,25 @@ export async function getAllUsers({ search = '', page = 1, limit = 20 } = {}) {
   return { users: rows.rows, total: parseInt(total.rows[0].count) }
 }
 
+export async function countAdmins() {
+  const result = await query(`SELECT COUNT(*) FROM users WHERE is_admin = true`)
+  return parseInt(result.rows[0].count, 10)
+}
+
+export async function createAdminUser({ full_name, email, password_hash }) {
+  const base = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_')
+  const username = `${base}_${Date.now()}`
+  const result = await query(
+    `INSERT INTO users
+       (full_name, username, country, email, primary_role, password_hash,
+        is_admin, is_active, subscription_status, kyc_status)
+     VALUES ($1, $2, 'N/A', $3, 'other', $4, true, true, 'active', 'verified')
+     RETURNING id, full_name, email, avatar_url, is_admin`,
+    [full_name, username, email, password_hash]
+  )
+  return result.rows[0]
+}
+
 export async function createManagedUser({ full_name, email, phone, country, password_hash }) {
   const base = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_')
   const username = `${base}_${Date.now()}`

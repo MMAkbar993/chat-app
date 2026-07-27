@@ -19,6 +19,7 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import PaymentCancelPage from './pages/PaymentCancelPage'
 import SigningInPage from './pages/SigningInPage'
 import { AdminAuthProvider, useAdminAuth } from './admin/context/AdminAuthContext'
+import AdminSignupPage from './admin/pages/AdminSignupPage'
 import AdminLoginPage from './admin/pages/AdminLoginPage'
 import AdminDashboardPage from './admin/pages/AdminDashboardPage'
 import AdminUsersPage from './admin/pages/AdminUsersPage'
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="/admin/*" element={
             <AdminAuthProvider>
               <Routes>
+                <Route path="signup" element={<AdminGuestRoute><AdminSignupPage /></AdminGuestRoute>} />
                 <Route path="login" element={<AdminGuestRoute><AdminLoginPage /></AdminGuestRoute>} />
                 <Route path="dashboard" element={<AdminProtectedRoute><AdminDashboardPage /></AdminProtectedRoute>} />
                 <Route path="users" element={<AdminProtectedRoute><AdminUsersPage /></AdminProtectedRoute>} />
