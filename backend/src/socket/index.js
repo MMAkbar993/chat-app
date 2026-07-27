@@ -28,6 +28,12 @@ export function getIo() {
   return io
 }
 
+// Accurate for a single process only (PM2 configured for one instance per DEPLOY.md) — if this
+// ever runs as multiple instances, online counts would need to move to a shared store (Redis).
+export function getOnlineUserCount() {
+  return onlineUsers.size
+}
+
 export function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {

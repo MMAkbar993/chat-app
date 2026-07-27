@@ -163,6 +163,189 @@ function UserModal({ user, onClose, onSave }) {
   )
 }
 
+function isProPlan(plan, status) {
+  return ['monthly', 'yearly'].includes(plan) && ['active', 'past_due'].includes(status)
+}
+
+function UserDetailModal({ userId, onClose, onSaved }) {
+  const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState(null)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [packageSaving, setPackageSaving] = useState(false)
+
+  useEffect(() => {
+    adminClient.get(`/users/${userId}`)
+      .then(({ data }) => {
+        setDetail(data.user)
+        setForm({
+          full_name: data.user.full_name || '',
+          email: data.user.email || '',
+          phone: data.user.phone || '',
+          country: data.user.country || '',
+        })
+      })
+      .catch(() => setError('Could not load user'))
+      .finally(() => setLoading(false))
+  }, [userId])
+
+  function set(k, v) { setForm((f) => ({ ...f, [k]: v })) }
+
+  async function saveProfile(e) {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      await adminClient.put(`/users/${userId}`, form)
+      onSaved()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function changePackage(plan) {
+    setPackageSaving(true)
+    try {
+      const { data } = await adminClient.patch(`/users/${userId}/package`, { plan })
+      setDetail((d) => ({ ...d, subscription_plan: data.user.subscription_plan, subscription_status: data.user.subscription_status }))
+    } catch {
+      setError('Could not change package')
+    } finally {
+      setPackageSaving(false)
+    }
+  }
+
+  const isPro = detail && isProPlan(detail.subscription_plan, detail.subscription_status)
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+          <h2 className="text-lg font-semibold text-gray-800">Member Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {loading || !detail ? (
+          <div className="flex items-center justify-center h-48">
+            <div className="w-7 h-7 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="p-6 space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>
+            )}
+
+            {/* Read-only summary */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">Verification</p>
+                <p className="text-sm font-semibold text-gray-800 capitalize">{detail.kyc_status || 'pending'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">Last Active</p>
+                <p className="text-sm font-semibold text-gray-800">{fmtDate(detail.last_seen_at)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">Login Count</p>
+                <p className="text-sm font-semibold text-gray-800">{detail.login_count ?? 0}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">Joined</p>
+                <p className="text-sm font-semibold text-gray-800">{fmtDate(detail.created_at)}</p>
+              </div>
+            </div>
+
+            {/* Package */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-2">Package</p>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${isPro ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {isPro ? 'Pro' : 'Free'}
+                </span>
+                <button
+                  disabled={packageSaving || isPro}
+                  onClick={() => changePackage('pro')}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white transition-colors"
+                >
+                  Set Pro
+                </button>
+                <button
+                  disabled={packageSaving || !isPro}
+                  onClick={() => changePackage('free')}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 text-gray-600 transition-colors"
+                >
+                  Set Free
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Local override — does not create or change a real Stripe subscription.</p>
+            </div>
+
+            {/* Editable profile */}
+            <form onSubmit={saveProfile} className="space-y-3">
+              <p className="text-sm font-semibold text-gray-800">Profile</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input value={form.full_name} onChange={(e) => set('full_name', e.target.value)} required placeholder="Full name"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} required placeholder="Email"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="Phone"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+                <input value={form.country} onChange={(e) => set('country', e.target.value)} required placeholder="Country"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400" />
+              </div>
+              <button type="submit" disabled={saving}
+                className="bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold rounded-xl px-4 py-2.5 text-sm transition-colors">
+                {saving ? 'Saving…' : 'Save Profile'}
+              </button>
+            </form>
+
+            {/* Verified websites */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-2">Verified Websites ({detail.verified_websites?.length || 0})</p>
+              {detail.verified_websites?.length ? (
+                <div className="space-y-1.5">
+                  {detail.verified_websites.map((w) => (
+                    <div key={w.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm">
+                      <span className="text-gray-700 truncate">{w.url}</span>
+                      <span className={`text-xs font-medium ${w.verified ? 'text-green-600' : 'text-amber-600'}`}>
+                        {w.verified ? 'Approved' : 'Pending'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-gray-400">None</p>}
+            </div>
+
+            {/* Reports against this user */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-2">Reports Against This User ({detail.reports?.length || 0})</p>
+              {detail.reports?.length ? (
+                <div className="space-y-1.5">
+                  {detail.reports.map((r) => (
+                    <div key={r.id} className="bg-red-50 rounded-xl px-3 py-2 text-sm">
+                      <p className="text-gray-700">{r.reason || 'No reason given'}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        By {r.reporter_name || 'Unknown'} · {fmtDate(r.created_at)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-gray-400">None</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function ConfirmDialog({ message, onConfirm, onCancel, danger = true }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -318,9 +501,9 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => setModal({ user: u })}
+                          onClick={() => setModal({ userId: u.id })}
                           className="text-gray-400 hover:text-violet-600 transition-colors p-1"
-                          title="Edit"
+                          title="View / Edit"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -399,8 +582,8 @@ export default function AdminUsersPage() {
       {modal === 'add' && (
         <UserModal onClose={() => setModal(null)} onSave={handleSaved} />
       )}
-      {modal?.user && (
-        <UserModal user={modal.user} onClose={() => setModal(null)} onSave={handleSaved} />
+      {modal?.userId && (
+        <UserDetailModal userId={modal.userId} onClose={() => setModal(null)} onSaved={() => { setModal(null); load() }} />
       )}
       {confirm?.type === 'delete' && (
         <ConfirmDialog

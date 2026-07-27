@@ -11,6 +11,15 @@ import {
   deleteUser,
   blockUser,
   unblockUser,
+  getUserDetailHandler,
+  changeUserPackage,
+  listReports,
+  billingOverview,
+  listVerifiedWebsites,
+  listRepresentationRequests,
+  representationAction,
+  createBroadcast,
+  listBroadcasts,
   listGroups,
   listConversations,
   listCalls,
@@ -36,6 +45,19 @@ adminRouter.put('/users/:id', updateUser)
 adminRouter.delete('/users/:id', deleteUser)
 adminRouter.post('/users/:id/block', blockUser)
 adminRouter.post('/users/:id/unblock', unblockUser)
+adminRouter.get('/users/:id', getUserDetailHandler)
+adminRouter.patch('/users/:id/package', changeUserPackage)
+
+adminRouter.get('/reports', listReports)
+
+adminRouter.get('/billing/overview', billingOverview)
+
+adminRouter.get('/websites', listVerifiedWebsites)
+adminRouter.get('/websites/representation-requests', listRepresentationRequests)
+adminRouter.post('/websites/representation-requests/:id/action', representationAction)
+
+adminRouter.post('/broadcasts', createBroadcast)
+adminRouter.get('/broadcasts', listBroadcasts)
 
 adminRouter.get('/groups', listGroups)
 adminRouter.get('/conversations', listConversations)

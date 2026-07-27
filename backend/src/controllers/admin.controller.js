@@ -1,7 +1,9 @@
+import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { config } from '../config/env.js'
 import { findUserByEmail } from '../db/queries/users.js'
+import { getIo } from '../socket/index.js'
 import {
   findAdminById,
   getDashboardStats,
@@ -19,6 +21,16 @@ import {
   updateAdminProfile,
   countAdmins,
   createAdminUser,
+  getUserDetail,
+  setUserPackage,
+  getAllReports,
+  getBillingOverview,
+  getAllVerifiedWebsites,
+  getAllRepresentationRequests,
+  adminSetRepresentative,
+  getBroadcastAudienceIds,
+  insertBroadcastNotifications,
+  getBroadcastHistory,
 } from '../db/queries/admin.js'
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -180,6 +192,126 @@ export async function unblockUser(req, res, next) {
   try {
     await unblockManagedUser(req.params.id)
     res.json({ message: 'User unblocked' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getUserDetailHandler(req, res, next) {
+  try {
+    const user = await getUserDetail(req.params.id)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    res.json({ user })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function changeUserPackage(req, res, next) {
+  try {
+    const { plan } = req.body
+    if (!['free', 'pro'].includes(plan)) return res.status(400).json({ error: 'plan must be "free" or "pro"' })
+    const updated = await setUserPackage(req.params.id, plan)
+    if (!updated) return res.status(404).json({ error: 'User not found' })
+    res.json({ user: updated })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+
+export async function listReports(req, res, next) {
+  try {
+    const { page = 1, limit = 20 } = req.query
+    const result = await getAllReports({ page: parseInt(page), limit: parseInt(limit) })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+
+export async function billingOverview(req, res, next) {
+  try {
+    const overview = await getBillingOverview()
+    res.json(overview)
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Website verification ─────────────────────────────────────────────────────
+
+export async function listVerifiedWebsites(req, res, next) {
+  try {
+    const { status = 'all', page = 1, limit = 20 } = req.query
+    const result = await getAllVerifiedWebsites({ status, page: parseInt(page), limit: parseInt(limit) })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function listRepresentationRequests(req, res, next) {
+  try {
+    const { status = 'pending', page = 1, limit = 20 } = req.query
+    const result = await getAllRepresentationRequests({ status, page: parseInt(page), limit: parseInt(limit) })
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function representationAction(req, res, next) {
+  try {
+    const { action } = req.body
+    if (!['approve', 'reject', 'revoke'].includes(action)) {
+      return res.status(400).json({ error: 'action must be "approve", "reject" or "revoke"' })
+    }
+    const updated = await adminSetRepresentative(req.params.id, action)
+    if (!updated) return res.status(404).json({ error: 'Request not found' })
+    res.json({ request: updated })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Broadcasts ────────────────────────────────────────────────────────────────
+
+export async function createBroadcast(req, res, next) {
+  try {
+    const { audience, title, body } = req.body
+    if (!['all', 'pro', 'free'].includes(audience)) {
+      return res.status(400).json({ error: 'audience must be "all", "pro" or "free"' })
+    }
+    if (!title?.trim() || !body?.trim()) {
+      return res.status(400).json({ error: 'Title and body are required' })
+    }
+
+    const userIds = await getBroadcastAudienceIds(audience)
+    const data = { broadcastId: crypto.randomUUID(), title: title.trim(), body: body.trim(), audience }
+    const inserted = await insertBroadcastNotifications(userIds, data)
+
+    const io = getIo()
+    if (io) {
+      inserted.forEach((row) => {
+        io.to(`user:${row.user_id}`).emit('notification', { id: row.id, type: 'broadcast', data })
+      })
+    }
+
+    res.status(201).json({ recipientCount: userIds.length })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function listBroadcasts(req, res, next) {
+  try {
+    const { page = 1, limit = 20 } = req.query
+    const broadcasts = await getBroadcastHistory({ page: parseInt(page), limit: parseInt(limit) })
+    res.json({ broadcasts })
   } catch (err) {
     next(err)
   }

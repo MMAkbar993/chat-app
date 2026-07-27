@@ -1,4 +1,5 @@
 import { findUserByStripeCustomer, updateSubscriptionStatus } from '../db/queries/users.js'
+import { recordPayment } from '../db/queries/payments.js'
 
 export async function handlePaymentWebhook(event) {
   switch (event.type) {
@@ -6,7 +7,18 @@ export async function handlePaymentWebhook(event) {
       const invoice = event.data.object
       const customerId = invoice.customer
       const user = await findUserByStripeCustomer(customerId)
-      if (user) await updateSubscriptionStatus(user.id, 'active')
+      if (user) {
+        await updateSubscriptionStatus(user.id, 'active')
+        const amount = (invoice.amount_paid ?? invoice.total ?? 0) / 100
+        if (amount > 0) {
+          await recordPayment({
+            userId: user.id,
+            stripeInvoiceId: invoice.id,
+            amount,
+            currency: invoice.currency || 'usd',
+          })
+        }
+      }
       break
     }
     case 'invoice.payment_failed': {

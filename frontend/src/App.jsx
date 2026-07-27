@@ -26,6 +26,10 @@ import AdminUsersPage from './admin/pages/AdminUsersPage'
 import AdminGroupsPage from './admin/pages/AdminGroupsPage'
 import AdminChatPage from './admin/pages/AdminChatPage'
 import AdminCallsPage from './admin/pages/AdminCallsPage'
+import AdminBillingPage from './admin/pages/AdminBillingPage'
+import AdminWebsitesPage from './admin/pages/AdminWebsitesPage'
+import AdminReportsPage from './admin/pages/AdminReportsPage'
+import AdminToolsPage from './admin/pages/AdminToolsPage'
 import AdminSettingsPage from './admin/pages/AdminSettingsPage'
 import AdminLayout from './admin/components/AdminLayout'
 
@@ -126,6 +130,10 @@ export default function App() {
                 <Route path="groups" element={<AdminProtectedRoute><AdminGroupsPage /></AdminProtectedRoute>} />
                 <Route path="chat" element={<AdminProtectedRoute><AdminChatPage /></AdminProtectedRoute>} />
                 <Route path="calls" element={<AdminProtectedRoute><AdminCallsPage /></AdminProtectedRoute>} />
+                <Route path="billing" element={<AdminProtectedRoute><AdminBillingPage /></AdminProtectedRoute>} />
+                <Route path="websites" element={<AdminProtectedRoute><AdminWebsitesPage /></AdminProtectedRoute>} />
+                <Route path="reports" element={<AdminProtectedRoute><AdminReportsPage /></AdminProtectedRoute>} />
+                <Route path="tools" element={<AdminProtectedRoute><AdminToolsPage /></AdminProtectedRoute>} />
                 <Route path="settings" element={<AdminProtectedRoute><AdminSettingsPage /></AdminProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/admin/login" replace />} />
               </Routes>
