@@ -159,7 +159,7 @@ const PLATFORMS = {
     clientId: () => process.env.FACEBOOK_CLIENT_ID,
     clientSecret: () => process.env.FACEBOOK_CLIENT_SECRET,
     redirectUri: () => getRedirectUri('facebook', 'FACEBOOK_REDIRECT_URI'),
-    scope: 'public_profile,email',
+    scope: 'public_profile,email,user_link',
     extractProfile: (data) => ({
       platformUserId: data.id,
       username: data.email || data.name,

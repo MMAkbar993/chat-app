@@ -32,6 +32,7 @@ import AdminReportsPage from './admin/pages/AdminReportsPage'
 import AdminToolsPage from './admin/pages/AdminToolsPage'
 import AdminSettingsPage from './admin/pages/AdminSettingsPage'
 import AdminLayout from './admin/components/AdminLayout'
+import PrivateBetaBadge from './components/ui/PrivateBetaBadge'
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-lavender">
@@ -83,6 +84,7 @@ function AdminGuestRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <PrivateBetaBadge />
       <AuthProvider>
         <Routes>
           {/* Auth — guest only */}

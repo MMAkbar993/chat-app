@@ -20,6 +20,8 @@ import {
   representationAction,
   createBroadcast,
   listBroadcasts,
+  listSystemEmails,
+  updateSystemEmail,
   listGroups,
   listConversations,
   listCalls,
@@ -58,6 +60,9 @@ adminRouter.post('/websites/representation-requests/:id/action', representationA
 
 adminRouter.post('/broadcasts', createBroadcast)
 adminRouter.get('/broadcasts', listBroadcasts)
+
+adminRouter.get('/system-emails', listSystemEmails)
+adminRouter.patch('/system-emails/:key', updateSystemEmail)
 
 adminRouter.get('/groups', listGroups)
 adminRouter.get('/conversations', listConversations)

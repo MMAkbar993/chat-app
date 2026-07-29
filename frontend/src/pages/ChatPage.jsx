@@ -5,6 +5,8 @@ import { useChat } from '../context/ChatContext'
 import { useToast } from '../context/ToastContext'
 import { getOrCreateDirect } from '../api/conversations'
 import { markTourSeen } from '../api/users'
+import client from '../api/client'
+import { PENDING_DM_KEY } from '../utils/pendingDm'
 import { playRingtone, stopRingtone } from '../utils/sounds'
 import Sidebar from '../components/chat/Sidebar'
 import ChatsView from '../components/chat/ChatsView'
@@ -37,6 +39,21 @@ export default function ChatPage() {
   const activeCallRef = useRef(null)
 
   useEffect(() => { activeCallRef.current = activeCall }, [activeCall])
+
+  // "Send Message" from a public profile page (/u/:username) sets this before redirecting through
+  // login/signup/KYC — pick it up once here, however many hops it took to actually land on /chat.
+  useEffect(() => {
+    const username = localStorage.getItem(PENDING_DM_KEY)
+    if (!username) return
+    localStorage.removeItem(PENDING_DM_KEY)
+    client.get(`/users/profile/${username}`)
+      .then(({ data }) => getOrCreateDirect(data.user.id))
+      .then((data) => {
+        openConversation(data.conversation)
+        setSection('chats')
+      })
+      .catch(() => {})
+  }, [openConversation])
 
   // Mobile: only one panel (list vs. detail) is shown at a time, Telegram-style.
   const mobileDetail = section === 'settings'

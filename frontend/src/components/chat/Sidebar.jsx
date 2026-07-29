@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
+import { isProUser } from '../../utils/plan'
 import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
+import GoogleCalendarPanel from '../calendar/GoogleCalendarPanel'
 
 const NAV = [
   { key: 'chats', label: 'Chats', icon: (
@@ -34,6 +36,12 @@ const NAV = [
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
       d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
   )},
+  { key: 'calendar', label: 'Calendar', icon: (
+    <>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </>
+  )},
   { key: 'profile', label: 'Profile', icon: (
     <>
       <circle cx="12" cy="12" r="10" strokeWidth={1.75} fill="none" stroke="currentColor" />
@@ -59,6 +67,9 @@ function formatNotif(n) {
     const verb = n.data.action === 'approve' ? 'approved' : 'rejected'
     return `${n.data.ownerName} ${verb} your request for ${n.data.websiteUrl}`
   }
+  if (n.type === 'broadcast') {
+    return `${n.data.title} — ${n.data.body}`
+  }
   return 'New notification'
 }
 
@@ -79,6 +90,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
   const [showPanel, setShowPanel] = useState(false)
   const [showOwnProfile, setShowOwnProfile] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
   const [clearing, setClearing] = useState(false)
   const unread = notifications.filter((n) => !n.read).length
 
@@ -128,7 +140,11 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           key={key}
           title={label}
           data-tour={`sidebar-${key}`}
-          onClick={() => key === 'profile' ? setShowOwnProfile(true) : onNav(key)}
+          onClick={() => {
+            if (key === 'profile') setShowOwnProfile(true)
+            else if (key === 'calendar') (isProUser(user) ? setShowCalendar(true) : setShowUpgrade(true))
+            else onNav(key)
+          }}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
             active === key
               ? 'bg-violet-600 text-white'
@@ -208,6 +224,10 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
     </aside>
 
     <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+
+    {showCalendar && (
+      <GoogleCalendarPanel darkMode={darkMode} onClose={() => setShowCalendar(false)} />
+    )}
 
     {showOwnProfile && (
       <UserProfileModal

@@ -11,7 +11,7 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
   const result = await query(
     `SELECT
        m.id, m.conversation_id, m.content, m.message_type, m.media_url,
-       m.is_deleted, m.created_at, m.reply_to_message_id, m.status,
+       m.is_deleted, m.created_at, m.reply_to_message_id, m.status, m.edited_at,
        u.id AS sender_id, u.full_name AS sender_name, u.avatar_url AS sender_avatar,
        u.display_name AS sender_display_name,
        rm.content AS reply_content,
@@ -81,6 +81,16 @@ export async function getMessageById(id) {
      LEFT JOIN users u ON u.id = m.sender_id
      WHERE m.id = $1`,
     [id]
+  )
+  return result.rows[0] || null
+}
+
+export async function editMessage(id, senderId, content) {
+  const result = await query(
+    `UPDATE messages SET content = $1, edited_at = NOW()
+     WHERE id = $2 AND sender_id = $3 AND is_deleted = false AND message_type = 'text'
+     RETURNING id, conversation_id, content, edited_at`,
+    [content, id, senderId]
   )
   return result.rows[0] || null
 }

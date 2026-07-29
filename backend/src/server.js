@@ -15,6 +15,7 @@ import { groupRouter } from './routes/group.routes.js'
 import { callRouter } from './routes/call.routes.js'
 import { userRouter } from './routes/user.routes.js'
 import { socialRouter } from './routes/social.routes.js'
+import { calendarRouter } from './routes/calendar.routes.js'
 import { uploadRouter } from './routes/upload.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
@@ -46,6 +47,7 @@ export function createApp() {
   app.use('/api/calls', callRouter)
   app.use('/api/users', userRouter)
   app.use('/api/social', socialRouter)
+  app.use('/api/calendar', calendarRouter)
   // OAuth providers redirect to /connect/{platform}/callback (configured in .env redirect URIs)
   app.use('/connect', socialRouter)
   app.use('/api/upload', uploadRouter)
