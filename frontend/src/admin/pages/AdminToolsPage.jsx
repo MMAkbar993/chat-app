@@ -12,7 +12,17 @@ const AUDIENCES = [
   { key: 'free', label: 'Free Users' },
 ]
 
-export default function AdminToolsPage() {
+const EMAIL_LABELS = {
+  password_reset_otp: 'Password Reset Code',
+  feedback_notification: 'Feedback Notification',
+}
+
+const EMAIL_PLACEHOLDERS = {
+  password_reset_otp: ['otp'],
+  feedback_notification: ['label', 'username', 'userEmail', 'message'],
+}
+
+function BroadcastsSection() {
   const [audience, setAudience] = useState('all')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -53,11 +63,6 @@ export default function AdminToolsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Tools</h1>
-        <p className="text-sm text-gray-500">Broadcast in-app notifications to your users</p>
-      </div>
-
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <form onSubmit={send} className="space-y-4">
           {error && (
@@ -140,6 +145,156 @@ export default function AdminToolsPage() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function SystemEmailRow({ email, onSaved }) {
+  const [enabled, setEnabled] = useState(email.enabled)
+  const [subject, setSubject] = useState(email.subject)
+  const [bodyHtml, setBodyHtml] = useState(email.body_html)
+  const [saving, setSaving] = useState(false)
+  const [savedMsg, setSavedMsg] = useState('')
+  const dirty = enabled !== email.enabled || subject !== email.subject || bodyHtml !== email.body_html
+
+  async function toggleEnabled() {
+    const next = !enabled
+    setEnabled(next)
+    try {
+      const { data } = await adminClient.patch(`/system-emails/${email.email_key}`, { enabled: next })
+      onSaved(data.email)
+    } catch {
+      setEnabled(!next)
+    }
+  }
+
+  async function save() {
+    setSaving(true)
+    setSavedMsg('')
+    try {
+      const { data } = await adminClient.patch(`/system-emails/${email.email_key}`, { subject, body_html: bodyHtml })
+      onSaved(data.email)
+      setSavedMsg('Saved.')
+      setTimeout(() => setSavedMsg(''), 2000)
+    } catch {
+      setSavedMsg('Could not save.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">{EMAIL_LABELS[email.email_key] || email.email_key}</p>
+          <p className="text-xs text-gray-400">
+            Placeholders: {(EMAIL_PLACEHOLDERS[email.email_key] || []).map((p) => `{{${p}}}`).join(', ')}
+          </p>
+        </div>
+        <button
+          onClick={toggleEnabled}
+          className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${enabled ? 'bg-violet-600' : 'bg-gray-200'}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-5' : ''}`} />
+        </button>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
+        <input
+          value={subject} onChange={(e) => setSubject(e.target.value)}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">Body (HTML)</label>
+        <textarea
+          value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={6}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-violet-400 resize-y"
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={!dirty || saving}
+          className="text-xs font-semibold px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        {savedMsg && <span className="text-xs text-gray-500">{savedMsg}</span>}
+      </div>
+    </div>
+  )
+}
+
+function SystemEmailsSection() {
+  const [emails, setEmails] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await adminClient.get('/system-emails')
+      setEmails(data.emails)
+    } catch {}
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  function handleSaved(updated) {
+    setEmails((prev) => prev.map((e) => (e.email_key === updated.email_key ? updated : e)))
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="w-7 h-7 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {emails.map((email) => (
+        <SystemEmailRow key={email.email_key} email={email} onSaved={handleSaved} />
+      ))}
+    </div>
+  )
+}
+
+const TABS = [
+  { key: 'broadcasts', label: 'Broadcasts' },
+  { key: 'emails', label: 'System Emails' },
+]
+
+export default function AdminToolsPage() {
+  const [tab, setTab] = useState('broadcasts')
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Admin Tools</h1>
+        <p className="text-sm text-gray-500">Broadcast notifications and configure automatic emails</p>
+      </div>
+
+      <div className="flex gap-1">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              tab === t.key ? 'bg-violet-600 text-white' : 'text-gray-500 hover:bg-gray-100'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'broadcasts' ? <BroadcastsSection /> : <SystemEmailsSection />}
     </div>
   )
 }

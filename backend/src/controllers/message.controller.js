@@ -1,4 +1,4 @@
-import { getMessages, getMessageById, createMessage, deleteMessage, deleteMessageForMe } from '../db/queries/messages.js'
+import { getMessages, getMessageById, createMessage, deleteMessage, deleteMessageForMe, editMessage } from '../db/queries/messages.js'
 import { isParticipant, getParticipants } from '../db/queries/conversations.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 import { getIo } from '../socket/index.js'
@@ -114,6 +114,37 @@ export async function toggleReactionHandler(req, res, next) {
     })
 
     res.json({ reactions })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function editMessageHandler(req, res, next) {
+  try {
+    const { content } = req.body
+    if (!content?.trim()) return res.status(400).json({ error: 'content required' })
+
+    const msg = await getMessageById(req.params.id)
+    if (!msg) return res.status(404).json({ error: 'Message not found' })
+
+    const ok = await isParticipant(msg.conversation_id, req.user.id)
+    if (!ok) return res.status(403).json({ error: 'Not a participant' })
+
+    const updated = await editMessage(req.params.id, req.user.id, content.trim())
+    if (!updated) return res.status(403).json({ error: 'Cannot edit this message' })
+
+    const participants = await getParticipants(updated.conversation_id)
+    const io = getIo()
+    participants.forEach((p) => {
+      io.to(`user:${p.id}`).emit('message-edited', {
+        messageId: updated.id,
+        conversationId: updated.conversation_id,
+        content: updated.content,
+        edited_at: updated.edited_at,
+      })
+    })
+
+    res.json({ message: updated })
   } catch (err) {
     next(err)
   }

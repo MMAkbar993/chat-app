@@ -31,6 +31,8 @@ import {
   getBroadcastAudienceIds,
   insertBroadcastNotifications,
   getBroadcastHistory,
+  getSystemEmailSettings,
+  updateSystemEmailSetting,
 } from '../db/queries/admin.js'
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -312,6 +314,28 @@ export async function listBroadcasts(req, res, next) {
     const { page = 1, limit = 20 } = req.query
     const broadcasts = await getBroadcastHistory({ page: parseInt(page), limit: parseInt(limit) })
     res.json({ broadcasts })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── System emails ─────────────────────────────────────────────────────────────
+
+export async function listSystemEmails(req, res, next) {
+  try {
+    const emails = await getSystemEmailSettings()
+    res.json({ emails })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function updateSystemEmail(req, res, next) {
+  try {
+    const { enabled, subject, body_html } = req.body
+    const updated = await updateSystemEmailSetting(req.params.key, { enabled, subject, body_html })
+    if (!updated) return res.status(404).json({ error: 'Email setting not found' })
+    res.json({ email: updated })
   } catch (err) {
     next(err)
   }

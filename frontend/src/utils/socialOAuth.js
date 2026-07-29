@@ -108,12 +108,13 @@ export function publishSocialOAuthError(reason) {
   ingestOAuthResult(payload)
 }
 
-export function openSocialOAuthPopup(platform, { wasConnected, onPopupClosed } = {}) {
+export function openSocialOAuthPopup(platform, { wasConnected, onPopupClosed, path } = {}) {
   ensureSocialOAuthListeners()
 
   const apiBase = import.meta.env.VITE_API_URL || window.location.origin
   const token = getAccessToken()
-  const url = `${apiBase}/api/social/${platform}/connect${token ? `?token=${encodeURIComponent(token)}` : ''}`
+  const connectPath = path || `/api/social/${platform}/connect`
+  const url = `${apiBase}${connectPath}${token ? `${connectPath.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : ''}`
   const popup = window.open(url, 'oauth-connect', 'width=600,height=700,menubar=no,toolbar=no')
 
   if (!popup) return { blocked: true }

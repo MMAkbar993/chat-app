@@ -259,6 +259,12 @@ export function ChatProvider({ children }) {
       })
     }
 
+    const onMessageEdited = ({ messageId, content, edited_at }) => {
+      setMessages((prev) =>
+        prev.map((m) => m.id === messageId ? { ...m, content, edited_at } : m)
+      )
+    }
+
     const onReactionUpdated = ({ messageId, reactions }) => {
       setMessages((prev) =>
         prev.map((m) => m.id === messageId ? { ...m, reactions } : m)
@@ -293,6 +299,7 @@ export function ChatProvider({ children }) {
     socket.on('user-typing', onTyping)
     socket.on('user-stop-typing', onStopTyping)
     socket.on('reaction-updated', onReactionUpdated)
+    socket.on('message-edited', onMessageEdited)
     socket.on('message-status-updated', onMessageStatusUpdated)
     socket.on('user-presence', onPresence)
     socket.on('online-users', onOnlineList)
@@ -305,6 +312,7 @@ export function ChatProvider({ children }) {
       socket.off('user-typing', onTyping)
       socket.off('user-stop-typing', onStopTyping)
       socket.off('reaction-updated', onReactionUpdated)
+      socket.off('message-edited', onMessageEdited)
       socket.off('message-status-updated', onMessageStatusUpdated)
       socket.off('user-presence', onPresence)
       socket.off('online-users', onOnlineList)

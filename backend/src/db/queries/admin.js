@@ -178,6 +178,24 @@ export async function insertBroadcastNotifications(userIds, data) {
   return result.rows
 }
 
+export async function getSystemEmailSettings() {
+  const result = await query(
+    `SELECT email_key, enabled, subject, body_html, updated_at FROM system_email_settings ORDER BY email_key`
+  )
+  return result.rows
+}
+
+export async function updateSystemEmailSetting(emailKey, { enabled, subject, body_html }) {
+  const result = await query(
+    `UPDATE system_email_settings
+     SET enabled = COALESCE($1, enabled), subject = COALESCE($2, subject), body_html = COALESCE($3, body_html), updated_at = NOW()
+     WHERE email_key = $4
+     RETURNING email_key, enabled, subject, body_html, updated_at`,
+    [enabled, subject, body_html, emailKey]
+  )
+  return result.rows[0]
+}
+
 export async function getBroadcastHistory({ page = 1, limit = 20 } = {}) {
   const offset = (page - 1) * limit
   const rows = await query(

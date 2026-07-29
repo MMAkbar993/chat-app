@@ -31,16 +31,19 @@ function highlightText(text, query) {
   )
 }
 
-export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
+export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
   const { user } = useAuth()
   const { socket } = useSocket()
   const isMe = msg.sender_id === user?.id
+  const canEdit = isMe && msg.message_type === 'text'
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState(null)
   const [pickerDir, setPickerDir] = useState('up')
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(msg.content || '')
   const reactionBtnRef = useRef(null)
 
   const reactions = msg.reactions || []
@@ -57,6 +60,18 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
 
   function handleCopy() {
     navigator.clipboard.writeText(msg.content || '').catch(() => {})
+  }
+
+  function startEdit() {
+    setEditValue(msg.content || '')
+    setEditing(true)
+  }
+
+  function saveEdit() {
+    const trimmed = editValue.trim()
+    if (!trimmed || trimmed === msg.content) { setEditing(false); return }
+    onEdit?.(msg.id, trimmed)
+    setEditing(false)
   }
 
   async function handleForward(targetConversationId) {
@@ -197,6 +212,37 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
                     {src.split('/').pop()}
                   </a>
                 )
+              if (editing) {
+                return (
+                  <div className="min-w-48">
+                    <textarea
+                      autoFocus
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit() }
+                        else if (e.key === 'Escape') setEditing(false)
+                      }}
+                      rows={Math.min(6, Math.max(1, editValue.split('\n').length))}
+                      className={`w-full bg-transparent text-sm outline-none resize-none border-b ${isMe ? 'border-white/40 placeholder-white/60' : 'border-gray-300'}`}
+                    />
+                    <div className="flex items-center justify-end gap-2 mt-1.5">
+                      <button
+                        onClick={() => setEditing(false)}
+                        className={`text-xs px-2 py-0.5 rounded-md ${isMe ? 'text-white/80 hover:bg-white/15' : darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={saveEdit}
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-md ${isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-violet-600 hover:bg-violet-700 text-white'}`}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
               return <p className="whitespace-pre-wrap wrap-break-word">{highlightText(msg.content || '', searchQuery)}</p>
             })()}
           </div>
@@ -218,11 +264,13 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
           {showMenu && (
             <MessageContextMenu
               isMe={isMe}
+              canEdit={canEdit}
               darkMode={darkMode}
               onClose={() => setShowMenu(false)}
               onReply={() => onReply?.(msg)}
               onForward={() => setShowForward(true)}
               onCopy={handleCopy}
+              onEdit={startEdit}
               onDelete={() => onDelete?.(msg.id)}
               onDeleteForMe={() => onDeleteForMe?.(msg.id)}
             />
@@ -281,6 +329,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onDelete, onDele
               </div>
             )}
           </div>
+          {msg.edited_at && (
+            <span className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>edited</span>
+          )}
           <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.created_at)}</span>
           {isMe && <Ticks status={msg.status || 'sent'} />}
         </div>

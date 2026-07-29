@@ -166,6 +166,9 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
 
           {/* Name + tagline */}
           <p className="font-bold text-lg leading-tight">{name}</p>
+          {profile?.username && (
+            <p className={`text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`}>@{profile.username}</p>
+          )}
           {tagline && <p className={`text-sm mb-1 ${dm ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
           {isSelf
             ? <p className="text-xs text-green-500 mb-1">Online</p>
