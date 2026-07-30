@@ -2,7 +2,7 @@ import { useLocation } from 'react-router-dom'
 
 export default function PrivateBetaBadge() {
   const location = useLocation()
-  if (location.pathname.startsWith('/admin')) return null
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/chat')) return null
 
   return (
     <div className="fixed bottom-3 right-3 z-100 pointer-events-none select-none">

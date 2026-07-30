@@ -5,7 +5,7 @@ import speakeasy from 'speakeasy'
 import qrcode from 'qrcode'
 import { validate } from '../middleware/validate.js'
 import { config } from '../config/env.js'
-import { sendPasswordResetOtp } from '../config/email.js'
+import { sendPasswordResetOtp, sendTwoFactorEnabledEmail, sendAdminNewSignupEmail } from '../config/email.js'
 import {
   registerUser,
   loginUser,
@@ -63,6 +63,7 @@ export async function register(req, res, next) {
     const user = await registerUser({ full_name, username, country, email, primary_role, phone, password })
     const { accessToken, refreshToken } = signTokens(user.id, user.email)
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS(process.env.NODE_ENV))
+    sendAdminNewSignupEmail({ username: user.username, email: user.email, fullName: user.full_name }).catch(() => {})
     res.status(201).json({ user, accessToken })
   } catch (err) {
     next(err)
@@ -241,6 +242,7 @@ export async function twoFactorEnable(req, res, next) {
     if (!valid) return res.status(400).json({ error: 'Invalid code' })
 
     await enableTwoFactor(req.user.id)
+    sendTwoFactorEnabledEmail(req.user.email).catch(() => {})
     res.json({ message: '2FA enabled' })
   } catch (err) {
     next(err)

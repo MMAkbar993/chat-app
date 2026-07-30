@@ -29,6 +29,29 @@ async function syncSubscriptionStatus(user, subscription) {
   return user.subscription_status
 }
 
+// A user's stripe_customer_id may point at a customer that no longer exists under the
+// currently-configured Stripe key — most commonly because it was created while Stripe was in
+// test mode and the account has since switched to live keys (test/live customers are two
+// separate namespaces in Stripe). Self-heals by creating a fresh customer instead of failing.
+async function getOrCreateStripeCustomer(user) {
+  if (user.stripe_customer_id) {
+    try {
+      await stripe.customers.retrieve(user.stripe_customer_id)
+      return user.stripe_customer_id
+    } catch (err) {
+      if (err.code !== 'resource_missing') throw err
+    }
+  }
+
+  const stripeCustomer = await stripe.customers.create({
+    email: user.email,
+    name: user.full_name,
+    metadata: { userId: user.id },
+  })
+  await updateStripeCustomer(user.id, stripeCustomer.id)
+  return stripeCustomer.id
+}
+
 export async function createSubscription(userId, planType) {
   const user = await findUserById(userId)
   if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
@@ -43,16 +66,7 @@ export async function createSubscription(userId, planType) {
     return { subscriptionId: 'dev_bypass', clientSecret: null }
   }
 
-  let customerId = user.stripe_customer_id
-  if (!customerId) {
-    const stripeCustomer = await stripe.customers.create({
-      email: user.email,
-      name: user.full_name,
-      metadata: { userId: user.id },
-    })
-    await updateStripeCustomer(userId, stripeCustomer.id)
-    customerId = stripeCustomer.id
-  }
+  const customerId = await getOrCreateStripeCustomer(user)
 
   const priceId = planType === 'yearly' ? config.stripeYearlyPriceId : config.stripeMonthlyPriceId
 
@@ -132,7 +146,17 @@ export async function getBillingInfo(userId) {
       invoicePdf: inv.invoice_pdf || null,
     }))
   } catch (err) {
-    console.error('Failed to load billing info from Stripe:', err.message)
+    if (err.code === 'resource_missing') {
+      // Stale customer/subscription (e.g. from before Stripe went live) — clear it so the DB
+      // stops claiming a subscription that no longer exists on the Stripe side, and future
+      // calls don't keep retrying a doomed lookup.
+      await updateStripeCustomer(userId, null)
+      await updateSubscription(userId, { subscriptionId: null, plan: null, status: 'inactive' })
+      base.plan = null
+      base.status = 'inactive'
+    } else {
+      console.error('Failed to load billing info from Stripe:', err.message)
+    }
   }
 
   return base

@@ -8,6 +8,7 @@ import {
   getPublicSocialConnections,
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
+import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail } from '../config/email.js'
 
 async function createNotification(userId, type, data = {}) {
   try {
@@ -227,6 +228,7 @@ export async function changeEmail(req, res, next) {
     if (!valid) return res.status(400).json({ error: 'Current password is incorrect' })
 
     await query(`UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2`, [new_email, req.user.id])
+    sendEmailChangedEmail(req.user.email, new_email).catch(() => {})
     res.json({ success: true })
   } catch (err) {
     next(err)
@@ -257,6 +259,7 @@ export async function changePassword(req, res, next) {
     if (!valid) return res.status(400).json({ error: 'Current password is incorrect' })
     const newHash = await bcrypt.hash(new_password, 12)
     await query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, [newHash, req.user.id])
+    sendPasswordChangedEmail(req.user.email).catch(() => {})
     res.json({ success: true })
   } catch (err) {
     next(err)
@@ -754,6 +757,7 @@ export async function confirmWebsiteVerification(req, res, next) {
        updated_at = NOW() WHERE id = $2`,
       [domainName, req.user.id]
     )
+    sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
     res.json({ success: true })
   } catch (err) {
     next(err)

@@ -18,6 +18,7 @@ import { socialRouter } from './routes/social.routes.js'
 import { calendarRouter } from './routes/calendar.routes.js'
 import { uploadRouter } from './routes/upload.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
+import { ogRouter } from './routes/og.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -36,6 +37,11 @@ export function createApp() {
 
   // Serve uploaded files (avatars)
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
+  // Public profile page HTML with per-user Open Graph tags, for link-preview scrapers
+  // (Telegram/Discord/WhatsApp/etc read raw HTML, not the SPA's JS bundle). Nginx proxies /u/
+  // here in production instead of serving the static SPA index.html directly — see DEPLOY.md.
+  app.use('/u', ogRouter)
 
   app.use('/api/auth', authRouter)
   app.use('/api/payment', paymentRouter)
