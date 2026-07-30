@@ -97,7 +97,7 @@ npm run db:migrate
 
 cd /home/deploy/chat
 git pull origin main
-cd backend && npm install && npm run db:migrate && cd ..
+cd backend && npm run db:migrate && cd ..
 pm2 reload chat-backend --update-env
 
 
@@ -396,6 +396,18 @@ server {
         proxy_set_header Host $host;
     }
 
+    # Proxy public profile pages to the backend so it can inject per-user Open Graph
+    # meta tags (og:title/og:image/og:description) for link previews on Discord,
+    # WhatsApp, Telegram, etc. — the static SPA files have no way to do this per-user.
+    location /u/ {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # Proxy Socket.IO (WebSocket support required)
     location /socket.io/ {
         proxy_pass http://localhost:3001;
@@ -417,6 +429,13 @@ sudo ln -s /etc/nginx/sites-available/chat /etc/nginx/sites-enabled/
 sudo nginx -t          # must say "syntax is ok"
 sudo systemctl reload nginx
 ```
+
+> **Already deployed before the `/u/` block was added?** Nginx's config file isn't part of the
+> repo, so pulling new code and auto-deploying (Step 12) does **not** update it automatically —
+> only a running `reload` of whatever's already on disk. Add the `location /u/` block above to
+> your existing `/etc/nginx/sites-available/chat` by hand once (`sudo nano ...`), then
+> `sudo nginx -t && sudo systemctl reload nginx`. Without it, public profile links won't show
+> rich previews when pasted elsewhere — they'll still work for real visitors either way.
 
 Visit `http://yourdomain.com` — the app should load over HTTP.
 

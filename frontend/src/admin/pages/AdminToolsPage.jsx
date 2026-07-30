@@ -15,11 +15,25 @@ const AUDIENCES = [
 const EMAIL_LABELS = {
   password_reset_otp: 'Password Reset Code',
   feedback_notification: 'Feedback Notification',
+  welcome: 'Welcome / Registration Success',
+  unread_message: 'Unread Message (24h)',
+  two_factor_enabled: '2FA Enabled',
+  password_changed: 'Password Changed',
+  email_changed: 'Email Changed',
+  website_verified: 'Website Verified',
+  admin_new_signup: 'Admin: New Signup',
 }
 
 const EMAIL_PLACEHOLDERS = {
   password_reset_otp: ['otp'],
   feedback_notification: ['label', 'username', 'userEmail', 'message'],
+  welcome: ['appName', 'name'],
+  unread_message: ['appName', 'name', 'senderName'],
+  two_factor_enabled: ['appName'],
+  password_changed: ['appName'],
+  email_changed: ['appName', 'newEmail'],
+  website_verified: ['appName', 'url'],
+  admin_new_signup: ['appName', 'username', 'email', 'fullName'],
 }
 
 function BroadcastsSection() {

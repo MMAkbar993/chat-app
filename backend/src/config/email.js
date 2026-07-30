@@ -59,6 +59,154 @@ export async function sendPasswordResetOtp(email, otp) {
   await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
 }
 
+export async function sendWelcomeEmail(email, name) {
+  const setting = await getEmailSetting('welcome')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME, name: escapeHtml(name || 'there') }
+  const subject = setting ? render(setting.subject, vars) : `Welcome to ${APP_NAME}, ${name || 'there'}!`
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">You're verified — welcome to ${APP_NAME}!</h2>
+        <p>Hi ${escapeHtml(name || 'there')}, your identity verification is complete and your account is fully active.</p>
+        <p>You can now message, call and connect with anyone on ${APP_NAME}.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Welcome email for ${email}`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+}
+
+export async function sendUnreadMessageEmail(email, name, senderName) {
+  const setting = await getEmailSetting('unread_message')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME, name: escapeHtml(name || 'there'), senderName: escapeHtml(senderName || 'Someone') }
+  const subject = setting ? render(setting.subject, vars) : `You have an unread message on ${APP_NAME}`
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">You have an unread message</h2>
+        <p>Hi ${escapeHtml(name || 'there')}, ${escapeHtml(senderName || 'Someone')} sent you a message on ${APP_NAME} over a day ago and it's still unread.</p>
+        <p style="color:#6b7280;font-size:0.85rem">Log in to ${APP_NAME} to read and reply.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Unread message email for ${email} (from ${senderName})`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+}
+
+export async function sendTwoFactorEnabledEmail(email) {
+  const setting = await getEmailSetting('two_factor_enabled')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME }
+  const subject = setting ? render(setting.subject, vars) : 'Two-factor authentication enabled'
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">2FA is now enabled</h2>
+        <p>Two-factor authentication was just turned on for your ${APP_NAME} account.</p>
+        <p style="color:#6b7280;font-size:0.85rem">If you didn't do this, contact support immediately.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] 2FA enabled email for ${email}`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+}
+
+export async function sendPasswordChangedEmail(email) {
+  const setting = await getEmailSetting('password_changed')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME }
+  const subject = setting ? render(setting.subject, vars) : 'Your password was changed'
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">Password updated</h2>
+        <p>Your ${APP_NAME} account password was just changed.</p>
+        <p style="color:#6b7280;font-size:0.85rem">If you didn't do this, contact support immediately.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Password changed email for ${email}`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+}
+
+export async function sendEmailChangedEmail(oldEmail, newEmail) {
+  const setting = await getEmailSetting('email_changed')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME, newEmail: escapeHtml(newEmail) }
+  const subject = setting ? render(setting.subject, vars) : 'Your account email was changed'
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">Email address updated</h2>
+        <p>The email address on your ${APP_NAME} account was changed to ${escapeHtml(newEmail)}.</p>
+        <p style="color:#6b7280;font-size:0.85rem">If you didn't do this, contact support immediately.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Email changed notice for ${oldEmail} (new: ${newEmail})`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: oldEmail, subject, html })
+}
+
+export async function sendWebsiteVerifiedEmail(email, url) {
+  const setting = await getEmailSetting('website_verified')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME, url: escapeHtml(url) }
+  const subject = setting ? render(setting.subject, vars) : 'Your website has been verified'
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">You've successfully verified your website</h2>
+        <p>${escapeHtml(url)} is now a verified website on your ${APP_NAME} profile.</p>
+        <p>Do you have employees? They can add their own verified website the same way — just have them go through the same verification flow from their profile settings.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Website verified email for ${email} (${url})`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+}
+
+export async function sendAdminNewSignupEmail({ username, email, fullName }) {
+  const setting = await getEmailSetting('admin_new_signup')
+  if (setting && !setting.enabled) return
+
+  const vars = { appName: APP_NAME, username: escapeHtml(username), email: escapeHtml(email), fullName: escapeHtml(fullName) }
+  const subject = setting ? render(setting.subject, vars) : `[${APP_NAME}] New signup: ${username}`
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">New signup</h2>
+        <p><strong>Username:</strong> @${escapeHtml(username)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p><strong>Name:</strong> ${escapeHtml(fullName)}</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Admin new-signup notice for @${username} (${email})`)
+    return
+  }
+  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: SUPPORT_EMAIL, subject, html })
+}
+
 export async function sendFeedbackNotification({ type, message, userEmail, username }) {
   const label = FEEDBACK_TYPE_LABELS[type] || 'Other'
   const setting = await getEmailSetting('feedback_notification')

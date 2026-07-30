@@ -6,6 +6,7 @@ import {
   updateKycStatus,
   updateFullName,
 } from '../db/queries/users.js'
+import { sendWelcomeEmail } from '../config/email.js'
 
 const DIDIT_BASE_URL = 'https://verification.didit.me/v3'
 const FAILED_STATUSES = ['Declined', 'Expired', 'Not Finished']
@@ -21,9 +22,14 @@ function extractVerifiedName(decision) {
 // same behavior (including pulling the verified legal name off the ID once Approved).
 export async function applyKycDecision(userId, decision) {
   if (decision.status === 'Approved') {
+    const user = await findUserById(userId)
+    const wasAlreadyVerified = user?.kyc_status === 'verified'
     await updateKycStatus(userId, 'verified')
     const verifiedName = extractVerifiedName(decision)
     if (verifiedName) await updateFullName(userId, verifiedName)
+    if (!wasAlreadyVerified && user) {
+      sendWelcomeEmail(user.email, user.display_name || user.full_name).catch(() => {})
+    }
     return 'verified'
   }
   if (FAILED_STATUSES.includes(decision.status)) {
@@ -44,7 +50,9 @@ export async function createKycSession(userId) {
   if (!config.diditApiKey || !config.diditWorkflowId) {
     // Dev fallback when Didit isn't configured at all — mirrors the same
     // graceful-degradation pattern used in payment.service.js.
+    // (kyc_status !== 'verified' is guaranteed here, the check above already returned otherwise)
     await updateKycStatus(userId, 'verified')
+    sendWelcomeEmail(user.email, user.display_name || user.full_name).catch(() => {})
     return { url: null }
   }
 
