@@ -34,8 +34,6 @@ function generatePKCE() {
   return { verifier, challenge }
 }
 
-const OAUTH_RESULT_STORAGE_KEY = 'social-oauth-result'
-
 const PLATFORM_LABELS = {
   facebook: 'Facebook',
   instagram: 'Instagram',
@@ -60,35 +58,13 @@ button{background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:12px
 button:hover{background:#6d28d9}`
 }
 
-function oauthCloseHandler() {
-  return `(function(){
-  function requestClose(){
-    try{window.close();}catch(e){}
-    if(window.opener){
-      try{window.opener.postMessage({type:'social-oauth-request-close',ts:Date.now()},'*');}catch(e){}
-    }
-    setTimeout(function(){
-      if(window.closed)return;
-      var btn=document.getElementById('oauth-close-btn');
-      var hint=document.getElementById('oauth-close-hint');
-      if(btn)btn.textContent='Return to Settings';
-      if(hint)hint.textContent='You can close this tab manually, or click the button to ask the main window to close it.';
-    },200);
-  }
-  window.requestOAuthClose=requestClose;
-})();`
+function escapeHtmlAttr(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 }
 
-function notifyOpenerAndStore(payload) {
-  const json = JSON.stringify(payload)
-  return `(function(){
-  var msg=${json};
-  try{localStorage.setItem(${JSON.stringify(OAUTH_RESULT_STORAGE_KEY)},JSON.stringify(msg));}catch(e){}
-  if(window.opener){try{window.opener.postMessage(msg,'*');}catch(e){}}
-  setTimeout(function(){requestOAuthClose();},400);
-})();`
-}
-
+// The close/notify logic lives in the external /api/static/oauth-popup.js instead of an inline
+// <script> here — Helmet's CSP (script-src 'self', script-src-attr 'none') blocks inline scripts
+// and inline onclick= attributes outright, with no allowance carved out for this response.
 function sendOAuthPopupResponse(res, { success, platform, reason }) {
   const label = platformLabel(platform)
 
@@ -100,9 +76,9 @@ function sendOAuthPopupResponse(res, { success, platform, reason }) {
   <div class="icon ok"><svg width="28" height="28" fill="none" stroke="#16a34a" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
   <h1>${label} connected!</h1>
   <p id="oauth-close-hint">Your ${label} account was linked successfully. This window should close automatically.</p>
-  <button id="oauth-close-btn" type="button" onclick="requestOAuthClose()">Close window</button>
+  <button id="oauth-close-btn" type="button">Close window</button>
 </div>
-<script>${oauthCloseHandler()}${notifyOpenerAndStore(payload)}</script>
+<script src="/api/static/oauth-popup.js" data-payload="${escapeHtmlAttr(JSON.stringify(payload))}"></script>
 </body></html>`)
   }
 
@@ -114,9 +90,9 @@ function sendOAuthPopupResponse(res, { success, platform, reason }) {
   <div class="icon err"><svg width="28" height="28" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>
   <h1>Connection failed</h1>
   <p id="oauth-close-hint">${safeReason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-  <button id="oauth-close-btn" type="button" onclick="requestOAuthClose()">Close window</button>
+  <button id="oauth-close-btn" type="button">Close window</button>
 </div>
-<script>${oauthCloseHandler()}${notifyOpenerAndStore(payload)}</script>
+<script src="/api/static/oauth-popup.js" data-payload="${escapeHtmlAttr(JSON.stringify(payload))}"></script>
 </body></html>`)
 }
 
@@ -503,19 +479,24 @@ export async function socialCallback(req, res) {
     sendOAuthPopupResponse(res, { success: true, platform })
   } catch (err) {
     const detail = err.response?.data
-    console.error(`Social auth error (${platform}):`, detail || err.message)
+    console.error(`Social auth error (${platform}, status ${err.response?.status ?? 'n/a'}):`, detail || err.message)
 
     let reason = 'Could not connect account. Please try again.'
-    if (err.message && !detail?.error?.message && !detail?.error_message && !detail?.error_description) {
-      reason = err.message
-    } else if (platform === 'facebook' && detail?.error?.message) {
+    if (platform === 'facebook' && detail?.error?.message) {
       reason = detail.error.message
     } else if (platform === 'instagram' && detail?.error_message) {
       reason = detail.error_message
     } else if (detail?.error_description) {
       reason = detail.error_description
+    } else if (detail?.detail) {
+      // X (and other RFC 7807 "problem details" APIs) use title/detail instead of
+      // error/error_description — e.g. a 403 on the profile fetch when the app's access level
+      // doesn't include the requested scope shows up here, not as an OAuth-shaped error.
+      reason = detail.title ? `${detail.title}: ${detail.detail}` : detail.detail
     } else if (detail?.error) {
       reason = typeof detail.error === 'string' ? detail.error : reason
+    } else if (err.message) {
+      reason = err.message
     }
 
     sendOAuthPopupResponse(res, { reason })

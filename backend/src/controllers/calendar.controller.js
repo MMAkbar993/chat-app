@@ -10,7 +10,9 @@ import {
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
-const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
+// calendar.events (not the broader calendar scope) — read/write on events specifically, without
+// calendar-management/sharing permissions this app has no use for.
+const SCOPE = 'https://www.googleapis.com/auth/calendar.events'
 
 function redirectUri() {
   if (process.env.GOOGLE_CALENDAR_REDIRECT_URI) return process.env.GOOGLE_CALENDAR_REDIRECT_URI
@@ -18,28 +20,29 @@ function redirectUri() {
   return base ? `${base.replace(/\/$/, '')}/api/calendar/callback` : undefined
 }
 
+function escapeHtmlAttr(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+}
+
 // Minimal self-closing popup page, matching the message shape social.controller.js's OAuth popups
 // already send (`social-connect-success`/`social-connect-error`) so the existing generic frontend
-// listener (frontend/src/utils/socialOAuth.js) picks this up without any changes.
+// listener (frontend/src/utils/socialOAuth.js) picks this up without any changes. Close/notify
+// logic lives in the external /api/static/oauth-popup.js, not an inline <script> here — Helmet's CSP
+// (script-src 'self', script-src-attr 'none') blocks inline scripts and onclick= attributes
+// outright, with no exception carved out for this response.
 function sendCalendarPopupResponse(res, { success, reason }) {
   const payload = success
     ? { type: 'social-connect-success', platform: 'calendar', ts: Date.now() }
     : { type: 'social-connect-error', reason: reason || 'Could not connect. Please try again.', ts: Date.now() }
-  const json = JSON.stringify(payload)
   const safeReason = (reason || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${success ? 'Connected' : 'Connection failed'}</title></head>
 <body style="font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb">
   <div style="background:#fff;border-radius:16px;padding:32px;max-width:360px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #f3f4f6">
     <h1 style="font-size:20px;margin:0 0 8px;color:#111">${success ? 'Google Calendar connected!' : 'Connection failed'}</h1>
-    <p style="font-size:14px;color:#6b7280;margin:0 0 20px;line-height:1.5">${success ? 'This window should close automatically.' : safeReason}</p>
-    <button onclick="window.close()" style="background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Close window</button>
+    <p id="oauth-close-hint" style="font-size:14px;color:#6b7280;margin:0 0 20px;line-height:1.5">${success ? 'This window should close automatically.' : safeReason}</p>
+    <button id="oauth-close-btn" type="button" style="background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;width:100%">Close window</button>
   </div>
-  <script>
-    var msg = ${json};
-    try { localStorage.setItem('social-oauth-result', JSON.stringify(msg)); } catch (e) {}
-    if (window.opener) { try { window.opener.postMessage(msg, '*'); } catch (e) {} }
-    setTimeout(function () { window.close(); }, 800);
-  </script>
+  <script src="/api/static/oauth-popup.js" data-payload="${escapeHtmlAttr(JSON.stringify(payload))}"></script>
 </body></html>`)
 }
 
@@ -103,6 +106,39 @@ export async function calendarCallback(req, res) {
   }
 }
 
+// Shared by calendarEvents and createCalendarEvent — refreshes the access token when expired,
+// throws a 409-tagged error when there's no refresh token to fall back on.
+async function getValidAccessToken(userId, conn) {
+  if (!conn.token_expires_at || new Date(conn.token_expires_at) > new Date()) {
+    return conn.access_token
+  }
+  if (!conn.refresh_token) {
+    throw Object.assign(new Error('Connection expired. Please reconnect.'), { status: 409 })
+  }
+  const { data } = await axios.post(
+    TOKEN_URL,
+    new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: conn.refresh_token,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+    }).toString(),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  )
+  const tokenExpiresAt = data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null
+  await upsertCalendarConnection(userId, { accessToken: data.access_token, refreshToken: conn.refresh_token, tokenExpiresAt })
+  return data.access_token
+}
+
+// Google rejects a write with 403 insufficientPermissions when the stored token was only ever
+// granted calendar.readonly (e.g. connected before this app supported creating events) — distinct
+// from other 403s (like the Pro-gating one above), so the frontend can tell them apart and prompt
+// a reconnect instead of a dead-end error.
+function isInsufficientScopeError(err) {
+  return err.response?.status === 403
+    && err.response?.data?.error?.errors?.some((e) => e.reason === 'insufficientPermissions')
+}
+
 export async function calendarEvents(req, res, next) {
   try {
     if (!isProUser(req.user)) return res.status(403).json({ error: 'Google Calendar is a Pro feature' })
@@ -110,23 +146,7 @@ export async function calendarEvents(req, res, next) {
     const conn = await getCalendarConnection(req.user.id)
     if (!conn) return res.status(404).json({ error: 'Not connected' })
 
-    let accessToken = conn.access_token
-    if (conn.token_expires_at && new Date(conn.token_expires_at) <= new Date()) {
-      if (!conn.refresh_token) return res.status(409).json({ error: 'Connection expired. Please reconnect.' })
-      const { data } = await axios.post(
-        TOKEN_URL,
-        new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: conn.refresh_token,
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        }).toString(),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      )
-      accessToken = data.access_token
-      const tokenExpiresAt = data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null
-      await upsertCalendarConnection(req.user.id, { accessToken, refreshToken: conn.refresh_token, tokenExpiresAt })
-    }
+    const accessToken = await getValidAccessToken(req.user.id, conn)
 
     const { timeMin, timeMax } = req.query
     const hasRange = timeMin || timeMax
@@ -150,6 +170,51 @@ export async function calendarEvents(req, res, next) {
       htmlLink: e.htmlLink,
     }))
     res.json({ events })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function createCalendarEvent(req, res, next) {
+  try {
+    if (!isProUser(req.user)) return res.status(403).json({ error: 'Google Calendar is a Pro feature' })
+
+    const { title, description, start, end, allDay } = req.body
+    if (!title?.trim() || !start || !end) {
+      return res.status(400).json({ error: 'title, start and end are required' })
+    }
+
+    const conn = await getCalendarConnection(req.user.id)
+    if (!conn) return res.status(404).json({ error: 'Not connected' })
+
+    const accessToken = await getValidAccessToken(req.user.id, conn)
+
+    try {
+      const { data } = await axios.post(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+        {
+          summary: title.trim(),
+          description: description?.trim() || undefined,
+          start: allDay ? { date: start } : { dateTime: start },
+          end: allDay ? { date: end } : { dateTime: end },
+        },
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      )
+      res.status(201).json({
+        event: {
+          id: data.id,
+          title: data.summary || '(No title)',
+          start: data.start?.dateTime || data.start?.date,
+          end: data.end?.dateTime || data.end?.date,
+          htmlLink: data.htmlLink,
+        },
+      })
+    } catch (err) {
+      if (isInsufficientScopeError(err)) {
+        return res.status(403).json({ error: 'insufficient_scope', message: 'Reconnect Google Calendar to allow creating events.' })
+      }
+      throw err
+    }
   } catch (err) {
     next(err)
   }

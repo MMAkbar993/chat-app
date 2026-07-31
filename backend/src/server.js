@@ -43,6 +43,14 @@ export function createApp() {
   // Serve uploaded files (avatars)
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
+  // Static assets referenced by server-rendered pages (e.g. the OAuth popup close/notify script —
+  // it has to be an external file, not inline, since the CSP's script-src 'self' blocks inline
+  // <script> tags and inline event-handler attributes entirely, with no exception carved out here).
+  // Mounted under /api/ specifically — that's the one prefix Nginx is already configured to proxy
+  // to this server; a new top-level path like /static wouldn't reach Express in production at all,
+  // Nginx would just serve the SPA's index.html for it instead (see DEPLOY.md's proxied paths).
+  app.use('/api/static', express.static(path.join(__dirname, '../public')))
+
   // Public profile page HTML with per-user Open Graph tags, for link-preview scrapers
   // (Telegram/Discord/WhatsApp/etc read raw HTML, not the SPA's JS bundle). Nginx proxies /u/
   // here in production instead of serving the static SPA index.html directly — see DEPLOY.md.

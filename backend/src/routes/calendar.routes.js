@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middleware/auth.js'
 import { config } from '../config/env.js'
 import { findUserById } from '../db/queries/users.js'
-import { calendarConnect, calendarCallback, calendarEvents, calendarDisconnect } from '../controllers/calendar.controller.js'
+import { calendarConnect, calendarCallback, calendarEvents, createCalendarEvent, calendarDisconnect } from '../controllers/calendar.controller.js'
 
 // Same pattern as social.routes.js's socialConnectAuth — OAuth popups can't set headers, so accept
 // the token via query string too.
@@ -27,4 +27,5 @@ export const calendarRouter = Router()
 calendarRouter.get('/connect', connectAuth, calendarConnect)
 calendarRouter.get('/callback', calendarCallback)
 calendarRouter.get('/events', authMiddleware, calendarEvents)
+calendarRouter.post('/events', authMiddleware, createCalendarEvent)
 calendarRouter.delete('/disconnect', authMiddleware, calendarDisconnect)
