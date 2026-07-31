@@ -3,6 +3,7 @@ import { getCalendarEvents, disconnectCalendar } from '../../api/calendar'
 import Button from '../ui/Button'
 import MonthGrid from './MonthGrid'
 import WeekGrid from './WeekGrid'
+import NewEventModal from './NewEventModal'
 import { openSocialOAuthPopup, subscribeSocialOAuthResults } from '../../utils/socialOAuth'
 
 const VIEWS = ['day', 'week', 'month']
@@ -66,6 +67,8 @@ export default function CalendarPage({ darkMode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [disconnecting, setDisconnecting] = useState(false)
+  const [showNewEvent, setShowNewEvent] = useState(false)
+  const [needsReconnect, setNeedsReconnect] = useState(false)
 
   const today = useMemo(() => new Date(), [])
   const range = useMemo(() => getRange(view, currentDate), [view, currentDate])
@@ -92,7 +95,10 @@ export default function CalendarPage({ darkMode }) {
 
   useEffect(() => {
     return subscribeSocialOAuthResults((data) => {
-      if (data.type === 'social-connect-success' && data.platform === 'calendar') load()
+      if (data.type === 'social-connect-success' && data.platform === 'calendar') {
+        setNeedsReconnect(false)
+        load()
+      }
     })
   }, [load])
 
@@ -171,6 +177,7 @@ export default function CalendarPage({ darkMode }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button onClick={() => setShowNewEvent(true)} className="px-4! py-2! text-sm">New event</Button>
           <div className={`flex rounded-lg p-0.5 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
             {VIEWS.map((v) => (
               <button
@@ -196,6 +203,13 @@ export default function CalendarPage({ darkMode }) {
 
       {error && <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>}
 
+      {needsReconnect && (
+        <div className="mx-6 mt-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3">
+          <span>This connection was made before event creation was supported — reconnect to enable it.</span>
+          <button onClick={handleConnect} className="shrink-0 font-semibold text-amber-900 hover:underline">Reconnect</button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="w-7 h-7 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
@@ -205,6 +219,15 @@ export default function CalendarPage({ darkMode }) {
       ) : (
         <WeekGrid darkMode={darkMode} days={range.days} today={today} events={events} onEventClick={onEventClick} />
       )}
+
+      <NewEventModal
+        isOpen={showNewEvent}
+        onClose={() => setShowNewEvent(false)}
+        onCreated={() => load()}
+        onInsufficientScope={() => setNeedsReconnect(true)}
+        darkMode={darkMode}
+        defaultDate={currentDate}
+      />
     </div>
   )
 }
