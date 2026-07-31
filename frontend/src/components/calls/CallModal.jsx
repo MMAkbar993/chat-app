@@ -359,7 +359,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={toggleScreenShare}
-                title={canScreenShare ? undefined : 'Upgrade to Pro or Business to share your screen'}
+                title={canScreenShare ? undefined : 'Upgrade to Pro to share your screen'}
                 className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors relative ${
                   sharingScreen ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
                 }`}

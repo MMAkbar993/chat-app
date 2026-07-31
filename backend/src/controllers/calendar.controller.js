@@ -128,9 +128,18 @@ export async function calendarEvents(req, res, next) {
       await upsertCalendarConnection(req.user.id, { accessToken, refreshToken: conn.refresh_token, tokenExpiresAt })
     }
 
+    const { timeMin, timeMax } = req.query
+    const hasRange = timeMin || timeMax
+
     const { data } = await axios.get('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       headers: { Authorization: `Bearer ${accessToken}` },
-      params: { timeMin: new Date().toISOString(), singleEvents: true, orderBy: 'startTime', maxResults: 10 },
+      params: {
+        timeMin: timeMin || new Date().toISOString(),
+        ...(timeMax && { timeMax }),
+        singleEvents: true,
+        orderBy: 'startTime',
+        maxResults: hasRange ? 250 : 10,
+      },
     })
 
     const events = (data.items || []).map((e) => ({

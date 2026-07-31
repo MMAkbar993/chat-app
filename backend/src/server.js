@@ -26,7 +26,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export function createApp() {
   const app = express()
 
-  app.use(helmet())
+  // crossOriginOpenerPolicy disabled: the OAuth connect/callback routes (calendar, social) are
+  // opened as popups from the main app and need window.opener to postMessage results back and
+  // self-close. Helmet's default "same-origin" COOP severs that link the moment the popup
+  // navigates here, since the parent SPA (served statically by Nginx) has no COOP header at all —
+  // the mismatch breaks both the popup's own window.close() and postMessage to the opener.
+  app.use(helmet({ crossOriginOpenerPolicy: false }))
   app.use(cors({ origin: config.frontendUrl, credentials: true }))
   app.use(cookieParser())
 
