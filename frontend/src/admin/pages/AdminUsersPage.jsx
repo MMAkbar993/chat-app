@@ -323,6 +323,21 @@ function UserDetailModal({ userId, onClose, onSaved }) {
               ) : <p className="text-xs text-gray-400">None</p>}
             </div>
 
+            {/* Approved company representation */}
+            <div>
+              <p className="text-sm font-semibold text-gray-800 mb-2">Approved Representative Of ({detail.rep_websites?.length || 0})</p>
+              {detail.rep_websites?.length ? (
+                <div className="space-y-1.5">
+                  {detail.rep_websites.map((w) => (
+                    <div key={w.url} className="flex items-center justify-between bg-violet-50 rounded-xl px-3 py-2 text-sm">
+                      <span className="text-gray-700 truncate">{w.url}</span>
+                      <span className="text-xs font-medium text-violet-600">Approved Rep</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-gray-400">None</p>}
+            </div>
+
             {/* Reports against this user */}
             <div>
               <p className="text-sm font-semibold text-gray-800 mb-2">Reports Against This User ({detail.reports?.length || 0})</p>

@@ -5,7 +5,6 @@ import { getNotifications, markNotificationsRead, clearNotifications } from '../
 import { isProUser } from '../../utils/plan'
 import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
-import GoogleCalendarPanel from '../calendar/GoogleCalendarPanel'
 
 const NAV = [
   { key: 'chats', label: 'Chats', icon: (
@@ -59,18 +58,53 @@ const NAV = [
   )},
 ]
 
+function websiteLink(url) {
+  const href = url.startsWith('http') ? url : `https://${url}`
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+      className="text-violet-600 hover:underline break-all">
+      {url}
+    </a>
+  )
+}
+
 function formatNotif(n) {
   if (n.type === 'rep_request') {
-    return `${n.data.requesterName} requested to represent ${n.data.websiteUrl}`
+    return <>{n.data.requesterName} requested to represent {websiteLink(n.data.websiteUrl)}</>
   }
   if (n.type === 'rep_decision') {
     const verb = n.data.action === 'approve' ? 'approved' : 'rejected'
-    return `${n.data.ownerName} ${verb} your request for ${n.data.websiteUrl}`
-  }
-  if (n.type === 'broadcast') {
-    return `${n.data.title} — ${n.data.body}`
+    return <>{n.data.ownerName} {verb} your request for {websiteLink(n.data.websiteUrl)}</>
   }
   return 'New notification'
+}
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g
+
+// Splits text on URLs and turns each one into a real link — broadcast bodies are admin-authored
+// free text that may contain a URL (e.g. "check it out https://..."), and rendering that as plain
+// text left it looking like unstyled, half-broken content sitting inside a notification feed.
+function linkify(text) {
+  return text.split(URL_REGEX).map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="text-violet-600 hover:underline break-all">
+        {part}
+      </a>
+    ) : part
+  )
+}
+
+function BroadcastIcon() {
+  return (
+    <div className="mt-0.5 w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+      </svg>
+    </div>
+  )
 }
 
 function timeAgo(dateStr) {
@@ -90,7 +124,6 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
   const [showPanel, setShowPanel] = useState(false)
   const [showOwnProfile, setShowOwnProfile] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
-  const [showCalendar, setShowCalendar] = useState(false)
   const [clearing, setClearing] = useState(false)
   const unread = notifications.filter((n) => !n.read).length
 
@@ -142,7 +175,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           data-tour={`sidebar-${key}`}
           onClick={() => {
             if (key === 'profile') setShowOwnProfile(true)
-            else if (key === 'calendar') (isProUser(user) ? setShowCalendar(true) : setShowUpgrade(true))
+            else if (key === 'calendar') (isProUser(user) ? onNav(key) : setShowUpgrade(true))
             else onNav(key)
           }}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
@@ -225,10 +258,6 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
 
     <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
 
-    {showCalendar && (
-      <GoogleCalendarPanel darkMode={darkMode} onClose={() => setShowCalendar(false)} />
-    )}
-
     {showOwnProfile && (
       <UserProfileModal
         isSelf
@@ -291,13 +320,31 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
                   key={n.id}
                   className={`px-5 py-4 border-b last:border-0 flex gap-3 items-start ${
                     darkMode ? 'border-gray-800' : 'border-gray-50'
-                  } ${!n.read ? (darkMode ? 'bg-violet-900/20' : 'bg-violet-50') : ''}`}
+                  } ${
+                    n.type === 'broadcast'
+                      ? (darkMode ? 'bg-violet-900/10' : 'bg-violet-50/60')
+                      : !n.read ? (darkMode ? 'bg-violet-900/20' : 'bg-violet-50') : ''
+                  }`}
                 >
-                  <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-violet-500' : 'bg-transparent'}`} />
+                  {n.type === 'broadcast' ? (
+                    <BroadcastIcon />
+                  ) : (
+                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-violet-500' : 'bg-transparent'}`} />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                      {formatNotif(n)}
-                    </p>
+                    {n.type === 'broadcast' ? (
+                      <>
+                        <p className={`text-xs font-semibold uppercase tracking-wide text-violet-500 mb-0.5`}>Announcement</p>
+                        <p className={`text-sm font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{n.data.title}</p>
+                        <p className={`text-sm leading-relaxed mt-0.5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {linkify(n.data.body)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                        {formatNotif(n)}
+                      </p>
+                    )}
                     <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{timeAgo(n.created_at)}</p>
                   </div>
                 </div>

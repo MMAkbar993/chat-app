@@ -53,9 +53,14 @@ export async function getUserDetail(id) {
   const user = userResult.rows[0]
   if (!user) return null
 
-  const [websites, reports] = await Promise.all([
+  const [websites, repWebsites, reports] = await Promise.all([
     query(
       `SELECT id, url, verified, created_at FROM verified_websites WHERE user_id = $1 ORDER BY created_at DESC`,
+      [id]
+    ),
+    query(
+      `SELECT website_url AS url, created_at FROM website_representation_requests
+       WHERE requester_id = $1 AND status = 'approved' ORDER BY created_at DESC`,
       [id]
     ),
     query(
@@ -66,7 +71,7 @@ export async function getUserDetail(id) {
     ),
   ])
 
-  return { ...user, verified_websites: websites.rows, reports: reports.rows }
+  return { ...user, verified_websites: websites.rows, rep_websites: repWebsites.rows, reports: reports.rows }
 }
 
 export async function setUserPackage(userId, plan) {

@@ -5,18 +5,15 @@ import PaymentModal from './PaymentModal'
 const TIERS = [
   { key: 'free', label: 'Free', accent: 'slate' },
   { key: 'pro', label: 'Pro', accent: 'violet' },
-  { key: 'business', label: 'Business', accent: 'amber' },
 ]
 
 const ACCENT = {
   slate:  { bg: 'bg-slate-500',  tabActive: 'bg-slate-600 text-white',  hero: 'from-slate-500 to-slate-700' },
   violet: { bg: 'bg-violet-600', tabActive: 'bg-violet-600 text-white', hero: 'from-violet-500 to-indigo-600' },
-  amber:  { bg: 'bg-amber-500',  tabActive: 'bg-amber-500 text-white',  hero: 'from-amber-400 to-orange-600' },
 }
 
 const PRICE = {
-  pro:      { monthly: '€6.99', yearly: '€70.00' },
-  business: { monthly: '€6.99', yearly: '€70.00' },
+  pro: { monthly: '€6.99', yearly: '€70.00' },
 }
 
 const FEATURES = {
@@ -45,20 +42,6 @@ const FEATURES = {
       path: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     { title: 'Requests Marketplace', badge: 'Coming soon', desc: 'Post business requests and discover new partnership opportunities.',
       path: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 11H4L5 9z' },
-  ],
-  business: [
-    { title: 'Everything in Pro', desc: 'Get every Pro feature, including unlimited voice and video calls, groups, Google Calendar integration, unlimited file sharing, and the Requests marketplace.',
-      path: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { title: 'Business Profile', desc: 'Create a verified company profile to showcase your business and build trust with industry professionals.',
-      path: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { title: 'Company Information', desc: 'Show your company name, logo, website, industry role, headquarters, and company description.',
-      path: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-    { title: 'Team Members', desc: 'Display approved team members directly on your company profile, making it easy for others to see who represents your business.',
-      path: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m16-14a4 4 0 010 7.75M9 7a4 4 0 118 0 4 4 0 01-8 0z' },
-    { title: 'Company Contact', desc: 'Allow professionals to contact your company directly from your Business Profile.',
-      path: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-    { title: 'Services & Expertise', desc: 'Highlight the services your business offers so users immediately understand how you can help.',
-      path: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 10l-5.714 2.143L13 19l-2.286-6.857L5 10l5.714-2.143z' },
   ],
 }
 
