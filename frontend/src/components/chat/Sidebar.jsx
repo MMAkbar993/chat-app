@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
-import { isProUser } from '../../utils/plan'
 import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 
@@ -34,12 +33,6 @@ const NAV = [
   { key: 'calls', label: 'Calls', icon: (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
       d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
-  )},
-  { key: 'calendar', label: 'Calendar', icon: (
-    <>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </>
   )},
   { key: 'profile', label: 'Profile', icon: (
     <>
@@ -175,7 +168,6 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           data-tour={`sidebar-${key}`}
           onClick={() => {
             if (key === 'profile') setShowOwnProfile(true)
-            else if (key === 'calendar') (isProUser(user) ? onNav(key) : setShowUpgrade(true))
             else onNav(key)
           }}
           className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${

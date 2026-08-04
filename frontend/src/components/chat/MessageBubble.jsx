@@ -31,6 +31,29 @@ function highlightText(text, query) {
   )
 }
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g
+
+// Turns plain-text URLs into real links — e.g. the Google Calendar invite link a scheduled
+// meeting drops into the conversation. Only touches plain string segments, so it composes safely
+// with highlightText's <mark> output instead of fighting it.
+function linkifyNode(node, keyPrefix) {
+  if (typeof node !== 'string') return [node]
+  const parts = node.split(URL_REGEX)
+  if (parts.length === 1) return [node]
+  return parts.map((part, i) =>
+    i % 2 === 1
+      ? <a key={`${keyPrefix}-${i}`} href={part} target="_blank" rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()} className="underline break-all">{part}</a>
+      : part
+  )
+}
+
+function renderMessageText(text, query) {
+  const highlighted = highlightText(text, query)
+  const nodes = Array.isArray(highlighted) ? highlighted : [highlighted]
+  return nodes.flatMap((node, i) => linkifyNode(node, `link-${i}`))
+}
+
 export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
   const { user } = useAuth()
   const { socket } = useSocket()
@@ -243,7 +266,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                   </div>
                 )
               }
-              return <p className="whitespace-pre-wrap wrap-break-word">{highlightText(msg.content || '', searchQuery)}</p>
+              return <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery)}</p>
             })()}
           </div>
 
