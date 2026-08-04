@@ -160,6 +160,20 @@ export async function getParticipants(conversationId) {
   return result.rows
 }
 
+// Server-side only — unlike getParticipants (used for frontend-facing payloads elsewhere),
+// this exposes an email address, so it stays scoped to callers that need it internally
+// (e.g. inviting the other person in a direct conversation to a scheduled meeting).
+export async function getOtherParticipantEmail(conversationId, userId) {
+  const result = await query(
+    `SELECT u.email FROM conversation_participants cp
+     JOIN users u ON u.id = cp.user_id
+     WHERE cp.conversation_id = $1 AND cp.user_id != $2
+     LIMIT 1`,
+    [conversationId, userId]
+  )
+  return result.rows[0]?.email || null
+}
+
 export async function isParticipant(conversationId, userId) {
   const result = await query(
     `SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2`,

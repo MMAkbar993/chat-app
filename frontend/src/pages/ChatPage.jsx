@@ -23,7 +23,6 @@ import CallingCard from '../components/calls/CallingCard'
 import IncomingCallModal from '../components/calls/IncomingCallModal'
 import UpgradeModal from '../features/payment/UpgradeModal'
 import ProductTour from '../components/onboarding/ProductTour'
-import CalendarPage from '../components/calendar/CalendarPage'
 
 export default function ChatPage() {
   const [section, setSection] = useState('chats')
@@ -204,33 +203,26 @@ export default function ChatPage() {
         mobileHidden={mobileDetail}
       />
 
-      {section === 'calendar' ? (
-        /* Calendar is a full-width page, not a list+detail split like the other sections. */
-        <CalendarPage darkMode={darkMode} />
-      ) : (
-        <>
-          {/* Left panel */}
-          {section === 'chats' && <ChatsView darkMode={darkMode} mobileHidden={mobileDetail} />}
-          {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} mobileHidden={mobileDetail} />}
-          {section === 'groups' && <GroupsView darkMode={darkMode} mobileHidden={mobileDetail} />}
-          {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} mobileHidden={mobileDetail} />}
-          {section === 'settings' && (
-            <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} onStartTour={() => setTourRestartCount((c) => c + 1)} />
-          )}
-
-          {/* Right panel — settings detail on that tab, chat window on chats/groups, welcome screen otherwise.
-              Hidden on mobile until a chat/setting is actually opened, since the list fills the screen until then. */}
-          <div className={`${mobileDetail ? 'flex' : 'hidden md:flex'} flex-1 overflow-hidden`}>
-          {section === 'settings' ? (
-            <SettingsDetailPanel darkMode={darkMode} section={settingsSection} onBack={() => setSettingsSection(null)} />
-          ) : (section === 'chats' || section === 'groups') && activeConversation ? (
-            <ChatWindow darkMode={darkMode} onCallStart={handleCallStart} />
-          ) : (
-            <WelcomeScreen darkMode={darkMode} />
-          )}
-          </div>
-        </>
+      {/* Left panel */}
+      {section === 'chats' && <ChatsView darkMode={darkMode} mobileHidden={mobileDetail} />}
+      {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} mobileHidden={mobileDetail} />}
+      {section === 'groups' && <GroupsView darkMode={darkMode} mobileHidden={mobileDetail} />}
+      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} mobileHidden={mobileDetail} />}
+      {section === 'settings' && (
+        <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} onStartTour={() => setTourRestartCount((c) => c + 1)} />
       )}
+
+      {/* Right panel — settings detail on that tab, chat window on chats/groups, welcome screen otherwise.
+          Hidden on mobile until a chat/setting is actually opened, since the list fills the screen until then. */}
+      <div className={`${mobileDetail ? 'flex' : 'hidden md:flex'} flex-1 overflow-hidden`}>
+      {section === 'settings' ? (
+        <SettingsDetailPanel darkMode={darkMode} section={settingsSection} onBack={() => setSettingsSection(null)} />
+      ) : (section === 'chats' || section === 'groups') && activeConversation ? (
+        <ChatWindow darkMode={darkMode} onCallStart={handleCallStart} />
+      ) : (
+        <WelcomeScreen darkMode={darkMode} />
+      )}
+      </div>
 
       {/* Incoming call */}
       {incomingCall && !activeCall && (

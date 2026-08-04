@@ -13,6 +13,7 @@ import ContactInfoPanel from './ContactInfoPanel'
 import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
 import UserProfileModal from '../ui/UserProfileModal'
+import ScheduleMeetingModal from '../calendar/ScheduleMeetingModal'
 
 function formatDuration(secs) {
   if (!secs) return ''
@@ -69,7 +70,7 @@ function CallEventPill({ msg, userId, darkMode, meAvatar, meName }) {
         </div>
       )}
 
-      <div className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+      <div className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-white shadow-sm'}`}>
         <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
           isMissed
             ? darkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-500'
@@ -143,6 +144,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const [searchIndex, setSearchIndex] = useState(0)
   const [showReportPrompt, setShowReportPrompt] = useState(false)
   const [reportReason, setReportReason] = useState('')
+  const [showScheduleMeeting, setShowScheduleMeeting] = useState(false)
 
   const matchIds = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -379,6 +381,17 @@ export default function ChatWindow({ darkMode, onCallStart }) {
               </>
             )}
 
+            {activeConversation.type !== 'group' && (
+              /* Schedule meeting */
+              <button onClick={() => setShowScheduleMeeting(true)} title="Schedule meeting"
+                className={`w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+            )}
+
             {/* Contact info */}
             <button
               onClick={() => setShowContactInfo((v) => !v)}
@@ -572,6 +585,16 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           darkMode={darkMode}
           onClose={() => setShowProfileModal(false)}
           onCallStart={(type) => { setShowProfileModal(false); onCallStart?.(type) }}
+        />
+      )}
+
+      {showScheduleMeeting && (
+        <ScheduleMeetingModal
+          isOpen={showScheduleMeeting}
+          onClose={() => setShowScheduleMeeting(false)}
+          onScheduled={(message) => setMessages((prev) => [...prev, message])}
+          conversationId={activeConversation.id}
+          darkMode={darkMode}
         />
       )}
 

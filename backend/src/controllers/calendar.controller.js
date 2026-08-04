@@ -7,6 +7,9 @@ import {
   upsertCalendarConnection,
   deleteCalendarConnection,
 } from '../db/queries/calendar.js'
+import { isParticipant, getParticipants, getOtherParticipantEmail } from '../db/queries/conversations.js'
+import { createMessage } from '../db/queries/messages.js'
+import { getIo } from '../socket/index.js'
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
@@ -94,10 +97,22 @@ export async function calendarCallback(req, res) {
     )
 
     const tokenExpiresAt = data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null
+
+    let calendarName = null
+    try {
+      const { data: cal } = await axios.get('https://www.googleapis.com/calendar/v3/calendars/primary', {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+      })
+      calendarName = cal.summary || null
+    } catch {
+      // Non-fatal — the connection still works, we just won't have a friendly name to show yet.
+    }
+
     await upsertCalendarConnection(userId, {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       tokenExpiresAt,
+      calendarName,
     })
     return sendCalendarPopupResponse(res, { success: true })
   } catch (err) {
@@ -139,56 +154,45 @@ function isInsufficientScopeError(err) {
     && err.response?.data?.error?.errors?.some((e) => e.reason === 'insufficientPermissions')
 }
 
-export async function calendarEvents(req, res, next) {
+export async function getCalendarStatus(req, res, next) {
   try {
     if (!isProUser(req.user)) return res.status(403).json({ error: 'Google Calendar is a Pro feature' })
-
     const conn = await getCalendarConnection(req.user.id)
-    if (!conn) return res.status(404).json({ error: 'Not connected' })
-
-    const accessToken = await getValidAccessToken(req.user.id, conn)
-
-    const { timeMin, timeMax } = req.query
-    const hasRange = timeMin || timeMax
-
-    const { data } = await axios.get('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      params: {
-        timeMin: timeMin || new Date().toISOString(),
-        ...(timeMax && { timeMax }),
-        singleEvents: true,
-        orderBy: 'startTime',
-        maxResults: hasRange ? 250 : 10,
-      },
-    })
-
-    const events = (data.items || []).map((e) => ({
-      id: e.id,
-      title: e.summary || '(No title)',
-      start: e.start?.dateTime || e.start?.date,
-      end: e.end?.dateTime || e.end?.date,
-      htmlLink: e.htmlLink,
-    }))
-    res.json({ events })
+    res.json({ connected: !!conn, calendarName: conn?.calendar_name || null })
   } catch (err) {
     next(err)
   }
 }
 
-export async function createCalendarEvent(req, res, next) {
+function formatEventTimeForMessage(start, allDay) {
+  const d = new Date(start)
+  if (allDay) return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })
+  return d.toLocaleString([], { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+// Schedules a meeting on the caller's Google Calendar, invites the other participant in the
+// conversation by email (Google emails them the invite directly — sendUpdates=all is required for
+// that, it's opt-in on Google's side), then posts a real chat message with the event link so
+// everyone stays inside the conversation instead of needing to go find it in their own calendar.
+export async function scheduleMeeting(req, res, next) {
   try {
     if (!isProUser(req.user)) return res.status(403).json({ error: 'Google Calendar is a Pro feature' })
 
-    const { title, description, start, end, allDay } = req.body
-    if (!title?.trim() || !start || !end) {
-      return res.status(400).json({ error: 'title, start and end are required' })
+    const { conversationId, title, description, start, end, allDay } = req.body
+    if (!conversationId || !title?.trim() || !start || !end) {
+      return res.status(400).json({ error: 'conversationId, title, start and end are required' })
     }
+
+    const ok = await isParticipant(conversationId, req.user.id)
+    if (!ok) return res.status(403).json({ error: 'Not a participant' })
 
     const conn = await getCalendarConnection(req.user.id)
     if (!conn) return res.status(404).json({ error: 'Not connected' })
 
     const accessToken = await getValidAccessToken(req.user.id, conn)
+    const attendeeEmail = await getOtherParticipantEmail(conversationId, req.user.id)
 
+    let event
     try {
       const { data } = await axios.post(
         'https://www.googleapis.com/calendar/v3/calendars/primary/events',
@@ -197,24 +201,46 @@ export async function createCalendarEvent(req, res, next) {
           description: description?.trim() || undefined,
           start: allDay ? { date: start } : { dateTime: start },
           end: allDay ? { date: end } : { dateTime: end },
+          ...(attendeeEmail && { attendees: [{ email: attendeeEmail }] }),
         },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: attendeeEmail ? { sendUpdates: 'all' } : undefined,
+        }
       )
-      res.status(201).json({
-        event: {
-          id: data.id,
-          title: data.summary || '(No title)',
-          start: data.start?.dateTime || data.start?.date,
-          end: data.end?.dateTime || data.end?.date,
-          htmlLink: data.htmlLink,
-        },
-      })
+      event = {
+        id: data.id,
+        title: data.summary || '(No title)',
+        start: data.start?.dateTime || data.start?.date,
+        end: data.end?.dateTime || data.end?.date,
+        htmlLink: data.htmlLink,
+      }
     } catch (err) {
       if (isInsufficientScopeError(err)) {
-        return res.status(403).json({ error: 'insufficient_scope', message: 'Reconnect Google Calendar to allow creating events.' })
+        return res.status(403).json({ error: 'insufficient_scope', message: 'Reconnect Google Calendar to allow scheduling meetings.' })
       }
       throw err
     }
+
+    const content = `📅 Scheduled: ${event.title}\n${formatEventTimeForMessage(event.start, allDay)}\n${event.htmlLink}`
+    const msg = await createMessage({ conversationId, senderId: req.user.id, content, messageType: 'text' })
+    const fullMsg = {
+      ...msg,
+      sender_id: req.user.id,
+      sender_name: req.user.full_name,
+      sender_avatar: req.user.avatar_url,
+      sender_display_name: req.user.display_name,
+    }
+
+    const participants = await getParticipants(conversationId)
+    const io = getIo()
+    participants.forEach((p) => {
+      if (p.id !== req.user.id) {
+        io.to(`user:${p.id}`).emit('new-message', fullMsg)
+      }
+    })
+
+    res.status(201).json({ event, message: fullMsg })
   } catch (err) {
     next(err)
   }
