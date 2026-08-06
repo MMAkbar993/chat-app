@@ -221,6 +221,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const [errors, setErrors] = useState({})
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [currentEmail, setCurrentEmail] = useState(profile.email || '')
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const knownRoleValues = INDUSTRY_ROLES.map((r) => r.value)
   const isOtherRole = form.primary_role && !knownRoleValues.includes(form.primary_role) && form.primary_role !== 'other'
@@ -231,6 +232,14 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   } focus:ring-2 focus:ring-violet-400 transition-colors`
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
   const lbl = `text-xs mb-1 flex items-center ${sub}`
+
+  const shareLink = `${window.location.origin}/u/${profile.username}`
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(shareLink).catch(() => {})
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
 
   async function handleAvatar(e) {
     const file = e.target.files?.[0]
@@ -316,6 +325,24 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
           <span className={`text-sm ${sub}`}>@</span>
           <input value={profile.username} disabled className={`flex-1 bg-transparent outline-none text-sm cursor-not-allowed ${darkMode ? 'text-white' : ''}`} />
         </div>
+      </div>
+
+      {/* Share link */}
+      <div>
+        <label className={lbl}>Share Link</label>
+        <div className={`flex items-center rounded-xl border px-4 py-2.5 gap-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+          <input value={shareLink} readOnly className={`flex-1 min-w-0 bg-transparent outline-none text-sm truncate ${darkMode ? 'text-white' : 'text-gray-700'}`} />
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              linkCopied ? 'text-green-600' : 'text-violet-600 hover:bg-violet-50'
+            }`}
+          >
+            {linkCopied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <p className={`text-[11px] mt-1 ${sub}`}>Anyone with this link can message you on Pulse — put it on your website like a contact link.</p>
       </div>
 
       {/* Display name */}
