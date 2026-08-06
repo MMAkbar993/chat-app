@@ -375,7 +375,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>You're an Authorized Representative</h3>
             <p className={`text-sm mt-1 ${sub}`}>
               You have been approved as an authorized representative
-              {profile?.company_name ? ` of ${profile.company_name}` : ''}. Your profile now shows your company affiliation.
+              {profile?.rep_websites?.length > 0
+                ? ` of ${profile.rep_websites.map((w) => w.url.replace(/^https?:\/\//, '')).join(', ')}`
+                : ''}. Your profile now shows your company affiliation.
             </p>
           </div>
         </div>
