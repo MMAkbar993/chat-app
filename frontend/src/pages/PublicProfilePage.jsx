@@ -105,7 +105,7 @@ export default function PublicProfilePage() {
                   ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
                   : initials}
               </div>
-              <div className="pb-1">
+              <div className="pb-1 mt-8">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold text-gray-900">
                     {user.display_name || user.full_name}
