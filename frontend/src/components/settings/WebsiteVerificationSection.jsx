@@ -382,6 +382,39 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           </div>
         </div>
 
+        {/* My pending representation requests — a user already approved for one website can still
+            have a separate request awaiting approval for another; without this, that pending
+            request became invisible the moment this "already approved" view took over the page. */}
+        {myPendingRequests.length > 0 && (
+          <div className={`rounded-2xl border p-4 space-y-2 ${darkMode ? 'border-yellow-800 bg-yellow-900/20' : 'border-yellow-200 bg-yellow-50'}`}>
+            <p className={`text-xs font-semibold ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+              Awaiting Approval
+            </p>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            {myPendingRequests.map((r) => {
+              const ownerName = r.owner_display_name || r.owner_full_name || 'the site owner'
+              return (
+                <div key={r.id} className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-yellow-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className={`text-xs flex-1 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                    Awaiting approval from <span className="font-medium">{ownerName}</span> for{' '}
+                    <span className="font-medium">{r.website_url.replace(/^https?:\/\//, '')}</span>
+                  </span>
+                  <button
+                    onClick={() => handleCancelRequest(r.id)}
+                    disabled={cancellingId === r.id}
+                    className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 shrink-0 font-medium"
+                  >
+                    {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         <div className={`${card} p-5 flex items-center justify-between gap-4 flex-wrap`}>
           <div>
             <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Remove representative status</p>
