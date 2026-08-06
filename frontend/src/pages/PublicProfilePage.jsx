@@ -99,7 +99,7 @@ export default function PublicProfilePage() {
 
           {/* Avatar + name */}
           <div className="px-6 pb-6">
-            <div className="flex items-end gap-4 -mt-12 mb-4">
+            <div className="flex items-end gap-5 -mt-12 mb-4">
               <div className="w-20 h-20 rounded-2xl border-4 border-white overflow-hidden shadow-md flex-shrink-0 bg-violet-600 flex items-center justify-center text-white text-2xl font-bold">
                 {user.avatar_url
                   ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
@@ -216,7 +216,9 @@ export default function PublicProfilePage() {
                           </span>
                         )}
                         <span className="font-medium">{meta.label}</span>
-                        {sc.username && <span className="text-gray-400 text-xs">@{sc.username}</span>}
+                        {/* Facebook has no real public @handle — "username" there is actually the
+                            connected email, so showing it would leak that instead of a handle. */}
+                        {sc.username && sc.platform !== 'facebook' && <span className="text-gray-400 text-xs">@{sc.username}</span>}
                       </a>
                     )
                   })}
