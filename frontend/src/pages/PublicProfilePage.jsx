@@ -97,30 +97,42 @@ export default function PublicProfilePage() {
       <main className="max-w-2xl mx-auto px-6 py-10">
         {/* Profile card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Banner */}
-          <div className="h-24 bg-gradient-to-r from-violet-600 to-violet-800" />
-
-          {/* Avatar + name */}
-          <div className="px-6 pb-6">
-            <div className="flex items-end gap-5 -mt-12 mb-4">
-              <div className="w-20 h-20 rounded-2xl border-4 border-white overflow-hidden shadow-md flex-shrink-0 bg-violet-600 flex items-center justify-center text-white text-2xl font-bold">
+          {/* Banner — avatar, name, username and Send Message all live inside it now, white text on purple */}
+          <div className="bg-gradient-to-r from-violet-600 to-violet-800 px-6 py-6 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-2xl border-4 border-white overflow-hidden shadow-md flex-shrink-0 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
                 {user.avatar_url
                   ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
                   : initials}
               </div>
-              <div className="pb-1 mt-12">
+              <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-gray-900">
+                  <h1 className="text-xl font-bold text-white">
                     {user.display_name || user.full_name}
                   </h1>
                   {user.is_verified && (
-                    <span title="KYC Verified" className="w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center text-white text-xs">✓</span>
+                    <span title="KYC Verified" className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-white text-xs">✓</span>
                   )}
                 </div>
-                <p className="text-gray-500 text-sm">@{user.username}</p>
+                <p className="text-violet-200 text-sm">@{user.username}</p>
               </div>
             </div>
 
+            {!isSelf && (
+              <button
+                onClick={handleSendMessage}
+                disabled={authLoading}
+                className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors border border-white/30 shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Send Message
+              </button>
+            )}
+          </div>
+
+          <div className="px-6 pt-5 pb-6">
             {/* Role + location */}
             <div className="flex flex-wrap gap-2 mb-4">
               {user.primary_role && (
@@ -217,28 +229,14 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* Connect CTA */}
-        <div className="mt-6 flex flex-col items-center gap-3">
-          {!isSelf && (
-            <>
-              <button
-                onClick={handleSendMessage}
-                disabled={authLoading}
-                className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-colors shadow-sm"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                Send Message
-              </button>
-              {!authUser && (
-                <p className="text-xs text-gray-400">
-                  New here? <Link to="/signup" onClick={() => localStorage.setItem(PENDING_DM_KEY, username)} className="text-violet-600 hover:underline">Create a free account</Link>
-                </p>
-              )}
-            </>
-          )}
-        </div>
+        {/* "New here?" — the Send Message button itself now lives in the banner above */}
+        {!isSelf && !authUser && (
+          <div className="mt-4 flex justify-center">
+            <p className="text-xs text-gray-400">
+              New here? <Link to="/signup" onClick={() => localStorage.setItem(PENDING_DM_KEY, username)} className="text-violet-600 hover:underline">Create a free account</Link>
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )
