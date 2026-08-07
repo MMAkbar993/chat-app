@@ -4,6 +4,7 @@ import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { listGroups, createGroup, getGroup, updateGroup, addMember, removeMember, leaveGroup, uploadGroupAvatar } from '../controllers/group.controller.js'
+import { imageOnlyFilter } from '../middleware/fileFilters.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.join(__dirname, '../../uploads')
@@ -15,7 +16,7 @@ const storage = multer.diskStorage({
     cb(null, `group-${req.params.id}-${Date.now()}${ext}`)
   },
 })
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } })
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageOnlyFilter })
 
 export const groupRouter = Router()
 groupRouter.use(authMiddleware)

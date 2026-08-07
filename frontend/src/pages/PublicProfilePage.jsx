@@ -140,6 +140,14 @@ export default function PublicProfilePage() {
                   {ROLE_LABELS[user.primary_role] || user.primary_role}
                 </span>
               )}
+              {user.is_verified && (
+                <span title="This user has completed identity verification." className="inline-flex items-center gap-1 bg-green-50 text-green-700 rounded-full px-3 py-1 text-xs font-medium">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  KYC Verified
+                </span>
+              )}
               {user.country && (
                 <span className="bg-gray-100 text-gray-600 rounded-full px-3 py-1 text-xs font-medium">
                   📍 {user.country}
@@ -148,14 +156,6 @@ export default function PublicProfilePage() {
               {joinYear && (
                 <span className="bg-gray-100 text-gray-500 rounded-full px-3 py-1 text-xs">
                   Member since {joinYear}
-                </span>
-              )}
-              {user.is_verified && (
-                <span title="This user has completed identity verification." className="inline-flex items-center gap-1 bg-green-50 text-green-700 rounded-full px-3 py-1 text-xs font-medium">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  KYC Verified
                 </span>
               )}
             </div>

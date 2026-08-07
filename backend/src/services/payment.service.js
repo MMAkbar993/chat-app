@@ -52,7 +52,18 @@ async function getOrCreateStripeCustomer(user) {
   return stripeCustomer.id
 }
 
-export async function createSubscription(userId, planType) {
+// Promo codes are looked up by their human-readable code (e.g. "SAVE20") — that's a separate
+// field from Stripe's internal promo_xxx id, so it has to go through promotionCodes.list rather
+// than being passed straight to subscriptions.create.
+async function resolvePromoCode(promoCode) {
+  if (!promoCode?.trim()) return null
+  const result = await stripe.promotionCodes.list({ code: promoCode.trim(), active: true, limit: 1 })
+  const match = result.data[0]
+  if (!match) throw Object.assign(new Error('Invalid or expired promo code.'), { status: 400 })
+  return match.id
+}
+
+export async function createSubscription(userId, planType, promoCode) {
   const user = await findUserById(userId)
   if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
 
@@ -67,6 +78,7 @@ export async function createSubscription(userId, planType) {
   }
 
   const customerId = await getOrCreateStripeCustomer(user)
+  const promotionCodeId = await resolvePromoCode(promoCode)
 
   const priceId = planType === 'yearly' ? config.stripeYearlyPriceId : config.stripeMonthlyPriceId
 
@@ -76,6 +88,7 @@ export async function createSubscription(userId, planType) {
     payment_behavior: 'default_incomplete',
     payment_settings: { save_default_payment_method: 'on_subscription' },
     expand: ['latest_invoice.payment_intent'],
+    ...(promotionCodeId && { discounts: [{ promotion_code: promotionCodeId }] }),
   })
 
   await updateSubscription(userId, {

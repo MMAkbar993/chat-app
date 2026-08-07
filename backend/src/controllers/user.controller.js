@@ -10,6 +10,14 @@ import {
 import { getIo } from '../socket/index.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail } from '../config/email.js'
 
+// Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
+// can't route around website-in-bio blocking just by dropping the protocol/www prefix.
+const URL_PATTERN = /(https?:\/\/|www\.)\S+|\b[a-z0-9-]+\.(com|net|org|io|co|info|biz|xyz|online|site|app|dev|me|ai|gg|tv|casino|bet|game|shop|club|link)\b/i
+
+function containsUrl(text) {
+  return Boolean(text) && URL_PATTERN.test(text)
+}
+
 async function createNotification(userId, type, data = {}) {
   try {
     const result = await query(
@@ -61,6 +69,13 @@ export async function getProfile(req, res, next) {
 export async function updateProfile(req, res, next) {
   try {
     const { display_name, bio, gender, phone, website, location, country, primary_role, date_of_birth, job_title, company_name } = req.body
+
+    if (containsUrl(bio) || containsUrl(job_title)) {
+      return res.status(400).json({
+        error: 'You cannot include website URLs in your description. All websites must be verified under Settings → Website Verification before they can be added to your profile.',
+      })
+    }
+
     const result = await query(
       `UPDATE users SET
          display_name = COALESCE($1, display_name),

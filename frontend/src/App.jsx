@@ -21,6 +21,7 @@ import SigningInPage from './pages/SigningInPage'
 import { AdminAuthProvider, useAdminAuth } from './admin/context/AdminAuthContext'
 import AdminSignupPage from './admin/pages/AdminSignupPage'
 import AdminLoginPage from './admin/pages/AdminLoginPage'
+import AdminSetup2FAPage from './admin/pages/AdminSetup2FAPage'
 import AdminDashboardPage from './admin/pages/AdminDashboardPage'
 import AdminUsersPage from './admin/pages/AdminUsersPage'
 import AdminGroupsPage from './admin/pages/AdminGroupsPage'
@@ -71,6 +72,7 @@ function AdminProtectedRoute({ children }) {
   const { admin, loading } = useAdminAuth()
   if (loading) return <Spinner />
   if (!admin) return <Navigate to="/admin/login" replace />
+  if (admin.mustSetup2FA) return <AdminSetup2FAPage />
   return <AdminLayout>{children}</AdminLayout>
 }
 

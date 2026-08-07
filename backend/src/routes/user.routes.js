@@ -16,6 +16,7 @@ import {
   markTourSeenHandler,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler, submitFeedback } from '../controllers/user_actions.controller.js'
+import { imageOnlyFilter } from '../middleware/fileFilters.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.join(__dirname, '../../uploads')
@@ -27,7 +28,7 @@ const storage = multer.diskStorage({
     cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`)
   },
 })
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } })
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageOnlyFilter })
 
 export const userRouter = Router()
 

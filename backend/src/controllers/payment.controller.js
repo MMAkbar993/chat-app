@@ -11,8 +11,8 @@ export const createSubscriptionValidators = [
 
 export async function createSubscriptionHandler(req, res, next) {
   try {
-    const { planType } = req.body
-    const result = await createSubscription(req.user.id, planType)
+    const { planType, promoCode } = req.body
+    const result = await createSubscription(req.user.id, planType, promoCode)
     res.json(result)
   } catch (err) {
     next(err)

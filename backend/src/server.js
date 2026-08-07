@@ -20,11 +20,17 @@ import { uploadRouter } from './routes/upload.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
 import { ogRouter } from './routes/og.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { apiLimiter } from './middleware/rateLimit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export function createApp() {
   const app = express()
+
+  // Production runs behind Nginx — without this, express-rate-limit (and anything else keyed on
+  // req.ip) sees Nginx's own IP for every request instead of the real client, either rate-limiting
+  // everyone as one bucket or not working at all.
+  app.set('trust proxy', 1)
 
   // crossOriginOpenerPolicy disabled: the OAuth connect/callback routes (calendar, social) are
   // opened as popups from the main app and need window.opener to postMessage results back and
@@ -32,8 +38,29 @@ export function createApp() {
   // navigates here, since the parent SPA (served statically by Nginx) has no COOP header at all —
   // the mismatch breaks both the popup's own window.close() and postMessage to the opener.
   app.use(helmet({ crossOriginOpenerPolicy: false }))
-  app.use(cors({ origin: config.frontendUrl, credentials: true }))
+
+  // Strict origin whitelist (config.corsOrigins, from CORS_ORIGINS/FRONTEND_URL) instead of a
+  // wildcard — required since credentials:true is set (browsers refuse `*` + credentials
+  // together anyway, but an unbounded reflect-any-origin function would be just as unsafe for a
+  // credentialed, cookie/token-bearing API). Requests with no Origin header (server-to-server
+  // webhooks, curl, mobile clients) skip the check entirely — Origin is a browser-only header.
+  app.use(cors({
+    origin(origin, callback) {
+      if (!origin || config.corsOrigins.includes(origin)) return callback(null, true)
+      callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }))
   app.use(cookieParser())
+
+  // Baseline abuse/cost protection on every API request; sensitive routes (auth, password reset,
+  // admin) additionally stack a tighter route-specific limiter on top (see rateLimit.js).
+  app.use('/api', apiLimiter)
+  app.use('/u', apiLimiter)
+  app.use('/connect', apiLimiter)
+  app.use('/uploads', apiLimiter)
 
   app.use('/api/payment/webhook', express.raw({ type: 'application/json' }))
   app.use('/api/kyc/webhook', express.raw({ type: 'application/json' }))

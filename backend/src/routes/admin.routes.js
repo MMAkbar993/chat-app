@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { adminAuthMiddleware } from '../middleware/adminAuth.js'
+import { adminAuthLimiter, adminSignupLimiter } from '../middleware/rateLimit.js'
 import {
   adminSignup,
   adminLogin,
+  adminTwoFactorVerify,
   adminMe,
   dashboard,
   listUsers,
@@ -32,8 +34,9 @@ import {
 export const adminRouter = Router()
 
 // Public
-adminRouter.post('/signup', adminSignup)
-adminRouter.post('/login', adminLogin)
+adminRouter.post('/signup', adminSignupLimiter, adminSignup)
+adminRouter.post('/login', adminAuthLimiter, adminLogin)
+adminRouter.post('/2fa-verify', adminAuthLimiter, adminTwoFactorVerify)
 
 // Protected — all routes below require admin token
 adminRouter.use(adminAuthMiddleware)
