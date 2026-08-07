@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { FaFacebook, FaLinkedin, FaYoutube, FaInstagram, FaTwitch } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
+import { SiKick } from 'react-icons/si'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { PENDING_DM_KEY } from '../utils/pendingDm'
 
 const PLATFORM_META = {
-  linkedin:           { label: 'LinkedIn',          color: '#0A66C2', icon: 'in' },
-  youtube:            { label: 'YouTube',            color: '#FF0000', icon: '▶' },
-  facebook:           { label: 'Facebook',           color: '#1877F2', icon: 'f' },
-  instagram:          { label: 'Instagram',          color: '#E1306C', icon: '◎' },
-  twitter:            { label: 'X (Twitter)',        color: '#000000', icon: '𝕏' },
-  twitch:             { label: 'Twitch',             color: '#9147FF', icon: '◈' },
-  kick:               { label: 'Kick',               color: '#53FC18', icon: '▸' },
+  linkedin:           { label: 'LinkedIn',          color: '#0A66C2', Icon: FaLinkedin },
+  youtube:            { label: 'YouTube',            color: '#FF0000', Icon: FaYoutube },
+  facebook:           { label: 'Facebook',           color: '#1877F2', Icon: FaFacebook },
+  instagram:          { label: 'Instagram',          color: '#E1306C', Icon: FaInstagram },
+  twitter:            { label: 'X (Twitter)',        color: '#000000', Icon: FaXTwitter },
+  twitch:             { label: 'Twitch',             color: '#9147FF', Icon: FaTwitch },
+  kick:               { label: 'Kick',               color: '#53FC18', Icon: SiKick },
   affiliate_roulette: { label: 'Affiliate Roulette', color: '#7C3AED', img: '/affiliate-roulette-icon.png' },
 }
 
@@ -188,7 +191,7 @@ export default function PublicProfilePage() {
                 <h2 className="text-sm font-semibold text-gray-700 mb-3">Verified Accounts</h2>
                 <div className="flex flex-wrap gap-2">
                   {user.social_connections.map((sc) => {
-                    const meta = PLATFORM_META[sc.platform] || { label: sc.platform, color: '#6b7280', icon: '◉' }
+                    const meta = PLATFORM_META[sc.platform] || { label: sc.platform, color: '#6b7280', Icon: null }
                     return (
                       <a
                         key={sc.platform}
@@ -199,18 +202,12 @@ export default function PublicProfilePage() {
                       >
                         {meta.img ? (
                           <img src={meta.img} alt="" className="w-5 h-5 rounded object-cover" />
+                        ) : meta.Icon ? (
+                          <meta.Icon className="w-5 h-5 shrink-0" style={{ color: meta.color }} />
                         ) : (
-                          <span
-                            className="w-5 h-5 rounded flex items-center justify-center text-white font-bold"
-                            style={{ backgroundColor: meta.color, fontSize: meta.icon.length > 1 ? '7px' : '' }}
-                          >
-                            {meta.icon}
-                          </span>
+                          <span className="w-5 h-5 rounded-full bg-gray-400 shrink-0" />
                         )}
                         <span className="font-medium">{meta.label}</span>
-                        {/* Facebook has no real public @handle — "username" there is actually the
-                            connected email, so showing it would leak that instead of a handle. */}
-                        {sc.username && sc.platform !== 'facebook' && <span className="text-gray-400 text-xs">@{sc.username}</span>}
                       </a>
                     )
                   })}
