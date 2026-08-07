@@ -16,12 +16,13 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
   const [clientSecret, setClientSecret] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [promoCode, setPromoCode] = useState('')
 
   async function handleEnterPayment() {
     setLoading(true)
     setError('')
     try {
-      const res = await client.post('/payment/create-subscription', { planType: selectedPlan })
+      const res = await client.post('/payment/create-subscription', { planType: selectedPlan, promoCode: promoCode.trim() || undefined })
       if (!res.data.clientSecret) {
         // Stripe not configured — subscription activated directly on backend
         if (standalone) {
@@ -70,6 +71,16 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
             <div className="grid grid-cols-2 gap-3 mt-1">
               <PlanCard plan="monthly" selected={selectedPlan === 'monthly'} onSelect={setSelectedPlan} />
               <PlanCard plan="yearly" selected={selectedPlan === 'yearly'} onSelect={setSelectedPlan} />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Promo code (optional)</label>
+              <input
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                placeholder="Enter code"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+              />
             </div>
 
             {error && (

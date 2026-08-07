@@ -1,8 +1,10 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import speakeasy from 'speakeasy'
 import { config } from '../config/env.js'
 import { findUserByEmail } from '../db/queries/users.js'
+import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import {
   findAdminById,
@@ -78,6 +80,10 @@ export async function adminSignup(req, res, next) {
   }
 }
 
+function signAdminToken(user) {
+  return jwt.sign({ id: user.id, email: user.email, isAdmin: true }, config.jwtSecret, { expiresIn: '7d' })
+}
+
 export async function adminLogin(req, res, next) {
   try {
     const { email, password } = req.body
@@ -90,11 +96,55 @@ export async function adminLogin(req, res, next) {
     const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, isAdmin: true },
-      config.jwtSecret,
-      { expiresIn: '7d' }
-    )
+    // 2FA is mandatory for admin accounts. If it's already enabled, hold off issuing the real
+    // admin token until they pass a TOTP challenge. If it's not enabled yet, still let them in
+    // (never hard-lock an admin out at the login step) but flag it so the admin UI forces a
+    // "set up 2FA now" screen before showing the rest of the panel.
+    const twoFa = await getTwoFactorFields(user.id)
+    if (twoFa?.two_factor_enabled) {
+      const tempToken = jwt.sign({ id: user.id, purpose: 'admin-2fa' }, config.jwtSecret, { expiresIn: '10m' })
+      return res.json({ requires2FA: true, tempToken })
+    }
+
+    const token = signAdminToken(user)
+    res.json({
+      token,
+      mustSetup2FA: true,
+      admin: { id: user.id, full_name: user.full_name, email: user.email, avatar_url: user.avatar_url },
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function adminTwoFactorVerify(req, res, next) {
+  try {
+    const { tempToken, code } = req.body
+    if (!tempToken || !code) return res.status(400).json({ error: 'tempToken and code are required' })
+
+    let payload
+    try {
+      payload = jwt.verify(tempToken, config.jwtSecret)
+    } catch {
+      return res.status(400).json({ error: 'Session expired, please log in again' })
+    }
+    if (payload.purpose !== 'admin-2fa') return res.status(400).json({ error: 'Invalid token' })
+
+    const twoFa = await getTwoFactorFields(payload.id)
+    if (!twoFa?.two_factor_secret) return res.status(400).json({ error: 'Invalid state' })
+
+    const valid = speakeasy.totp.verify({
+      secret: twoFa.two_factor_secret,
+      encoding: 'base32',
+      token: code,
+      window: 1,
+    })
+    if (!valid) return res.status(400).json({ error: 'Invalid authenticator code' })
+
+    const user = await findAdminById(payload.id)
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+
+    const token = signAdminToken(user)
     res.json({
       token,
       admin: { id: user.id, full_name: user.full_name, email: user.email, avatar_url: user.avatar_url },
@@ -106,8 +156,10 @@ export async function adminLogin(req, res, next) {
 
 export async function adminMe(req, res, next) {
   try {
-    const admin = await findAdminById(req.admin.id)
-    res.json({ admin })
+    const user = await findAdminById(req.admin.id)
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+    const { two_factor_enabled, ...admin } = user
+    res.json({ admin: { ...admin, mustSetup2FA: !two_factor_enabled } })
   } catch (err) {
     next(err)
   }

@@ -11,6 +11,8 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [tempToken, setTempToken] = useState(null)
+  const [code, setCode] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -18,13 +20,67 @@ export default function AdminLoginPage() {
     setLoading(true)
     try {
       const { data } = await adminClient.post('/login', { email, password })
-      login(data.admin, data.token)
-      navigate('/admin/dashboard')
+      if (data.requires2FA) {
+        setTempToken(data.tempToken)
+      } else {
+        login({ ...data.admin, mustSetup2FA: data.mustSetup2FA }, data.token)
+        navigate('/admin/dashboard')
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleVerify(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const { data } = await adminClient.post('/2fa-verify', { tempToken, code })
+      login(data.admin, data.token)
+      navigate('/admin/dashboard')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Invalid code')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (tempToken) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-violet-600 rounded-2xl mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white">Two-Factor Authentication</h1>
+            <p className="text-slate-400 text-sm mt-1">Enter the 6-digit code from your authenticator app</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-2xl p-8">
+            <form onSubmit={handleVerify} className="space-y-5">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>
+              )}
+              <input
+                type="text" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)}
+                required maxLength={6} autoFocus placeholder="000000"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors"
+              />
+              <button type="submit" disabled={loading}
+                className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold rounded-xl px-6 py-3 transition-colors flex items-center justify-center gap-2">
+                {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Verify
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

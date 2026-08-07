@@ -7,7 +7,7 @@ const PRO_SQL = `subscription_plan IN ('monthly','yearly') AND subscription_stat
 
 export async function findAdminById(id) {
   const result = await query(
-    `SELECT id, full_name, email, avatar_url, is_admin FROM users WHERE id = $1 AND is_admin = true`,
+    `SELECT id, full_name, email, avatar_url, is_admin, two_factor_enabled FROM users WHERE id = $1 AND is_admin = true`,
     [id]
   )
   return result.rows[0] || null

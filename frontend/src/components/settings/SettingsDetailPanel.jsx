@@ -219,6 +219,8 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState({})
+  const [saveError, setSaveError] = useState('')
+  const [avatarError, setAvatarError] = useState('')
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [currentEmail, setCurrentEmail] = useState(profile.email || '')
   const [linkCopied, setLinkCopied] = useState(false)
@@ -244,10 +246,13 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   async function handleAvatar(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    setAvatarError('')
     try {
       const data = await uploadAvatar(file)
       setUser((prev) => ({ ...prev, avatar_url: data.avatarUrl }))
-    } catch {}
+    } catch (err) {
+      setAvatarError(err.response?.data?.error || 'Could not upload image.')
+    }
   }
 
   function validate() {
@@ -264,6 +269,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     setErrors(errs)
     if (Object.keys(errs).length) return
     setSaving(true)
+    setSaveError('')
     try {
       const payload = {
         display_name:  displayMode === 'firstname' ? firstNameOf(profile.full_name) : profile.full_name,
@@ -282,7 +288,9 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
       onSaved?.()
-    } catch {}
+    } catch (err) {
+      setSaveError(err.response?.data?.error || 'Could not save changes.')
+    }
     setSaving(false)
   }
 
@@ -308,6 +316,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
       </div>
+      {avatarError && <p className="text-xs text-red-500 text-center -mt-1 mb-2">{avatarError}</p>}
 
       {/* First Name (locked) */}
       <div>
@@ -410,6 +419,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       <div>
         <label className={lbl}>About</label>
         <textarea value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} rows={3} placeholder="Tell people about yourself…" className={`${inp} resize-none`} />
+        {saveError && <p className="text-xs text-red-500 mt-1">{saveError}</p>}
       </div>
 
       {/* Industry Role */}
