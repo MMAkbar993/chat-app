@@ -1,6 +1,6 @@
 import { body } from 'express-validator'
 import { validate } from '../middleware/validate.js'
-import { createSubscription, getBillingInfo } from '../services/payment.service.js'
+import { createSubscription, getBillingInfo, cancelSubscription, resumeSubscription } from '../services/payment.service.js'
 import { stripe } from '../config/stripe.js'
 import { config } from '../config/env.js'
 import { handlePaymentWebhook } from '../webhooks/stripeWebhook.js'
@@ -23,6 +23,24 @@ export async function getBillingHandler(req, res, next) {
   try {
     const billing = await getBillingInfo(req.user.id)
     res.json(billing)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function cancelSubscriptionHandler(req, res, next) {
+  try {
+    const result = await cancelSubscription(req.user.id)
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function resumeSubscriptionHandler(req, res, next) {
+  try {
+    const result = await resumeSubscription(req.user.id)
+    res.json(result)
   } catch (err) {
     next(err)
   }
