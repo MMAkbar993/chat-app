@@ -123,7 +123,11 @@ export default function UpgradeModal({ isOpen, onClose }) {
 
       {/* Footer CTA */}
       <div className="px-5 pb-6">
-        {alreadyOnThisTab ? (
+        {tab === 'free' ? (
+          <div className="text-center text-sm text-gray-400 py-2.5">
+            {isProUser(user) ? 'To downgrade, manage your subscription from Billing.' : 'This is your current plan.'}
+          </div>
+        ) : alreadyOnThisTab ? (
           <div className="text-center text-sm text-gray-400 py-2.5">This is your current plan.</div>
         ) : (
           <>
