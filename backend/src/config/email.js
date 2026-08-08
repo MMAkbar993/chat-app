@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer'
 import { query } from './database.js'
+import { config } from './env.js'
 
 const smtpConfigured =
   process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
@@ -216,6 +217,28 @@ export async function sendAdminNewSignupEmail({ username, email, fullName }) {
     return
   }
   await transporter.sendMail({ from: MAIL_FROM, to: SUPPORT_EMAIL, subject, html })
+}
+
+export async function sendInviteEmail(toEmail, { senderName, message }) {
+  const setting = await getEmailSetting('invite')
+  if (setting && !setting.enabled) return
+
+  const signupUrl = `${config.frontendUrl}/signup`
+  const vars = { appName: APP_NAME, senderName: escapeHtml(senderName || 'Someone'), message: escapeHtml(message || ''), signupUrl }
+  const subject = setting ? render(setting.subject, vars) : `${senderName || 'Someone'} invited you to join ${APP_NAME}`
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">${escapeHtml(senderName || 'Someone')} invited you to ${APP_NAME}</h2>
+        <p style="white-space:pre-wrap;border-left:3px solid #7c3aed;padding-left:12px">${escapeHtml(message || '')}</p>
+        <p style="margin-top:20px"><a href="${signupUrl}" style="background:#7c3aed;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;display:inline-block">Join ${APP_NAME}</a></p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Invite email for ${toEmail} from ${senderName}`)
+    return
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: toEmail, subject, html })
 }
 
 export async function sendFeedbackNotification({ type, message, userEmail, username }) {

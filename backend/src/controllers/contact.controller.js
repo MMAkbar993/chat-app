@@ -1,5 +1,8 @@
 import { getContacts, addContact, removeContact, isContact, searchUsers, updateContactNames } from '../db/queries/contacts.js'
 import { query } from '../config/database.js'
+import { sendInviteEmail } from '../config/email.js'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function listContacts(req, res, next) {
   try {
@@ -59,14 +62,23 @@ export async function sendInviteHandler(req, res, next) {
   try {
     const { recipient, message } = req.body
     if (!recipient) return res.status(400).json({ error: 'recipient required' })
-    // Store the invite in DB for audit; actual email delivery can be wired to a mail provider later
+    const to = recipient.trim()
+
     await query(
       `INSERT INTO invitations (sender_id, recipient, message, created_at)
        VALUES ($1, $2, $3, NOW())
        ON CONFLICT DO NOTHING`,
-      [req.user.id, recipient.trim(), message || null]
+      [req.user.id, to, message || null]
     ).catch(() => {})
-    res.json({ ok: true })
+
+    if (!EMAIL_PATTERN.test(to)) {
+      // No SMS provider configured — say so plainly rather than pretending it sent.
+      return res.json({ ok: true, delivered: false, reason: 'SMS invites are not supported yet — only email addresses can be invited right now.' })
+    }
+
+    const senderName = req.user.display_name || req.user.full_name
+    await sendInviteEmail(to, { senderName, message })
+    res.json({ ok: true, delivered: true })
   } catch (err) {
     next(err)
   }
