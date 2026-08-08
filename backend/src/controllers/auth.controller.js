@@ -133,7 +133,7 @@ export async function forgotPassword(req, res, next) {
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
     await saveOtp(user.id, otpHash, expiresAt)
-    await sendPasswordResetOtp(user.email, otp)
+    await sendPasswordResetOtp(user.email, otp, user.display_name || user.full_name)
 
     res.json({ message: 'If that email exists, a code was sent.' })
   } catch (err) {

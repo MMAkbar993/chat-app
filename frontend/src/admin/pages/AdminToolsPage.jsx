@@ -24,16 +24,19 @@ const EMAIL_LABELS = {
   admin_new_signup: 'Admin: New Signup',
 }
 
+// appName and currentYear are available on every template automatically (merged in by the
+// backend's render() for all of them) — listed on each entry below anyway so the admin panel's
+// hint is a complete, accurate list of what that specific template can actually use.
 const EMAIL_PLACEHOLDERS = {
-  password_reset_otp: ['otp'],
-  feedback_notification: ['label', 'username', 'userEmail', 'message'],
-  welcome: ['appName', 'name'],
-  unread_message: ['appName', 'name', 'senderName'],
-  two_factor_enabled: ['appName'],
-  password_changed: ['appName'],
-  email_changed: ['appName', 'newEmail'],
-  website_verified: ['appName', 'url'],
-  admin_new_signup: ['appName', 'username', 'email', 'fullName'],
+  password_reset_otp: ['otp', 'name', 'appName', 'currentYear'],
+  feedback_notification: ['label', 'username', 'userEmail', 'message', 'appName', 'currentYear'],
+  welcome: ['appName', 'name', 'currentYear'],
+  unread_message: ['appName', 'name', 'senderName', 'currentYear'],
+  two_factor_enabled: ['appName', 'currentYear'],
+  password_changed: ['appName', 'currentYear'],
+  email_changed: ['appName', 'newEmail', 'currentYear'],
+  website_verified: ['appName', 'url', 'currentYear'],
+  admin_new_signup: ['appName', 'username', 'email', 'fullName', 'currentYear'],
 }
 
 function BroadcastsSection() {

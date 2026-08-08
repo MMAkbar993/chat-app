@@ -31,8 +31,13 @@ function escapeHtml(str) {
 }
 
 // Renders an admin-editable template (from system_email_settings) by substituting {{placeholders}}.
+// appName/currentYear are merged into every call automatically — an admin editing a template in
+// the panel has no way to know which per-function vars are wired up, so common ones (e.g. a
+// "© {{currentYear}} Pulse" footer) need to just always work rather than depend on every call
+// site remembering to pass them.
 function render(template, vars) {
-  return template.replace(/\{\{(\w+)\}\}/g, (m, key) => (key in vars ? vars[key] : m))
+  const allVars = { appName: APP_NAME, currentYear: new Date().getFullYear(), ...vars }
+  return template.replace(/\{\{(\w+)\}\}/g, (m, key) => (key in allVars ? allVars[key] : m))
 }
 
 async function getEmailSetting(emailKey) {
@@ -43,12 +48,13 @@ async function getEmailSetting(emailKey) {
   return result.rows[0] || null
 }
 
-export async function sendPasswordResetOtp(email, otp) {
+export async function sendPasswordResetOtp(email, otp, name) {
   const setting = await getEmailSetting('password_reset_otp')
   if (setting && !setting.enabled) return
 
-  const subject = setting ? render(setting.subject, { otp }) : 'Your password reset code'
-  const html = setting ? render(setting.body_html, { otp }) : `
+  const vars = { otp, name: escapeHtml(name || 'there') }
+  const subject = setting ? render(setting.subject, vars) : 'Your password reset code'
+  const html = setting ? render(setting.body_html, vars) : `
       <div style="font-family:sans-serif;max-width:480px;margin:auto">
         <h2 style="color:#7c3aed">Reset your password</h2>
         <p>Use the code below to reset your password. It expires in 15 minutes.</p>
