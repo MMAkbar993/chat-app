@@ -24,7 +24,8 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
     try {
       const res = await client.post('/payment/create-subscription', { planType: selectedPlan, promoCode: promoCode.trim() || undefined })
       if (!res.data.clientSecret) {
-        // Stripe not configured — subscription activated directly on backend
+        // No payment step needed — either Stripe isn't configured (dev bypass) or a promo code
+        // fully covered the invoice, so the subscription is already active on the backend.
         if (standalone) {
           onClose()
         } else {
