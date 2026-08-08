@@ -17,6 +17,11 @@ if (smtpConfigured) {
 
 const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@connectar.online'
 const APP_NAME = process.env.APP_NAME || 'Pulse'
+// SMTP_FROM is normally a bare address (e.g. "noreply@domain.com") that gets wrapped in the
+// display name below — but tolerate it already being a full "Name <email>" string too, so a
+// future .env edit that assumes the pre-formatted style doesn't quietly break every outgoing
+// email again (this exact mistake already happened once).
+const MAIL_FROM = /<.+>/.test(FROM) ? FROM : `"${APP_NAME}" <${FROM}>`
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@connectar.online'
 
 const FEEDBACK_TYPE_LABELS = { bug: 'Bug Report', feature: 'Feature Request', other: 'Other' }
@@ -56,7 +61,7 @@ export async function sendPasswordResetOtp(email, otp) {
     console.log(`[DEV] Password reset OTP for ${email}: ${otp}`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
 export async function sendWelcomeEmail(email, name) {
@@ -77,7 +82,7 @@ export async function sendWelcomeEmail(email, name) {
     console.log(`[DEV] Welcome email for ${email}`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
 export async function sendUnreadMessageEmail(email, name, senderName) {
@@ -98,7 +103,7 @@ export async function sendUnreadMessageEmail(email, name, senderName) {
     console.log(`[DEV] Unread message email for ${email} (from ${senderName})`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
 export async function sendTwoFactorEnabledEmail(email) {
@@ -119,7 +124,7 @@ export async function sendTwoFactorEnabledEmail(email) {
     console.log(`[DEV] 2FA enabled email for ${email}`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
 export async function sendPasswordChangedEmail(email) {
@@ -140,7 +145,7 @@ export async function sendPasswordChangedEmail(email) {
     console.log(`[DEV] Password changed email for ${email}`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
 export async function sendEmailChangedEmail(oldEmail, newEmail) {
@@ -161,7 +166,7 @@ export async function sendEmailChangedEmail(oldEmail, newEmail) {
     console.log(`[DEV] Email changed notice for ${oldEmail} (new: ${newEmail})`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: oldEmail, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: oldEmail, subject, html })
 }
 
 export async function sendWebsiteVerifiedEmail(email, url) {
@@ -182,7 +187,7 @@ export async function sendWebsiteVerifiedEmail(email, url) {
     console.log(`[DEV] Website verified email for ${email} (${url})`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: email, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
 export async function sendAdminNewSignupEmail({ username, email, fullName }) {
@@ -204,7 +209,7 @@ export async function sendAdminNewSignupEmail({ username, email, fullName }) {
     console.log(`[DEV] Admin new-signup notice for @${username} (${email})`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: SUPPORT_EMAIL, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: SUPPORT_EMAIL, subject, html })
 }
 
 export async function sendFeedbackNotification({ type, message, userEmail, username }) {
@@ -226,5 +231,5 @@ export async function sendFeedbackNotification({ type, message, userEmail, usern
     console.log(`[DEV] Feedback (${label}) from ${userEmail}: ${message}`)
     return
   }
-  await transporter.sendMail({ from: `"${APP_NAME}" <${FROM}>`, to: SUPPORT_EMAIL, replyTo: userEmail, subject, html })
+  await transporter.sendMail({ from: MAIL_FROM, to: SUPPORT_EMAIL, replyTo: userEmail, subject, html })
 }
