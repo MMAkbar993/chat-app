@@ -8,6 +8,7 @@ export default function InviteOthersModal({ darkMode, onClose }) {
   )
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [notDelivered, setNotDelivered] = useState('')
   const [error, setError] = useState(null)
 
   const cardBg  = darkMode ? 'bg-gray-900 text-white'  : 'bg-white text-gray-900'
@@ -19,7 +20,8 @@ export default function InviteOthersModal({ darkMode, onClose }) {
     setSending(true)
     setError(null)
     try {
-      await sendInvite(recipient.trim(), message.trim())
+      const data = await sendInvite(recipient.trim(), message.trim())
+      setNotDelivered(data.delivered === false ? data.reason : '')
       setSent(true)
     } catch {
       setError('Could not send invitation. Please try again.')
@@ -43,14 +45,20 @@ export default function InviteOthersModal({ darkMode, onClose }) {
 
         {sent ? (
           <div className="py-8 flex flex-col items-center gap-3 text-center">
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${notDelivered ? 'bg-amber-100' : 'bg-green-100'}`}>
+              {notDelivered ? (
+                <svg className="w-7 h-7 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              ) : (
+                <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </div>
-            <p className="font-semibold">Invitation Sent!</p>
+            <p className="font-semibold">{notDelivered ? 'Not Delivered' : 'Invitation Sent!'}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Your invitation has been sent to <strong>{recipient}</strong>.
+              {notDelivered || <>Your invitation has been sent to <strong>{recipient}</strong>.</>}
             </p>
             <button
               onClick={onClose}

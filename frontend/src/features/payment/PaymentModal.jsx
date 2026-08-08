@@ -26,8 +26,10 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
       if (!res.data.clientSecret) {
         // No payment step needed — either Stripe isn't configured (dev bypass) or a promo code
         // fully covered the invoice, so the subscription is already active on the backend.
+        // Still show a real confirmation rather than just vanishing — the account IS upgraded,
+        // the user just has no way to tell unless we say so.
         if (standalone) {
-          onClose()
+          setStep('success')
         } else {
           navigate('/verify')
         }

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Modal from '../../components/ui/Modal'
 import PaymentModal from './PaymentModal'
+import { useAuth } from '../../context/AuthContext'
+import { isProUser } from '../../utils/plan'
 
 const TIERS = [
   { key: 'free', label: 'Free', accent: 'slate' },
@@ -46,9 +48,11 @@ const FEATURES = {
 }
 
 export default function UpgradeModal({ isOpen, onClose }) {
+  const { user } = useAuth()
   const [tab, setTab] = useState('pro')
   const [showPayment, setShowPayment] = useState(false)
   const accent = ACCENT[TIERS.find((t) => t.key === tab).accent]
+  const alreadyOnThisTab = tab === 'free' ? !isProUser(user) : isProUser(user)
 
   function handleClose() {
     setTab('pro')
@@ -119,7 +123,7 @@ export default function UpgradeModal({ isOpen, onClose }) {
 
       {/* Footer CTA */}
       <div className="px-5 pb-6">
-        {tab === 'free' ? (
+        {alreadyOnThisTab ? (
           <div className="text-center text-sm text-gray-400 py-2.5">This is your current plan.</div>
         ) : (
           <>
