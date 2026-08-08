@@ -91,15 +91,23 @@ export async function createSubscription(userId, planType, promoCode) {
     ...(promotionCodeId && { discounts: [{ promotion_code: promotionCodeId }] }),
   })
 
+  // A fully-discounted invoice (e.g. a 100%-off promo code) has nothing to collect, so Stripe
+  // never creates a PaymentIntent for it — latest_invoice.payment_intent is null in that case,
+  // not just unpopulated. The subscription is already active at this point; there's no payment
+  // step for the frontend to run, so clientSecret comes back null (the frontend already treats a
+  // null clientSecret as "nothing left to do here" for the Stripe-not-configured dev path).
+  const paymentIntent = subscription.latest_invoice?.payment_intent
+  const status = paymentIntent ? 'incomplete' : (STRIPE_STATUS_MAP[subscription.status] || 'active')
+
   await updateSubscription(userId, {
     subscriptionId: subscription.id,
     plan: planType,
-    status: 'incomplete',
+    status,
   })
 
   return {
     subscriptionId: subscription.id,
-    clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+    clientSecret: paymentIntent?.client_secret || null,
   }
 }
 
