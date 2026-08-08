@@ -30,13 +30,43 @@ export default function BillingSection({ darkMode }) {
   const [billing, setBilling] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
 
-  useEffect(() => {
-    client.get('/payment/billing')
+  function loadBilling() {
+    return client.get('/payment/billing')
       .then(({ data }) => setBilling(data))
       .catch(() => setBilling(null))
-      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadBilling().finally(() => setLoading(false))
   }, [])
+
+  async function handleCancelPlan() {
+    if (!window.confirm("Cancel your Pro plan? You'll keep access until the end of your current billing period, then you'll drop to the Free plan.")) return
+    setCancelling(true)
+    setCancelError('')
+    try {
+      await client.post('/payment/cancel-subscription')
+      await loadBilling()
+    } catch (err) {
+      setCancelError(err.response?.data?.error || 'Could not cancel your plan. Please try again.')
+    }
+    setCancelling(false)
+  }
+
+  async function handleResumePlan() {
+    setCancelling(true)
+    setCancelError('')
+    try {
+      await client.post('/payment/resume-subscription')
+      await loadBilling()
+    } catch (err) {
+      setCancelError(err.response?.data?.error || 'Could not resume your plan. Please try again.')
+    }
+    setCancelling(false)
+  }
 
   const sub  = dm ? 'text-gray-400' : 'text-gray-500'
   const card = `rounded-2xl border ${dm ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
@@ -89,13 +119,25 @@ export default function BillingSection({ darkMode }) {
               <p className={`text-sm mt-1 ${sub}`}>You're not currently subscribed to a paid plan.</p>
             )}
           </div>
-          <button
-            onClick={() => setShowUpgrade(true)}
-            className="text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl px-4 py-2 transition-colors shrink-0"
-          >
-            {isPaid ? 'Manage Plan' : 'Upgrade'}
-          </button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl px-4 py-2 transition-colors"
+            >
+              {isPaid ? 'Manage Plan' : 'Upgrade'}
+            </button>
+            {isPaid && (
+              <button
+                onClick={billing.cancelAtPeriodEnd ? handleResumePlan : handleCancelPlan}
+                disabled={cancelling}
+                className={`text-xs font-medium disabled:opacity-50 ${billing.cancelAtPeriodEnd ? 'text-violet-500 hover:text-violet-700' : 'text-red-500 hover:text-red-700'}`}
+              >
+                {cancelling ? 'Please wait…' : billing.cancelAtPeriodEnd ? 'Resume Plan' : 'Cancel Plan'}
+              </button>
+            )}
+          </div>
         </div>
+        {cancelError && <p className="text-xs text-red-500 mt-2">{cancelError}</p>}
       </div>
 
       {/* Payment method */}

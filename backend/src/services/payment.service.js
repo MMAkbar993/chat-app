@@ -111,6 +111,36 @@ export async function createSubscription(userId, planType, promoCode) {
   }
 }
 
+function requireRealSubscription(user) {
+  if (!user.stripe_subscription_id || user.stripe_subscription_id === 'dev_bypass') {
+    throw Object.assign(new Error('No active subscription to manage.'), { status: 400 })
+  }
+}
+
+// Schedules cancellation for the end of the current billing period rather than revoking access
+// immediately — the user already paid for this period, and the existing billing UI already
+// anticipates this exact state (it shows "Cancels on {date}" whenever cancel_at_period_end is
+// true), it just never had a way to actually set it until now.
+export async function cancelSubscription(userId) {
+  const user = await findUserById(userId)
+  if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
+  requireRealSubscription(user)
+
+  const subscription = await stripe.subscriptions.update(user.stripe_subscription_id, { cancel_at_period_end: true })
+  return { cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end) }
+}
+
+// Undoes a pending cancellation — only meaningful before the period actually ends (Stripe itself
+// fully cancels the subscription at that point, at which point there's nothing left to resume).
+export async function resumeSubscription(userId) {
+  const user = await findUserById(userId)
+  if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
+  requireRealSubscription(user)
+
+  const subscription = await stripe.subscriptions.update(user.stripe_subscription_id, { cancel_at_period_end: false })
+  return { cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end) }
+}
+
 export async function getBillingInfo(userId) {
   const user = await findUserById(userId)
   if (!user) throw Object.assign(new Error('User not found'), { status: 404 })
