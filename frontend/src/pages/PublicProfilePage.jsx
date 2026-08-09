@@ -136,25 +136,25 @@ export default function PublicProfilePage() {
             {/* Role + location */}
             <div className="flex flex-wrap gap-2 mb-4">
               {user.primary_role && (
-                <span className="bg-violet-50 text-violet-700 rounded-full px-3 py-1 text-xs font-medium">
+                <span className="inline-flex items-center gap-1 bg-white border border-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
                   {ROLE_LABELS[user.primary_role] || user.primary_role}
                 </span>
               )}
               {user.is_verified && (
-                <span title="This user has completed identity verification." className="inline-flex items-center gap-1 bg-green-50 text-green-700 rounded-full px-3 py-1 text-xs font-medium">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <span title="This user has completed identity verification." className="inline-flex items-center gap-1 bg-white border border-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+                  <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   KYC Verified
                 </span>
               )}
               {user.country && (
-                <span className="bg-gray-100 text-gray-600 rounded-full px-3 py-1 text-xs font-medium">
+                <span className="inline-flex items-center gap-1 bg-white border border-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
                   📍 {user.country}
                 </span>
               )}
               {joinYear && (
-                <span className="bg-gray-100 text-gray-500 rounded-full px-3 py-1 text-xs">
+                <span className="inline-flex items-center gap-1 bg-white border border-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
                   Member since {joinYear}
                 </span>
               )}

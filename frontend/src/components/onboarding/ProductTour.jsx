@@ -97,12 +97,18 @@ export default function ProductTour({ hasSeenTour, onMarkSeen, setSection, darkM
   useLayoutEffect(() => {
     if (phase !== 'running') return
     let raf
+    const waitStartedAt = performance.now()
     function measure() {
       const step = steps[stepIndex]
       const target = step && document.querySelector(step.target)
       if (!target) {
         // Target not mounted (e.g. layout still settling after a `before` nav) — retry shortly,
-        // and skip this step entirely if it never shows up.
+        // and skip this step entirely if it never shows up (e.g. a Pro-only element for a user
+        // who's already Pro, where the target will genuinely never exist on the page at all).
+        if (performance.now() - waitStartedAt > 800) {
+          goNext()
+          return
+        }
         raf = requestAnimationFrame(measure)
         return
       }
