@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import client from '../../api/client'
+import { getCallUsage } from '../../api/calls'
 import UpgradeModal from '../../features/payment/UpgradeModal'
+
+function formatMinutes(seconds) {
+  return Math.floor(seconds / 60)
+}
 
 const STATUS_STYLE = {
   active:    { label: 'Active',    bg: 'bg-green-100 text-green-700' },
@@ -28,6 +33,7 @@ const CARD_BRAND_LABEL = {
 export default function BillingSection({ darkMode }) {
   const dm = darkMode
   const [billing, setBilling] = useState(null)
+  const [usage, setUsage] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -41,6 +47,7 @@ export default function BillingSection({ darkMode }) {
 
   useEffect(() => {
     loadBilling().finally(() => setLoading(false))
+    getCallUsage().then(setUsage).catch(() => setUsage(null))
   }, [])
 
   async function handleCancelPlan() {
@@ -139,6 +146,31 @@ export default function BillingSection({ darkMode }) {
         </div>
         {cancelError && <p className="text-xs text-red-500 mt-2">{cancelError}</p>}
       </div>
+
+      {/* Call usage — free plan only; Pro has no cap so there's nothing to track */}
+      {usage && !usage.isPro && (
+        <div className={`${card} p-5`}>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h4 className={`text-sm font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Call Usage This Month</h4>
+            <span className={`text-xs font-medium ${sub}`}>
+              {formatMinutes(usage.usedSeconds)} / {formatMinutes(usage.limitSeconds)} min
+            </span>
+          </div>
+          <div className={`w-full h-2 rounded-full overflow-hidden ${dm ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            <div
+              className={`h-full rounded-full transition-all ${
+                usage.remainingSeconds === 0 ? 'bg-red-500' : usage.usedSeconds / usage.limitSeconds >= 0.75 ? 'bg-amber-500' : 'bg-violet-600'
+              }`}
+              style={{ width: `${Math.min(100, (usage.usedSeconds / usage.limitSeconds) * 100)}%` }}
+            />
+          </div>
+          <p className={`text-xs mt-2 ${sub}`}>
+            {usage.remainingSeconds === 0
+              ? "You've used all your free voice and video call minutes for this month."
+              : `${formatMinutes(usage.remainingSeconds)} min left on Free. Upgrade to Pro for unlimited calls.`}
+          </p>
+        </div>
+      )}
 
       {/* Payment method */}
       <div className={`${card} p-5`}>

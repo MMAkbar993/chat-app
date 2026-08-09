@@ -15,6 +15,7 @@ import {
   deleteConversationForUser,
   clearConversationMessages,
 } from '../db/queries/conversations.js'
+import { addContact } from '../db/queries/contacts.js'
 
 export async function listConversations(req, res, next) {
   try {
@@ -36,6 +37,10 @@ export async function getOrCreateDirect(req, res, next) {
       conv = await createConversation({ type: 'direct', createdBy: req.user.id })
       await addParticipant(conv.id, req.user.id)
       await addParticipant(conv.id, userId)
+      // Starting a DM (e.g. via someone's public profile "Send Message" link) implies you know
+      // each other — mirrors WhatsApp/Telegram, and means they show up in Contacts without an
+      // extra manual step.
+      await addContact(req.user.id, userId)
     }
     const participants = await getParticipants(conv.id)
     const other = participants.find((p) => p.id !== req.user.id)
