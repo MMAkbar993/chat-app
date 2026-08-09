@@ -4,6 +4,7 @@ import { useSocket } from '../../context/SocketContext'
 import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
 import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
+import { isProUser } from '../../utils/plan'
 
 const NAV = [
   { key: 'chats', label: 'Chats', icon: (
@@ -186,17 +187,19 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
 
       <div className="flex-1" />
 
-      {/* Upgrade */}
-      <button
-        title="Upgrade to Premium"
-        data-tour="sidebar-upgrade"
-        onClick={() => setShowUpgrade(true)}
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-1 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm hover:shadow-md hover:brightness-105 transition-all"
-      >
-        <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
-        </svg>
-      </button>
+      {/* Upgrade — hidden once the account is already Pro, nothing left to upgrade to */}
+      {!isProUser(user) && (
+        <button
+          title="Upgrade to Premium"
+          data-tour="sidebar-upgrade"
+          onClick={() => setShowUpgrade(true)}
+          className="w-10 h-10 rounded-xl flex items-center justify-center mb-1 bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm hover:shadow-md hover:brightness-105 transition-all"
+        >
+          <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+          </svg>
+        </button>
+      )}
 
       {/* Notification bell */}
       <button
