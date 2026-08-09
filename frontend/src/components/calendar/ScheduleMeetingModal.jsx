@@ -3,6 +3,9 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { getCalendarStatus, scheduleMeeting } from '../../api/calendar'
 import { openSocialOAuthPopup, subscribeSocialOAuthResults } from '../../utils/socialOAuth'
+import { useAuth } from '../../context/AuthContext'
+import { isProUser } from '../../utils/plan'
+import UpgradeModal from '../../features/payment/UpgradeModal'
 
 function toDateInput(d) {
   return d.toISOString().slice(0, 10)
@@ -15,6 +18,7 @@ function addDays(dateStr, n) {
 }
 
 export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, conversationId, darkMode }) {
+  const { user } = useAuth()
   const [status, setStatus] = useState(null) // null = loading, else { connected, calendarName }
   const [needsReconnect, setNeedsReconnect] = useState(false)
   const [title, setTitle] = useState('')
@@ -33,7 +37,7 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, con
       .catch(() => setStatus({ connected: false, calendarName: null }))
   }
 
-  useEffect(() => { if (isOpen) loadStatus() }, [isOpen])
+  useEffect(() => { if (isOpen && isProUser(user)) loadStatus() }, [isOpen, user])
 
   useEffect(() => {
     return subscribeSocialOAuthResults((data) => {
@@ -92,6 +96,10 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, con
   const inputClass = `w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none focus:ring-2 focus:ring-violet-400 ${
     darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900'
   }`
+
+  if (!isProUser(user)) {
+    return <UpgradeModal isOpen={isOpen} onClose={handleClose} />
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md" darkMode={darkMode} scroll>
