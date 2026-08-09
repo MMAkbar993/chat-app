@@ -18,6 +18,9 @@ export async function getConversationsForUser(userId) {
        other_user.avatar_url AS other_user_avatar,
        other_user.display_name AS other_user_display_name,
        other_user.last_seen_at AS other_user_last_seen_at,
+       EXISTS (
+         SELECT 1 FROM contacts ct WHERE ct.user_id = $1 AND ct.contact_id = other_user.id
+       ) AS is_contact,
        COUNT(unread.id) FILTER (WHERE unread.created_at > cp.last_read_at) AS unread_count
      FROM conversations c
      JOIN conversation_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1 AND NOT cp.is_hidden
