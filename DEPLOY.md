@@ -89,8 +89,12 @@ SSH into your VPS as root:
 ```bash
 ssh root@5.189.143.148
 fijnar-geZrub-7buzsy
-cd /var/www/chat  
+cd /var/www/chat
 git pull origin main
+cd backend && npm install && npm run db:migrate && cd ..
+cd frontend && npm install && npm run build && cd ..
+pm2 reload chat-backend --update-env
+
 
 pm2 restart all
 npm run db:migrate

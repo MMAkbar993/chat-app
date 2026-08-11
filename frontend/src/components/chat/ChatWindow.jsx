@@ -538,7 +538,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
               <button
                 onClick={handleAddContact}
                 disabled={addingContact}
-                className="text-xs font-semibold text-violet-600 hover:text-violet-800 disabled:opacity-50"
+                className={`text-xs font-semibold disabled:opacity-50 ${darkMode ? 'text-gray-200 hover:text-white' : 'text-amber-900 hover:text-amber-950'}`}
               >
                 {addingContact ? 'Adding…' : 'Add Contact'}
               </button>
