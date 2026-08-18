@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
-import { getCalendarStatus, scheduleMeeting } from '../../api/calendar'
+import { getCalendarStatus, scheduleMeeting, disconnectCalendar } from '../../api/calendar'
 import { openSocialOAuthPopup, subscribeSocialOAuthResults } from '../../utils/socialOAuth'
 import { useAuth } from '../../context/AuthContext'
 import { isProUser } from '../../utils/plan'
@@ -29,6 +29,7 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, con
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [disconnecting, setDisconnecting] = useState(false)
 
   const loadStatus = () => {
     setStatus(null)
@@ -58,6 +59,18 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, con
   function handleConnect() {
     const { blocked } = openSocialOAuthPopup('calendar', { path: '/api/calendar/connect' })
     if (blocked) setError('Popup was blocked. Allow popups for this site and try again.')
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true)
+    setError('')
+    try {
+      await disconnectCalendar()
+      loadStatus()
+    } catch {
+      setError('Could not disconnect. Please try again.')
+    }
+    setDisconnecting(false)
   }
 
   async function handleSubmit(e) {
@@ -125,9 +138,19 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, con
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Scheduling on: <span className="font-medium">{status.calendarName || 'your Google Calendar'}</span>
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Scheduling on: <span className="font-medium">{status.calendarName || 'your Google Calendar'}</span>
+              </p>
+              <button
+                type="button"
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                className={`shrink-0 text-xs font-medium disabled:opacity-50 ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
+              >
+                {disconnecting ? 'Disconnecting…' : 'Disconnect'}
+              </button>
+            </div>
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>

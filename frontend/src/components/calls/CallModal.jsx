@@ -31,6 +31,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   const [muted, setMuted] = useState(false)
   const [videoOff, setVideoOff] = useState(false)
   const [speakerOn, setSpeakerOn] = useState(false)
+  const [speakerSupported, setSpeakerSupported] = useState(true)
   const [elapsed, setElapsed] = useState(0)
   const [sharingScreen, setSharingScreen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
@@ -192,6 +193,29 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
     }
     cleanup()
     onEnd?.()
+  }
+
+  useEffect(() => {
+    if (isVideo) return
+    // setSinkId (output-device selection) is how the web platform exposes "which speaker plays this
+    // audio" — there is no separate earpiece/loudspeaker concept in browser APIs. Safari (desktop and
+    // iOS) and Firefox don't implement it at all, so on those the button can't actually do anything.
+    setSpeakerSupported(typeof remoteAudioRef.current?.setSinkId === 'function')
+  }, [isVideo])
+
+  async function toggleSpeaker() {
+    const audioEl = remoteAudioRef.current
+    if (!audioEl?.setSinkId) return
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const outputs = devices.filter((d) => d.kind === 'audiooutput')
+      const speakerDevice = outputs.find((d) => /speaker/i.test(d.label))
+      const nextOn = !speakerOn
+      await audioEl.setSinkId(nextOn ? (speakerDevice?.deviceId || '') : '')
+      setSpeakerOn(nextOn)
+    } catch {
+      // setSinkId rejected (e.g. permission not granted, device removed) — leave state unchanged
+    }
   }
 
   function toggleMute() {
@@ -379,8 +403,10 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
           {!isVideo && (
             <div className="flex flex-col items-center gap-2">
               <button
-                onClick={() => setSpeakerOn((s) => !s)}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+                onClick={toggleSpeaker}
+                disabled={!speakerSupported}
+                title={speakerSupported ? undefined : "Not supported by this browser — audio output can't be switched from the page."}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   speakerOn ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
                 }`}
               >

@@ -3,6 +3,7 @@ import { getMyProfile, updateProfile, uploadAvatar } from '../../api/users'
 import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
+import { useToast } from '../../context/ToastContext'
 import TwoFactorSection from './TwoFactorSection'
 import SocialLinksSection from './SocialLinksSection'
 import PasswordSection from './PasswordSection'
@@ -200,7 +201,9 @@ function ChangeEmailModal({ currentEmail, darkMode, onClose, onChanged }) {
 
 function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const { setUser } = useAuth()
+  const { showToast } = useToast()
   const fileRef = useRef(null)
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
   const [form, setForm] = useState({
     bio:           profile.bio || '',
     gender:        profile.gender || '',
@@ -249,7 +252,13 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     setAvatarError('')
     try {
       const data = await uploadAvatar(file)
+      // Uploads apply immediately server-side (no separate Save step) — update the preview
+      // straight from the response instead of waiting on `profile` (a prop that's only
+      // refetched on the next full profile load), otherwise the new photo doesn't visibly
+      // appear until the user hits Save and refreshes.
+      setAvatarUrl(data.avatarUrl)
       setUser((prev) => ({ ...prev, avatar_url: data.avatarUrl }))
+      showToast('Photo uploaded.', 'success')
     } catch (err) {
       setAvatarError(err.response?.data?.error || 'Could not upload image.')
     }
@@ -294,7 +303,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     setSaving(false)
   }
 
-  const avatarSrc = profile.avatar_url
+  const avatarSrc = avatarUrl
   const initials  = ((profile.display_name || profile.full_name || '?')[0]).toUpperCase()
 
   return (

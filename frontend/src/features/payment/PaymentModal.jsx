@@ -57,7 +57,7 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
         {!standalone && <StepIndicator currentStep={step === 'card' ? 2 : 1} />}
 
         {step === 'plan' && (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-900">Choose Your Plan</h2>
             </div>
@@ -71,18 +71,18 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 mt-1">
+            <div className="grid grid-cols-2 gap-3">
               <PlanCard plan="monthly" selected={selectedPlan === 'monthly'} onSelect={setSelectedPlan} />
               <PlanCard plan="yearly" selected={selectedPlan === 'yearly'} onSelect={setSelectedPlan} />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Promo code (optional)</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Promo code (optional)</label>
               <input
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Enter code"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors"
               />
             </div>
 
@@ -124,8 +124,41 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
                   theme: 'stripe',
                   variables: {
                     colorPrimary: '#7C3AED',
+                    colorBackground: '#ffffff',
+                    colorText: '#111827',
+                    colorTextSecondary: '#6b7280',
+                    colorDanger: '#dc2626',
                     borderRadius: '12px',
                     fontFamily: 'inherit',
+                    fontSizeBase: '14px',
+                    spacingGridRow: '12px',
+                  },
+                  rules: {
+                    '.Input': {
+                      border: '1px solid #e5e7eb',
+                      boxShadow: 'none',
+                      padding: '10px 14px',
+                    },
+                    '.Input:focus': {
+                      border: '1px solid #7C3AED',
+                      boxShadow: '0 0 0 3px rgba(124,58,237,0.15)',
+                    },
+                    '.Label': {
+                      fontWeight: '500',
+                      color: '#6b7280',
+                      marginBottom: '4px',
+                    },
+                    '.Tab': {
+                      border: '1px solid #e5e7eb',
+                      boxShadow: 'none',
+                    },
+                    '.Tab:hover': {
+                      border: '1px solid #c4b5fd',
+                    },
+                    '.Tab--selected': {
+                      border: '1px solid #7C3AED',
+                      boxShadow: '0 0 0 1px #7C3AED',
+                    },
                   },
                 },
               }}

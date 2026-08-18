@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
+import { useChat } from '../../context/ChatContext'
 import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
 import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
@@ -114,12 +115,14 @@ function timeAgo(dateStr) {
 export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDarkMode, mobileHidden }) {
   const { user } = useAuth()
   const { socket } = useSocket()
+  const { conversations } = useChat()
   const [notifications, setNotifications] = useState([])
   const [showPanel, setShowPanel] = useState(false)
   const [showOwnProfile, setShowOwnProfile] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [clearing, setClearing] = useState(false)
   const unread = notifications.filter((n) => !n.read).length
+  const hasUnreadChats = conversations.some((c) => c.unread_count > 0 && !c.is_deleted)
 
   useEffect(() => {
     getNotifications()
@@ -171,7 +174,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
             if (key === 'profile') setShowOwnProfile(true)
             else onNav(key)
           }}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+          className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
             active === key
               ? 'bg-violet-600 text-white'
               : darkMode
@@ -182,6 +185,9 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             {icon}
           </svg>
+          {key === 'chats' && hasUnreadChats && (
+            <span className={`absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ${darkMode ? 'ring-gray-900' : 'ring-white'}`} />
+          )}
         </button>
       ))}
 
