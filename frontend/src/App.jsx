@@ -13,6 +13,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import TwoFactorChallengePage from './pages/TwoFactorChallengePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
+import CookiePolicyPage from './pages/CookiePolicyPage'
+import KycPolicyPage from './pages/KycPolicyPage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import SocialConnectErrorPage from './pages/SocialConnectErrorPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
@@ -106,6 +108,8 @@ export default function App() {
           {/* Public pages (no auth) */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/cookies" element={<CookiePolicyPage />} />
+          <Route path="/kyc-policy" element={<KycPolicyPage />} />
           <Route path="/u/:username" element={<PublicProfilePage />} />
           <Route path="/social-error" element={<SocialConnectErrorPage />} />
 
