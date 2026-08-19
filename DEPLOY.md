@@ -237,7 +237,7 @@ DATABASE_URL=postgres://chatuser:mujeeb@localhost:5432/chatapp
 JWT_SECRET=generate_a_random_64_char_string_here
 JWT_REFRESH_SECRET=generate_a_different_random_64_char_string_here
 
-FRONTEND_URL=https://connectar.online
+FRONTEND_URL=https://pulse.affiliateroulette.com
 
 # Stripe (if using payments)
 STRIPE_SECRET_KEY=sk_live_...
@@ -275,7 +275,7 @@ nano .env
 ```
 
 ```env
-VITE_API_URL=https://connectar.online
+VITE_API_URL=https://pulse.affiliateroulette.com
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
 ```
 
@@ -351,7 +351,7 @@ Check the backend is running:
 ```bash
 pm2 status
 pm2 logs chat-backend
-curl https://connectar.online/api/health   # should return 200 if you have a health route
+curl https://pulse.affiliateroulette.com/api/health   # should return 200 if you have a health route
 ```
 
 ---
@@ -369,7 +369,7 @@ Paste this (replace `yourdomain.com`):
 ```nginx
 server {
     listen 80;
-    server_name https://connectar.online/ www.connectar.online.com;
+    server_name pulse.affiliateroulette.com;
 
     # Increase body size for file uploads
     client_max_body_size 25M;
