@@ -16,14 +16,14 @@ if (smtpConfigured) {
   })
 }
 
-const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@connectar.online'
+const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@pulse.affiliateroulette.com'
 const APP_NAME = process.env.APP_NAME || 'Pulse'
 // SMTP_FROM is normally a bare address (e.g. "noreply@domain.com") that gets wrapped in the
 // display name below — but tolerate it already being a full "Name <email>" string too, so a
 // future .env edit that assumes the pre-formatted style doesn't quietly break every outgoing
 // email again (this exact mistake already happened once).
 const MAIL_FROM = /<.+>/.test(FROM) ? FROM : `"${APP_NAME}" <${FROM}>`
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@connectar.online'
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'hello@affiliateroulette.com'
 
 const FEEDBACK_TYPE_LABELS = { bug: 'Bug Report', feature: 'Feature Request', other: 'Other' }
 
