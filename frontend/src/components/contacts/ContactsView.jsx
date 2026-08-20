@@ -20,7 +20,7 @@ import { getContacts, removeContact } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
 import { useChat } from '../../context/ChatContext'
 import AddContactModal from './AddContactModal'
-import ContactDetailModal from './ContactDetailModal'
+import UserProfileModal from '../ui/UserProfileModal'
 import EditContactModal from './EditContactModal'
 import BlockedContactsModal from './BlockedContactsModal'
 import InviteOthersModal from './InviteOthersModal'
@@ -224,14 +224,15 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       )}
 
       {selectedContact && !editContact && (
-        <ContactDetailModal
+        <UserProfileModal
           contact={selectedContact}
+          isOnline={onlineUsers.has(selectedContact.id)}
           darkMode={darkMode}
           onClose={() => setSelectedContact(null)}
-          onChat={() => handleChat(selectedContact)}
-          onCall={(callType) => handleCall(selectedContact, callType)}
-          onDelete={handleDelete}
-          onEdit={(c) => { setEditContact(c) }}
+          onChatStart={() => handleChat(selectedContact)}
+          onCallStart={(callType) => handleCall(selectedContact, callType)}
+          onDeleteContact={handleDelete}
+          onEditContact={(c) => { setEditContact(c) }}
           onBlockToggle={(c, isBlocked) => showToast(isBlocked ? `${c.display_name || c.full_name} blocked.` : `${c.display_name || c.full_name} unblocked.`)}
         />
       )}
