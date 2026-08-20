@@ -22,14 +22,12 @@ import { useChat } from '../../context/ChatContext'
 import AddContactModal from './AddContactModal'
 import UserProfileModal from '../ui/UserProfileModal'
 import EditContactModal from './EditContactModal'
-import BlockedContactsModal from './BlockedContactsModal'
 import InviteOthersModal from './InviteOthersModal'
 
 export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHidden }) {
   const [contacts, setContacts] = useState([])
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
-  const [showBlocked, setShowBlocked] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [selectedContact, setSelectedContact] = useState(null)
   const [editContact, setEditContact] = useState(null)
@@ -109,27 +107,13 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
-        <div className="flex items-center gap-1">
-          {/* Invite button */}
+        <div className="flex items-center gap-2">
+          {/* Invite — blocked contacts already live under Settings, no need to duplicate here */}
           <button
             onClick={() => setShowInvite(true)}
-            title="Invite Others"
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+            className={`text-sm font-medium underline underline-offset-2 transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-800'}`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </button>
-          {/* Blocked contacts button */}
-          <button
-            onClick={() => setShowBlocked(true)}
-            title="Blocked Contacts"
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" strokeWidth={2} />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.93 4.93l14.14 14.14" />
-            </svg>
+            Invite
           </button>
           {/* Add contact button */}
           <button
@@ -213,10 +197,6 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       {/* Modals */}
       {showAdd && (
         <AddContactModal darkMode={darkMode} onClose={() => setShowAdd(false)} onAdded={() => { load(); setShowAdd(false) }} />
-      )}
-
-      {showBlocked && (
-        <BlockedContactsModal darkMode={darkMode} onClose={() => setShowBlocked(false)} />
       )}
 
       {showInvite && (
