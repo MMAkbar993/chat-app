@@ -31,6 +31,7 @@ const INDUSTRY_ROLES = [
   { value: 'investor_advisor',     label: 'Investor / Advisor' },
   { value: 'compliance_legal',     label: 'Compliance & Legal' },
   { value: 'kyc_aml_provider',     label: 'KYC / AML Provider' },
+  { value: 'entrepreneur',         label: 'Entrepreneur' },
   { value: 'other',                label: 'Other' },
 ]
 
