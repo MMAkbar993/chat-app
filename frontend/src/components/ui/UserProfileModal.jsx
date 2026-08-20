@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { getUserById, getMyProfile } from '../../api/users'
+import { getUserById, getMyProfile, blockUser, unblockUser } from '../../api/users'
 import client from '../../api/client'
 import SocialIcon from './SocialIcon'
 import VerifiedBadge from './VerifiedBadge'
+import ConfirmDialog from './ConfirmDialog'
 
 const ROLE_LABELS = {
   affiliate_publisher:  'Affiliate Publisher',
@@ -34,6 +35,24 @@ const SOCIAL_PLATFORMS = [
 ]
 const OAUTH_KEYS = ['facebook', 'twitter', 'instagram', 'youtube', 'kick', 'twitch']
 
+const CONFIRM_MESSAGES = {
+  block: {
+    title: 'Block User',
+    message: 'Blocked contacts will no longer be able to call you or send you messages.',
+    label: 'Block',
+  },
+  unblock: {
+    title: 'Unblock User',
+    message: 'Are you sure you want to unblock this user?',
+    label: 'Unblock',
+  },
+  delete: {
+    title: 'Delete Contact',
+    message: 'Are you sure to delete the contact.',
+    label: 'Delete',
+  },
+}
+
 function getTagline(profile) {
   if (!profile) return null
   const industryRole = ROLE_LABELS[profile.primary_role] || profile.primary_role || null
@@ -56,24 +75,85 @@ function InfoCell({ darkMode, label, value, full }) {
   )
 }
 
-export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, onClose, onCallStart, onEditProfile }) {
+// Contacts pass their raw contact row here (custom name, cached avatar/bio) so those show
+// instantly while the full profile loads, and so this modal can offer the same Chat/Edit/Block/
+// Delete affordances the old Contacts-only ContactDetailModal had — this is now the single
+// component both Contacts and Chats use to view a profile, so the two entry points always match.
+export default function UserProfileModal({
+  userId, isSelf, isOnline, darkMode, onClose, onCallStart, onEditProfile,
+  contact, onChatStart, onEditContact, onDeleteContact, onBlockToggle,
+}) {
   const { user: authUser } = useAuth()
   const [profile, setProfile] = useState(null)
   const [selfSocials, setSelfSocials] = useState([])
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [blocked, setBlocked] = useState(false)
+  const [confirm, setConfirm] = useState(null) // { type: 'block'|'unblock'|'delete' }
+  const [toast, setToast] = useState(null)
   const backdropRef = useRef(null)
+  const menuRef = useRef(null)
+  const effectiveUserId = isSelf ? undefined : (userId || contact?.id)
 
   useEffect(() => {
     if (isSelf) {
       getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
       client.get('/users/me/social').then(({ data }) => setSelfSocials(data.connections || [])).catch(() => {})
-    } else if (userId) {
-      getUserById(userId).then((d) => setProfile(d.user || d)).catch(() => {})
+    } else if (effectiveUserId) {
+      getUserById(effectiveUserId).then((d) => {
+        const u = d.user || d
+        setProfile(u)
+        if (u.is_blocked_by_me) setBlocked(true)
+      }).catch(() => {})
     }
-  }, [userId, isSelf])
+  }, [effectiveUserId, isSelf])
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    if (menuOpen) document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [menuOpen])
+
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  async function handleConfirm() {
+    const type = confirm?.type
+    setConfirm(null)
+    if (type === 'delete') {
+      onDeleteContact?.(contact)
+      onClose()
+    } else if (type === 'block') {
+      try {
+        await blockUser(effectiveUserId)
+        setBlocked(true)
+        showToast(`${name} has been blocked.`)
+        onBlockToggle?.(contact, true)
+      } catch {
+        showToast('Could not block user.', 'error')
+      }
+    } else if (type === 'unblock') {
+      try {
+        await unblockUser(effectiveUserId)
+        setBlocked(false)
+        showToast(`${name} has been unblocked.`)
+        onBlockToggle?.(contact, false)
+      } catch {
+        showToast('Could not unblock user.', 'error')
+      }
+    }
+  }
 
   const dm = darkMode
-  const name = profile?.display_name || profile?.full_name || profile?.username || authUser?.username || '?'
-  const avatar = profile?.avatar_url
+  const contactName = contact?.custom_first_name
+    ? `${contact.custom_first_name} ${contact.custom_last_name || ''}`.trim()
+    : null
+  const name = contactName || profile?.display_name || profile?.full_name || profile?.username || authUser?.username || '?'
+  const avatar = contact?.avatar_url || profile?.avatar_url
+  const bio = contact?.bio || profile?.bio
   const tagline = getTagline(profile)
   const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
   const lbl = `text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`
@@ -111,15 +191,61 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
     >
       <div className={`relative w-[440px] max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
 
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className={`absolute top-3 right-3 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dm ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Menu (Contacts only) + Close */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+          {contact && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dm ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <div className={`absolute right-0 top-9 w-44 rounded-xl shadow-lg z-10 py-1 ${dm ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'}`}>
+                  <button
+                    onClick={() => { setMenuOpen(false); onEditContact?.(contact) }}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                  >
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Contact
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); setConfirm({ type: blocked ? 'unblock' : 'block' }) }}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left ${blocked ? 'text-green-500' : 'text-orange-500'} ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <circle cx="12" cy="12" r="10" strokeWidth={2} />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.93 4.93l14.14 14.14" />
+                    </svg>
+                    {blocked ? 'Unblock' : 'Block'}
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); setConfirm({ type: 'delete' }) }}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-red-500 ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            onClick={onClose}
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dm ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
         <div className="max-h-[85vh] overflow-y-auto">
         {/* Banner + avatar */}
@@ -136,8 +262,19 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
             </div>
 
             {/* Action buttons */}
-            {!isSelf && onCallStart && (
+            {!isSelf && (onCallStart || onChatStart) && (
               <div className="flex gap-2 mt-12">
+                {onChatStart && (
+                  <button
+                    onClick={() => { onChatStart(); onClose() }}
+                    title="Chat"
+                    className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shadow"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   onClick={() => { onCallStart('audio'); onClose() }}
                   className="w-9 h-9 rounded-full bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shadow"
@@ -178,8 +315,14 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
                 {isOnline ? 'Online' : 'Offline'}
               </p>
           }
-          {profile?.bio && (
-            <p className={`text-sm mt-2 ${dm ? 'text-gray-300' : 'text-gray-600'}`}>{profile.bio}</p>
+          {blocked && <span className="text-xs text-orange-500 font-medium">Blocked</span>}
+          {toast && (
+            <div className={`mt-2 px-3 py-2 rounded-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+              {toast.msg}
+            </div>
+          )}
+          {bio && (
+            <p className={`text-sm mt-2 ${dm ? 'text-gray-300' : 'text-gray-600'}`}>{bio}</p>
           )}
 
           {/* Verification badges */}
@@ -267,6 +410,29 @@ export default function UserProfileModal({ userId, isSelf, isOnline, darkMode, o
         </div>
         </div>
       </div>
+
+      {/* Confirmation dialogs (Contacts only) */}
+      {confirm && (
+        <ConfirmDialog
+          open
+          darkMode={dm}
+          title={CONFIRM_MESSAGES[confirm.type]?.title}
+          message={
+            confirm.type === 'delete' ? (
+              <span className="flex flex-col items-center gap-2 text-center">
+                <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {CONFIRM_MESSAGES[confirm.type]?.message}
+              </span>
+            ) : CONFIRM_MESSAGES[confirm.type]?.message
+          }
+          confirmLabel={CONFIRM_MESSAGES[confirm.type]?.label}
+          variant={confirm.type === 'unblock' ? 'warning' : 'danger'}
+          onConfirm={handleConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </div>
   )
 }

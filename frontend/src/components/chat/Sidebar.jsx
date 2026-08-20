@@ -9,12 +9,8 @@ import { isProUser } from '../../utils/plan'
 
 const NAV = [
   { key: 'chats', label: 'Chats', icon: (
-    <>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M12 9c-.6-1.2-2.2-1.2-2.8 0-.3.7-.1 1.5.6 2.1L12 13l2.2-1.9c.7-.6.9-1.4.6-2.1-.6-1.2-2.2-1.2-2.8 0z" />
-    </>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+      d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
   )},
   { key: 'contacts', label: 'Contacts', icon: (
     <>
@@ -115,10 +111,13 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
   const [clearing, setClearing] = useState(false)
   const unread = notifications.filter((n) => !n.read).length
   const activeConversations = conversations.filter((c) => !c.is_deleted)
-  const chatsUnreadCount = activeConversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)
+  // unread_count comes from a Postgres COUNT(), which node-postgres returns as a string — summing
+  // with `+` unconverted silently does string concatenation ("0" + "1" + "0" = "010") instead of
+  // addition, so every conversation's count must be coerced to a real number first.
+  const chatsUnreadCount = activeConversations.reduce((sum, c) => sum + Number(c.unread_count || 0), 0)
   const groupsUnreadCount = activeConversations
     .filter((c) => c.type === 'group')
-    .reduce((sum, c) => sum + (c.unread_count || 0), 0)
+    .reduce((sum, c) => sum + Number(c.unread_count || 0), 0)
   const NAV_BADGES = { chats: chatsUnreadCount, groups: groupsUnreadCount }
 
   useEffect(() => {
@@ -157,10 +156,11 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
   return (
     <>
     <aside className={`w-16 md:w-64 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col py-5 border-r relative ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
-      {/* Logo + wordmark — wordmark only fits once the sidebar expands at md: */}
-      <div className="flex items-center justify-center md:justify-start gap-2.5 px-2 md:px-5 mb-6 shrink-0">
-        <img src="/Icon.png" alt="logo" className="w-8 h-8 shrink-0" />
-        <span className={`hidden md:inline text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Pulse</span>
+      {/* Logo — the full wordmark only fits once the sidebar expands at md:, so mobile falls
+          back to just the icon glyph */}
+      <div className="flex items-center justify-center md:justify-start px-2 md:px-5 mb-6 shrink-0">
+        <img src="/Icon.png" alt="Pulse" className="w-8 h-8 shrink-0 md:hidden" />
+        <img src="/full-logo.png" alt="Pulse" className="hidden md:block h-7 w-auto" />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 md:px-3 space-y-1 min-h-0">
