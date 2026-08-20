@@ -154,6 +154,7 @@ export default function SignupForm({ onSuccess }) {
             <option value="investor_advisor">Investor / Advisor</option>
             <option value="compliance_legal">Compliance / Legal</option>
             <option value="kyc_aml_provider">KYC / AML Provider</option>
+            <option value="entrepreneur">Entrepreneur</option>
             <option value="other">Other</option>
           </select>
           <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

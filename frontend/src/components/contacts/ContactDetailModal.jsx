@@ -18,6 +18,7 @@ const ROLE_LABELS = {
   investor_advisor:     'Investor / Advisor',
   compliance_legal:     'Compliance & Legal',
   kyc_aml_provider:     'KYC / AML Provider',
+  entrepreneur:         'Entrepreneur',
   other:                'Other',
 }
 
