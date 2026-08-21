@@ -348,6 +348,7 @@ export default function UserProfileModal({
           <div className={`rounded-xl p-4 mt-3 mb-3 ${cardBg}`}>
             <p className={`${lbl} mb-3`}>Personal Information</p>
             <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+              <InfoCell darkMode={dm} label="Industry Role" value={tagline} />
               <InfoCell darkMode={dm} label="Local Time" value={localTime} />
               <InfoCell darkMode={dm} label="Company" value={profile?.company_name} />
               <InfoCell darkMode={dm} label="Job Title" value={profile?.job_title} />
