@@ -16,7 +16,9 @@ export default function InviteOthersModal({ darkMode, onClose }) {
   const labelCls = `text-sm font-medium mb-1.5 block ${darkMode ? 'text-gray-300' : 'text-gray-700'}`
 
   async function handleSend() {
-    if (!recipient.trim()) { setError('Please enter an email address or phone number.'); return }
+    const trimmed = recipient.trim()
+    if (!trimmed) { setError('Please enter an email address.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { setError('Please enter a valid email address.'); return }
     setSending(true)
     setError(null)
     try {
@@ -74,11 +76,12 @@ export default function InviteOthersModal({ darkMode, onClose }) {
             )}
 
             <div className="mb-4">
-              <label className={labelCls}>Email Address or Phone Number</label>
+              <label className={labelCls}>Email Address</label>
               <input
+                type="email"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder="e.g. friend@email.com or +1 555 000 0000"
+                placeholder="e.g. friend@email.com"
                 className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 ${inputBg}`}
               />
             </div>

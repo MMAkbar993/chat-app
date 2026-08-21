@@ -48,7 +48,8 @@ export async function submitFeedback(req, res, next) {
       `INSERT INTO feedback_reports (user_id, type, message) VALUES ($1, $2, $3)`,
       [req.user.id, type, message]
     )
-    sendFeedbackNotification({ type, message, userEmail: req.user.email, username: req.user.username }).catch(() => {})
+    sendFeedbackNotification({ type, message, userEmail: req.user.email, username: req.user.username })
+      .catch((err) => console.error('Feedback notification email failed:', err.message))
     res.json({ ok: true })
   } catch (err) {
     next(err)

@@ -19,28 +19,6 @@ function SectionLabel({ children, darkMode }) {
   )
 }
 
-function DocModal({ title, content, darkMode, onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className={`w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-        <div className={`flex items-center justify-between px-6 py-4 border-b shrink-0 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-          <h2 className="font-bold text-base">{title}</h2>
-          <button onClick={onClose} className={`p-1.5 rounded-lg ${darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className={`flex-1 overflow-y-auto px-6 py-5 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          {content.split('\n\n').map((para, i) => (
-            <p key={i} className="mb-4">{para}</p>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // A flat, Telegram-style row: colored icon badge + label + chevron.
 // Highlights when it's the active/selected section.
 function ListRow({ icon, label, description, active, onClick, darkMode, danger = false, dataTour }) {
@@ -71,17 +49,12 @@ function ListRow({ icon, label, description, active, onClick, darkMode, danger =
 
 // ─── main list ───────────────────────────────────────────────────────────────
 
-const TERMS = `These Terms & Conditions govern your use of this platform. By using the service, you agree to comply with all applicable rules and policies. The platform reserves the right to modify, suspend, or terminate access for violations of these terms. All content shared on the platform remains the responsibility of the user who posted it. Disputes are subject to the jurisdiction of the platform's registered territory.`
-
-const PRIVACY = `Your privacy is important to us. We collect only the information necessary to operate the service, including your name, email, and usage data. We do not sell your personal information to third parties. Data is stored securely and you may request deletion of your account and associated data at any time. Cookies may be used to improve your experience and are governed by our Cookie Policy.`
-
 export default function SettingsView({ darkMode, activeSection, onSelect, mobileHidden, onStartTour }) {
   const { logout } = useAuth()
   const [showBlocked, setShowBlocked] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [showDoc, setShowDoc] = useState(null) // 'terms' | 'privacy'
   const [deleting, setDeleting] = useState(false)
   const [deactivating, setDeactivating] = useState(false)
   const [toast, setToast] = useState(null)
@@ -222,7 +195,7 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
           onClick={() => onSelect('chat')}
           icon={icon('M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', 'bg-green-500')}
           label="Chat"
-          description="Clear history, backup"
+          description="Clear history"
         />
 
         {/* ── NOTIFICATIONS ── */}
@@ -253,14 +226,14 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
           darkMode={dm}
           icon={icon('M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'bg-blue-500')}
           label="Terms & Conditions"
-          onClick={() => setShowDoc('terms')}
+          onClick={() => window.open('/terms', '_blank', 'noopener,noreferrer')}
         />
 
         <ListRow
           darkMode={dm}
           icon={icon('M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'bg-green-500')}
           label="Privacy Policy"
-          onClick={() => setShowDoc('privacy')}
+          onClick={() => window.open('/privacy', '_blank', 'noopener,noreferrer')}
         />
 
         <ListRow
@@ -327,14 +300,6 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
 
       {/* Blocked contacts modal */}
       {showBlocked && <BlockedContactsModal darkMode={dm} onClose={() => setShowBlocked(false)} />}
-
-      {/* Terms & Conditions / Privacy Policy modals */}
-      {showDoc === 'terms' && (
-        <DocModal title="Terms & Conditions" content={TERMS} darkMode={dm} onClose={() => setShowDoc(null)} />
-      )}
-      {showDoc === 'privacy' && (
-        <DocModal title="Privacy Policy" content={PRIVACY} darkMode={dm} onClose={() => setShowDoc(null)} />
-      )}
 
       {/* Deactivate account confirmation */}
       <ConfirmDialog

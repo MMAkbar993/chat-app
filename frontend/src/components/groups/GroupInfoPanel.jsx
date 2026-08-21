@@ -5,7 +5,9 @@ import { useToast } from '../../context/ToastContext'
 import { useSocket } from '../../context/SocketContext'
 import { getGroup, updateGroup, addMember, removeMember, uploadGroupAvatar } from '../../api/groups'
 import { getContacts, searchUsers } from '../../api/contacts'
+import { getOrCreateDirect } from '../../api/conversations'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import UserProfileModal from '../ui/UserProfileModal'
 import client from '../../api/client'
 
 function Accordion({ title, count, darkMode, children }) {
@@ -38,11 +40,12 @@ function Accordion({ title, count, darkMode, children }) {
 
 export default function GroupInfoPanel({ conversation, darkMode, onClose, onCallStart, onSearch }) {
   const { user } = useAuth()
-  const { messages, toggleConversationFlag, removeConversation, dropConversation } = useChat()
+  const { messages, toggleConversationFlag, removeConversation, dropConversation, onlineUsers, openConversation } = useChat()
   const { showToast } = useToast()
   const { socket } = useSocket()
 
   const [participants, setParticipants] = useState([])
+  const [selectedParticipant, setSelectedParticipant] = useState(null)
   const [groupData, setGroupData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [memberSearch, setMemberSearch] = useState('')
@@ -157,6 +160,17 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
       showToast('Member added', 'success')
     } catch {
       showToast('Could not add member', 'error')
+    }
+  }
+
+  async function handleChatWithMember(memberId) {
+    try {
+      const data = await getOrCreateDirect(memberId)
+      openConversation(data.conversation)
+      setSelectedParticipant(null)
+      onClose()
+    } catch {
+      showToast('Could not open chat', 'error')
     }
   }
 
@@ -430,7 +444,11 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
               {filteredParticipants.map((p) => {
                 const pName = p.display_name || p.full_name || p.username || '?'
                 return (
-                  <div key={p.id} className={`flex items-center gap-3 px-3 py-2.5 border-t ${divider}`}>
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedParticipant(p)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 border-t text-left transition-colors ${divider} ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                  >
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
                       {p.avatar_url
                         ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -443,22 +461,27 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                       )}
                     </div>
                     {isAdmin && p.id !== user?.id && (
-                      <button
-                        onClick={() => setConfirm({
-                          title: 'Remove Member',
-                          message: `Remove ${pName} from this group?`,
-                          confirmLabel: 'Remove',
-                          variant: 'danger',
-                          onConfirm: () => handleRemoveMember(p.id),
-                        })}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setConfirm({
+                            title: 'Remove Member',
+                            message: `Remove ${pName} from this group?`,
+                            confirmLabel: 'Remove',
+                            variant: 'danger',
+                            onConfirm: () => handleRemoveMember(p.id),
+                          })
+                        }}
                         className="text-red-400 hover:text-red-500 shrink-0 transition-colors"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
                         </svg>
-                      </button>
+                      </span>
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -595,6 +618,17 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
         onCancel={() => setConfirm(null)}
         darkMode={dm}
       />
+
+      {selectedParticipant && (
+        <UserProfileModal
+          userId={selectedParticipant.id}
+          isSelf={selectedParticipant.id === user?.id}
+          isOnline={onlineUsers?.has(selectedParticipant.id)}
+          darkMode={dm}
+          onClose={() => setSelectedParticipant(null)}
+          onChatStart={() => handleChatWithMember(selectedParticipant.id)}
+        />
+      )}
     </div>
   )
 }

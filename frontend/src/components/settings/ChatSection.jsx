@@ -20,7 +20,6 @@ function Toggle({ on, onClick }) {
 
 export default function ChatSection({ darkMode }) {
   const { loadConversations, closeConversation, setMessages } = useChat()
-  const [backup, setBackup] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [clearing, setClearing] = useState(false)
   const [toast, setToast] = useState(null)
@@ -72,19 +71,6 @@ export default function ChatSection({ darkMode }) {
           </div>
           <Toggle on={false} onClick={() => setShowClearConfirm(true)} />
         </div>
-      </div>
-
-      <div className="flex items-start justify-between gap-3 py-3">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <svg className={`w-4 h-4 mt-0.5 shrink-0 ${sub}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
-          </svg>
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${text}`}>Chat Backup</p>
-            <p className={`text-xs mt-0.5 ${sub}`}>Save a copy of your chats.</p>
-          </div>
-        </div>
-        <Toggle on={backup} onClick={() => setBackup((b) => !b)} />
       </div>
 
       <ConfirmDialog

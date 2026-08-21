@@ -160,7 +160,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           back to just the icon glyph */}
       <div className="flex items-center justify-center md:justify-start px-2 md:px-5 mb-6 shrink-0">
         <img src="/Icon.png" alt="Pulse" className="w-8 h-8 shrink-0 md:hidden" />
-        <img src="/full-logo.png" alt="Pulse" className="hidden md:block h-7 w-auto" />
+        <img src="/full-logo.png" alt="Pulse" className="hidden md:block h-9 w-auto" />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 md:px-3 space-y-1 min-h-0">
