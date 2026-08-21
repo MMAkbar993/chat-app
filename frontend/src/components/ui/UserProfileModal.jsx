@@ -6,23 +6,6 @@ import SocialIcon from './SocialIcon'
 import VerifiedBadge from './VerifiedBadge'
 import ConfirmDialog from './ConfirmDialog'
 
-const ROLE_LABELS = {
-  affiliate_publisher:  'Affiliate Publisher',
-  casino_operator:      'Casino Operator',
-  affiliate_manager:    'Affiliate Manager',
-  game_provider:        'Game Provider',
-  payment_provider:     'Payment Provider',
-  platform_provider:    'Platform Provider',
-  media_seo_agency:     'Media / SEO Agency',
-  event_organizer:      'Event Organizer',
-  influencer_streamer:  'Influencer / Streamer',
-  investor_advisor:     'Investor / Advisor',
-  compliance_legal:     'Compliance & Legal',
-  kyc_aml_provider:     'KYC / AML Provider',
-  entrepreneur:         'Entrepreneur',
-  other:                'Other',
-}
-
 const SOCIAL_PLATFORMS = [
   { name: 'Facebook',  key: 'facebook' },
   { name: 'Twitter',   key: 'twitter' },
@@ -51,13 +34,6 @@ const CONFIRM_MESSAGES = {
     message: 'Are you sure to delete the contact.',
     label: 'Delete',
   },
-}
-
-// Just the industry role — company/job title already have their own row in Personal
-// Information below, so repeating them here as the tagline was redundant.
-function getTagline(profile) {
-  if (!profile) return null
-  return ROLE_LABELS[profile.primary_role] || profile.primary_role || null
 }
 
 function InfoCell({ darkMode, label, value, full }) {
@@ -151,7 +127,6 @@ export default function UserProfileModal({
   const name = contactName || profile?.display_name || profile?.full_name || profile?.username || authUser?.username || '?'
   const avatar = contact?.avatar_url || profile?.avatar_url
   const bio = contact?.bio || profile?.bio
-  const tagline = getTagline(profile)
   const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
   const lbl = `text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`
 
@@ -304,12 +279,11 @@ export default function UserProfileModal({
             )}
           </div>
 
-          {/* Name + tagline */}
+          {/* Name */}
           <p className="font-bold text-lg leading-tight">{name}</p>
           {profile?.username && (
-            <p className={`text-xs ${dm ? 'text-gray-500' : 'text-gray-400'}`}>@{profile.username}</p>
+            <p className={`text-xs mb-1 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>@{profile.username}</p>
           )}
-          {tagline && <p className={`text-sm mb-1 ${dm ? 'text-gray-400' : 'text-gray-500'}`} title={tagline}>{tagline}</p>}
           {isSelf
             ? <p className="text-xs text-green-500 mb-1">Online</p>
             : <p className={`text-xs mb-1 ${isOnline ? 'text-green-500' : dm ? 'text-gray-500' : 'text-gray-400'}`}>
