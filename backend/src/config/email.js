@@ -23,7 +23,7 @@ const APP_NAME = process.env.APP_NAME || 'Pulse'
 // future .env edit that assumes the pre-formatted style doesn't quietly break every outgoing
 // email again (this exact mistake already happened once).
 const MAIL_FROM = /<.+>/.test(FROM) ? FROM : `"${APP_NAME}" <${FROM}>`
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'hello@affiliateroulette.com'
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'pulse@affiliateroulette.com'
 
 const FEEDBACK_TYPE_LABELS = { bug: 'Bug Report', feature: 'Feature Request', other: 'Other' }
 

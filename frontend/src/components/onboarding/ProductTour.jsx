@@ -48,6 +48,7 @@ export default function ProductTour({ hasSeenTour, onMarkSeen, setSection, darkM
   const [stepIndex, setStepIndex] = useState(0)
   const [pos, setPos] = useState(null) // { top, left, spotlight: {top,left,width,height}, arrow }
   const tooltipRef = useRef(null)
+  const scrolledForStepRef = useRef(-1)
 
   const steps = useMemo(() => buildSteps({ setSection }), [setSection])
 
@@ -111,6 +112,14 @@ export default function ProductTour({ hasSeenTour, onMarkSeen, setSection, darkM
         }
         raf = requestAnimationFrame(measure)
         return
+      }
+      // The target may be scrolled out of view inside a scrollable panel (e.g. Settings' list,
+      // if the tour was restarted from "Take a Tour" — itself scrolled down near the bottom of
+      // that same list) — scroll it into view once per step before measuring, or the spotlight/
+      // tooltip anchor to a stale off-screen position.
+      if (scrolledForStepRef.current !== stepIndex) {
+        scrolledForStepRef.current = stepIndex
+        target.scrollIntoView({ block: 'center', behavior: 'instant' })
       }
       const rect = target.getBoundingClientRect()
       const spotlight = { top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12 }
