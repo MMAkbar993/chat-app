@@ -246,7 +246,7 @@ export async function getAllUsers({ search = '', page = 1, limit = 20 } = {}) {
   const offset = (page - 1) * limit
   const pat = `%${search}%`
   const rows = await query(
-    `SELECT id, full_name, email, phone, country, created_at, last_seen_at, avatar_url, is_active, blocked_at
+    `SELECT id, full_name, email, phone, country, created_at, last_seen_at, avatar_url, is_active, blocked_at, kyc_status
      FROM users WHERE is_admin = false
        AND (full_name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1)
      ORDER BY created_at DESC

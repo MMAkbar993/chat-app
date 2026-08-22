@@ -251,7 +251,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const isGroup = activeConversation.type === 'group'
   const otherName = isGroup
     ? activeConversation.name
-    : activeConversation.other_user_display_name || activeConversation.other_user_name || 'Unknown'
+    : activeConversation.other_user_display_name || activeConversation.other_user_name || 'Account Deleted'
 
   const showAddContactBanner = !isGroup
     && activeConversation.other_user_id

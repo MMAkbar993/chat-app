@@ -142,7 +142,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             </div>
             <div className="flex gap-4 px-4 overflow-x-auto pb-3">
               {recent.map((c) => {
-                const fullName = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Unknown')
+                const fullName = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Account Deleted')
                 const firstName = fullName.split(' ')[0]
                 const avatar = c.other_user_avatar || c.avatar_url
                 return (
@@ -202,7 +202,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
           )}
 
           {all.map((c) => {
-            const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Unknown')
+            const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Account Deleted')
             const avatar = c.other_user_avatar || c.avatar_url
             const isActive = activeConversation?.id === c.id
             return (

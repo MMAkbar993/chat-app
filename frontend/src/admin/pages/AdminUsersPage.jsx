@@ -32,13 +32,28 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function Badge({ blocked }) {
+function Badge({ blocked, kycStatus }) {
+  const { label, color } = blocked
+    ? { label: 'Blocked', color: 'red' }
+    : kycStatus === 'verified'
+      ? { label: 'Active', color: 'green' }
+      : kycStatus === 'failed'
+        ? { label: 'Failed KYC', color: 'red' }
+        : { label: 'KYC Pending', color: 'amber' }
+  const colors = {
+    red:   'bg-red-100 text-red-700',
+    green: 'bg-green-100 text-green-700',
+    amber: 'bg-amber-100 text-amber-700',
+  }
+  const dots = {
+    red:   'bg-red-500',
+    green: 'bg-green-500',
+    amber: 'bg-amber-500',
+  }
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-      blocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-    }`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${blocked ? 'bg-red-500' : 'bg-green-500'}`} />
-      {blocked ? 'Blocked' : 'Active'}
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colors[color]}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dots[color]}`} />
+      {label}
     </span>
   )
 }
@@ -511,7 +526,7 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-3 text-gray-500 hidden lg:table-cell">{u.country}</td>
                     <td className="px-6 py-3 text-gray-500 hidden xl:table-cell">{fmtDate(u.created_at)}</td>
                     <td className="px-6 py-3">
-                      <Badge blocked={!!u.blocked_at} />
+                      <Badge blocked={!!u.blocked_at} kycStatus={u.kyc_status} />
                     </td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-2">

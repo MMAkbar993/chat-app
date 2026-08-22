@@ -58,6 +58,7 @@ export default function UserProfileModal({
 }) {
   const { user: authUser } = useAuth()
   const [profile, setProfile] = useState(null)
+  const [notFound, setNotFound] = useState(false)
   const [selfSocials, setSelfSocials] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
   const [blocked, setBlocked] = useState(false)
@@ -75,10 +76,17 @@ export default function UserProfileModal({
       getUserById(effectiveUserId).then((d) => {
         const u = d.user || d
         setProfile(u)
+        setNotFound(false)
         if (u.is_blocked_by_me) setBlocked(true)
-      }).catch(() => {})
+      }).catch((err) => {
+        if (err.response?.status === 404) setNotFound(true)
+      })
     }
   }, [effectiveUserId, isSelf])
+
+  // No id to look up at all (e.g. the other side of a direct conversation whose account was
+  // deleted — other_user_id comes back null) is the same "gone" state as a 404 from the fetch.
+  const accountDeleted = notFound || (!isSelf && !effectiveUserId)
 
   useEffect(() => {
     function onClickOutside(e) {
@@ -124,7 +132,8 @@ export default function UserProfileModal({
   const contactName = contact?.custom_first_name
     ? `${contact.custom_first_name} ${contact.custom_last_name || ''}`.trim()
     : null
-  const name = contactName || profile?.display_name || profile?.full_name || profile?.username || authUser?.username || '?'
+  const name = contactName || profile?.display_name || profile?.full_name || profile?.username
+    || (isSelf ? authUser?.username : null) || (accountDeleted ? 'Account Deleted' : '?')
   const avatar = contact?.avatar_url || profile?.avatar_url
   const bio = contact?.bio || profile?.bio
   const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
@@ -234,7 +243,7 @@ export default function UserProfileModal({
             </div>
 
             {/* Action buttons */}
-            {!isSelf && (onCallStart || onChatStart) && (
+            {!isSelf && !accountDeleted && (onCallStart || onChatStart) && (
               <div className="flex gap-2 mt-12">
                 {onChatStart && (
                   <button
@@ -377,10 +386,15 @@ export default function UserProfileModal({
             </div>
           )}
 
-          {!profile && (
+          {!profile && !accountDeleted && (
             <div className="flex justify-center py-4">
               <div className="w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
             </div>
+          )}
+          {accountDeleted && (
+            <p className={`text-sm text-center py-4 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
+              This account no longer exists.
+            </p>
           )}
         </div>
         </div>
