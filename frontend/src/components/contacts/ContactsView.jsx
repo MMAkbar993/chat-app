@@ -1,20 +1,28 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const ROLE_LABELS = {
-  affiliate_publisher:  'Affiliate Publisher',
-  casino_operator:      'Casino Operator',
-  affiliate_manager:    'Affiliate Manager',
-  game_provider:        'Game Provider',
-  payment_provider:     'Payment Provider',
-  platform_provider:    'Platform Provider',
-  media_seo_agency:     'Media / SEO Agency',
-  event_organizer:      'Event Organizer',
-  influencer_streamer:  'Influencer / Streamer',
-  investor_advisor:     'Investor / Advisor',
-  compliance_legal:     'Compliance & Legal',
-  kyc_aml_provider:     'KYC / AML Provider',
-  entrepreneur:         'Entrepreneur',
-  other:                'Other',
+  affiliate_publisher:          'Affiliate (Publisher)',
+  affiliate_manager:            'Affiliate Manager',
+  affiliate_network:            'Affiliate Network',
+  business_development_sales:   'Business Development / Sales',
+  casino_operator:               'Casino / Operator',
+  compliance_legal:              'Compliance / Legal',
+  data_odds_provider:            'Data / Odds Provider',
+  entrepreneur:                  'Entrepreneur',
+  event_organizer:               'Event Organizer',
+  fraud_risk_provider:           'Fraud / Risk Provider',
+  game_provider:                 'Game Provider',
+  influencer_streamer:           'Influencer / Streamer',
+  investor_advisor:              'Investor / Advisor',
+  kyc_aml_provider:              'KYC / AML Provider',
+  marketing_crm:                 'Marketing / CRM',
+  media_seo_agency:              'Media / SEO Agency',
+  payment_provider:              'Payment Provider',
+  platform_provider:             'Platform Provider (White Label / Turnkey)',
+  recruitment_talent:            'Recruitment / Talent',
+  regulator_licensing:           'Regulator / Licensing',
+  sportsbook_betting_provider:   'Sportsbook / Betting Provider',
+  technology_software_provider:  'Technology / Software Provider',
 }
 import { getContacts, removeContact } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
@@ -184,7 +192,9 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
                     </div>
                     <div className="min-w-0">
                       <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
-                      <p className={`text-xs ${sub}`}>{ROLE_LABELS[c.primary_role] || c.primary_role || c.username}</p>
+                      <p className={`text-xs ${sub}`}>
+                        {(c.primary_role === 'other' ? c.primary_role_other : ROLE_LABELS[c.primary_role]) || c.primary_role || c.username}
+                      </p>
                     </div>
                   </button>
                 )
