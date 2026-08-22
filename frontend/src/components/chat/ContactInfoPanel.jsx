@@ -81,7 +81,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
     } catch {}
   }
 
-  const name = conversation.other_user_display_name || conversation.other_user_name || profile?.display_name || profile?.full_name || 'Unknown'
+  const name = conversation.other_user_display_name || conversation.other_user_name || profile?.display_name || profile?.full_name || 'Account Deleted'
   const avatar = conversation.other_user_avatar || profile?.avatar_url
 
   const SOCIAL_DEFS = [

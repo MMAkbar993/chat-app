@@ -33,7 +33,7 @@ export default function ForwardModal({ darkMode, onClose, onForward }) {
 
         <div className="max-h-64 overflow-y-auto">
           {filtered.map((c) => {
-            const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Unknown')
+            const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Account Deleted')
             const avatar = c.other_user_avatar || c.avatar_url
             return (
               <button
