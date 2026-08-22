@@ -19,20 +19,29 @@ function firstNameOf(fullName) {
 }
 
 const INDUSTRY_ROLES = [
-  { value: 'affiliate_publisher',  label: 'Affiliate Publisher' },
-  { value: 'casino_operator',      label: 'Casino Operator' },
-  { value: 'affiliate_manager',    label: 'Affiliate Manager' },
-  { value: 'game_provider',        label: 'Game Provider' },
-  { value: 'payment_provider',     label: 'Payment Provider' },
-  { value: 'platform_provider',    label: 'Platform Provider' },
-  { value: 'media_seo_agency',     label: 'Media / SEO Agency' },
-  { value: 'event_organizer',      label: 'Event Organizer' },
-  { value: 'influencer_streamer',  label: 'Influencer / Streamer' },
-  { value: 'investor_advisor',     label: 'Investor / Advisor' },
-  { value: 'compliance_legal',     label: 'Compliance & Legal' },
-  { value: 'kyc_aml_provider',     label: 'KYC / AML Provider' },
-  { value: 'entrepreneur',         label: 'Entrepreneur' },
-  { value: 'other',                label: 'Other' },
+  { value: 'affiliate_publisher',          label: 'Affiliate (Publisher)' },
+  { value: 'affiliate_manager',            label: 'Affiliate Manager' },
+  { value: 'affiliate_network',            label: 'Affiliate Network' },
+  { value: 'business_development_sales',   label: 'Business Development / Sales' },
+  { value: 'casino_operator',              label: 'Casino / Operator' },
+  { value: 'compliance_legal',             label: 'Compliance / Legal' },
+  { value: 'data_odds_provider',           label: 'Data / Odds Provider' },
+  { value: 'entrepreneur',                 label: 'Entrepreneur' },
+  { value: 'event_organizer',              label: 'Event Organizer' },
+  { value: 'fraud_risk_provider',          label: 'Fraud / Risk Provider' },
+  { value: 'game_provider',                label: 'Game Provider' },
+  { value: 'influencer_streamer',          label: 'Influencer / Streamer' },
+  { value: 'investor_advisor',             label: 'Investor / Advisor' },
+  { value: 'kyc_aml_provider',             label: 'KYC / AML Provider' },
+  { value: 'marketing_crm',                label: 'Marketing / CRM' },
+  { value: 'media_seo_agency',             label: 'Media / SEO Agency' },
+  { value: 'payment_provider',             label: 'Payment Provider' },
+  { value: 'platform_provider',            label: 'Platform Provider (White Label / Turnkey)' },
+  { value: 'recruitment_talent',           label: 'Recruitment / Talent' },
+  { value: 'regulator_licensing',          label: 'Regulator / Licensing' },
+  { value: 'sportsbook_betting_provider',  label: 'Sportsbook / Betting Provider' },
+  { value: 'technology_software_provider', label: 'Technology / Software Provider' },
+  { value: 'other',                        label: 'Other' },
 ]
 
 const META = {
@@ -212,6 +221,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     location:      profile.location || '',
     country:       profile.country || '',
     primary_role:  profile.primary_role || '',
+    primary_role_other: profile.primary_role_other || '',
     date_of_birth: profile.date_of_birth ? profile.date_of_birth.split('T')[0] : '',
     job_title:     profile.job_title || '',
     company_name:  profile.company_name || '',
@@ -270,6 +280,9 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     if (form.phone && !/^[\d\s\+\-\(\)]+$/.test(form.phone)) {
       errs.phone = 'Phone number can only contain digits, spaces, +, -, ( and ).'
     }
+    if (form.primary_role === 'other' && !form.primary_role_other.trim()) {
+      errs.primary_role_other = 'Please describe your role.'
+    }
     return errs
   }
 
@@ -289,6 +302,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         location:      form.location,
         country:       form.country,
         primary_role:  form.primary_role,
+        primary_role_other: form.primary_role === 'other' ? form.primary_role_other : undefined,
         date_of_birth: form.date_of_birth || undefined,
         job_title:     form.job_title || undefined,
         company_name:  form.company_name || undefined,
@@ -436,7 +450,15 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       <div>
         <label className={lbl}>Industry Role</label>
         <div className="relative">
-          <select value={isOtherRole ? 'other' : form.primary_role} onChange={(e) => setForm((f) => ({ ...f, primary_role: e.target.value }))} className={`${inp} pr-8 appearance-none`}>
+          <select
+            value={isOtherRole ? 'other' : form.primary_role}
+            onChange={(e) => setForm((f) => ({
+              ...f,
+              primary_role: e.target.value,
+              primary_role_other: e.target.value === 'other' ? f.primary_role_other : '',
+            }))}
+            className={`${inp} pr-8 appearance-none`}
+          >
             <option value="">Select a role</option>
             {INDUSTRY_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
@@ -444,6 +466,15 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
+        {(form.primary_role === 'other' || isOtherRole) && (
+          <input
+            value={form.primary_role_other || (isOtherRole ? form.primary_role : '')}
+            onChange={(e) => setForm((f) => ({ ...f, primary_role_other: e.target.value }))}
+            placeholder="Describe your role"
+            className={`${inp} mt-2`}
+          />
+        )}
+        {errors.primary_role_other && <p className="text-xs text-red-500 mt-1">{errors.primary_role_other}</p>}
       </div>
 
       {/* Position */}

@@ -143,18 +143,27 @@ export default function SignupForm({ onSuccess }) {
           >
             <option value="" disabled>Select role</option>
             <option value="affiliate_publisher">Affiliate (Publisher)</option>
-            <option value="casino_operator">Casino / Operator</option>
             <option value="affiliate_manager">Affiliate Manager</option>
-            <option value="game_provider">Game Provider</option>
-            <option value="payment_provider">Payment Provider</option>
-            <option value="platform_provider">Platform Provider (White Label / Turnkey)</option>
-            <option value="media_seo_agency">Media / SEO Agency</option>
+            <option value="affiliate_network">Affiliate Network</option>
+            <option value="business_development_sales">Business Development / Sales</option>
+            <option value="casino_operator">Casino / Operator</option>
+            <option value="compliance_legal">Compliance / Legal</option>
+            <option value="data_odds_provider">Data / Odds Provider</option>
+            <option value="entrepreneur">Entrepreneur</option>
             <option value="event_organizer">Event Organizer</option>
+            <option value="fraud_risk_provider">Fraud / Risk Provider</option>
+            <option value="game_provider">Game Provider</option>
             <option value="influencer_streamer">Influencer / Streamer</option>
             <option value="investor_advisor">Investor / Advisor</option>
-            <option value="compliance_legal">Compliance / Legal</option>
             <option value="kyc_aml_provider">KYC / AML Provider</option>
-            <option value="entrepreneur">Entrepreneur</option>
+            <option value="marketing_crm">Marketing / CRM</option>
+            <option value="media_seo_agency">Media / SEO Agency</option>
+            <option value="payment_provider">Payment Provider</option>
+            <option value="platform_provider">Platform Provider (White Label / Turnkey)</option>
+            <option value="recruitment_talent">Recruitment / Talent</option>
+            <option value="regulator_licensing">Regulator / Licensing</option>
+            <option value="sportsbook_betting_provider">Sportsbook / Betting Provider</option>
+            <option value="technology_software_provider">Technology / Software Provider</option>
             <option value="other">Other</option>
           </select>
           <svg className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

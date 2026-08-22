@@ -3,7 +3,7 @@ import { query } from '../../config/database.js'
 export async function getContacts(userId) {
   const result = await query(
     `SELECT
-       u.id, u.full_name, u.username, u.primary_role, u.avatar_url, u.display_name, u.bio,
+       u.id, u.full_name, u.username, u.primary_role, u.primary_role_other, u.avatar_url, u.display_name, u.bio,
        c.custom_first_name, c.custom_last_name
      FROM contacts c
      JOIN users u ON u.id = c.contact_id

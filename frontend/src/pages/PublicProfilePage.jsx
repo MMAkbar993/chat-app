@@ -19,20 +19,28 @@ const PLATFORM_META = {
 }
 
 const ROLE_LABELS = {
-  affiliate_publisher:   'Affiliate Publisher',
-  casino_operator:       'Casino Operator',
-  affiliate_manager:     'Affiliate Manager',
-  game_provider:         'Game Provider',
-  payment_provider:      'Payment Provider',
-  platform_provider:     'Platform Provider',
-  media_seo_agency:      'Media / SEO Agency',
-  event_organizer:       'Event Organizer',
-  influencer_streamer:   'Influencer / Streamer',
-  investor_advisor:      'Investor / Advisor',
-  compliance_legal:      'Compliance & Legal',
-  kyc_aml_provider:      'KYC / AML Provider',
-  entrepreneur:          'Entrepreneur',
-  other:                 'Other',
+  affiliate_publisher:          'Affiliate (Publisher)',
+  affiliate_manager:            'Affiliate Manager',
+  affiliate_network:            'Affiliate Network',
+  business_development_sales:   'Business Development / Sales',
+  casino_operator:               'Casino / Operator',
+  compliance_legal:              'Compliance / Legal',
+  data_odds_provider:            'Data / Odds Provider',
+  entrepreneur:                  'Entrepreneur',
+  event_organizer:               'Event Organizer',
+  fraud_risk_provider:           'Fraud / Risk Provider',
+  game_provider:                 'Game Provider',
+  influencer_streamer:           'Influencer / Streamer',
+  investor_advisor:              'Investor / Advisor',
+  kyc_aml_provider:              'KYC / AML Provider',
+  marketing_crm:                 'Marketing / CRM',
+  media_seo_agency:              'Media / SEO Agency',
+  payment_provider:              'Payment Provider',
+  platform_provider:             'Platform Provider (White Label / Turnkey)',
+  recruitment_talent:            'Recruitment / Talent',
+  regulator_licensing:           'Regulator / Licensing',
+  sportsbook_betting_provider:   'Sportsbook / Betting Provider',
+  technology_software_provider:  'Technology / Software Provider',
 }
 
 export default function PublicProfilePage() {
@@ -138,7 +146,7 @@ export default function PublicProfilePage() {
             <div className="flex flex-wrap gap-2 mb-4">
               {user.primary_role && (
                 <span className="inline-flex items-center gap-1 bg-white border border-gray-200 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
-                  {ROLE_LABELS[user.primary_role] || user.primary_role}
+                  {(user.primary_role === 'other' ? user.primary_role_other : ROLE_LABELS[user.primary_role]) || user.primary_role}
                 </span>
               )}
               {user.is_verified && (

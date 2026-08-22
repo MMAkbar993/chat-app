@@ -15,7 +15,7 @@ function isStripeConfigured(key) {
   return Boolean(key) && /^sk_(test|live)_[A-Za-z0-9]{20,}/.test(key)
 }
 
-export async function registerUser({ full_name, username, country, email, primary_role, phone, password }) {
+export async function registerUser({ full_name, username, country, email, primary_role, primary_role_other, phone, password }) {
   const existingEmail = await findUserByEmail(email)
   if (existingEmail) {
     const err = new Error('Email already registered')
@@ -33,7 +33,7 @@ export async function registerUser({ full_name, username, country, email, primar
   }
 
   const password_hash = await bcrypt.hash(password, 12)
-  const user = await createUser({ full_name, username, country, email, primary_role, phone, password_hash })
+  const user = await createUser({ full_name, username, country, email, primary_role, primary_role_other, phone, password_hash })
 
   if (isStripeConfigured(config.stripeSecretKey)) {
     try {

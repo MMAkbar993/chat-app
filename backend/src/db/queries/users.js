@@ -1,11 +1,11 @@
 import { query } from '../../config/database.js'
 
-export async function createUser({ full_name, username, country, email, primary_role, phone, password_hash }) {
+export async function createUser({ full_name, username, country, email, primary_role, primary_role_other, phone, password_hash }) {
   const result = await query(
-    `INSERT INTO users (full_name, username, country, email, primary_role, phone, password_hash)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, full_name, username, country, email, primary_role, phone, subscription_status, kyc_status, is_active, created_at`,
-    [full_name, username, country, email, primary_role, phone || null, password_hash]
+    `INSERT INTO users (full_name, username, country, email, primary_role, primary_role_other, phone, password_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id, full_name, username, country, email, primary_role, primary_role_other, phone, subscription_status, kyc_status, is_active, created_at`,
+    [full_name, username, country, email, primary_role, primary_role_other || null, phone || null, password_hash]
   )
   return result.rows[0]
 }
@@ -20,7 +20,7 @@ export async function findUserByEmail(email) {
 
 export async function findUserById(id) {
   const result = await query(
-    `SELECT id, full_name, username, country, location, email, primary_role, phone,
+    `SELECT id, full_name, username, country, location, email, primary_role, primary_role_other, phone,
             stripe_customer_id, stripe_subscription_id, subscription_plan,
             subscription_status, kyc_status, kyc_session_id, is_active, created_at,
             avatar_url, display_name, bio, gender, website, date_of_birth,

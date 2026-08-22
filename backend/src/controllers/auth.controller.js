@@ -40,10 +40,15 @@ export const registerValidators = [
   body('country').trim().notEmpty().withMessage('Country is required'),
   body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('primary_role').isIn([
-    'affiliate_publisher', 'casino_operator', 'affiliate_manager', 'game_provider',
-    'payment_provider', 'platform_provider', 'media_seo_agency', 'event_organizer',
-    'influencer_streamer', 'investor_advisor', 'compliance_legal', 'kyc_aml_provider', 'other',
+    'affiliate_publisher', 'affiliate_manager', 'affiliate_network', 'business_development_sales',
+    'casino_operator', 'compliance_legal', 'data_odds_provider', 'entrepreneur', 'event_organizer',
+    'fraud_risk_provider', 'game_provider', 'influencer_streamer', 'investor_advisor',
+    'kyc_aml_provider', 'marketing_crm', 'media_seo_agency', 'payment_provider', 'platform_provider',
+    'recruitment_talent', 'regulator_licensing', 'sportsbook_betting_provider',
+    'technology_software_provider', 'other',
   ]).withMessage('Invalid primary role'),
+  body('primary_role_other').if(body('primary_role').equals('other'))
+    .trim().notEmpty().withMessage('Please specify your role').isLength({ max: 255 }),
   body('phone').optional({ checkFalsy: true }).matches(/^\+?[0-9\s\-()\+]{7,20}$/).withMessage('Invalid phone number'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('confirm_password').custom((val, { req }) => {
@@ -59,8 +64,12 @@ export const loginValidators = [
 
 export async function register(req, res, next) {
   try {
-    const { full_name, username, country, email, primary_role, phone, password } = req.body
-    const user = await registerUser({ full_name, username, country, email, primary_role, phone, password })
+    const { full_name, username, country, email, primary_role, primary_role_other, phone, password } = req.body
+    const user = await registerUser({
+      full_name, username, country, email, primary_role,
+      primary_role_other: primary_role === 'other' ? primary_role_other : null,
+      phone, password,
+    })
     const { accessToken, refreshToken } = signTokens(user.id, user.email)
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS(process.env.NODE_ENV))
     sendAdminNewSignupEmail({ username: user.username, email: user.email, fullName: user.full_name }).catch(() => {})

@@ -68,7 +68,7 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const { display_name, bio, gender, phone, website, location, country, primary_role, date_of_birth, job_title, company_name } = req.body
+    const { display_name, bio, gender, phone, website, location, country, primary_role, primary_role_other, date_of_birth, job_title, company_name } = req.body
 
     if (containsUrl(bio) || containsUrl(job_title)) {
       return res.status(400).json({
@@ -86,6 +86,7 @@ export async function updateProfile(req, res, next) {
          location = COALESCE($6, location),
          country = COALESCE($7, country),
          primary_role = COALESCE($8, primary_role),
+         primary_role_other = CASE WHEN $8::text IS NOT NULL THEN $13 ELSE primary_role_other END,
          date_of_birth = COALESCE($9::date, date_of_birth),
          job_title = COALESCE($10, job_title),
          company_name = CASE
@@ -95,7 +96,7 @@ export async function updateProfile(req, res, next) {
          END,
          updated_at = NOW()
        WHERE id = $12
-       RETURNING id, full_name, username, country, location, email, primary_role, phone,
+       RETURNING id, full_name, username, country, location, email, primary_role, primary_role_other, phone,
                  avatar_url, display_name, bio, gender, website, date_of_birth,
                  job_title, company_name, website_verified, website_representation_approved,
                  subscription_status, kyc_status, is_active`,
@@ -112,6 +113,7 @@ export async function updateProfile(req, res, next) {
         job_title !== undefined ? (job_title || null) : null,
         company_name !== undefined ? (company_name || null) : null,
         req.user.id,
+        primary_role === 'other' ? (primary_role_other || null) : null,
       ]
     )
     res.json({ user: result.rows[0] })
@@ -134,7 +136,7 @@ export async function uploadAvatar(req, res, next) {
 export async function getUserById(req, res, next) {
   try {
     const result = await query(
-      `SELECT u.id, u.full_name, u.username, u.primary_role, u.avatar_url, u.display_name, u.bio,
+      `SELECT u.id, u.full_name, u.username, u.primary_role, u.primary_role_other, u.avatar_url, u.display_name, u.bio,
               u.country, u.location, u.website, u.created_at, u.date_of_birth,
               u.job_title, u.company_name, u.website_verified, u.website_representation_approved,
               u.kyc_status,
@@ -165,7 +167,7 @@ export async function getUserById(req, res, next) {
 export async function getPublicProfile(req, res, next) {
   try {
     const result = await query(
-      `SELECT id, full_name, username, primary_role, avatar_url, display_name, bio,
+      `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, bio,
               country, kyc_status, created_at, website_verified, website_representation_approved
        FROM users WHERE username = $1`,
       [req.params.username]
@@ -186,6 +188,7 @@ export async function getPublicProfile(req, res, next) {
         username: user.username,
         display_name: user.display_name,
         primary_role: user.primary_role,
+        primary_role_other: user.primary_role_other,
         avatar_url: user.avatar_url,
         bio: user.bio,
         country: user.country,
