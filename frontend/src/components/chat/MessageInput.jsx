@@ -6,6 +6,7 @@ import AttachmentMenu from './AttachmentMenu'
 import EmojiPicker from './EmojiPicker'
 import { playSentSound } from '../../utils/sounds'
 import { getReplyPreviewText, getReplyImageUrl } from '../../utils/replyPreview'
+import { getUploadErrorMessage } from '../../utils/uploadError'
 
 function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
@@ -163,7 +164,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       onClearReply?.()
       discardPreview()
     } catch (err) {
-      showToast(err.response?.data?.error || 'Upload failed. Please try again.', 'error')
+      showToast(getUploadErrorMessage(err), 'error')
     }
     setSending(false)
   }

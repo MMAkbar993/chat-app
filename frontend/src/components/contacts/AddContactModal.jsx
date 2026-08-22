@@ -15,7 +15,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
   }
 
   useEffect(() => {
-    if (q.length < 4) { setResults([]); setLoading(false); return }
+    if (q.trim().replace(/^@/, '').length < 3) { setResults([]); setLoading(false); return }
     setLoading(true)
     const t = setTimeout(async () => {
       try {
@@ -87,7 +87,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by Username or Name"
+            placeholder="Search by exact username"
             className={`flex-1 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
             autoFocus
           />
@@ -95,7 +95,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
 
         {/* Hint */}
         <p className={`text-xs mb-3 px-1 ${sub}`}>
-          Enter at least 4 characters to find people by name, username, or email.
+          Enter someone's exact username to find them.
         </p>
 
         {/* Results */}
@@ -125,7 +125,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
               )}
             </div>
           ))}
-          {!loading && q.length >= 4 && results.length === 0 && (
+          {!loading && q.trim().replace(/^@/, '').length >= 3 && results.length === 0 && (
             <p className={`text-center text-sm py-4 ${sub}`}>No users found</p>
           )}
         </div>

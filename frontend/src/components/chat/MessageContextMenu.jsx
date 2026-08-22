@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 
-export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onClose, isMe, canEdit, darkMode }) {
+export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onClose, isMe, canEdit, darkMode, dir = 'down' }) {
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit,
       ref={menuRef}
       className={`absolute z-50 rounded-2xl shadow-xl py-1.5 px-1.5 ${
         darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
-      } ${isMe ? 'right-0' : 'left-0'} top-0`}
+      } ${isMe ? 'right-0' : 'left-0'} ${dir === 'up' ? 'bottom-0' : 'top-0'}`}
       style={{ minWidth: '13rem' }}
     >
       <button className={itemClass} onClick={() => { onReply(); onClose() }}>

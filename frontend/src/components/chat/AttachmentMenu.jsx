@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { uploadFile } from '../../api/users'
 import { useToast } from '../../context/ToastContext'
+import { getUploadErrorMessage } from '../../utils/uploadError'
 
 function CameraModal({ onCapture, onClose, darkMode }) {
   const videoRef = useRef(null)
@@ -107,7 +108,7 @@ export default function AttachmentMenu({ onClose, onAttach, onPreview, darkMode 
       onAttach(fileUrl, messageType || detectedType)
     } catch (err) {
       console.error('Upload error:', err)
-      showToast(err.response?.data?.error || 'Upload failed. Please try again.', 'error')
+      showToast(getUploadErrorMessage(err), 'error')
       onPreview?.(null, null)
     }
     setUploading(false)
@@ -125,7 +126,7 @@ export default function AttachmentMenu({ onClose, onAttach, onPreview, darkMode 
       onAttach(fileUrl, messageType || 'image')
     } catch (err) {
       console.error('Camera upload error:', err)
-      showToast(err.response?.data?.error || 'Upload failed. Please try again.', 'error')
+      showToast(getUploadErrorMessage(err), 'error')
       onPreview?.(null, null)
     }
     setUploading(false)

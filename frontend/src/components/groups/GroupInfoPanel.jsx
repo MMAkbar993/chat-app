@@ -183,7 +183,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
 
   useEffect(() => {
     if (!showAddMembers) { setUserSearchResults([]); return }
-    if (addSearch.length < 2) { setUserSearchResults([]); return }
+    if (addSearch.trim().replace(/^@/, '').length < 3) { setUserSearchResults([]); return }
     const t = setTimeout(async () => {
       try {
         const data = await searchUsers(addSearch)
@@ -547,12 +547,13 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
             </div>
             <div className="overflow-y-auto flex-1 pb-2">
               {(() => {
-                const pool = addSearch.length >= 2 ? userSearchResults : contacts
+                const searching = addSearch.trim().replace(/^@/, '').length >= 3
+                const pool = searching ? userSearchResults : contacts
                 const available = pool.filter((u) => !participants.some((p) => p.id === u.id))
                 if (available.length === 0) {
                   return (
                     <p className={`text-sm text-center py-6 ${sub}`}>
-                      {addSearch.length >= 2 ? 'No users found' : 'No contacts to add — type a name to search all users'}
+                      {searching ? 'No users found' : 'No contacts to add — type an exact username to search all users'}
                     </p>
                   )
                 }

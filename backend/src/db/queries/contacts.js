@@ -48,15 +48,15 @@ export async function isContact(userId, contactId) {
   return result.rows.length > 0
 }
 
-export async function searchUsers(query_text, excludeUserId, limit = 20) {
+export async function searchUsers(username, excludeUserId, limit = 20) {
   const result = await query(
     `SELECT id, full_name, username, primary_role, avatar_url, display_name
      FROM users
      WHERE id != $2
-       AND (username ILIKE $1 OR full_name ILIKE $1)
+       AND username ILIKE $1
        AND is_active = true
      LIMIT $3`,
-    [`%${query_text}%`, excludeUserId, limit]
+    [username, excludeUserId, limit]
   )
   return result.rows
 }

@@ -65,9 +65,11 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState(null)
   const [pickerDir, setPickerDir] = useState('up')
+  const [menuDir, setMenuDir] = useState('down')
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState(msg.content || '')
   const reactionBtnRef = useRef(null)
+  const menuBtnRef = useRef(null)
 
   const reactions = msg.reactions || []
 
@@ -113,6 +115,17 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
     setShowReactionPicker(false)
   }
 
+  function openMenuFromRect(rect) {
+    setMenuDir(rect && window.innerHeight - rect.bottom < 300 ? 'up' : 'down')
+    setShowMenu(true)
+  }
+
+  function handleContextMenu(e) {
+    e.preventDefault()
+    if (editing) return
+    openMenuFromRect(e.currentTarget.getBoundingClientRect())
+  }
+
   const hasReactions = reactions.length > 0
   const replyImageUrl = getReplyImageUrl({
     messageType: msg.reply_message_type,
@@ -152,7 +165,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
           </p>
         )}
 
-        <div className="relative">
+        <div className="relative" onContextMenu={handleContextMenu}>
           {/* Bubble */}
           <div className={`px-4 py-2 rounded-2xl text-sm ${
             isMe
@@ -273,7 +286,11 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
           {/* Three-dot context menu button */}
           {hovered && (
             <button
-              onClick={() => setShowMenu((v) => !v)}
+              ref={menuBtnRef}
+              onClick={() => {
+                if (showMenu) { setShowMenu(false); return }
+                openMenuFromRect(menuBtnRef.current?.getBoundingClientRect())
+              }}
               className={`absolute ${isMe ? '-left-7' : '-right-7'} top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                 darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
               }`}
@@ -287,6 +304,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
           {showMenu && (
             <MessageContextMenu
               isMe={isMe}
+              dir={menuDir}
               canEdit={canEdit}
               darkMode={darkMode}
               onClose={() => setShowMenu(false)}
