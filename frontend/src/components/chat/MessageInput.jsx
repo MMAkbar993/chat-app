@@ -426,6 +426,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
           file={pendingMedia.file}
           localUrl={pendingMedia.localUrl}
           mediaType={pendingMedia.mediaType}
+          darkMode={darkMode}
           onCancel={() => setPendingMedia(null)}
           onSend={handleSendMedia}
         />
