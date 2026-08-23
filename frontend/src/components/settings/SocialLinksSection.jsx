@@ -17,7 +17,6 @@ const AFFILIATE_ROULETTE_ROLES = [
 ]
 
 const RECOMMENDED = [
-  { key: 'facebook',  label: 'Facebook' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'twitter',   label: 'X (Twitter)', connectKey: 'x' },
   { key: 'linkedin',  label: 'LinkedIn',    urlOnly: true },

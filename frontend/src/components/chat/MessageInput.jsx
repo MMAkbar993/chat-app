@@ -3,6 +3,7 @@ import { useSocket } from '../../context/SocketContext'
 import { useToast } from '../../context/ToastContext'
 import { uploadFile } from '../../api/users'
 import AttachmentMenu from './AttachmentMenu'
+import MediaCaptionModal from './MediaCaptionModal'
 import EmojiPicker from './EmojiPicker'
 import { playSentSound } from '../../utils/sounds'
 import { getReplyPreviewText, getReplyImageUrl } from '../../utils/replyPreview'
@@ -12,10 +13,11 @@ function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
-export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview }) {
+export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, editingMessage, onClearEdit, onEditSubmit }) {
   const { showToast } = useToast()
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [pendingMedia, setPendingMedia] = useState(null) // { file, localUrl, mediaType }
   const [showEmoji, setShowEmoji] = useState(false)
   const [recording, setRecording] = useState(false)
   const [recordSecs, setRecordSecs] = useState(false)
@@ -35,6 +37,14 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   const chunksRef = useRef([])
   const recordTimerRef = useRef(null)
 
+  // Load the target message's text into the composer the moment editingMessage changes — a prop
+  // change handled during render (React's documented pattern), not in an effect.
+  const [prevEditingMessage, setPrevEditingMessage] = useState(null)
+  if (editingMessage !== prevEditingMessage) {
+    setPrevEditingMessage(editingMessage)
+    if (editingMessage) setText(editingMessage.content || '')
+  }
+
   // Sync audio element events
   useEffect(() => {
     const el = audioRef.current
@@ -50,6 +60,24 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       el.removeEventListener('ended', onEnded)
     }
   }, [preview])
+
+  useEffect(() => {
+    if (!editingMessage) return
+    const el = textareaRef.current
+    if (el) {
+      el.focus()
+      el.style.height = 'auto'
+      el.style.height = `${el.scrollHeight}px`
+      const len = el.value.length
+      el.setSelectionRange(len, len)
+    }
+  }, [editingMessage])
+
+  function cancelEdit() {
+    onClearEdit?.()
+    setText('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
+  }
 
   function handleChange(e) {
     setText(e.target.value)
@@ -75,6 +103,11 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     e?.preventDefault()
     const content = text.trim()
     if (!content) return
+    if (editingMessage) {
+      if (content !== editingMessage.content) onEditSubmit?.(editingMessage.id, content)
+      cancelEdit()
+      return
+    }
     if (getNotifPrefs().sound !== false) playSentSound()
     onSend(content, 'text', replyTo?.id || null)
     setText('')
@@ -89,6 +122,8 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
+    } else if (e.key === 'Escape' && editingMessage) {
+      cancelEdit()
     }
   }
 
@@ -105,10 +140,27 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     }, 0)
   }
 
-  function handleAttach(fileUrl, messageType) {
-    onSend(fileUrl, messageType, replyTo?.id || null)
+  function handleAttach(fileUrl, messageType, caption) {
+    onSend(fileUrl, messageType, replyTo?.id || null, caption)
     onClearReply?.()
     setShowAttachMenu(false)
+  }
+
+  function handleFileSelected(file, localUrl, mediaType) {
+    setPendingMedia({ file, localUrl, mediaType })
+  }
+
+  async function handleSendMedia(caption) {
+    const pending = pendingMedia
+    setPendingMedia(null)
+    onMediaPreview?.(pending.localUrl, pending.mediaType, caption)
+    try {
+      const { fileUrl, messageType } = await uploadFile(pending.file)
+      handleAttach(fileUrl, messageType || pending.mediaType, caption)
+    } catch (err) {
+      showToast(getUploadErrorMessage(err), 'error')
+      onMediaPreview?.(null, null)
+    }
   }
 
   async function startRecording() {
@@ -171,8 +223,25 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
 
   return (
     <div className={`border-t ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+      {/* Edit preview */}
+      {editingMessage && (
+        <div className={`flex items-center justify-between px-4 py-2 border-l-4 border-violet-500 ${
+          darkMode ? 'bg-gray-800 text-gray-300' : 'bg-violet-50 text-gray-600'
+        }`}>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-violet-600">Edit Message</p>
+            <p className="text-xs truncate">{editingMessage.content}</p>
+          </div>
+          <button onClick={cancelEdit} className="ml-2 shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Reply preview */}
-      {replyTo && (
+      {!editingMessage && replyTo && (
         <div className={`flex items-center justify-between px-4 py-2 border-l-4 border-violet-500 ${
           darkMode ? 'bg-gray-800 text-gray-300' : 'bg-violet-50 text-gray-600'
         }`}>
@@ -208,8 +277,9 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
         <div className="relative shrink-0">
           <button
             type="button"
+            disabled={!!editingMessage}
             onClick={() => setShowAttachMenu((v) => !v)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               showAttachMenu
                 ? 'bg-violet-100 text-violet-600'
                 : darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
@@ -220,7 +290,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
             </svg>
           </button>
           {showAttachMenu && (
-            <AttachmentMenu darkMode={darkMode} onClose={() => setShowAttachMenu(false)} onAttach={handleAttach} onPreview={onMediaPreview} />
+            <AttachmentMenu darkMode={darkMode} onClose={() => setShowAttachMenu(false)} onFileSelected={handleFileSelected} />
           )}
         </div>
 
@@ -327,12 +397,17 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
                 </svg>
             }
           </button>
-        ) : text.trim() ? (
-          <button type="submit"
-            className="w-10 h-10 shrink-0 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
+        ) : text.trim() || editingMessage ? (
+          <button type="submit" disabled={!text.trim()}
+            className="w-10 h-10 shrink-0 rounded-full bg-violet-600 hover:bg-violet-700 flex items-center justify-center text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+            {editingMessage
+              ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+            }
           </button>
         ) : (
           <button type="button" onClick={startRecording}
@@ -345,6 +420,16 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
           </button>
         )}
       </form>
+
+      {pendingMedia && (
+        <MediaCaptionModal
+          file={pendingMedia.file}
+          localUrl={pendingMedia.localUrl}
+          mediaType={pendingMedia.mediaType}
+          onCancel={() => setPendingMedia(null)}
+          onSend={handleSendMedia}
+        />
+      )}
     </div>
   )
 }

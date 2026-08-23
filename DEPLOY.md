@@ -371,8 +371,8 @@ server {
     listen 80;
     server_name pulse.affiliateroulette.com;
 
-    # Increase body size for file uploads
-    client_max_body_size 25M;
+    # Increase body size for file uploads (matches backend's 100MB upload cap)
+    client_max_body_size 100M;
 
     # Serve frontend static files
     root /home/deploy/chat/frontend/dist;

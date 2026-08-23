@@ -146,6 +146,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const [showReportPrompt, setShowReportPrompt] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [showScheduleMeeting, setShowScheduleMeeting] = useState(false)
+  const [editingMessage, setEditingMessage] = useState(null)
   const [contactBannerDismissed, setContactBannerDismissed] = useState(false)
   const [contactAddedFor, setContactAddedFor] = useState(null)
   const [addingContact, setAddingContact] = useState(false)
@@ -190,6 +191,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     setIsBlocked(false)
     setGroupParticipants([])
     setContactBannerDismissed(false)
+    setEditingMessage(null)
     closeSearch()
     if (!activeConversation?.id) return
     if (activeConversation.type === 'group') {
@@ -261,7 +263,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
   const isTyping = typingUsers[activeConversation.id]
 
-  function handleMediaPreview(localUrl, messageType) {
+  function handleMediaPreview(localUrl, messageType, caption = null) {
     if (!localUrl) {
       if (tempMediaRef.current) {
         setMessages((prev) => prev.filter((m) => m.id !== tempMediaRef.current))
@@ -277,21 +279,28 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       sender_display_name: user.display_name || user.full_name,
       message_type: messageType,
       media_url: localUrl,
-      content: null,
+      content: caption,
       created_at: new Date().toISOString(),
       uploading: true,
     }])
   }
 
-  function handleSend(content, messageType = 'text', replyToMessageId = null) {
-    sendMessage(activeConversation.id, content, messageType, replyToMessageId)
+  function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null) {
+    sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption)
   }
 
   async function handleEditMessage(msgId, content) {
     try {
       const { message } = await editMessageApi(msgId, content)
       setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, content: message.content, edited_at: message.edited_at } : m))
-    } catch {}
+    } catch {
+      showToast('Could not save your edit. Please try again.', 'error')
+    }
+  }
+
+  function startEditingMessage(msg) {
+    clearReply()
+    setEditingMessage(msg)
   }
 
   async function handleDeleteMessage(msgId) {
@@ -583,8 +592,8 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                 key={item.msg.id}
                 msg={item.msg}
                 darkMode={darkMode}
-                onReply={(msg) => setReplyTo(msg)}
-                onEdit={handleEditMessage}
+                onReply={(msg) => { setEditingMessage(null); setReplyTo(msg) }}
+                onEdit={startEditingMessage}
                 onDelete={handleDeleteMessage}
                 onDeleteForMe={handleDeleteMessageForMe}
                 searchQuery={searchQuery}
@@ -602,6 +611,9 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           replyTo={replyTo}
           onClearReply={clearReply}
           onMediaPreview={handleMediaPreview}
+          editingMessage={editingMessage}
+          onClearEdit={() => setEditingMessage(null)}
+          onEditSubmit={handleEditMessage}
         />
       </div>
 

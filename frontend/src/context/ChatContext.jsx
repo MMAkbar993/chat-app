@@ -99,12 +99,12 @@ export function ChatProvider({ children }) {
     setMessages([])
   }, [socket])
 
-  const sendMessage = useCallback(async (conversationId, content, messageType = 'text', replyToMessageId = null) => {
+  const sendMessage = useCallback(async (conversationId, content, messageType = 'text', replyToMessageId = null, caption = null) => {
     if (!socket) return
     const isMedia = messageType !== 'text'
     socket.emit('send-message', {
       conversationId,
-      content: isMedia ? null : content,
+      content: isMedia ? (caption || null) : content,
       mediaUrl: isMedia ? content : null,
       messageType,
       replyToMessageId,

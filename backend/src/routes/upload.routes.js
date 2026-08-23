@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
     cb(null, `msg-${req.user.id}-${Date.now()}${ext}`)
   },
 })
-const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: safeFileFilter })
+const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 }, fileFilter: safeFileFilter })
 
 export const uploadRouter = Router()
 uploadRouter.use(authMiddleware)

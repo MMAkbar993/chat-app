@@ -318,14 +318,14 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
               <p className={`text-xs font-semibold uppercase tracking-wide px-3 pt-3 mb-1 ${sub}`}>Media Details</p>
               <Accordion title="Photos" count={photos.length} darkMode={dm}>
                 {photos.length > 0
-                  ? <div className="grid grid-cols-3 gap-1 px-2">{photos.slice(0, 9).map((m) => (
+                  ? <div className="grid grid-cols-3 gap-1 px-2">{photos.map((m) => (
                       <img key={m.id} src={m.media_url} alt="" className="w-full h-16 object-cover rounded" />
                     ))}</div>
                   : <p className={`px-3 text-xs ${sub}`}>No photos found.</p>}
               </Accordion>
               <Accordion title="Videos" count={videos.length} darkMode={dm}>
                 {videos.length > 0
-                  ? <div className="grid grid-cols-3 gap-1 px-2">{videos.slice(0, 9).map((m) => (
+                  ? <div className="grid grid-cols-3 gap-1 px-2">{videos.map((m) => (
                       <video key={m.id} src={m.media_url} className="w-full h-16 object-cover rounded" />
                     ))}</div>
                   : <p className={`px-3 text-xs ${sub}`}>No videos found.</p>}

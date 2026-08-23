@@ -31,6 +31,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const [mediaTab, setMediaTab] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [lightboxUrl, setLightboxUrl] = useState(null)
+  const [lightboxVideoUrl, setLightboxVideoUrl] = useState(null)
 
   const isBlocked = isBlockedProp !== undefined ? isBlockedProp : localBlocked
   function setIsBlocked(val) {
@@ -212,9 +213,18 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
               </button>
               {mediaTab === key && key === 'photos' && photos.length > 0 && (
                 <div className="grid grid-cols-3 gap-1 p-2">
-                  {photos.slice(0, 9).map((m) => (
+                  {photos.map((m) => (
                     <button key={m.id} onClick={() => setLightboxUrl(m.media_url)} className="w-full h-16 overflow-hidden rounded focus:outline-none">
                       <img src={m.media_url} alt="" className="w-full h-full object-cover hover:opacity-80 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {mediaTab === key && key === 'videos' && videos.length > 0 && (
+                <div className="grid grid-cols-3 gap-1 p-2">
+                  {videos.map((m) => (
+                    <button key={m.id} onClick={() => setLightboxVideoUrl(m.media_url)} className="w-full h-16 overflow-hidden rounded focus:outline-none">
+                      <video src={m.media_url} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -322,6 +332,30 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
             src={lightboxUrl}
             alt=""
             className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* Video lightbox */}
+      {lightboxVideoUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setLightboxVideoUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            onClick={() => setLightboxVideoUrl(null)}
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <video
+            src={lightboxVideoUrl}
+            controls
+            autoPlay
+            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

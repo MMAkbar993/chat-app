@@ -66,8 +66,6 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const [lightboxUrl, setLightboxUrl] = useState(null)
   const [pickerDir, setPickerDir] = useState('up')
   const [menuDir, setMenuDir] = useState('down')
-  const [editing, setEditing] = useState(false)
-  const [editValue, setEditValue] = useState(msg.content || '')
   const reactionBtnRef = useRef(null)
   const menuBtnRef = useRef(null)
 
@@ -85,18 +83,6 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
 
   function handleCopy() {
     navigator.clipboard.writeText(msg.content || '').catch(() => {})
-  }
-
-  function startEdit() {
-    setEditValue(msg.content || '')
-    setEditing(true)
-  }
-
-  function saveEdit() {
-    const trimmed = editValue.trim()
-    if (!trimmed || trimmed === msg.content) { setEditing(false); return }
-    onEdit?.(msg.id, trimmed)
-    setEditing(false)
   }
 
   async function handleForward(targetConversationId) {
@@ -122,7 +108,6 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
 
   function handleContextMenu(e) {
     e.preventDefault()
-    if (editing) return
     openMenuFromRect(e.currentTarget.getBoundingClientRect())
   }
 
@@ -207,78 +192,60 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
             )}
             {(() => {
               const src = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
+              const caption = msg.media_url && msg.message_type !== 'text' ? msg.content : null
+              const captionEl = caption && (
+                <p className="whitespace-pre-wrap wrap-break-word mt-1.5">{renderMessageText(caption, searchQuery)}</p>
+              )
               if (msg.message_type === 'image' && src)
                 return (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => !msg.uploading && setLightboxUrl(src)}
-                      disabled={msg.uploading}
-                      className={`block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-zoom-in'}`}
-                    >
-                      <img src={src} alt="media" className={`rounded-lg max-w-full ${msg.uploading ? 'opacity-60' : ''}`} />
-                    </button>
-                    {msg.uploading && (
-                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
-                        <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
+                  <div>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => !msg.uploading && setLightboxUrl(src)}
+                        disabled={msg.uploading}
+                        className={`block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-zoom-in'}`}
+                      >
+                        <img src={src} alt="media" className={`rounded-lg max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
+                      </button>
+                      {msg.uploading && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                          <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    {captionEl}
                   </div>
                 )
               if (msg.message_type === 'audio' && src)
                 return <audio controls src={src} className="max-w-xs" />
               if (msg.message_type === 'video' && src)
                 return (
-                  <div className="relative">
-                    <video controls={!msg.uploading} src={src} className={`rounded-lg max-w-full max-h-48 ${msg.uploading ? 'opacity-60' : ''}`} />
-                    {msg.uploading && (
-                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
-                        <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
+                  <div>
+                    <div className="relative">
+                      <video controls={!msg.uploading} src={src} className={`rounded-lg max-w-full max-h-48 ${msg.uploading ? 'opacity-60' : ''}`} />
+                      {msg.uploading && (
+                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                          <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    {captionEl}
                   </div>
                 )
               if (msg.message_type === 'file' && src)
                 return (
-                  <a href={src} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline">
-                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {src.split('/').pop()}
-                  </a>
-                )
-              if (editing) {
-                return (
-                  <div className="min-w-48">
-                    <textarea
-                      autoFocus
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit() }
-                        else if (e.key === 'Escape') setEditing(false)
-                      }}
-                      rows={Math.min(6, Math.max(1, editValue.split('\n').length))}
-                      className={`w-full bg-transparent text-sm outline-none resize-none border-b ${isMe ? 'border-white/40 placeholder-white/60' : 'border-gray-300'}`}
-                    />
-                    <div className="flex items-center justify-end gap-2 mt-1.5">
-                      <button
-                        onClick={() => setEditing(false)}
-                        className={`text-xs px-2 py-0.5 rounded-md ${isMe ? 'text-white/80 hover:bg-white/15' : darkMode ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-500 hover:bg-gray-100'}`}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={saveEdit}
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-md ${isMe ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-violet-600 hover:bg-violet-700 text-white'}`}
-                      >
-                        Save
-                      </button>
-                    </div>
+                  <div>
+                    <a href={src} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline">
+                      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {src.split('/').pop()}
+                    </a>
+                    {captionEl}
                   </div>
                 )
-              }
               return <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery)}</p>
             })()}
           </div>
@@ -311,7 +278,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               onReply={() => onReply?.(msg)}
               onForward={() => setShowForward(true)}
               onCopy={handleCopy}
-              onEdit={startEdit}
+              onEdit={() => onEdit?.(msg)}
               onDelete={() => onDelete?.(msg.id)}
               onDeleteForMe={() => onDeleteForMe?.(msg.id)}
             />
