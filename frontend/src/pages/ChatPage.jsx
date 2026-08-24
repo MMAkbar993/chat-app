@@ -194,6 +194,7 @@ export default function ChatPage() {
 
   return (
     <div className={`h-dvh flex overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+      <h1 className="sr-only">Pulse</h1>
       <Sidebar
         active={section}
         onNav={setSection}

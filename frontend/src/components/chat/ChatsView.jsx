@@ -157,7 +157,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
                       )}
                     </div>
-                    <span className={`text-xs font-medium truncate max-w-14 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{firstName}</span>
+                    <span className={`text-xs font-medium truncate max-w-14 text-center ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{firstName}</span>
                   </button>
                 )
               })}
@@ -173,8 +173,9 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             </span>
             <div className="relative">
               <button
+                aria-label="Filter chats"
                 onClick={() => setShowFilterMenu((v) => !v)}
-                className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${
+                className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
                   conversationFilter !== 'all'
                     ? 'text-violet-500'
                     : darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
@@ -241,11 +242,20 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         {c.last_message && c.last_message_sender_id === user?.id && (
                           <SidebarTicks status={c.last_message_status || 'sent'} />
                         )}
-                        <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
+                        <span className={`text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
+                      {c.last_message?.startsWith('📅 Scheduled:') ? (
+                        <span title={c.last_message} className={`flex items-center gap-1 min-w-0 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="truncate">{c.last_message.replace('📅 ', '')}</span>
+                        </span>
+                      ) : (
+                        <span title={formatLastMessage(c.last_message, c.last_message_type)} className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
+                      )}
                       {c.unread_count > 0 ? (
                         <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
                           {c.unread_count}

@@ -199,7 +199,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
         })}
       </nav>
 
-      <div className={`px-2 md:px-3 pt-3 mt-1 space-y-1 border-t shrink-0 ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+      <div className={`px-2 md:px-3 pt-3 mt-1 space-y-3 border-t shrink-0 ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
         {/* Upgrade — hidden once the account is already Pro, nothing left to upgrade to */}
         {!isProUser(user) && (
           <button
@@ -278,7 +278,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           )}
         </div>
         <div className="hidden md:block flex-1 min-w-0 text-left">
-          <p className={`text-sm font-semibold truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <p title={user?.display_name || user?.full_name || user?.username || 'Me'} className={`text-sm font-semibold truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {user?.display_name || user?.full_name || user?.username || 'Me'}
           </p>
           <p className="text-xs text-violet-500 font-medium">{isProUser(user) ? 'Pro Plan' : 'Free Plan'}</p>
