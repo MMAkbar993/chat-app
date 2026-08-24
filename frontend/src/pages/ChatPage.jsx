@@ -209,7 +209,7 @@ export default function ChatPage() {
       {section === 'groups' && <GroupsView darkMode={darkMode} mobileHidden={mobileDetail} />}
       {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} mobileHidden={mobileDetail} />}
       {section === 'settings' && (
-        <SettingsView darkMode={darkMode} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} onStartTour={() => setTourRestartCount((c) => c + 1)} />
+        <SettingsView darkMode={darkMode} onDarkMode={() => setDarkMode((d) => !d)} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} onStartTour={() => setTourRestartCount((c) => c + 1)} />
       )}
 
       {/* Right panel — settings detail on that tab, chat window on chats/groups, welcome screen otherwise.

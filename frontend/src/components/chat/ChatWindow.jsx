@@ -428,10 +428,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
           {/* Header action buttons */}
           <div className="flex items-center gap-1 relative shrink-0">
-            {/* Search */}
+            {/* Search — tucked into the "..." menu on mobile to keep the header uncluttered */}
             <button
               onClick={() => setShowSearch((v) => !v)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`hidden md:flex w-8 h-8 rounded-full items-center justify-center transition-colors ${
                 showSearch
                   ? 'bg-violet-100 text-violet-600'
                   : `hover:bg-gray-100 dark:hover:bg-gray-700 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
@@ -446,7 +446,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
               <>
                 {/* Video call */}
                 <button onClick={() => onCallStart('video')}
-                  className={`w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
+                  className={`hidden md:flex w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -455,7 +455,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
                 {/* Audio call */}
                 <button onClick={() => onCallStart('audio')}
-                  className={`w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
+                  className={`hidden md:flex w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -467,7 +467,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
             {activeConversation.type !== 'group' && (
               /* Schedule meeting */
               <button onClick={() => setShowScheduleMeeting(true)} title="Schedule meeting"
-                className={`w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
+                className={`hidden md:flex w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 items-center justify-center ${darkMode ? 'text-gray-400' : 'text-gray-500'} transition-colors`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -475,10 +475,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
               </button>
             )}
 
-            {/* Contact info */}
+            {/* Contact info — also tucked into the "..." menu on mobile */}
             <button
               onClick={() => setShowContactInfo((v) => !v)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`hidden md:flex w-8 h-8 rounded-full items-center justify-center transition-colors ${
                 showContactInfo
                   ? 'bg-violet-100 text-violet-600'
                   : `hover:bg-gray-100 dark:hover:bg-gray-700 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`
@@ -504,7 +504,13 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                   darkMode={darkMode}
                   conversationId={activeConversation.id}
                   isBlocked={isBlocked}
+                  isGroup={isGroup}
                   onClose={() => setShowHeaderMenu(false)}
+                  onSearch={() => setShowSearch((v) => !v)}
+                  onVideoCall={onCallStart ? () => onCallStart('video') : undefined}
+                  onAudioCall={onCallStart ? () => onCallStart('audio') : undefined}
+                  onScheduleMeeting={() => setShowScheduleMeeting(true)}
+                  onContactInfo={() => setShowContactInfo((v) => !v)}
                   onMute={() => {
                     toggleConversationFlag(activeConversation.id, 'is_muted')
                     showToast('Notifications muted', 'success')

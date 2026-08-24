@@ -155,7 +155,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
 
   return (
     <>
-    <aside className={`w-16 md:w-64 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col py-5 border-r relative ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <aside className={`hidden md:flex w-64 shrink-0 flex-col py-5 border-r relative ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Logo — the full wordmark only fits once the sidebar expands at md:, so mobile falls
           back to just the icon glyph */}
       <div className="flex items-center justify-center md:justify-start px-2 md:px-5 mb-6 shrink-0">
@@ -285,6 +285,40 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
         </div>
       </button>
     </aside>
+
+    {/* Mobile bottom tab bar — replaces the desktop rail below md:, Telegram/WhatsApp style.
+        Hidden once a deeper view (an open chat, a settings detail) takes over the screen, same
+        as the desktop rail was via mobileHidden — the compose bar takes its place there instead. */}
+    {!mobileHidden && (
+      <nav
+        className={`md:hidden fixed bottom-0 inset-x-0 z-30 flex border-t ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {NAV.map(({ key, label, icon }) => {
+          const badge = NAV_BADGES[key]
+          return (
+            <button
+              key={key}
+              data-tour={`sidebar-${key}`}
+              onClick={() => onNav(key)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                active === key
+                  ? 'text-violet-600'
+                  : darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}
+            >
+              <div className="relative">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icon}</svg>
+                {badge > 0 && (
+                  <span className={`absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ${darkMode ? 'ring-2 ring-gray-900' : 'ring-2 ring-white'}`} />
+                )}
+              </div>
+              {label}
+            </button>
+          )
+        })}
+      </nav>
+    )}
 
     <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
 

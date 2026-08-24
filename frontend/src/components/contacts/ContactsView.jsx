@@ -110,7 +110,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
   const rowHov = darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
 
   return (
-    <div className={`w-[calc(100%-4rem)] md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${bg}`}>
+    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${bg}`}>
 
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
@@ -159,7 +159,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       )}
 
       {/* Contact list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
         <div className="px-4 mb-2">
           <span className={`text-xs font-semibold uppercase tracking-wide ${sub}`}>All Contacts</span>
         </div>

@@ -49,7 +49,7 @@ function ListRow({ icon, label, description, active, onClick, darkMode, danger =
 
 // ─── main list ───────────────────────────────────────────────────────────────
 
-export default function SettingsView({ darkMode, activeSection, onSelect, mobileHidden, onStartTour }) {
+export default function SettingsView({ darkMode, onDarkMode, activeSection, onSelect, mobileHidden, onStartTour }) {
   const { logout } = useAuth()
   const [showBlocked, setShowBlocked] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -111,7 +111,7 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
   )
 
   return (
-    <div className={`w-[calc(100%-4rem)] md:w-96 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-full md:w-96 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r overflow-y-auto pb-16 md:pb-0 ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
 
       {/* Toast */}
       {toast && (
@@ -127,6 +127,33 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
       </div>
 
       <div className="pb-8">
+
+        {/* ── PREFERENCES — mobile only; desktop already has these in the side rail ── */}
+        <div className="md:hidden">
+          <SectionLabel darkMode={dm}>Preferences</SectionLabel>
+          <button
+            onClick={onDarkMode}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b transition-colors ${
+              dm ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'
+            }`}
+          >
+            <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${dm ? 'bg-slate-600' : 'bg-slate-700'}`}>
+              {dm ? (
+                <svg className="w-4.5 h-4.5 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M18.364 18.364l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </span>
+            <span className={`flex-1 text-sm font-medium ${dm ? 'text-white' : 'text-gray-900'}`}>Dark Mode</span>
+            <span className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${dm ? 'bg-violet-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${dm ? 'translate-x-4' : 'translate-x-0'}`} />
+            </span>
+          </button>
+        </div>
 
         {/* ── ACCOUNT ── */}
         <SectionLabel darkMode={dm}>Account</SectionLabel>

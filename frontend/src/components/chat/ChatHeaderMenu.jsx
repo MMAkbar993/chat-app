@@ -1,7 +1,10 @@
 import { useRef, useEffect } from 'react'
 import { useChat } from '../../context/ChatContext'
 
-export default function ChatHeaderMenu({ darkMode, onClose, conversationId, onMute, onClear, onDelete, onReport, onBlock, isBlocked }) {
+export default function ChatHeaderMenu({
+  darkMode, onClose, conversationId, onMute, onClear, onDelete, onReport, onBlock, isBlocked,
+  isGroup, onSearch, onVideoCall, onAudioCall, onScheduleMeeting, onContactInfo,
+}) {
   const menuRef = useRef(null)
   const { closeConversation } = useChat()
 
@@ -16,6 +19,36 @@ export default function ChatHeaderMenu({ darkMode, onClose, conversationId, onMu
   const base = `flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition-colors ${
     darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
   }`
+
+  // These duplicate the header's own icon row — only surfaced here on mobile, where that row is
+  // hidden to keep the header from being crowded with icons.
+  const mobileItems = [
+    onSearch && {
+      label: 'Search',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />,
+      action: () => { onSearch(); onClose() },
+    },
+    onVideoCall && {
+      label: 'Video Call',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />,
+      action: () => { onVideoCall(); onClose() },
+    },
+    onAudioCall && {
+      label: 'Audio Call',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />,
+      action: () => { onAudioCall(); onClose() },
+    },
+    !isGroup && onScheduleMeeting && {
+      label: 'Schedule Meeting',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />,
+      action: () => { onScheduleMeeting(); onClose() },
+    },
+    onContactInfo && {
+      label: isGroup ? 'Group Info' : 'Contact Info',
+      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+      action: () => { onContactInfo(); onClose() },
+    },
+  ].filter(Boolean)
 
   const items = [
     {
@@ -64,6 +97,15 @@ export default function ChatHeaderMenu({ darkMode, onClose, conversationId, onMu
         darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
       }`}
     >
+      {mobileItems.map(({ label, icon, action }) => (
+        <button key={label} onClick={action} className={`${base} md:hidden`}>
+          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icon}</svg>
+          {label}
+        </button>
+      ))}
+      {mobileItems.length > 0 && (
+        <div className={`md:hidden my-1 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`} />
+      )}
       {items.map(({ label, icon, action, red, orange }) => (
         <button
           key={label}

@@ -49,7 +49,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
   }
 
   return (
-    <div className={`w-[calc(100%-4rem)] md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
         <div className="flex gap-2">
@@ -94,7 +94,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
         {filtered.map((c) => {
           const isMe = c.caller_id === user?.id
           const isGroup = c.conversation_type === 'group'
