@@ -134,6 +134,9 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const searchInputRef = useRef(null)
   const tempMediaRef = useRef(null)
   const scrolledForConvRef = useRef(null)
+  const dragCounterRef = useRef(0)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
+  const [droppedFile, setDroppedFile] = useState(null)
   const [showContactInfo, setShowContactInfo] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
@@ -192,6 +195,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     setGroupParticipants([])
     setContactBannerDismissed(false)
     setEditingMessage(null)
+    setDroppedFile(null)
     closeSearch()
     if (!activeConversation?.id) return
     if (activeConversation.type === 'group') {
@@ -303,6 +307,34 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     setEditingMessage(msg)
   }
 
+  // dragenter/dragleave fire on every child crossed, not just the container's own boundary —
+  // a counter (instead of a plain boolean) is the standard fix so the overlay doesn't flicker
+  // as the pointer passes over messages/avatars while dragging.
+  function handleDragEnter(e) {
+    e.preventDefault()
+    if (!e.dataTransfer.types.includes('Files')) return
+    dragCounterRef.current++
+    setIsDraggingFile(true)
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault()
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault()
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1)
+    if (dragCounterRef.current === 0) setIsDraggingFile(false)
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    dragCounterRef.current = 0
+    setIsDraggingFile(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) setDroppedFile(file)
+  }
+
   async function handleDeleteMessage(msgId) {
     try {
       await deleteMessageApi(msgId)
@@ -322,7 +354,23 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   return (
     <div className="flex-1 flex h-full overflow-hidden">
       {/* Main chat area */}
-      <div className={`flex-1 flex flex-col h-full min-w-0 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+      <div
+        className={`relative flex-1 flex flex-col h-full min-w-0 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDraggingFile && (
+          <div className="absolute inset-0 z-100 flex items-center justify-center bg-violet-600/10 border-4 border-dashed border-violet-500 pointer-events-none">
+            <div className={`rounded-2xl px-6 py-5 shadow-xl flex flex-col items-center gap-2 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <svg className="w-8 h-8 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
+              </svg>
+              <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>Drop to send</p>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className={`flex items-center justify-between px-5 py-3 border-b ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center gap-3 min-w-0">
@@ -614,6 +662,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           editingMessage={editingMessage}
           onClearEdit={() => setEditingMessage(null)}
           onEditSubmit={handleEditMessage}
+          droppedFile={droppedFile}
         />
       </div>
 

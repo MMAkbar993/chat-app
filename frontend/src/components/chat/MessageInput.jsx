@@ -13,7 +13,7 @@ function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
-export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, editingMessage, onClearEdit, onEditSubmit }) {
+export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, editingMessage, onClearEdit, onEditSubmit, droppedFile }) {
   const { showToast } = useToast()
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
@@ -43,6 +43,18 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   if (editingMessage !== prevEditingMessage) {
     setPrevEditingMessage(editingMessage)
     if (editingMessage) setText(editingMessage.content || '')
+  }
+
+  // Same pattern for a file dropped onto the chat window — hand it straight to the same
+  // caption-preview flow the attachment menu uses.
+  const [prevDroppedFile, setPrevDroppedFile] = useState(null)
+  if (droppedFile && droppedFile !== prevDroppedFile) {
+    setPrevDroppedFile(droppedFile)
+    const mediaType = droppedFile.type.startsWith('image/') ? 'image'
+      : droppedFile.type.startsWith('video/') ? 'video'
+      : droppedFile.type.startsWith('audio/') ? 'audio'
+      : 'file'
+    setPendingMedia({ file: droppedFile, localUrl: URL.createObjectURL(droppedFile), mediaType })
   }
 
   // Sync audio element events
