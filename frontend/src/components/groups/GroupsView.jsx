@@ -191,7 +191,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
   const dm = darkMode
 
   return (
-    <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-[calc(100%-4rem)] md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3 flex items-center justify-between">
         <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Groups</h2>
         <button onClick={() => (isProUser(user) ? setShowCreate(true) : setShowUpgrade(true))}

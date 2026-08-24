@@ -111,7 +111,7 @@ export default function SettingsView({ darkMode, activeSection, onSelect, mobile
   )
 
   return (
-    <div className={`w-full md:w-96 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
+    <div className={`w-[calc(100%-4rem)] md:w-96 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r overflow-y-auto ${dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
 
       {/* Toast */}
       {toast && (
