@@ -51,8 +51,10 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
   return (
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       <div className="px-4 pt-5 pb-3">
-        {/* Mobile: icon left, title centered */}
-        <div className="relative flex items-center md:hidden">
+        {/* Mobile: logo left, title centered, action button right */}
+        <div className="relative flex items-center justify-between md:hidden">
+          <img src="/Icon.png" alt="Pulse" className="w-8 h-8 shrink-0" />
+          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
           <button
             onClick={() => setShowNewCall(true)}
             className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
@@ -63,7 +65,6 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
                 d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
             </svg>
           </button>
-          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
         </div>
         {/* Desktop: original title-left, icon-right layout, unchanged */}
         <div className="hidden md:flex items-center justify-between">

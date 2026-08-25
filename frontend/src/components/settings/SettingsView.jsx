@@ -123,7 +123,13 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
       )}
 
       <div className="px-4 pt-5 pb-2 shrink-0">
-        <h2 className={`text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
+        {/* Mobile: logo left, title centered */}
+        <div className="relative flex items-center md:hidden">
+          <img src="/Icon.png" alt="Pulse" className="w-8 h-8 shrink-0" />
+          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
+        </div>
+        {/* Desktop: original layout, unchanged */}
+        <h2 className={`hidden md:block text-lg font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Settings</h2>
       </div>
 
       <div className="pb-8">

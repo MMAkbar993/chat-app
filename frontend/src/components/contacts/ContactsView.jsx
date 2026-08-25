@@ -114,8 +114,10 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
 
       {/* Header */}
       <div className="px-4 pt-5 pb-3">
-        {/* Mobile: icon(s) left, title centered */}
-        <div className="relative flex items-center md:hidden">
+        {/* Mobile: logo left, title centered, action buttons right */}
+        <div className="relative flex items-center justify-between md:hidden">
+          <img src="/Icon.png" alt="Pulse" className="w-8 h-8 shrink-0" />
+          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowInvite(true)}
@@ -133,7 +135,6 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
               </svg>
             </button>
           </div>
-          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
         </div>
         {/* Desktop: original title-left, icons-right layout, unchanged */}
         <div className="hidden md:flex items-center justify-between">

@@ -124,8 +124,10 @@ export default function ChatsView({ darkMode, mobileHidden }) {
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Header */}
       <div className="px-4 pt-5 pb-3">
-        {/* Mobile: icon left, title centered */}
-        <div className="relative flex items-center md:hidden">
+        {/* Mobile: logo left, title centered, action button right */}
+        <div className="relative flex items-center justify-between md:hidden">
+          <img src="/Icon.png" alt="Pulse" className="w-8 h-8 shrink-0" />
+          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Chats</h2>
           <button
             onClick={() => { setShowNewChat(true); setNewChatSearch('') }}
             className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
@@ -134,7 +136,6 @@ export default function ChatsView({ darkMode, mobileHidden }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </button>
-          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Chats</h2>
         </div>
         {/* Desktop: original title-left, icon-right layout, unchanged */}
         <div className="hidden md:flex items-center justify-between">
