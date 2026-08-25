@@ -62,11 +62,6 @@ export default function ChatHeaderMenu({
       action: () => { onMute?.(); onClose() },
     },
     {
-      label: 'Disappearing Message',
-      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />,
-      action: () => { onClose() },
-    },
-    {
       label: 'Clear Message',
       icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />,
       action: () => { onClear?.(); onClose() },

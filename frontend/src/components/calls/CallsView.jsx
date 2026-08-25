@@ -50,8 +50,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
 
   return (
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
-      <div className="px-4 pt-5 pb-3 flex items-center justify-between">
-        <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
+      <div className="relative px-4 pt-5 pb-3 flex items-center">
         <div className="flex gap-2">
           <button
             onClick={() => setShowNewCall(true)}
@@ -64,6 +63,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
             </svg>
           </button>
         </div>
+        <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
       </div>
 
       <div className="px-4 pb-3">

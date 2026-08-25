@@ -170,7 +170,7 @@ export default function UserProfileModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onMouseDown={(e) => { if (e.target === backdropRef.current) onClose() }}
     >
-      <div className={`relative w-[440px] max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+      <div className={`relative w-[calc(100vw-2rem)] max-w-110 max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden ${dm ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
 
         {/* Menu (Contacts only) + Close */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
@@ -231,7 +231,7 @@ export default function UserProfileModal({
         <div className="max-h-[85vh] overflow-y-auto">
         {/* Banner + avatar */}
         <div className={`h-16 ${dm ? 'bg-gradient-to-r from-violet-900 to-violet-700' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
-        <div className="px-5 pb-5">
+        <div className="px-6 pb-6">
           <div className="-mt-10 mb-3 flex items-start justify-between">
             <div className="relative">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">

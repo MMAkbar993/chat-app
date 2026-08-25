@@ -113,8 +113,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${bg}`}>
 
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 flex items-center justify-between">
-        <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
+      <div className="relative px-4 pt-5 pb-3 flex items-center">
         <div className="flex items-center gap-2">
           {/* Invite — blocked contacts already live under Settings, no need to duplicate here */}
           <button
@@ -134,6 +133,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
             </svg>
           </button>
         </div>
+        <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
       </div>
 
       {/* Search */}

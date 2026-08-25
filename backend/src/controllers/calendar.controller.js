@@ -1,5 +1,6 @@
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
+import { randomUUID } from 'crypto'
 import { config } from '../config/env.js'
 import { isProUser } from '../utils/plan.js'
 import {
@@ -202,10 +203,16 @@ export async function scheduleMeeting(req, res, next) {
           start: allDay ? { date: start } : { dateTime: start },
           end: allDay ? { date: end } : { dateTime: end },
           ...(attendeeEmail && { attendees: [{ email: attendeeEmail }] }),
+          conferenceData: {
+            createRequest: {
+              requestId: randomUUID(),
+              conferenceSolutionKey: { type: 'hangoutsMeet' },
+            },
+          },
         },
         {
           headers: { Authorization: `Bearer ${accessToken}` },
-          params: attendeeEmail ? { sendUpdates: 'all' } : undefined,
+          params: { conferenceDataVersion: 1, ...(attendeeEmail && { sendUpdates: 'all' }) },
         }
       )
       event = {
@@ -214,6 +221,7 @@ export async function scheduleMeeting(req, res, next) {
         start: data.start?.dateTime || data.start?.date,
         end: data.end?.dateTime || data.end?.date,
         htmlLink: data.htmlLink,
+        meetLink: data.hangoutLink || null,
       }
     } catch (err) {
       if (isInsufficientScopeError(err)) {
@@ -222,7 +230,9 @@ export async function scheduleMeeting(req, res, next) {
       throw err
     }
 
-    const content = `📅 Scheduled: ${event.title}\n${formatEventTimeForMessage(event.start, allDay)}\n${event.htmlLink}`
+    const content = `📅 Scheduled: ${event.title}\n${formatEventTimeForMessage(event.start, allDay)}\n`
+      + (event.meetLink ? `🎥 Join: ${event.meetLink}\n` : '')
+      + event.htmlLink
     const msg = await createMessage({ conversationId, senderId: req.user.id, content, messageType: 'text' })
     const fullMsg = {
       ...msg,

@@ -103,11 +103,27 @@ export default function ChatsView({ darkMode, mobileHidden }) {
 
   const recent = conversations.filter((c) => !c.is_archived).slice(0, 4)
 
+  // Right-click on desktop; a long-press on mobile fires this same native contextmenu event, so
+  // this is the one handler that covers both — there's no hover state on touch devices to reveal
+  // the "..." button, so without this, pin/favourite/archive would be unreachable on mobile.
+  function openRowMenu(e, c) {
+    e.preventDefault()
+    // ChatItemMenu is w-48 (192px) and positioned via `right` — clamp so it never overflows
+    // either edge, which a naive viewportWidth - clientX does for presses near the left edge.
+    const menuWidth = 192
+    const margin = 8
+    const right = Math.min(
+      Math.max(margin, window.innerWidth - e.clientX),
+      window.innerWidth - menuWidth - margin
+    )
+    setMenuPos({ top: e.clientY, right })
+    setMenuConvId((id) => id === c.id ? null : c.id)
+  }
+
   return (
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 flex items-center justify-between">
-        <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Chats</h2>
+      <div className="relative px-4 pt-5 pb-3 flex items-center">
         <button
           onClick={() => { setShowNewChat(true); setNewChatSearch('') }}
           className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
@@ -116,6 +132,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
         </button>
+        <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Chats</h2>
       </div>
 
       {/* Search */}
@@ -215,6 +232,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
               >
                 <button
                   onClick={() => openConversation(c)}
+                  onContextMenu={(e) => openRowMenu(e, c)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                     isActive
                       ? darkMode ? 'bg-gray-800' : 'bg-violet-50'
@@ -230,9 +248,9 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                       <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 pr-6">
+                  <div className="flex-1 min-w-0 md:pr-6">
                     <div className="flex items-center justify-between">
-                      <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</span>
+                      <span className={`font-semibold text-base md:text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</span>
                       <span className="flex items-center gap-1 shrink-0">
                         {c.is_favorite && (
                           <svg className="w-3 h-3 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
@@ -242,19 +260,19 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         {c.last_message && c.last_message_sender_id === user?.id && (
                           <SidebarTicks status={c.last_message_status || 'sent'} />
                         )}
-                        <span className={`text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
+                        <span className={`text-sm md:text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       {c.last_message?.startsWith('📅 Scheduled:') ? (
-                        <span title={c.last_message} className={`flex items-center gap-1 min-w-0 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <span title={c.last_message} className={`flex items-center gap-1 min-w-0 text-sm md:text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           <span className="truncate">{c.last_message.replace('📅 ', '')}</span>
                         </span>
                       ) : (
-                        <span title={formatLastMessage(c.last_message, c.last_message_type)} className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
+                        <span title={formatLastMessage(c.last_message, c.last_message_type)} className={`text-sm md:text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
                       )}
                       {c.unread_count > 0 ? (
                         <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
