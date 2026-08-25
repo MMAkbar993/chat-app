@@ -63,7 +63,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
-  const [lightboxUrl, setLightboxUrl] = useState(null)
+  const [lightbox, setLightbox] = useState(null) // { url, type: 'image' | 'video' }
   const [pickerDir, setPickerDir] = useState('up')
   const [menuDir, setMenuDir] = useState('down')
   const reactionBtnRef = useRef(null)
@@ -202,7 +202,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                     <div className="relative">
                       <button
                         type="button"
-                        onClick={() => !msg.uploading && setLightboxUrl(src)}
+                        onClick={() => !msg.uploading && setLightbox({ url: src, type: 'image' })}
                         disabled={msg.uploading}
                         className={`block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-zoom-in'}`}
                       >
@@ -223,7 +223,23 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                 return (
                   <div>
                     <div className="relative">
-                      <video controls={!msg.uploading} src={src} className={`rounded-lg max-w-full max-h-48 ${msg.uploading ? 'opacity-60' : ''}`} />
+                      <button
+                        type="button"
+                        onClick={() => !msg.uploading && setLightbox({ url: src, type: 'video' })}
+                        disabled={msg.uploading}
+                        className={`relative block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-pointer'}`}
+                      >
+                        <video src={src} preload="metadata" className={`rounded-lg max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
+                        {!msg.uploading && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center">
+                              <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </button>
                       {msg.uploading && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
                           <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -353,26 +369,36 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
         />
       )}
 
-      {lightboxUrl && (
+      {lightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-          onClick={() => setLightboxUrl(null)}
+          onClick={() => setLightbox(null)}
         >
           <button
             type="button"
             className="absolute top-4 right-4 text-white/80 hover:text-white"
-            onClick={() => setLightboxUrl(null)}
+            onClick={() => setLightbox(null)}
           >
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <img
-            src={lightboxUrl}
-            alt=""
-            className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {lightbox.type === 'video' ? (
+            <video
+              src={lightbox.url}
+              controls
+              autoPlay
+              className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={lightbox.url}
+              alt=""
+              className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </div>
       )}
     </div>

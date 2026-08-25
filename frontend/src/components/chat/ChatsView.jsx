@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
@@ -103,21 +103,56 @@ export default function ChatsView({ darkMode, mobileHidden }) {
 
   const recent = conversations.filter((c) => !c.is_archived).slice(0, 4)
 
-  // Right-click on desktop; a long-press on mobile fires this same native contextmenu event, so
-  // this is the one handler that covers both — there's no hover state on touch devices to reveal
-  // the "..." button, so without this, pin/favourite/archive would be unreachable on mobile.
-  function openRowMenu(e, c) {
-    e.preventDefault()
+  // There's no hover state on touch devices to reveal the "..." button, so without a long-press
+  // path, pin/favourite/archive would be unreachable on mobile.
+  const longPressTimer = useRef(null)
+  const longPressTriggered = useRef(false)
+  const touchStartPos = useRef({ x: 0, y: 0 })
+
+  function openRowMenuAt(clientX, clientY, c) {
     // ChatItemMenu is w-48 (192px) and positioned via `right` — clamp so it never overflows
     // either edge, which a naive viewportWidth - clientX does for presses near the left edge.
     const menuWidth = 192
     const margin = 8
     const right = Math.min(
-      Math.max(margin, window.innerWidth - e.clientX),
+      Math.max(margin, window.innerWidth - clientX),
       window.innerWidth - menuWidth - margin
     )
-    setMenuPos({ top: e.clientY, right })
+    setMenuPos({ top: clientY, right })
     setMenuConvId((id) => id === c.id ? null : c.id)
+  }
+
+  // Right-click on desktop.
+  function openRowMenu(e, c) {
+    e.preventDefault()
+    openRowMenuAt(e.clientX, e.clientY, c)
+  }
+
+  // Long-press on mobile — the browser's native `contextmenu` event from a touch-and-hold isn't
+  // reliable across mobile browsers (notably iOS Safari), so this detects the hold with a manual
+  // timer instead. A move past a small threshold (scrolling) cancels it; a firing long-press sets
+  // longPressTriggered so the row's own onClick (which fires right after touchend) doesn't also
+  // open the conversation.
+  function handleTouchStart(e, c) {
+    const touch = e.touches[0]
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
+    longPressTriggered.current = false
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true
+      if (navigator.vibrate) navigator.vibrate(10)
+      openRowMenuAt(touch.clientX, touch.clientY, c)
+    }, 500)
+  }
+
+  function handleTouchMove(e) {
+    const touch = e.touches[0]
+    if (Math.abs(touch.clientX - touchStartPos.current.x) > 10 || Math.abs(touch.clientY - touchStartPos.current.y) > 10) {
+      clearTimeout(longPressTimer.current)
+    }
+  }
+
+  function handleTouchEnd() {
+    clearTimeout(longPressTimer.current)
   }
 
   return (
@@ -247,8 +282,14 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                 onMouseLeave={() => setHoveredConvId(null)}
               >
                 <button
-                  onClick={() => openConversation(c)}
+                  onClick={() => {
+                    if (longPressTriggered.current) { longPressTriggered.current = false; return }
+                    openConversation(c)
+                  }}
                   onContextMenu={(e) => openRowMenu(e, c)}
+                  onTouchStart={(e) => handleTouchStart(e, c)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
                     isActive
                       ? darkMode ? 'bg-gray-800' : 'bg-violet-50'
