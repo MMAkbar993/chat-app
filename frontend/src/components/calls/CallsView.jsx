@@ -50,8 +50,24 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
 
   return (
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}>
-      <div className="relative px-4 pt-5 pb-3 flex items-center">
-        <div className="flex gap-2">
+      <div className="px-4 pt-5 pb-3">
+        {/* Mobile: icon left, title centered */}
+        <div className="relative flex items-center md:hidden">
+          <button
+            onClick={() => setShowNewCall(true)}
+            className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
+            title="New call"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+          </button>
+          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
+        </div>
+        {/* Desktop: original title-left, icon-right layout, unchanged */}
+        <div className="hidden md:flex items-center justify-between">
+          <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
           <button
             onClick={() => setShowNewCall(true)}
             className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
@@ -63,7 +79,6 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
             </svg>
           </button>
         </div>
-        <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Calls</h2>
       </div>
 
       <div className="px-4 pb-3">

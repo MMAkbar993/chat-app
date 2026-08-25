@@ -113,27 +113,51 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
     <div className={`w-full md:w-80 shrink-0 ${mobileHidden ? 'hidden md:flex' : 'flex'} flex-col border-r ${bg}`}>
 
       {/* Header */}
-      <div className="relative px-4 pt-5 pb-3 flex items-center">
-        <div className="flex items-center gap-2">
-          {/* Invite — blocked contacts already live under Settings, no need to duplicate here */}
-          <button
-            onClick={() => setShowInvite(true)}
-            className={`text-sm font-medium underline underline-offset-2 transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-800'}`}
-          >
-            Invite
-          </button>
-          {/* Add contact button */}
-          <button
-            onClick={() => setShowAdd(true)}
-            title="Add Contact"
-            className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
+      <div className="px-4 pt-5 pb-3">
+        {/* Mobile: icon(s) left, title centered */}
+        <div className="relative flex items-center md:hidden">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowInvite(true)}
+              className={`text-sm font-medium underline underline-offset-2 transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              Invite
+            </button>
+            <button
+              onClick={() => setShowAdd(true)}
+              title="Add Contact"
+              className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+          <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
         </div>
-        <h2 className={`absolute left-1/2 -translate-x-1/2 text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
+        {/* Desktop: original title-left, icons-right layout, unchanged */}
+        <div className="hidden md:flex items-center justify-between">
+          <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacts</h2>
+          <div className="flex items-center gap-2">
+            {/* Invite — blocked contacts already live under Settings, no need to duplicate here */}
+            <button
+              onClick={() => setShowInvite(true)}
+              className={`text-sm font-medium underline underline-offset-2 transition-colors ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              Invite
+            </button>
+            {/* Add contact button */}
+            <button
+              onClick={() => setShowAdd(true)}
+              title="Add Contact"
+              className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-white hover:bg-violet-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Search */}
