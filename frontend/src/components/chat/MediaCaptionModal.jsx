@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 function formatBytes(bytes) {
   if (!bytes) return ''
@@ -11,6 +11,14 @@ function formatBytes(bytes) {
 
 export default function MediaCaptionModal({ file, localUrl, mediaType, darkMode, onCancel, onSend }) {
   const [caption, setCaption] = useState('')
+  const textareaRef = useRef(null)
+
+  function handleChange(e) {
+    setCaption(e.target.value)
+    const el = e.target
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -59,14 +67,16 @@ export default function MediaCaptionModal({ file, localUrl, mediaType, darkMode,
         </div>
 
         <div className="p-3">
-          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${inputBg}`}>
-            <input
+          <div className={`flex items-end gap-2 rounded-xl px-3 py-2 ${inputBg}`}>
+            <textarea
+              ref={textareaRef}
               autoFocus
+              rows={1}
               value={caption}
-              onChange={(e) => setCaption(e.target.value)}
+              onChange={handleChange}
               onKeyDown={handleKeyDown}
               placeholder="Add a caption…"
-              className={`flex-1 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
+              className={`flex-1 bg-transparent outline-none resize-none text-sm max-h-32 overflow-y-auto leading-5 py-0.5 ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
             />
             <button
               onClick={() => onSend(caption.trim() || null)}

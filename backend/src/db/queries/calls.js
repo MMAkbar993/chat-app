@@ -4,8 +4,8 @@ export async function getCallHistory(userId, limit = 50) {
   const result = await query(
     `SELECT
        c.id, c.call_type, c.status, c.started_at, c.ended_at, c.duration_seconds,
-       caller.id AS caller_id, caller.full_name AS caller_name, caller.avatar_url AS caller_avatar,
-       callee.id AS callee_id, callee.full_name AS callee_name, callee.avatar_url AS callee_avatar,
+       caller.id AS caller_id, caller.full_name AS caller_name, caller.display_name AS caller_display_name, caller.avatar_url AS caller_avatar,
+       callee.id AS callee_id, callee.full_name AS callee_name, callee.display_name AS callee_display_name, callee.avatar_url AS callee_avatar,
        c.conversation_id,
        conv.name AS conversation_name, conv.avatar_url AS conversation_avatar, conv.type AS conversation_type
      FROM calls c

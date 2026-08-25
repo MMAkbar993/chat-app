@@ -35,7 +35,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
     const isMe = c.caller_id === user?.id
     const other = c.conversation_type === 'group'
       ? (c.conversation_name || '')
-      : (isMe ? c.callee_name : c.caller_name) || ''
+      : (isMe ? (c.callee_display_name || c.callee_name) : (c.caller_display_name || c.caller_name)) || ''
     if (search && !other.toLowerCase().includes(search.toLowerCase())) return false
     if (filter === 'missed') return c.status === 'missed'
     if (filter === 'incoming') return c.callee_id === user?.id
@@ -116,7 +116,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
           const isGroup = c.conversation_type === 'group'
           const otherName = isGroup
             ? (c.conversation_name || 'Group')
-            : (isMe ? c.callee_name : c.caller_name) || 'Unknown'
+            : (isMe ? (c.callee_display_name || c.callee_name) : (c.caller_display_name || c.caller_name)) || 'Account Deleted'
           const otherAvatar = isGroup
             ? c.conversation_avatar
             : (isMe ? c.callee_avatar : c.caller_avatar)
@@ -138,7 +138,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName || 'Unknown'}</p>
+                <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName}</p>
                 <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{label} · {timeAgo(c.started_at)}</span>
               </div>
               <button
