@@ -184,7 +184,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       )}
 
       {/* Contact list */}
-      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
+      <div className="flex-1 overflow-y-auto pb-28 md:pb-0">
         <div className="px-4 mb-2">
           <span className={`text-xs font-semibold uppercase tracking-wide ${sub}`}>All Contacts</span>
         </div>

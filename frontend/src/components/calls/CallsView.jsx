@@ -110,7 +110,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
+      <div className="flex-1 overflow-y-auto pb-28 md:pb-0">
         {filtered.map((c) => {
           const isMe = c.caller_id === user?.id
           const isGroup = c.conversation_type === 'group'

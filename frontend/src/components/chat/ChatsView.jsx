@@ -188,7 +188,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
 
       {/* Search */}
       <div className="px-4 pb-3">
-        <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+        <div className={`flex items-center gap-2 rounded-full md:rounded-xl px-4 py-2.5 md:py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -207,6 +207,17 @@ export default function ChatsView({ darkMode, mobileHidden }) {
           <div className="mb-3">
             <div className="px-4 flex items-center justify-between mb-3">
               <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Recent Chats</span>
+              <button
+                onClick={() => document.getElementById('all-chats-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className={`md:hidden flex items-center gap-0.5 pl-3 pr-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                  darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                See all
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
             <div className="flex gap-4 px-4 overflow-x-auto pb-3">
               {recent.map((c) => {
@@ -217,7 +228,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                   <button key={c.id} onClick={() => openConversation(c)}
                     className="flex flex-col items-center gap-1.5 min-w-14">
                     <div className="relative shrink-0 w-14 h-14">
-                      <div className={`w-full h-full rounded-full overflow-hidden ring-2 ${darkMode ? 'ring-gray-800' : 'ring-gray-100'}`}>
+                      <div className={`w-full h-full rounded-full overflow-hidden ring-2 shadow-md md:shadow-none ${darkMode ? 'ring-gray-800' : 'ring-white'}`}>
                         {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                           : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-lg">{(fullName || '?')[0].toUpperCase()}</div>}
                       </div>
@@ -236,17 +247,17 @@ export default function ChatsView({ darkMode, mobileHidden }) {
         {/* All chats */}
         <div>
           <div className="px-4 flex items-center justify-between mb-2">
-            <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            <span id="all-chats-heading" className={`text-sm font-bold scroll-mt-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               {FILTER_LABELS[conversationFilter] || 'All Chats'}
             </span>
             <div className="relative">
               <button
                 aria-label="Filter chats"
                 onClick={() => setShowFilterMenu((v) => !v)}
-                className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
+                className={`w-7 h-7 flex items-center justify-center rounded-full md:rounded transition-colors ${
                   conversationFilter !== 'all'
-                    ? 'text-violet-500'
-                    : darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                    ? darkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-100 text-violet-500'
+                    : darkMode ? 'md:hover:text-gray-300 bg-gray-800 md:bg-transparent text-gray-400' : 'md:hover:text-gray-600 bg-gray-100 md:bg-transparent text-gray-500 md:text-gray-400'
                 }`}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -277,7 +288,9 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             return (
               <div
                 key={c.id}
-                className={`relative border-b ${darkMode ? 'border-gray-800' : 'border-gray-50'}`}
+                className={`relative overflow-hidden mx-4 mb-2 rounded-2xl shadow-sm md:shadow-none md:mx-0 md:mb-0 md:rounded-none md:border-b ${
+                  darkMode ? 'bg-gray-800 md:bg-transparent md:border-gray-800' : 'bg-white md:bg-transparent md:border-gray-50'
+                }`}
                 onMouseEnter={() => setHoveredConvId(c.id)}
                 onMouseLeave={() => setHoveredConvId(null)}
               >
@@ -290,14 +303,14 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                   onTouchStart={(e) => handleTouchStart(e, c)}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 md:py-3 text-left transition-colors ${
                     isActive
-                      ? darkMode ? 'bg-gray-800' : 'bg-violet-50'
-                      : darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
+                      ? darkMode ? 'md:bg-gray-800' : 'md:bg-violet-50'
+                      : darkMode ? 'md:hover:bg-gray-800' : 'md:hover:bg-gray-50'
                   }`}
                 >
                   <div className="relative shrink-0 w-11 h-11">
-                    <div className="w-full h-full rounded-full overflow-hidden">
+                    <div className="w-full h-full rounded-full overflow-hidden shadow-sm md:shadow-none">
                       {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                         : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(name || '?')[0].toUpperCase()}</div>}
                     </div>

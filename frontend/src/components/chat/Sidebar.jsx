@@ -286,34 +286,42 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
       </button>
     </aside>
 
-    {/* Mobile bottom tab bar — replaces the desktop rail below md:, Telegram/WhatsApp style.
+    {/* Mobile bottom tab bar — replaces the desktop rail below md:, floating pill style.
         Hidden once a deeper view (an open chat, a settings detail) takes over the screen, same
         as the desktop rail was via mobileHidden — the compose bar takes its place there instead. */}
     {!mobileHidden && (
       <nav
-        className={`md:hidden fixed bottom-0 inset-x-0 z-30 flex border-t ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'}`}
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className={`md:hidden fixed inset-x-4 z-30 flex items-center justify-around gap-1 rounded-full px-2 py-2 shadow-xl border ${
+          darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'
+        }`}
+        style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         {NAV.map(({ key, label, icon }) => {
           const badge = NAV_BADGES[key]
+          const isActive = active === key
           return (
             <button
               key={key}
               data-tour={`sidebar-${key}`}
               onClick={() => onNav(key)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-                active === key
-                  ? 'text-violet-600'
-                  : darkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}
+              className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-14"
             >
-              <div className="relative">
+              <div className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                isActive
+                  ? darkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-100 text-violet-600'
+                  : darkMode ? 'text-gray-500' : 'text-gray-400'
+              }`}>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icon}</svg>
                 {badge > 0 && (
-                  <span className={`absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ${darkMode ? 'ring-2 ring-gray-900' : 'ring-2 ring-white'}`} />
+                  <span className={`absolute top-0.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ${darkMode ? 'ring-2 ring-gray-900' : 'ring-2 ring-white'}`} />
                 )}
               </div>
-              {label}
+              <span className={`text-[11px] font-medium transition-colors ${
+                isActive ? 'text-violet-600' : darkMode ? 'text-gray-500' : 'text-gray-400'
+              }`}>
+                {label}
+              </span>
+              {isActive && <span className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-violet-500" />}
             </button>
           )
         })}

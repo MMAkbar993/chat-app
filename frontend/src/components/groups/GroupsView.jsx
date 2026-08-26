@@ -230,7 +230,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
+      <div className="flex-1 overflow-y-auto pb-28 md:pb-0">
         {/* Filter header */}
         <div className="px-4 mb-2 flex items-center justify-between">
           <span className={`text-xs font-semibold uppercase tracking-wide ${dm ? 'text-gray-500' : 'text-gray-400'}`}>
