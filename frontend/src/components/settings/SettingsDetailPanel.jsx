@@ -138,6 +138,24 @@ function InfoTooltip({ tip, darkMode }) {
   )
 }
 
+// Website verification (DNS/meta-tag steps) and social OAuth popups both need a full browser
+// window and don't work reliably on a phone — gate them to desktop instead of shipping a
+// cramped, half-working version of either flow.
+function DesktopOnlyNotice({ darkMode }) {
+  return (
+    <div className="md:hidden flex flex-col items-center text-center py-14 px-6">
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+        <svg className={`w-7 h-7 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <p className={`text-sm max-w-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        Login to Pulse on Desktop or Laptop to update social accounts or website verification.
+      </p>
+    </div>
+  )
+}
+
 function ChangeEmailModal({ currentEmail, darkMode, onClose, onChanged }) {
   const [step, setStep] = useState('form') // 'form' | 'done'
   const [newEmail, setNewEmail] = useState('')
@@ -603,20 +621,26 @@ export default function SettingsDetailPanel({ darkMode, section, onBack }) {
             <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : section === 'website' ? (
-          // Website Verification builds its own full-width card layout — no outer box.
-          <div className="max-w-4xl mx-auto">
-            <WebsiteVerificationSection darkMode={dm} profile={profile} />
-          </div>
+          <>
+            <DesktopOnlyNotice darkMode={dm} />
+            {/* Website Verification builds its own full-width card layout — no outer box. */}
+            <div className="hidden md:block max-w-4xl mx-auto">
+              <WebsiteVerificationSection darkMode={dm} profile={profile} />
+            </div>
+          </>
         ) : section === 'billing' ? (
           // Billing builds its own full-width card layout — no outer box.
           <div className="max-w-4xl mx-auto">
             <BillingSection darkMode={dm} />
           </div>
         ) : section === 'social' ? (
-          // Social Profiles builds its own full-width card layout — no outer box.
-          <div className="max-w-4xl mx-auto">
-            <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
-          </div>
+          <>
+            <DesktopOnlyNotice darkMode={dm} />
+            {/* Social Profiles builds its own full-width card layout — no outer box. */}
+            <div className="hidden md:block max-w-4xl mx-auto">
+              <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
+            </div>
+          </>
         ) : section === 'feedback' ? (
           <div className="max-w-4xl mx-auto">
             <div className={`rounded-2xl p-6 shadow-sm ${dm ? 'bg-gray-900' : 'bg-white'}`}>
