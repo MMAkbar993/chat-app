@@ -20,15 +20,17 @@ function SectionLabel({ children, darkMode }) {
 }
 
 // A flat, Telegram-style row: colored icon badge + label + chevron.
-// Highlights when it's the active/selected section.
+// Highlights when it's the active/selected section. On mobile, rows are grouped into a shared
+// card by SettingsGroup below (which supplies the divider between rows via divide-y), so the
+// row itself only draws its own border on desktop's flat list.
 function ListRow({ icon, label, description, active, onClick, darkMode, danger = false, dataTour }) {
   const dm = darkMode
   return (
     <button
       onClick={onClick}
       data-tour={dataTour}
-      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b transition-colors ${
-        dm ? 'border-gray-700' : 'border-gray-100'
+      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left md:border-b transition-colors ${
+        dm ? 'md:border-gray-700' : 'md:border-gray-100'
       } ${
         active
           ? (dm ? 'bg-gray-800' : 'bg-violet-50')
@@ -44,6 +46,20 @@ function ListRow({ icon, label, description, active, onClick, darkMode, danger =
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </button>
+  )
+}
+
+// Wraps a group of rows into its own rounded card on mobile (Telegram-style), with a divider
+// between rows instead of each row drawing its own border. On desktop this is a no-op — display:
+// contents means the wrapper paints nothing and its own classes (bg/shadow/rounding) are ignored,
+// so the rows fall back to their normal flat list with each row's own md:border-b, unchanged.
+function SettingsGroup({ darkMode, children }) {
+  return (
+    <div className={`mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm divide-y md:contents ${
+      darkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-100'
+    }`}>
+      {children}
+    </div>
   )
 }
 
@@ -137,10 +153,11 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
         {/* ── PREFERENCES — mobile only; desktop already has these in the side rail ── */}
         <div className="md:hidden">
           <SectionLabel darkMode={dm}>Preferences</SectionLabel>
+          <div className={`mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm ${dm ? 'bg-gray-800' : 'bg-white'}`}>
           <button
             onClick={onDarkMode}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b transition-colors ${
-              dm ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-100 hover:bg-gray-50'
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+              dm ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
             }`}
           >
             <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${dm ? 'bg-slate-600' : 'bg-slate-700'}`}>
@@ -159,11 +176,13 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${dm ? 'translate-x-4' : 'translate-x-0'}`} />
             </span>
           </button>
+          </div>
         </div>
 
         {/* ── ACCOUNT ── */}
         <SectionLabel darkMode={dm}>Account</SectionLabel>
 
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           active={activeSection === 'profile'}
@@ -189,9 +208,11 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           icon={icon('M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1', 'bg-pink-500')}
           label="Social Profiles"
         />
+        </SettingsGroup>
 
         {/* ── BILLING ── */}
         <SectionLabel darkMode={dm}>Billing</SectionLabel>
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           active={activeSection === 'billing'}
@@ -200,10 +221,12 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           label="Billing"
           description="Plan, payment method, invoices"
         />
+        </SettingsGroup>
 
         {/* ── SECURITY ── */}
         <SectionLabel darkMode={dm}>Security</SectionLabel>
 
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           active={activeSection === 'password'}
@@ -219,9 +242,11 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           icon={icon('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', 'bg-indigo-500')}
           label="Two-Factor Authentication"
         />
+        </SettingsGroup>
 
         {/* ── CHAT ── */}
         <SectionLabel darkMode={dm}>Chat</SectionLabel>
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           active={activeSection === 'chat'}
@@ -230,9 +255,11 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           label="Chat"
           description="Clear history"
         />
+        </SettingsGroup>
 
         {/* ── NOTIFICATIONS ── */}
         <SectionLabel darkMode={dm}>Notifications</SectionLabel>
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           active={activeSection === 'notifications'}
@@ -240,10 +267,12 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           icon={icon('M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9', 'bg-orange-500')}
           label="Notifications"
         />
+        </SettingsGroup>
 
         {/* ── MANAGE DEVICE ── */}
         <SectionLabel darkMode={dm}>Manage Device</SectionLabel>
 
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           active={activeSection === 'devices'}
@@ -251,10 +280,12 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           icon={icon('M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', 'bg-amber-500')}
           label="Device History"
         />
+        </SettingsGroup>
 
         {/* ── OTHERS ── */}
         <SectionLabel darkMode={dm}>Other</SectionLabel>
 
+        <SettingsGroup darkMode={dm}>
         <ListRow
           darkMode={dm}
           icon={icon('M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'bg-blue-500')}
@@ -328,6 +359,7 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
+        </SettingsGroup>
 
       </div>
 

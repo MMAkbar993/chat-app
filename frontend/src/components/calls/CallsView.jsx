@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { useChat } from '../../context/ChatContext'
 import { getCalls } from '../../api/calls'
 import NewCallModal from './NewCallModal'
 
@@ -22,6 +23,7 @@ const STATUS_ICON = {
 
 export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat, mobileHidden }) {
   const { user } = useAuth()
+  const { onlineUsers } = useChat()
   const [calls, setCalls] = useState([])
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -120,6 +122,7 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
           const otherAvatar = isGroup
             ? c.conversation_avatar
             : (isMe ? c.callee_avatar : c.caller_avatar)
+          const otherId = isMe ? c.callee_id : c.caller_id
           const { color, label } = STATUS_ICON[c.status] || STATUS_ICON.missed
 
           return (
@@ -135,7 +138,9 @@ export default function CallsView({ darkMode, onCallStart, onNewCall, onOpenChat
                   {otherAvatar ? <img src={otherAvatar} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(otherName || '?')[0].toUpperCase()}</div>}
                 </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                {!isGroup && onlineUsers.has(otherId) && (
+                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName}</p>

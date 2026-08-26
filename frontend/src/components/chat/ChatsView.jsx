@@ -207,17 +207,6 @@ export default function ChatsView({ darkMode, mobileHidden }) {
           <div className="mb-3">
             <div className="px-4 flex items-center justify-between mb-3">
               <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Recent Chats</span>
-              <button
-                onClick={() => document.getElementById('all-chats-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className={`md:hidden flex items-center gap-0.5 pl-3 pr-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                  darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                See all
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
             </div>
             <div className="flex gap-4 px-4 overflow-x-auto pb-3">
               {recent.map((c) => {
@@ -247,7 +236,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
         {/* All chats */}
         <div>
           <div className="px-4 flex items-center justify-between mb-2">
-            <span id="all-chats-heading" className={`text-sm font-bold scroll-mt-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               {FILTER_LABELS[conversationFilter] || 'All Chats'}
             </span>
             <div className="relative">
