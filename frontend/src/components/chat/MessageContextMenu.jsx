@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react'
 
-export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onClose, isMe, canEdit, darkMode, dir = 'down' }) {
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+
+export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onReact, onMoreReactions, onClose, isMe, canEdit, darkMode, dir = 'down' }) {
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -23,6 +25,25 @@ export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit,
       } ${isMe ? 'right-0' : 'left-0'} ${dir === 'up' ? 'bottom-0' : 'top-0'}`}
       style={{ minWidth: '13rem' }}
     >
+      <div className={`flex items-center gap-0.5 px-0.5 pb-1.5 mb-1 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+        {QUICK_REACTIONS.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={() => { onReact(emoji); onClose() }}
+            className={`text-lg w-8 h-8 flex items-center justify-center rounded-full transition-transform hover:scale-125 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+          >
+            {emoji}
+          </button>
+        ))}
+        <button
+          onClick={() => { onMoreReactions(); onClose() }}
+          className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 ${darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-400 hover:bg-gray-100'}`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
       <button className={itemClass} onClick={() => { onReply(); onClose() }}>
         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />

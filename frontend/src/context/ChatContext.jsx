@@ -25,6 +25,10 @@ export function ChatProvider({ children }) {
   const [lastSeenMap, setLastSeenMap] = useState({})
   const activeConvRef = useRef(null)
   const conversationsRef = useRef([])
+  // conversationId -> unsent composer text. Lives here (not in MessageInput's own state) so a
+  // draft survives MessageInput unmounting — which happens on every navigation away from the
+  // Chats/Groups section, since ChatWindow only renders while one of those is active.
+  const messageDrafts = useRef(new Map())
 
   useEffect(() => {
     conversationsRef.current = conversations
@@ -332,6 +336,7 @@ export function ChatProvider({ children }) {
       replyTo, setReplyTo, clearReply,
       toggleConversationFlag, removeConversation, dropConversation, clearConversationMessages, markConversationUnread,
       onlineUsers, lastSeenMap,
+      messageDrafts,
     }}>
       {children}
     </ChatContext.Provider>

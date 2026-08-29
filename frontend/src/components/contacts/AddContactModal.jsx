@@ -1,17 +1,30 @@
 import { useEffect, useState } from 'react'
 import { searchUsers, addContact } from '../../api/contacts'
+import { useAuth } from '../../context/AuthContext'
+import { isProUser } from '../../utils/plan'
+import UpgradeModal from '../../features/payment/UpgradeModal'
 
 export default function AddContactModal({ darkMode, onClose, onAdded }) {
+  const { user } = useAuth()
+  const [mode, setMode] = useState('username') // 'username' | 'business'
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [adding, setAdding] = useState(null)
   const [added, setAdded] = useState({})
   const [toast, setToast] = useState(null)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
+  }
+
+  function selectTab(next) {
+    if (next === 'business' && !isProUser(user)) { setShowUpgrade(true); return }
+    setMode(next)
+    setQ('')
+    setResults([])
   }
 
   useEffect(() => {
@@ -19,7 +32,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
     setLoading(true)
     const t = setTimeout(async () => {
       try {
-        const data = await searchUsers(q)
+        const data = await searchUsers(q, mode)
         setResults(data.users || [])
       } catch {
         showToast('Search failed. Please try again.', 'error')
@@ -27,7 +40,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
       setLoading(false)
     }, 300)
     return () => clearTimeout(t)
-  }, [q])
+  }, [q, mode])
 
   async function handleAdd(user) {
     setAdding(user.id)
@@ -79,6 +92,35 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
           </div>
         )}
 
+        {/* Tabs */}
+        <div className={`flex items-center gap-1 p-1 rounded-xl mb-3 ${inputBg}`}>
+          <button
+            onClick={() => selectTab('username')}
+            className={`flex-1 text-xs font-semibold py-1.5 rounded-lg transition-colors ${
+              mode === 'username'
+                ? 'bg-violet-600 text-white'
+                : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            Username
+          </button>
+          <button
+            onClick={() => selectTab('business')}
+            className={`flex-1 flex items-center justify-center gap-1 text-xs font-semibold py-1.5 rounded-lg transition-colors ${
+              mode === 'business'
+                ? 'bg-violet-600 text-white'
+                : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            Business Name
+            {!isProUser(user) && (
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+              </svg>
+            )}
+          </button>
+        </div>
+
         {/* Search input */}
         <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-1 ${inputBg}`}>
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,7 +129,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by exact username"
+            placeholder={mode === 'business' ? 'Search by business name' : 'Search by exact username'}
             className={`flex-1 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
             autoFocus
           />
@@ -95,7 +137,9 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
 
         {/* Hint */}
         <p className={`text-xs mb-3 px-1 ${sub}`}>
-          Enter someone's exact username to find them.
+          {mode === 'business'
+            ? "Enter a business name to find its verified representative."
+            : "Enter someone's exact username to find them."}
         </p>
 
         {/* Results */}
@@ -110,7 +154,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{u.display_name || u.full_name}</p>
-                <p className="text-xs text-gray-400">@{u.username}</p>
+                <p className="text-xs text-gray-400">{mode === 'business' && u.company_name ? u.company_name : `@${u.username}`}</p>
               </div>
               {added[u.id] ? (
                 <span className="text-xs text-green-500 font-medium">Added</span>
@@ -130,6 +174,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded }) {
           )}
         </div>
       </div>
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </div>
   )
 }

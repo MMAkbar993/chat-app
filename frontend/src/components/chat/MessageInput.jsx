@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSocket } from '../../context/SocketContext'
+import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { uploadFile } from '../../api/users'
 import AttachmentMenu from './AttachmentMenu'
@@ -30,12 +31,31 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   const audioRef = useRef(null)
 
   const { socket } = useSocket()
+  const { messageDrafts } = useChat()
   const typingRef = useRef(false)
   const typingTimerRef = useRef(null)
   const textareaRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const chunksRef = useRef([])
   const recordTimerRef = useRef(null)
+  const textRef = useRef(text)
+
+  useEffect(() => {
+    textRef.current = text
+  }, [text])
+
+  // Without this the typed text would leak into whatever chat you open next — or, since
+  // MessageInput unmounts entirely when navigating away from Chats/Groups, get lost outright.
+  // The draft itself lives in ChatContext (messageDrafts) so it survives that unmount; the
+  // cleanup here always saves whatever was last typed for the conversation we're leaving,
+  // using textRef since the effect's own `text` closure would otherwise be stale.
+  useEffect(() => {
+    const drafts = messageDrafts.current
+    setText(drafts.get(conversationId) || '')
+    return () => {
+      drafts.set(conversationId, textRef.current)
+    }
+  }, [conversationId, messageDrafts])
 
   // Load the target message's text into the composer the moment editingMessage changes — a prop
   // change handled during render (React's documented pattern), not in an effect.

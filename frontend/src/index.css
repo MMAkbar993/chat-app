@@ -34,6 +34,20 @@
   animation: float-reverse 3.5s ease-in-out 1.2s infinite;
 }
 
+/* Jumbo emoji-only messages "pop" in once when the bubble first mounts (a real animated-artwork
+   emoji set isn't available under a free/clean license — see MessageBubble.jsx) instead of just
+   appearing flat. Plays once per mount, not on a loop, so a scrollback full of these doesn't turn
+   into a wall of wiggling emoji. */
+@keyframes emoji-pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.animate-emoji-pop {
+  animation: emoji-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 * {
   box-sizing: border-box;
 }

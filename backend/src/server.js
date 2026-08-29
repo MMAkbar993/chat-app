@@ -19,6 +19,7 @@ import { calendarRouter } from './routes/calendar.routes.js'
 import { uploadRouter } from './routes/upload.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
 import { ogRouter } from './routes/og.routes.js'
+import { linkPreviewRouter } from './routes/linkPreview.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { apiLimiter } from './middleware/rateLimit.js'
 
@@ -98,6 +99,7 @@ export function createApp() {
   app.use('/connect', socialRouter)
   app.use('/api/upload', uploadRouter)
   app.use('/api/admin', adminRouter)
+  app.use('/api/link-preview', linkPreviewRouter)
 
   app.use(errorHandler)
 

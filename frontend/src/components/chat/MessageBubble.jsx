@@ -4,6 +4,7 @@ import { useSocket } from '../../context/SocketContext'
 import MessageContextMenu from './MessageContextMenu'
 import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
+import LinkPreviewCard from './LinkPreviewCard'
 import { forwardMessageApi } from '../../api/conversations'
 import { getReplyPreviewText, getReplyImageUrl, hasReplyPreview } from '../../utils/replyPreview'
 
@@ -33,6 +34,11 @@ function highlightText(text, query) {
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g
 
+function firstUrl(text) {
+  const match = (text || '').match(URL_REGEX)
+  return match ? match[0] : null
+}
+
 // Turns plain-text URLs into real links — e.g. the Google Calendar invite link a scheduled
 // meeting drops into the conversation. Only touches plain string segments, so it composes safely
 // with highlightText's <mark> output instead of fighting it.
@@ -52,6 +58,22 @@ function renderMessageText(text, query) {
   const highlighted = highlightText(text, query)
   const nodes = Array.isArray(highlighted) ? highlighted : [highlighted]
   return nodes.flatMap((node, i) => linkifyNode(node, `link-${i}`))
+}
+
+// \p{Extended_Pictographic} covers emoji glyphs without also matching plain digits/punctuation
+// that Unicode's broader \p{Emoji} property includes (e.g. '#', '*', '0'-'9').
+const EMOJI_ONLY_REGEX = /^[\p{Extended_Pictographic}\p{Emoji_Component}\s]+$/u
+const segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null
+
+// Telegram-style jumbo rendering: a message that's just a handful of emoji (no other text)
+// shows the emoji big with no bubble, instead of tiny inside a normal chat bubble.
+function isEmojiOnly(text) {
+  const trimmed = (text || '').trim()
+  if (!trimmed || !EMOJI_ONLY_REGEX.test(trimmed)) return false
+  const count = segmenter
+    ? [...segmenter.segment(trimmed)].length
+    : [...trimmed].length
+  return count > 0 && count <= 6
 }
 
 export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
@@ -118,6 +140,8 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
     content: msg.reply_content,
   })
   const showReply = hasReplyPreview(msg)
+  const emojiOnly = msg.message_type === 'text' && !showReply && isEmojiOnly(msg.content)
+  const previewUrl = msg.message_type === 'text' && !emojiOnly ? firstUrl(msg.content) : null
 
   return (
     <div
@@ -152,7 +176,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
 
         <div className="relative" onContextMenu={handleContextMenu}>
           {/* Bubble */}
-          <div className={`px-4 py-2 rounded-2xl text-sm ${
+          <div className={emojiOnly ? 'text-sm' : `px-4 py-2 rounded-2xl text-sm ${
             isMe
               ? 'bg-violet-600 text-white rounded-br-sm'
               : darkMode
@@ -262,7 +286,13 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                     {captionEl}
                   </div>
                 )
-              return <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery)}</p>
+              if (emojiOnly) return <p className="text-5xl leading-tight animate-emoji-pop">{msg.content}</p>
+              return (
+                <>
+                  <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery)}</p>
+                  {previewUrl && <LinkPreviewCard url={previewUrl} darkMode={darkMode} isMe={isMe} />}
+                </>
+              )
             })()}
           </div>
 
@@ -291,6 +321,8 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               canEdit={canEdit}
               darkMode={darkMode}
               onClose={() => setShowMenu(false)}
+              onReact={handleReaction}
+              onMoreReactions={() => setShowReactionPicker(true)}
               onReply={() => onReply?.(msg)}
               onForward={() => setShowForward(true)}
               onCopy={handleCopy}

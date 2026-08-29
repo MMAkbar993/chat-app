@@ -60,3 +60,16 @@ export async function searchUsers(username, excludeUserId, limit = 20) {
   )
   return result.rows
 }
+
+export async function searchUsersByCompanyName(companyName, excludeUserId, limit = 20) {
+  const result = await query(
+    `SELECT id, full_name, username, primary_role, avatar_url, display_name, company_name
+     FROM users
+     WHERE id != $2
+       AND company_name ILIKE $1
+       AND is_active = true
+     LIMIT $3`,
+    [`%${companyName}%`, excludeUserId, limit]
+  )
+  return result.rows
+}

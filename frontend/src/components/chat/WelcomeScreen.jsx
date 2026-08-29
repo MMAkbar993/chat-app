@@ -4,7 +4,7 @@ export default function WelcomeScreen({ darkMode }) {
   const { user } = useAuth()
   return (
     <div className={`flex-1 flex flex-col items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
-      style={{ backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+      style={{ backgroundImage: `radial-gradient(circle, ${darkMode ? '#4b5563' : '#e5e7eb'} 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
     >
       <div className={`rounded-2xl shadow-lg px-6 py-4 flex items-center gap-3 mb-8 ${darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}>
         <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs font-bold">

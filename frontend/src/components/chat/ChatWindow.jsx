@@ -131,6 +131,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   } = useChat()
   const { showToast } = useToast()
   const bottomRef = useRef(null)
+  const messagesContainerRef = useRef(null)
   const searchInputRef = useRef(null)
   const tempMediaRef = useRef(null)
   const scrolledForConvRef = useRef(null)
@@ -185,6 +186,21 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     const isNewConv = scrolledForConvRef.current !== convId
     if (isNewConv) scrolledForConvRef.current = convId
     bottomRef.current.scrollIntoView({ behavior: isNewConv ? 'instant' : 'smooth' })
+
+    if (!isNewConv) return
+    // Images/videos in the conversation may still be loading when we jump to the bottom above —
+    // once they resolve, their real height pushes the true bottom further down than where we
+    // landed. Keep re-pinning to bottom as each one finishes loading.
+    const media = messagesContainerRef.current?.querySelectorAll('img, video') || []
+    const rescroll = () => bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+    media.forEach((el) => {
+      if (el.tagName === 'IMG' && !el.complete) el.addEventListener('load', rescroll, { once: true })
+      else if (el.tagName === 'VIDEO' && el.readyState < 1) el.addEventListener('loadedmetadata', rescroll, { once: true })
+    })
+    return () => media.forEach((el) => {
+      el.removeEventListener('load', rescroll)
+      el.removeEventListener('loadedmetadata', rescroll)
+    })
   }, [messages, activeConversation?.id])
 
   // Reset panels and load blocked status / group participants when conversation changes
@@ -619,7 +635,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
           {loadingMessages && (
             <div className="flex justify-center py-8">
               <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />

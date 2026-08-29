@@ -90,7 +90,7 @@ function HelpCard({ darkMode }) {
         <p className={`text-xs mt-0.5 ${sub}`}>If you believe this is an error or have any questions, contact our support team.</p>
       </div>
       <a
-        href="mailto:hello@affiliateroulette.com"
+        href="mailto:pulse@affiliateroulette.com"
         className="text-xs font-semibold text-violet-600 border border-violet-200 rounded-xl px-4 py-2 hover:bg-violet-50 transition-colors shrink-0"
       >
         Contact Support

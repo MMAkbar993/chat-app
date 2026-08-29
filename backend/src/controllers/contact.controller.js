@@ -1,6 +1,7 @@
-import { getContacts, addContact, removeContact, isContact, searchUsers, updateContactNames } from '../db/queries/contacts.js'
+import { getContacts, addContact, removeContact, isContact, searchUsers, searchUsersByCompanyName, updateContactNames } from '../db/queries/contacts.js'
 import { query } from '../config/database.js'
 import { sendInviteEmail } from '../config/email.js'
+import { isProUser } from '../utils/plan.js'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -49,7 +50,14 @@ export async function removeContactHandler(req, res, next) {
 
 export async function searchUsersHandler(req, res, next) {
   try {
-    const { q } = req.query
+    const { q, mode } = req.query
+    if (mode === 'business') {
+      if (!isProUser(req.user)) return res.status(403).json({ error: 'Searching by business name is a Pro feature' })
+      const companyName = (q || '').trim()
+      if (companyName.length < 3) return res.json({ users: [] })
+      const users = await searchUsersByCompanyName(companyName, req.user.id)
+      return res.json({ users })
+    }
     const username = (q || '').trim().replace(/^@/, '')
     if (username.length < 3) return res.json({ users: [] })
     const users = await searchUsers(username, req.user.id)
