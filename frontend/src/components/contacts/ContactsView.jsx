@@ -1,32 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-
-const ROLE_LABELS = {
-  affiliate_publisher:          'Affiliate (Publisher)',
-  affiliate_manager:            'Affiliate Manager',
-  affiliate_network:            'Affiliate Network',
-  business_development_sales:   'Business Development / Sales',
-  casino_operator:               'Casino / Operator',
-  compliance_legal:              'Compliance / Legal',
-  data_odds_provider:            'Data / Odds Provider',
-  entrepreneur:                  'Entrepreneur',
-  event_organizer:               'Event Organizer',
-  fraud_risk_provider:           'Fraud / Risk Provider',
-  game_provider:                 'Game Provider',
-  influencer_streamer:           'Influencer / Streamer',
-  investor_advisor:              'Investor / Advisor',
-  kyc_aml_provider:              'KYC / AML Provider',
-  marketing_crm:                 'Marketing / CRM',
-  media_seo_agency:              'Media / SEO Agency',
-  payment_provider:              'Payment Provider',
-  platform_provider:             'Platform Provider (White Label / Turnkey)',
-  recruitment_talent:            'Recruitment / Talent',
-  regulator_licensing:           'Regulator / Licensing',
-  sportsbook_betting_provider:   'Sportsbook / Betting Provider',
-  technology_software_provider:  'Technology / Software Provider',
-}
 import { getContacts, removeContact } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
 import { useChat } from '../../context/ChatContext'
+import { getRoleLabel } from '../../utils/roleLabels'
 import AddContactModal from './AddContactModal'
 import UserProfileModal from '../ui/UserProfileModal'
 import EditContactModal from './EditContactModal'
@@ -217,9 +193,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
                     </div>
                     <div className="min-w-0">
                       <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
-                      <p className={`text-xs ${sub}`}>
-                        {(c.primary_role === 'other' ? c.primary_role_other : ROLE_LABELS[c.primary_role]) || c.primary_role || c.username}
-                      </p>
+                      <p className={`text-xs ${sub}`}>{getRoleLabel(c)}</p>
                     </div>
                   </button>
                 )
@@ -231,7 +205,13 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
 
       {/* Modals */}
       {showAdd && (
-        <AddContactModal darkMode={darkMode} onClose={() => setShowAdd(false)} onAdded={() => { load(); setShowAdd(false) }} />
+        <AddContactModal
+          darkMode={darkMode}
+          contacts={contacts}
+          onClose={() => setShowAdd(false)}
+          onAdded={() => { load(); setShowAdd(false) }}
+          onMessage={(u) => { handleChat(u); setShowAdd(false) }}
+        />
       )}
 
       {showInvite && (

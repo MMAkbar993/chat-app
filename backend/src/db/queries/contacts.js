@@ -50,7 +50,7 @@ export async function isContact(userId, contactId) {
 
 export async function searchUsers(username, excludeUserId, limit = 20) {
   const result = await query(
-    `SELECT id, full_name, username, primary_role, avatar_url, display_name
+    `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name
      FROM users
      WHERE id != $2
        AND username ILIKE $1
@@ -63,7 +63,7 @@ export async function searchUsers(username, excludeUserId, limit = 20) {
 
 export async function searchUsersByCompanyName(companyName, excludeUserId, limit = 20) {
   const result = await query(
-    `SELECT id, full_name, username, primary_role, avatar_url, display_name, company_name
+    `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, company_name
      FROM users
      WHERE id != $2
        AND company_name ILIKE $1

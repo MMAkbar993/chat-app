@@ -267,6 +267,18 @@ export function ChatProvider({ children }) {
       setMessages((prev) =>
         prev.map((m) => m.id === messageId ? { ...m, content, edited_at } : m)
       )
+      // The edited message may be a conversation's last message — re-sync the sidebar preview
+      // the same way a brand-new message already does, instead of leaving it showing stale text.
+      loadConversations()
+    }
+
+    const onMessageDeleted = ({ messageId }) => {
+      setMessages((prev) =>
+        prev.map((m) => m.id === messageId ? { ...m, is_deleted: true, content: null } : m)
+      )
+      // Same reasoning as onMessageEdited — deleting the last message means some earlier message
+      // is now the true last message, and only a fresh fetch knows what that is.
+      loadConversations()
     }
 
     const onReactionUpdated = ({ messageId, reactions }) => {
@@ -304,6 +316,7 @@ export function ChatProvider({ children }) {
     socket.on('user-stop-typing', onStopTyping)
     socket.on('reaction-updated', onReactionUpdated)
     socket.on('message-edited', onMessageEdited)
+    socket.on('message-deleted', onMessageDeleted)
     socket.on('message-status-updated', onMessageStatusUpdated)
     socket.on('user-presence', onPresence)
     socket.on('online-users', onOnlineList)
@@ -317,6 +330,7 @@ export function ChatProvider({ children }) {
       socket.off('user-stop-typing', onStopTyping)
       socket.off('reaction-updated', onReactionUpdated)
       socket.off('message-edited', onMessageEdited)
+      socket.off('message-deleted', onMessageDeleted)
       socket.off('message-status-updated', onMessageStatusUpdated)
       socket.off('user-presence', onPresence)
       socket.off('online-users', onOnlineList)

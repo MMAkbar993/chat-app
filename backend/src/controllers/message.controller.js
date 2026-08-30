@@ -154,6 +154,20 @@ export async function removeMessage(req, res, next) {
   try {
     const deleted = await deleteMessage(req.params.id, req.user.id)
     if (!deleted) return res.status(403).json({ error: 'Cannot delete this message' })
+
+    // Same broadcast pattern as editMessageHandler — without this, the other participant's
+    // open chat never learns the message was deleted (no live update at all until they reopen
+    // the conversation), and nobody's sidebar preview re-syncs to whatever is now the true last
+    // message.
+    const participants = await getParticipants(deleted.conversation_id)
+    const io = getIo()
+    participants.forEach((p) => {
+      io.to(`user:${p.id}`).emit('message-deleted', {
+        messageId: deleted.id,
+        conversationId: deleted.conversation_id,
+      })
+    })
+
     res.json({ ok: true })
   } catch (err) {
     next(err)

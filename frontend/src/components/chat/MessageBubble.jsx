@@ -167,7 +167,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
         </div>
       )}
 
-      <div className="max-w-xs lg:max-w-md xl:max-w-lg">
+      <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${emojiOnly ? 'w-fit' : ''}`}>
         {!isMe && (
           <p className={`text-xs mb-1 ml-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {msg.sender_display_name || msg.sender_name}
@@ -286,7 +286,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                     {captionEl}
                   </div>
                 )
-              if (emojiOnly) return <p className="text-5xl leading-tight animate-emoji-pop">{msg.content}</p>
+              if (emojiOnly) return <p className="text-5xl leading-tight">{msg.content.trim()}</p>
               return (
                 <>
                   <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery)}</p>

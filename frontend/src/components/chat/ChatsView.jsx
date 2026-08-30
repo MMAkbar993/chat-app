@@ -18,7 +18,6 @@ const FILTER_LABELS = {
 }
 
 function formatLastMessage(content, type) {
-  if (!content && type !== 'call') return ' '
   if (type === 'call') {
     try {
       const d = JSON.parse(content || '{}')
@@ -316,7 +315,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                             <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
                         )}
-                        {c.last_message && c.last_message_sender_id === user?.id && (
+                        {c.last_message_id && c.last_message_sender_id === user?.id && (
                           <SidebarTicks status={c.last_message_status || 'sent'} />
                         )}
                         <span className={`text-sm md:text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>

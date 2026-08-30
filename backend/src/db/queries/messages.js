@@ -99,7 +99,7 @@ export async function deleteMessage(id, userId) {
   const result = await query(
     `UPDATE messages SET is_deleted = true, content = null
      WHERE id = $1 AND sender_id = $2
-     RETURNING id`,
+     RETURNING id, conversation_id`,
     [id, userId]
   )
   return result.rows[0] || null

@@ -201,7 +201,11 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       el.removeEventListener('load', rescroll)
       el.removeEventListener('loadedmetadata', rescroll)
     })
-  }, [messages, activeConversation?.id])
+  // messages.length (not messages itself) on purpose — a reaction, edit, or read-receipt update
+  // replaces the array in place (same length, one message's fields changed) and must NOT yank
+  // the view back to the bottom while someone's scrolled up reading history. Only an actual
+  // append/removal — a real new message — should trigger the scroll.
+  }, [messages.length, activeConversation?.id])
 
   // Reset panels and load blocked status / group participants when conversation changes
   useEffect(() => {
