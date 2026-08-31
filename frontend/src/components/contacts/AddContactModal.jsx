@@ -52,6 +52,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
 
   const loading = byUsername.loading || byBusiness.loading
   const searched = byUsername.active || byBusiness.active
+  const activeQueryLabel = byBusiness.active ? businessQuery.trim() : usernameQuery.trim()
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -163,7 +164,9 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
         {/* Results */}
         {loading && <p className="text-center text-gray-400 text-sm py-4">Searching…</p>}
         {!loading && results.length > 0 && (
-          <p className={`text-xs font-bold uppercase tracking-wide mb-2 px-1 ${sub}`}>People</p>
+          <p className={`text-xs font-bold uppercase tracking-wide mb-2 px-1 ${sub}`}>
+            {results.length} {results.length === 1 ? 'result' : 'results'} found{activeQueryLabel ? ` for "${activeQueryLabel}"` : ''}
+          </p>
         )}
         <div className="space-y-1 max-h-60 overflow-y-auto -mx-1">
           {results.map((u) => (
@@ -175,7 +178,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">{u.display_name || u.full_name}</p>
-                <p className={`text-xs truncate ${sub}`}>{getRoleLabel(u)}</p>
+                <p className={`text-xs truncate ${sub}`}>{u.matched_company || getRoleLabel(u)}</p>
               </div>
               {contactIds.has(u.id) || added[u.id] ? (
                 <button
