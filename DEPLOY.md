@@ -87,23 +87,9 @@ git push -u origin main
 SSH into your VPS as root:
 
 ```bash
-ssh root@5.189.143.148
-REDACTED_ROTATED_PASSWORD
-cd /var/www/chat
-git pull origin main
-cd backend && npm install && npm run db:migrate && cd ..
-cd frontend && npm install && npm run build && cd ..
-pm2 reload chat-backend --update-env
-
-
-pm2 restart all
-npm run db:migrate
-
-cd /home/deploy/chat
-git pull origin main
-cd backend && npm run db:migrate && cd ..
-pm2 reload chat-backend --update-env
-
+ssh root@YOUR_VPS_IP
+# Enter your root password when prompted (never store it in this file)
+```
 
 Create a non-root user (recommended):
 
@@ -183,7 +169,7 @@ sudo -i -u postgres
 psql
 
 # Run these SQL commands:
-CREATE USER chatuser WITH PASSWORD 'REDACTED_ROTATED_PASSWORD';
+CREATE USER chatuser WITH PASSWORD 'choose_a_strong_password_here';
 CREATE DATABASE chatapp OWNER chatuser;
 GRANT ALL PRIVILEGES ON DATABASE chatapp TO chatuser;
 \q
@@ -232,7 +218,7 @@ Fill in the values:
 PORT=3001
 NODE_ENV=production
 
-DATABASE_URL=postgres://chatuser:REDACTED_ROTATED_PASSWORD@localhost:5432/chatapp
+DATABASE_URL=postgres://chatuser:your_db_password_here@localhost:5432/chatapp
 
 JWT_SECRET=generate_a_random_64_char_string_here
 JWT_REFRESH_SECRET=generate_a_different_random_64_char_string_here
