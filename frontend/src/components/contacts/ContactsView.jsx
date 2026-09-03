@@ -33,13 +33,19 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
     setTimeout(() => setToast(null), 3500)
   }
 
+  // Collapsed to bare alphanumerics on both sides so "Affiliate Roulette" still matches a
+  // business stored as the bare domain "affiliateroulette.com" — same rule the Add Contact
+  // business search uses.
+  const collapse = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+
   const filtered = contacts.filter((c) => {
+    const q = search.toLowerCase()
     const name = (c.custom_first_name
       ? `${c.custom_first_name} ${c.custom_last_name || ''}`
       : c.display_name || c.full_name || c.username || '').toLowerCase()
-    return name.includes(search.toLowerCase()) ||
-      (c.username || '').toLowerCase().includes(search.toLowerCase()) ||
-      (c.email || '').toLowerCase().includes(search.toLowerCase())
+    return name.includes(q) ||
+      (c.username || '').toLowerCase().includes(q) ||
+      (!!collapse(search) && collapse(c.matched_company).includes(collapse(search)))
   })
 
   const grouped = {}
@@ -146,7 +152,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
+            placeholder="Search by name or business"
             className={`bg-transparent flex-1 outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
           />
         </div>
@@ -193,7 +199,11 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
                     </div>
                     <div className="min-w-0">
                       <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
-                      <p className={`text-xs ${sub}`}>{getRoleLabel(c)}</p>
+                      <p className={`text-xs truncate ${sub}`}>
+                        {c.matched_company
+                          ? `${getRoleLabel(c)} · ${c.matched_company}`
+                          : getRoleLabel(c)}
+                      </p>
                     </div>
                   </button>
                 )

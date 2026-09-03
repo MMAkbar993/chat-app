@@ -3,13 +3,15 @@ import { authMiddleware } from '../middleware/auth.js'
 import {
   listConversations, getOrCreateDirect, getConversation, markConversationRead, markConversationUnread,
   archiveConversation, pinConversation, favoriteConversation, muteConversation,
-  deleteConversation, clearConversation,
+  deleteConversation, clearConversation, searchMessagesHandler,
 } from '../controllers/conversation.controller.js'
 
 export const conversationRouter = Router()
 conversationRouter.use(authMiddleware)
 
 conversationRouter.get('/', listConversations)
+// Must come before '/:id' or "search-messages" gets captured as a conversation id.
+conversationRouter.get('/search-messages', searchMessagesHandler)
 conversationRouter.post('/direct', getOrCreateDirect)
 conversationRouter.get('/:id', getConversation)
 conversationRouter.patch('/:id/read', markConversationRead)

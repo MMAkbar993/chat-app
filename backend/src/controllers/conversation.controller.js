@@ -16,6 +16,18 @@ import {
   clearConversationMessages,
 } from '../db/queries/conversations.js'
 import { isContact } from '../db/queries/contacts.js'
+import { searchMessages } from '../db/queries/messages.js'
+
+export async function searchMessagesHandler(req, res, next) {
+  try {
+    const term = (req.query.q || '').trim()
+    if (term.length < 2) return res.json({ messages: [] })
+    const messages = await searchMessages(req.user.id, term)
+    res.json({ messages })
+  } catch (err) {
+    next(err)
+  }
+}
 
 export async function listConversations(req, res, next) {
   try {

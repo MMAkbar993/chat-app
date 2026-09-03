@@ -18,6 +18,22 @@ function firstNameOf(fullName) {
   return (fullName || '').trim().split(/\s+/)[0] || fullName || ''
 }
 
+// Every sensible way to render someone's own verified name: the whole thing, each individual
+// part, and first+last for longer names. Options are built from full_name rather than free
+// text so a display name always stays truthful to the KYC'd identity — but which part you go
+// by is your choice, since "the first word" isn't the first name for everyone.
+function displayNameOptions(fullName, current) {
+  const full = (fullName || '').trim()
+  const parts = full.split(/\s+/).filter(Boolean)
+  const opts = []
+  if (full) opts.push(full)
+  parts.forEach((p) => opts.push(p))
+  if (parts.length > 2) opts.push(`${parts[0]} ${parts[parts.length - 1]}`)
+  // Keep whatever is already saved selectable, even if it predates this list.
+  if (current && !opts.includes(current)) opts.unshift(current)
+  return [...new Set(opts)]
+}
+
 const INDUSTRY_ROLES = [
   { value: 'affiliate_publisher',          label: 'Affiliate (Publisher)' },
   { value: 'affiliate_manager',            label: 'Affiliate Manager' },
@@ -244,10 +260,10 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     job_title:     profile.job_title || '',
     company_name:  profile.company_name || '',
   })
-  const [displayMode, setDisplayMode] = useState(() => {
-    const first = firstNameOf(profile.full_name)
-    return profile.display_name && profile.display_name === first && first !== profile.full_name ? 'firstname' : 'fullname'
-  })
+  const [displayName, setDisplayName] = useState(
+    () => profile.display_name || profile.full_name || ''
+  )
+  const displayNameChoices = displayNameOptions(profile.full_name, profile.display_name)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState({})
@@ -313,7 +329,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     setSaveError('')
     try {
       const payload = {
-        display_name:  displayMode === 'firstname' ? firstNameOf(profile.full_name) : profile.full_name,
+        display_name:  displayName || profile.full_name,
         bio:           form.bio,
         gender:        form.gender,
         phone:         form.phone,
@@ -400,9 +416,10 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       <div>
         <label className={lbl}>Display Name</label>
         <div className="relative">
-          <select value={displayMode} onChange={(e) => setDisplayMode(e.target.value)} className={`${inp} pr-14 appearance-none`}>
-            <option value="fullname">Full Name</option>
-            <option value="firstname">First Name</option>
+          <select value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={`${inp} pr-14 appearance-none`}>
+            {displayNameChoices.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
           </select>
           <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

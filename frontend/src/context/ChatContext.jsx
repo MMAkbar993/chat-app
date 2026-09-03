@@ -11,6 +11,10 @@ import {
 
 const ChatContext = createContext(null)
 
+// Must match the backend's default page size in getMessages() — a returned page smaller
+// than this is how we know we've reached the start of the conversation.
+const MESSAGE_PAGE_SIZE = 50
+
 export function ChatProvider({ children }) {
   const { socket } = useSocket()
   const { user } = useAuth()
@@ -23,8 +27,15 @@ export function ChatProvider({ children }) {
   const [conversationFilter, setConversationFilter] = useState('all')
   const [onlineUsers, setOnlineUsers] = useState(new Set())
   const [lastSeenMap, setLastSeenMap] = useState({})
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false)
+  const [hasMoreMessages, setHasMoreMessages] = useState(false)
   const activeConvRef = useRef(null)
   const conversationsRef = useRef([])
+  const messagesRef = useRef([])
+  // Guards against re-entrancy while a page is in flight, and against firing once the
+  // server has told us there's nothing older left.
+  const loadingOlderRef = useRef(false)
+  const hasMoreRef = useRef(false)
   // conversationId -> unsent composer text. Lives here (not in MessageInput's own state) so a
   // draft survives MessageInput unmounting — which happens on every navigation away from the
   // Chats/Groups section, since ChatWindow only renders while one of those is active.
@@ -37,6 +48,10 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     activeConvRef.current = activeConversation
   }, [activeConversation])
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   const filteredConversations = useMemo(() => {
     let list
@@ -85,7 +100,13 @@ export function ChatProvider({ children }) {
     try {
       socket?.emit('join-conversation', conv.id)
       const data = await getMessages(conv.id)
-      setMessages(enrichMessagesWithReplyMeta(data.messages || []))
+      const first = data.messages || []
+      setMessages(enrichMessagesWithReplyMeta(first))
+      // A full page back means there's very likely more history behind it; a short page
+      // means we already have everything, so scrolling up shouldn't keep asking.
+      const more = first.length >= MESSAGE_PAGE_SIZE
+      hasMoreRef.current = more
+      setHasMoreMessages(more)
       await markReadApi(conv.id)
       socket?.emit('mark-read', { conversationId: conv.id })
       setConversations((prev) =>
@@ -94,6 +115,37 @@ export function ChatProvider({ children }) {
     } catch {}
     setLoadingMessages(false)
   }, [socket])
+
+  // Older history is fetched a page at a time, keyed on the timestamp of the oldest message
+  // we currently hold — the chat only ever loaded the most recent page before this, so
+  // scrolling up simply hit a wall at whatever the 50th-newest message happened to be.
+  const loadOlderMessages = useCallback(async () => {
+    const conv = activeConvRef.current
+    if (!conv || loadingOlderRef.current || !hasMoreRef.current) return
+    const oldest = messagesRef.current[0]
+    if (!oldest) return
+
+    loadingOlderRef.current = true
+    setLoadingOlderMessages(true)
+    try {
+      const data = await getMessages(conv.id, oldest.created_at)
+      const older = data.messages || []
+      if (older.length < MESSAGE_PAGE_SIZE) {
+        hasMoreRef.current = false
+        setHasMoreMessages(false)
+      }
+      if (older.length > 0) {
+        setMessages((prev) => {
+          // The page boundary can overlap if a message landed on the exact cutoff timestamp.
+          const known = new Set(prev.map((m) => m.id))
+          const fresh = older.filter((m) => !known.has(m.id))
+          return fresh.length ? enrichMessagesWithReplyMeta([...fresh, ...prev]) : prev
+        })
+      }
+    } catch {}
+    loadingOlderRef.current = false
+    setLoadingOlderMessages(false)
+  }, [])
 
   const closeConversation = useCallback(() => {
     if (activeConvRef.current) {
@@ -345,6 +397,7 @@ export function ChatProvider({ children }) {
       conversationFilter, setConversationFilter,
       activeConversation, openConversation, closeConversation,
       messages, setMessages, loadingMessages,
+      loadOlderMessages, loadingOlderMessages, hasMoreMessages,
       sendMessage,
       typingUsers,
       replyTo, setReplyTo, clearReply,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useSocket } from '../../context/SocketContext'
@@ -128,10 +128,15 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     replyTo, setReplyTo, clearReply,
     toggleConversationFlag, removeConversation, clearConversationMessages,
     onlineUsers, lastSeenMap, closeConversation, loadConversations,
+    loadOlderMessages, loadingOlderMessages, hasMoreMessages,
   } = useChat()
   const { showToast } = useToast()
   const bottomRef = useRef(null)
   const messagesContainerRef = useRef(null)
+  // Set just before an older page is requested so the auto-scroll-to-bottom effect knows
+  // this particular length change was a prepend, not a new incoming message.
+  const prependingRef = useRef(false)
+  const prependAnchorRef = useRef(0)
   const searchInputRef = useRef(null)
   const tempMediaRef = useRef(null)
   const scrolledForConvRef = useRef(null)
@@ -180,8 +185,30 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
   function closeSearch() { setShowSearch(false); setSearchQuery(''); setSearchIndex(0) }
 
+  // Restore the reading position after older history is prepended: the new content above
+  // would otherwise push what you were reading down out of view. Runs before paint so the
+  // jump is never visible.
+  useLayoutEffect(() => {
+    if (!prependingRef.current) return
+    const el = messagesContainerRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight - prependAnchorRef.current
+    // Deliberately not cleared here — the auto-scroll effect below runs after this one and
+    // needs to see the flag in order to skip itself. It clears it.
+  }, [messages.length])
+
+  function handleMessagesScroll(e) {
+    const el = e.currentTarget
+    if (el.scrollTop > 120 || loadingOlderMessages || !hasMoreMessages) return
+    prependingRef.current = true
+    prependAnchorRef.current = el.scrollHeight - el.scrollTop
+    loadOlderMessages()
+  }
+
   useEffect(() => {
     if (!bottomRef.current || !messages.length) return
+    // A prepend of older history must never yank the view to the bottom.
+    if (prependingRef.current) { prependingRef.current = false; return }
     const convId = activeConversation?.id
     const isNewConv = scrolledForConvRef.current !== convId
     if (isNewConv) scrolledForConvRef.current = convId
@@ -639,10 +666,15 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         )}
 
         {/* Messages */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
           {loadingMessages && (
             <div className="flex justify-center py-8">
               <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          {loadingOlderMessages && (
+            <div className="flex justify-center py-3">
+              <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
           {items.map((item, i) =>

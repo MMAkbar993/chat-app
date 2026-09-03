@@ -114,3 +114,43 @@ export async function deleteMessageForMe(id, userId) {
   )
   return result.rows[0] || null
 }
+
+// Searches message text across every conversation the user is in. Mirrors the visibility rules
+// of getMessages(): nothing deleted for everyone, nothing the user deleted for themselves, and
+// nothing from before they cleared that conversation's history.
+export async function searchMessages(userId, term, limit = 40) {
+  const result = await query(
+    `SELECT
+       m.id, m.conversation_id, m.content, m.message_type, m.created_at,
+       u.id AS sender_id,
+       COALESCE(u.display_name, u.full_name) AS sender_name,
+       c.type AS conversation_type,
+       c.name AS group_name,
+       c.avatar_url AS group_avatar,
+       other.id AS other_user_id,
+       COALESCE(other.display_name, other.full_name) AS other_user_name,
+       other.avatar_url AS other_user_avatar
+     FROM messages m
+     JOIN conversation_participants cp
+       ON cp.conversation_id = m.conversation_id AND cp.user_id = $1
+     JOIN conversations c ON c.id = m.conversation_id
+     LEFT JOIN users u ON u.id = m.sender_id
+     LEFT JOIN LATERAL (
+       SELECT ou.id, ou.display_name, ou.full_name, ou.avatar_url
+       FROM conversation_participants ocp
+       JOIN users ou ON ou.id = ocp.user_id
+       WHERE ocp.conversation_id = m.conversation_id AND ocp.user_id <> $1
+       LIMIT 1
+     ) other ON c.type <> 'group'
+     WHERE m.is_deleted = false
+       AND m.message_type = 'text'
+       AND m.content ILIKE '%' || $2 || '%'
+       AND NOT ($1::uuid = ANY(COALESCE(m.deleted_for, '{}')))
+       AND (cp.messages_cleared_at IS NULL OR m.created_at > cp.messages_cleared_at)
+       AND cp.is_deleted = false
+     ORDER BY m.created_at DESC
+     LIMIT $3`,
+    [userId, term, limit]
+  )
+  return result.rows
+}

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
+import { useToast } from '../../context/ToastContext'
 import MessageContextMenu from './MessageContextMenu'
 import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
@@ -79,6 +80,7 @@ function isEmojiOnly(text) {
 export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
   const { user } = useAuth()
   const { socket } = useSocket()
+  const { showToast } = useToast()
   const isMe = msg.sender_id === user?.id
   const canEdit = isMe && msg.message_type === 'text'
   const [hovered, setHovered] = useState(false)
@@ -104,7 +106,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   }
 
   function handleCopy() {
-    navigator.clipboard.writeText(msg.content || '').catch(() => {})
+    navigator.clipboard.writeText(msg.content || '')
+      .then(() => showToast('Copied to clipboard'))
+      .catch(() => showToast('Could not copy. Please try again.', 'error'))
   }
 
   async function handleForward(targetConversationId) {

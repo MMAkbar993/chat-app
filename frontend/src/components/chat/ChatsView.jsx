@@ -4,7 +4,7 @@ import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { reportUser } from '../../api/users'
 import { getContacts } from '../../api/contacts'
-import { getOrCreateDirect } from '../../api/conversations'
+import { getOrCreateDirect, getConversation, searchMessagesApi } from '../../api/conversations'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import ChatItemMenu from './ChatItemMenu'
 import ChatFilterMenu from './ChatFilterMenu'
@@ -70,6 +70,9 @@ export default function ChatsView({ darkMode, mobileHidden }) {
   } = useChat()
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
+  const [searchMode, setSearchMode] = useState('name') // 'name' | 'messages'
+  const [messageResults, setMessageResults] = useState([])
+  const [searchingMessages, setSearchingMessages] = useState(false)
   const [menuConvId, setMenuConvId] = useState(null)
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const [hoveredConvId, setHoveredConvId] = useState(null)
@@ -99,6 +102,36 @@ export default function ChatsView({ darkMode, mobileHidden }) {
     const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || '')
     return name.toLowerCase().includes(search.toLowerCase())
   })
+
+  // Message search runs server-side across every conversation — the client only ever holds
+  // the open conversation's messages, so it can't answer this locally.
+  useEffect(() => {
+    if (searchMode !== 'messages' || search.trim().length < 2) {
+      setMessageResults([])
+      setSearchingMessages(false)
+      return
+    }
+    setSearchingMessages(true)
+    const t = setTimeout(async () => {
+      try {
+        const data = await searchMessagesApi(search.trim())
+        setMessageResults(data.messages || [])
+      } catch {
+        setMessageResults([])
+      }
+      setSearchingMessages(false)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [search, searchMode])
+
+  async function openFromMessageResult(m) {
+    const conv = conversations.find((c) => c.id === m.conversation_id)
+    if (conv) { openConversation(conv); return }
+    try {
+      const data = await getConversation(m.conversation_id)
+      if (data?.conversation) openConversation(data.conversation)
+    } catch {}
+  }
 
   const recent = conversations.filter((c) => !c.is_archived).slice(0, 4)
 
@@ -194,13 +227,81 @@ export default function ChatsView({ darkMode, mobileHidden }) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
+            placeholder={searchMode === 'messages' ? 'Search messages' : 'Search names'}
             className={`bg-transparent flex-1 outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}`}
           />
+          {search && (
+            <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600 shrink-0">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* What the query applies to — names of chats, or the text inside them */}
+        <div className="flex items-center gap-1 mt-2">
+          {[['name', 'Names'], ['messages', 'Messages']].map(([mode, label]) => (
+            <button
+              key={mode}
+              onClick={() => setSearchMode(mode)}
+              className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+                searchMode === mode
+                  ? 'bg-violet-600 text-white'
+                  : darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        {/* Message search results replace the chat list entirely while active */}
+        {searchMode === 'messages' && search.trim().length >= 2 ? (
+          <div>
+            {searchingMessages && (
+              <p className="text-center text-gray-400 text-sm py-6">Searching…</p>
+            )}
+            {!searchingMessages && messageResults.length === 0 && (
+              <p className={`text-center text-sm py-6 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                No messages found
+              </p>
+            )}
+            {!searchingMessages && messageResults.map((m) => {
+              const who = m.conversation_type === 'group'
+                ? (m.group_name || 'Group')
+                : (m.other_user_name || 'Account Deleted')
+              const avatar = m.conversation_type === 'group' ? m.group_avatar : m.other_user_avatar
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => openFromMessageResult(m)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b ${
+                    darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="w-11 h-11 rounded-full overflow-hidden shrink-0">
+                    {avatar
+                      ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(who || '?')[0].toUpperCase()}</div>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{who}</span>
+                      <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(m.created_at)}</span>
+                    </div>
+                    <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {m.sender_name ? `${m.sender_name}: ` : ''}{m.content}
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+        <>
         {/* Recent */}
         {!search && conversationFilter === 'all' && recent.length > 0 && (
           <div className="mb-3">
@@ -371,6 +472,8 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             )
           })}
         </div>
+        </>
+        )}
       </div>
 
       {/* Chat item context menu — rendered at fixed position to escape scroll clipping */}

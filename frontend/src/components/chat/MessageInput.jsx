@@ -93,6 +93,12 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     }
   }, [preview])
 
+  // Hitting Reply should drop you straight into typing — otherwise the reply bar appears
+  // but the cursor is still nowhere, and you have to click the box before you can answer.
+  useEffect(() => {
+    if (replyTo) textareaRef.current?.focus()
+  }, [replyTo])
+
   useEffect(() => {
     if (!editingMessage) return
     const el = textareaRef.current
@@ -148,6 +154,25 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     socket?.emit('stop-typing', { conversationId })
     typingRef.current = false
     clearTimeout(typingTimerRef.current)
+  }
+
+  // Screenshots and copied images come through the clipboard as a file — route them into the
+  // same caption-preview flow the attachment menu uses, so pasting behaves like attaching.
+  function handlePaste(e) {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (const item of items) {
+      if (!item.type.startsWith('image/')) continue
+      const file = item.getAsFile()
+      if (!file) continue
+      e.preventDefault()
+      // Clipboard images arrive unnamed (or all called "image.png"), which would make every
+      // pasted screenshot collide on the server — give each one a unique name.
+      const ext = item.type.split('/')[1] || 'png'
+      const named = new File([file], `pasted-${Date.now()}.${ext}`, { type: item.type })
+      setPendingMedia({ file: named, localUrl: URL.createObjectURL(named), mediaType: 'image' })
+      return
+    }
   }
 
   function handleKey(e) {
@@ -378,6 +403,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
               value={text}
               onChange={handleChange}
               onKeyDown={handleKey}
+              onPaste={handlePaste}
               placeholder="Type Your Message"
               className={`flex-1 bg-transparent resize-none outline-none text-sm max-h-32 overflow-y-auto leading-5 py-0.5 ${
                 darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'

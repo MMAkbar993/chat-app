@@ -88,7 +88,9 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
         const label = getPlatformLabel(data.platform)
         showToast(`${label} account connected successfully.`, 'success')
       } else if (data.type === 'social-connect-error') {
-        showToast(data.reason || 'Could not connect account. Please try again.', 'error')
+        const label = data.platform ? getPlatformLabel(data.platform) : null
+        const detail = data.reason || 'Please try again.'
+        showToast(label ? `${label}: ${detail}` : detail, 'error')
       }
     })
   }, [])

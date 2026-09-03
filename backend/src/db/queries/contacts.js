@@ -4,12 +4,13 @@ export async function getContacts(userId) {
   const result = await query(
     `SELECT
        u.id, u.full_name, u.username, u.primary_role, u.primary_role_other, u.avatar_url, u.display_name, u.bio,
-       c.custom_first_name, c.custom_last_name
+       c.custom_first_name, c.custom_last_name,
+       (${matchedCompanySql('u', '$2')}) AS matched_company
      FROM contacts c
      JOIN users u ON u.id = c.contact_id
      WHERE c.user_id = $1
      ORDER BY COALESCE(c.custom_first_name, u.full_name) ASC`,
-    [userId]
+    [userId, FREE_EMAIL_DOMAINS]
   )
   return result.rows
 }
@@ -60,14 +61,21 @@ const FREE_EMAIL_DOMAINS = [
 // an explicit verified company_name, then a verified website, then — since most people never
 // go through either flow but plenty sign up with a real work email — the domain of their email
 // address, as long as it isn't one of the free providers above. Never the raw email itself.
-const MATCHED_COMPANY_SQL = `
+// `alias` prefixes the user columns (needed where users is joined as u), `param` is the
+// placeholder holding FREE_EMAIL_DOMAINS in the calling query.
+function matchedCompanySql(alias = '', param = '$4') {
+  const c = alias ? `${alias}.` : ''
+  return `
   CASE
-    WHEN company_name IS NOT NULL AND company_name != '' THEN company_name
-    WHEN website_verified AND website IS NOT NULL AND website != '' THEN website
-    WHEN split_part(email, '@', 2) != ALL($4::text[]) THEN split_part(email, '@', 2)
+    WHEN ${c}company_name IS NOT NULL AND ${c}company_name != '' THEN ${c}company_name
+    WHEN ${c}website_verified AND ${c}website IS NOT NULL AND ${c}website != '' THEN ${c}website
+    WHEN split_part(${c}email, '@', 2) != ALL(${param}::text[]) THEN split_part(${c}email, '@', 2)
     ELSE NULL
   END
 `
+}
+
+const MATCHED_COMPANY_SQL = matchedCompanySql()
 
 // Both the stored value and the incoming query are collapsed to bare lowercase alphanumerics
 // before comparing, so "Affiliate Roulette" (a natural, spaced business name someone would

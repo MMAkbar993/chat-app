@@ -499,7 +499,9 @@ export async function socialCallback(req, res) {
       reason = err.message
     }
 
-    sendOAuthPopupResponse(res, { reason })
+    // Always include the platform so the UI can say *which* connection failed — a bare
+    // "could not connect" with no attribution is indistinguishable from nothing happening.
+    sendOAuthPopupResponse(res, { reason, platform })
   }
 }
 

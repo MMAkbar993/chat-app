@@ -7,6 +7,8 @@ export const markReadApi = (id) => client.patch(`/conversations/${id}/read`).the
 export const markUnreadApi = (id) => client.patch(`/conversations/${id}/mark-unread`).then((r) => r.data)
 export const getMessages = (conversationId, before) =>
   client.get(`/conversations/${conversationId}/messages`, { params: { before } }).then((r) => r.data)
+export const searchMessagesApi = (q) =>
+  client.get('/conversations/search-messages', { params: { q } }).then((r) => r.data)
 export const sendMessageApi = (conversationId, content, messageType = 'text') =>
   client.post(`/conversations/${conversationId}/messages`, { content, messageType }).then((r) => r.data)
 
