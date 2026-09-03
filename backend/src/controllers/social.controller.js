@@ -7,6 +7,10 @@ import { config } from '../config/env.js'
 // X rejects state values over 500 chars — use short opaque state for PKCE platforms
 const oauthStateMap = new Map()
 
+// Meta retires Graph API versions on a rolling ~2-year cycle; overridable so it can be
+// bumped without a code change when this one is sunset.
+const INSTAGRAM_API_VERSION = process.env.INSTAGRAM_API_VERSION || 'v25.0'
+
 // Twitter uses /api/social/x/callback in provider dashboards
 const CALLBACK_PATH_ALIASES = { twitter: 'x' }
 
@@ -146,13 +150,19 @@ const PLATFORMS = {
   instagram: {
     authUrl: 'https://api.instagram.com/oauth/authorize',
     tokenUrl: 'https://api.instagram.com/oauth/access_token',
-    profileUrl: 'https://graph.instagram.com/me?fields=id,username',
+    // Must be version-prefixed. The unversioned /me path belonged to the Instagram Basic
+    // Display API, which Meta shut down in Dec 2024 — calling it now returns a 400
+    // "Unsupported request - method type: get" rather than anything descriptive.
+    // (The long-lived token exchange below is genuinely unversioned; only /me needs this.)
+    profileUrl: `https://graph.instagram.com/${INSTAGRAM_API_VERSION}/me?fields=id,username`,
     clientId: () => process.env.INSTAGRAM_CLIENT_ID,
     clientSecret: () => process.env.INSTAGRAM_CLIENT_SECRET,
     redirectUri: () => getRedirectUri('instagram', 'INSTAGRAM_REDIRECT_URI'),
     scope: 'instagram_business_basic',
     extractProfile: (data) => ({
-      platformUserId: data.id,
+      // Instagram Login returns the IG-scoped id as user_id on some versions and id on
+      // others — take whichever is present.
+      platformUserId: data.user_id || data.id,
       username: data.username,
       displayName: data.username,
       profileUrl: `https://instagram.com/${data.username}`,
