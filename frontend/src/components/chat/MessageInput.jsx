@@ -137,7 +137,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     try { return JSON.parse(localStorage.getItem('notif_prefs')) || {} } catch { return {} }
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e?.preventDefault()
     const content = text.trim()
     if (!content) return
@@ -146,8 +146,11 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       cancelEdit()
       return
     }
+    // Don't clear the box until we know it actually went out, so a failed send doesn't
+    // silently eat what you typed.
+    const sent = await onSend(content, 'text', replyTo?.id || null)
+    if (sent === false) return
     if (getNotifPrefs().sound !== false) playSentSound()
-    onSend(content, 'text', replyTo?.id || null)
     setText('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     onClearReply?.()

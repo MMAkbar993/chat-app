@@ -168,7 +168,9 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       {/* Contact list */}
       <div className="flex-1 overflow-y-auto pb-28 md:pb-0">
         <div className="px-4 mb-2">
-          <span className={`text-xs font-semibold uppercase tracking-wide ${sub}`}>All Contacts</span>
+          <span className={`text-xs font-semibold uppercase tracking-wide ${sub}`}>
+            All Contacts{filtered.length ? ` (${filtered.length})` : ''}
+          </span>
         </div>
 
         {filtered.length === 0 ? (
@@ -197,13 +199,14 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
                         <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
                       )}
                     </div>
-                    <div className="min-w-0">
-                      <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
-                      <p className={`text-xs truncate ${sub}`}>
-                        {c.matched_company
-                          ? `${getRoleLabel(c)} · ${c.matched_company}`
-                          : getRoleLabel(c)}
-                      </p>
+                    {/* Role and business each get their own line — sharing one line meant the
+                        business (the longer, more distinguishing half) was always what got cut. */}
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
+                      <p className={`text-xs truncate ${sub}`}>{getRoleLabel(c)}</p>
+                      {c.matched_company && (
+                        <p className="text-xs truncate font-medium text-violet-600">{c.matched_company}</p>
+                      )}
                     </div>
                   </button>
                 )

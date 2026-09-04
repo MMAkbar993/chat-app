@@ -89,10 +89,12 @@ export function initSocket(httpServer) {
       } catch {}
     })
 
-    socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, replyToMessageId }) => {
+    // `ack` lets the sender find out whether this actually landed. Without it a send into a
+    // half-dead socket looks identical to a successful one from the client's side.
+    socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, replyToMessageId }, ack) => {
       try {
         const ok = await isParticipant(conversationId, userId)
-        if (!ok) return
+        if (!ok) return ack?.({ ok: false, error: 'Not a participant' })
 
         const participants = await getParticipants(conversationId)
         const recipient = participants.find((p) => p.id !== userId)
@@ -128,8 +130,10 @@ export function initSocket(httpServer) {
         participants.forEach((p) => {
           io.to(`user:${p.id}`).emit('new-message', fullMsg)
         })
+        ack?.({ ok: true, id: msg.id })
       } catch (err) {
         console.error('send-message error:', err)
+        ack?.({ ok: false, error: 'Could not send' })
       }
     })
 

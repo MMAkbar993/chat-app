@@ -336,8 +336,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     }])
   }
 
-  function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null) {
-    sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption)
+  async function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null) {
+    const sent = await sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption)
+    if (!sent) showToast("You're offline — reconnecting. Your message wasn't sent.", 'error')
+    return sent
   }
 
   async function handleEditMessage(msgId, content) {

@@ -8,6 +8,43 @@ import { getOrCreateDirect, getConversation, searchMessagesApi } from '../../api
 import ConfirmDialog from '../ui/ConfirmDialog'
 import ChatItemMenu from './ChatItemMenu'
 import ChatFilterMenu from './ChatFilterMenu'
+import SearchScopeMenu from './SearchScopeMenu'
+
+const SEARCH_PLACEHOLDERS = {
+  all: 'Search chats',
+  name: 'Search names',
+  messages: 'Search messages',
+}
+
+function MessageResultRow({ m, darkMode, onOpen }) {
+  const who = m.conversation_type === 'group'
+    ? (m.group_name || 'Group')
+    : (m.other_user_name || 'Account Deleted')
+  const avatar = m.conversation_type === 'group' ? m.group_avatar : m.other_user_avatar
+  return (
+    <button
+      onClick={() => onOpen(m)}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b ${
+        darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'
+      }`}
+    >
+      <div className="w-11 h-11 rounded-full overflow-hidden shrink-0">
+        {avatar
+          ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+          : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(who || '?')[0].toUpperCase()}</div>}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{who}</span>
+          <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(m.created_at)}</span>
+        </div>
+        <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {m.sender_name ? `${m.sender_name}: ` : ''}{m.content}
+        </p>
+      </div>
+    </button>
+  )
+}
 
 const FILTER_LABELS = {
   all: 'All Chats',
@@ -70,7 +107,8 @@ export default function ChatsView({ darkMode, mobileHidden }) {
   } = useChat()
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
-  const [searchMode, setSearchMode] = useState('name') // 'name' | 'messages'
+  const [searchMode, setSearchMode] = useState('all') // 'all' | 'name' | 'messages'
+  const [showScopeMenu, setShowScopeMenu] = useState(false)
   const [messageResults, setMessageResults] = useState([])
   const [searchingMessages, setSearchingMessages] = useState(false)
   const [menuConvId, setMenuConvId] = useState(null)
@@ -106,7 +144,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
   // Message search runs server-side across every conversation — the client only ever holds
   // the open conversation's messages, so it can't answer this locally.
   useEffect(() => {
-    if (searchMode !== 'messages' || search.trim().length < 2) {
+    if (searchMode === 'name' || search.trim().length < 2) {
       setMessageResults([])
       setSearchingMessages(false)
       return
@@ -227,7 +265,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={searchMode === 'messages' ? 'Search messages' : 'Search names'}
+            placeholder={SEARCH_PLACEHOLDERS[searchMode]}
             className={`bg-transparent flex-1 outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}`}
           />
           {search && (
@@ -237,28 +275,38 @@ export default function ChatsView({ darkMode, mobileHidden }) {
               </svg>
             </button>
           )}
-        </div>
 
-        {/* What the query applies to — names of chats, or the text inside them */}
-        <div className="flex items-center gap-1 mt-2">
-          {[['name', 'Names'], ['messages', 'Messages']].map(([mode, label]) => (
+          {/* Scope picker — sits inside the field so it reads as part of the search control */}
+          <div className="relative shrink-0">
             <button
-              key={mode}
-              onClick={() => setSearchMode(mode)}
-              className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
-                searchMode === mode
+              onClick={() => setShowScopeMenu((v) => !v)}
+              title="Search in"
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                searchMode !== 'all'
                   ? 'bg-violet-600 text-white'
-                  : darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
+                  : darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-200'
               }`}
             >
-              {label}
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                  d="M4 6h16M7 12h10M10 18h4" />
+              </svg>
             </button>
-          ))}
+            {showScopeMenu && (
+              <SearchScopeMenu
+                darkMode={darkMode}
+                currentScope={searchMode}
+                onSelect={setSearchMode}
+                onClose={() => setShowScopeMenu(false)}
+              />
+            )}
+          </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
-        {/* Message search results replace the chat list entirely while active */}
+        {/* In "Messages" the hits replace the list; in "Everything" they sit under the
+            matching chats, so one query covers both without switching modes. */}
         {searchMode === 'messages' && search.trim().length >= 2 ? (
           <div>
             {searchingMessages && (
@@ -269,36 +317,9 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                 No messages found
               </p>
             )}
-            {!searchingMessages && messageResults.map((m) => {
-              const who = m.conversation_type === 'group'
-                ? (m.group_name || 'Group')
-                : (m.other_user_name || 'Account Deleted')
-              const avatar = m.conversation_type === 'group' ? m.group_avatar : m.other_user_avatar
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => openFromMessageResult(m)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b ${
-                    darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="w-11 h-11 rounded-full overflow-hidden shrink-0">
-                    {avatar
-                      ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(who || '?')[0].toUpperCase()}</div>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{who}</span>
-                      <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(m.created_at)}</span>
-                    </div>
-                    <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {m.sender_name ? `${m.sender_name}: ` : ''}{m.content}
-                    </p>
-                  </div>
-                </button>
-              )
-            })}
+            {!searchingMessages && messageResults.map((m) => (
+              <MessageResultRow key={m.id} m={m} darkMode={darkMode} onOpen={openFromMessageResult} />
+            ))}
           </div>
         ) : (
         <>
@@ -472,6 +493,22 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             )
           })}
         </div>
+
+        {/* "Everything" also surfaces matches from inside conversations, below the chats */}
+        {searchMode === 'all' && search.trim().length >= 2 && (
+          searchingMessages ? (
+            <p className="text-center text-gray-400 text-sm py-4">Searching messages…</p>
+          ) : messageResults.length > 0 ? (
+            <div className="mt-2">
+              <p className={`px-4 py-2 text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-gray-500 bg-gray-800' : 'text-gray-500 bg-gray-50'}`}>
+                In messages
+              </p>
+              {messageResults.map((m) => (
+                <MessageResultRow key={m.id} m={m} darkMode={darkMode} onOpen={openFromMessageResult} />
+              ))}
+            </div>
+          ) : null
+        )}
         </>
         )}
       </div>

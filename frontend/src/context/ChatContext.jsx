@@ -15,6 +15,11 @@ const ChatContext = createContext(null)
 // than this is how we know we've reached the start of the conversation.
 const MESSAGE_PAGE_SIZE = 50
 
+// How long to wait for the server to confirm a send before calling it failed. Long enough to
+// ride out a brief blip on a slow connection, short enough that a genuinely dead socket
+// surfaces while the user is still looking at the screen.
+const SEND_ACK_TIMEOUT_MS = 6000
+
 export function ChatProvider({ children }) {
   const { socket } = useSocket()
   const { user } = useAuth()
@@ -155,17 +160,32 @@ export function ChatProvider({ children }) {
     setMessages([])
   }, [socket])
 
+  // Returns false when the message couldn't be handed off, so the composer can keep the text
+  // and tell the user. Emitting on a disconnected socket silently goes nowhere — that's what
+  // "I pressed send and nothing happened" was.
   const sendMessage = useCallback(async (conversationId, content, messageType = 'text', replyToMessageId = null, caption = null) => {
-    if (!socket) return
+    if (!socket) return false
     const isMedia = messageType !== 'text'
-    socket.emit('send-message', {
+    const payload = {
       conversationId,
       content: isMedia ? (caption || null) : content,
       mediaUrl: isMedia ? content : null,
       messageType,
       replyToMessageId,
-    })
+    }
+
+    // Wait for the server to acknowledge rather than assuming the emit landed. socket.connected
+    // stays true for up to ~45s after the network actually drops (until the heartbeat gives up),
+    // so "is it connected?" is not a reliable answer to "did this send?" — only an ack is.
+    try {
+      const res = await socket.timeout(SEND_ACK_TIMEOUT_MS).emitWithAck('send-message', payload)
+      if (!res?.ok) return false
+    } catch {
+      return false // timed out — treat as not sent so the composer keeps the text
+    }
+
     await loadConversations()
+    return true
   }, [socket, loadConversations])
 
   const setReplyTo = useCallback((msg) => {

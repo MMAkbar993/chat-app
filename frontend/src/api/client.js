@@ -27,6 +27,27 @@ function processQueue(error, token) {
   refreshQueue = []
 }
 
+// Exposed so non-axios consumers can get a fresh access token too — notably the socket,
+// whose handshake auth is rejected outright once the 15-minute access token expires.
+// Shares the in-flight guard so a burst of callers only triggers one refresh.
+export async function refreshAccessToken() {
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => refreshQueue.push({ resolve, reject }))
+  }
+  isRefreshing = true
+  try {
+    const { data } = await axios.post('/api/auth/refresh', {}, { withCredentials: true })
+    accessToken = data.accessToken
+    processQueue(null, accessToken)
+    return accessToken
+  } catch (err) {
+    processQueue(err, null)
+    throw err
+  } finally {
+    isRefreshing = false
+  }
+}
+
 client.interceptors.response.use(
   (res) => res,
   async (error) => {
