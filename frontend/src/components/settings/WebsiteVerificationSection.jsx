@@ -139,7 +139,20 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
 
   useEffect(() => {
     getMyVerifiedWebsites()
-      .then((d) => setWebsites(d.websites || []))
+      .then((d) => {
+        const list = d.websites || []
+        setWebsites(list)
+        // Pick up where they left off: a site awaiting verification still has its snippet, and
+        // adding the meta tag can take a customer's dev team days. Dropping back to step 1 on
+        // every visit is what made people re-request and invalidate the tag already deployed.
+        const pending = list.find((w) => !w.verified && w.verify_token)
+        if (pending) {
+          setUrl(pending.url)
+          setMetaTag(`<meta name="site-verification" content="${pending.verify_token}">`)
+          setWebsiteId(pending.id)
+          setStep(2)
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingList(false))
     // Load pending requests this user has sent as a requester (persists across refreshes)

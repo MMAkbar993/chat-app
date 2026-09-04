@@ -350,15 +350,27 @@ export async function initWebsiteVerification(req, res, next) {
     }
 
     const token = crypto.randomBytes(20).toString('hex')
+    // Keep any token this site already has rather than minting a new one. Adding the meta tag
+    // is a job for someone else's dev team and can take days — regenerating on every visit
+    // silently invalidated the snippet they'd already deployed, so verification could never
+    // succeed. `verified` is deliberately left untouched too, so re-opening this page can't
+    // un-verify an already-verified site.
     const inserted = await query(
       `INSERT INTO verified_websites (user_id, url, verify_token, verified, updated_at)
        VALUES ($1, $2, $3, false, NOW())
        ON CONFLICT (user_id, url) DO UPDATE
-         SET verify_token = EXCLUDED.verify_token, verified = false, updated_at = NOW()
-       RETURNING id`,
+         SET verify_token = COALESCE(verified_websites.verify_token, EXCLUDED.verify_token),
+             updated_at = NOW()
+       RETURNING id, verify_token, verified`,
       [req.user.id, normalised, token]
     )
-    res.json({ token, metaTag: `<meta name="site-verification" content="${token}">`, websiteId: inserted.rows[0].id })
+    const row = inserted.rows[0]
+    res.json({
+      token: row.verify_token,
+      metaTag: `<meta name="site-verification" content="${row.verify_token}">`,
+      websiteId: row.id,
+      verified: row.verified,
+    })
   } catch (err) {
     next(err)
   }
@@ -545,8 +557,13 @@ export async function revokeRepresentation(req, res, next) {
 
 export async function getMyVerifiedWebsites(req, res, next) {
   try {
+    // verify_token comes back for pending sites so the UI can restore the exact snippet the
+    // user was given, instead of making them re-request one (which is how the old token got
+    // lost in the first place).
     const result = await query(
-      `SELECT id, url, verified, created_at FROM verified_websites WHERE user_id = $1 ORDER BY created_at`,
+      `SELECT id, url, verified, created_at,
+              CASE WHEN verified THEN NULL ELSE verify_token END AS verify_token
+       FROM verified_websites WHERE user_id = $1 ORDER BY created_at`,
       [req.user.id]
     )
     res.json({ websites: result.rows })
