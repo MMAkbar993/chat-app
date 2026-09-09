@@ -200,8 +200,8 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     }, 0)
   }
 
-  function handleAttach(fileUrl, messageType, caption) {
-    onSend(fileUrl, messageType, replyTo?.id || null, caption)
+  function handleAttach(fileUrl, messageType, caption, fileName) {
+    onSend(fileUrl, messageType, replyTo?.id || null, caption, fileName)
     onClearReply?.()
     setShowAttachMenu(false)
   }
@@ -213,10 +213,10 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   async function handleSendMedia(caption) {
     const pending = pendingMedia
     setPendingMedia(null)
-    onMediaPreview?.(pending.localUrl, pending.mediaType, caption)
+    onMediaPreview?.(pending.localUrl, pending.mediaType, caption, pending.file?.name || null)
     try {
-      const { fileUrl, messageType } = await uploadFile(pending.file)
-      handleAttach(fileUrl, messageType || pending.mediaType, caption)
+      const { fileUrl, messageType, fileName } = await uploadFile(pending.file)
+      handleAttach(fileUrl, messageType || pending.mediaType, caption, fileName || pending.file?.name || null)
     } catch (err) {
       showToast(getUploadErrorMessage(err), 'error')
       onMediaPreview?.(null, null)
@@ -270,9 +270,9 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     if (!preview) return
     setSending(true)
     try {
-      const { fileUrl, messageType } = await uploadFile(preview.file)
+      const { fileUrl, messageType, fileName } = await uploadFile(preview.file)
       if (getNotifPrefs().sound !== false) playSentSound()
-      onSend(fileUrl, messageType || 'audio', replyTo?.id || null)
+      onSend(fileUrl, messageType || 'audio', replyTo?.id || null, null, fileName || null)
       onClearReply?.()
       discardPreview()
     } catch (err) {

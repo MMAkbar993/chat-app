@@ -13,6 +13,7 @@ import ChatSection from './ChatSection'
 import NotificationsSection from './NotificationsSection'
 import DeviceSection from './DeviceSection'
 import FeedbackSection from './FeedbackSection'
+import FaqSection from './FaqSection'
 
 function firstNameOf(fullName) {
   return (fullName || '').trim().split(/\s+/)[0] || fullName || ''
@@ -105,6 +106,11 @@ const META = {
     title: 'Device History',
     color: 'bg-amber-500',
     path: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  },
+  faq: {
+    title: 'FAQ',
+    color: 'bg-yellow-500',
+    path: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   },
   feedback: {
     title: 'Feedback & Support',
@@ -658,6 +664,11 @@ export default function SettingsDetailPanel({ darkMode, section, onBack }) {
               <SocialLinksSection darkMode={dm} onToast={showToast} profile={profile} />
             </div>
           </>
+        ) : section === 'faq' ? (
+          // FAQ builds its own stack of cards — no outer box.
+          <div className="max-w-4xl mx-auto">
+            <FaqSection darkMode={dm} />
+          </div>
         ) : section === 'feedback' ? (
           <div className="max-w-4xl mx-auto">
             <div className={`rounded-2xl p-6 shadow-sm ${dm ? 'bg-gray-900' : 'bg-white'}`}>

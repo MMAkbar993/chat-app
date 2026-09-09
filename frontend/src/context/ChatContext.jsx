@@ -163,13 +163,15 @@ export function ChatProvider({ children }) {
   // Returns false when the message couldn't be handed off, so the composer can keep the text
   // and tell the user. Emitting on a disconnected socket silently goes nowhere — that's what
   // "I pressed send and nothing happened" was.
-  const sendMessage = useCallback(async (conversationId, content, messageType = 'text', replyToMessageId = null, caption = null) => {
+  const sendMessage = useCallback(async (conversationId, content, messageType = 'text', replyToMessageId = null, caption = null, fileName = null) => {
     if (!socket) return false
     const isMedia = messageType !== 'text'
     const payload = {
       conversationId,
       content: isMedia ? (caption || null) : content,
       mediaUrl: isMedia ? content : null,
+      // Uploads are stored under a randomised name; this carries the one the sender picked.
+      fileName: isMedia ? fileName : null,
       messageType,
       replyToMessageId,
     }

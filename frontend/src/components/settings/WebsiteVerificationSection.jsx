@@ -99,6 +99,18 @@ function HelpCard({ darkMode }) {
   )
 }
 
+// Mirrors the backend's TXT record naming so a restored pending verification shows the same
+// DNS instructions the user saw when they first generated the token.
+function dnsInfoFor(url, token) {
+  if (!url || !token) return null
+  try {
+    const host = new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '')
+    return { host: `_pulse-verification.${host}`, value: token }
+  } catch {
+    return null
+  }
+}
+
 export default function WebsiteVerificationSection({ darkMode, profile }) {
   const { socket } = useSocket()
   const [websites, setWebsites] = useState([])
@@ -112,6 +124,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [addOpen, setAddOpen] = useState(false)
   const [url, setUrl] = useState('')
   const [metaTag, setMetaTag] = useState(null)
+  // Filled in alongside the meta tag: sites behind a WAF can't be checked over HTTP at all,
+  // so we always offer a DNS TXT record as an equivalent second route.
+  const [dnsInfo, setDnsInfo] = useState(null)
+  const [showDns, setShowDns] = useState(false)
   const [websiteId, setWebsiteId] = useState(null)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -149,6 +165,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
         if (pending) {
           setUrl(pending.url)
           setMetaTag(`<meta name="site-verification" content="${pending.verify_token}">`)
+          setDnsInfo(dnsInfoFor(pending.url, pending.verify_token))
           setWebsiteId(pending.id)
           setStep(2)
         }
@@ -228,6 +245,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   function resetAddForm() {
     setUrl('')
     setMetaTag(null)
+    setDnsInfo(null)
+    setShowDns(false)
     setWebsiteId(null)
     setStep(1)
     setError('')
@@ -243,6 +262,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     try {
       const data = await initWebsiteVerify(url.trim())
       setMetaTag(data.metaTag)
+      setDnsInfo(data.dnsHost ? { host: data.dnsHost, value: data.dnsValue } : null)
       setWebsiteId(data.websiteId)
       setStep(2)
     } catch (err) {
@@ -266,7 +286,12 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       resetAddForm()
       setAddOpen(false)
     } catch (err) {
-      setError(err.response?.data?.error || 'Verification failed.')
+      const res = err.response?.data
+      setError(res?.error || 'Verification failed.')
+      // The server tells us when a firewall — not a missing tag — is what stopped it. Open the
+      // DNS panel for them rather than leaving them to re-check a meta tag that is already correct.
+      if (res?.dnsHost) setDnsInfo({ host: res.dnsHost, value: res.dnsValue })
+      if (res?.reason === 'blocked') setShowDns(true)
     }
     setLoading(false)
   }
@@ -373,6 +398,141 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   // way to reach the add-website form or the "request representation" flow below at all once
   // approved. Now it's just a header shown above the normal flow instead of replacing it.
   const isPureRepresentative = (approved && verifiedWebsites.length === 0) && !reprRevoked
+
+  // Hoisted so it can render in two places. When the user already has verified sites this
+  // belongs directly under that list — the natural place to look after clicking "Verify a
+  // Website" — rather than at the very bottom of the page below the reps and info cards,
+  // where opening it looked like nothing had happened. On first run there is no list yet,
+  // so it stays after the "How it works" walkthrough.
+  const addFormBlock = (
+    <div className={`${card} p-5`}>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          {verifiedWebsites.length === 0 ? 'Verify a Website You Own' : 'Verify Another Website'}
+        </h4>
+        {verifiedWebsites.length > 0 && (
+          <button onClick={() => { resetAddForm(); setAddOpen(false) }} className={`text-xs ${sub} hover:text-gray-700`}>
+            Cancel
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <p className="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mb-3">{error}</p>
+      )}
+
+      {step === 1 && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://yoursite.com"
+              className={`${inp} flex-1`}
+            />
+            <button
+              onClick={handleInit}
+              disabled={loading}
+              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors shrink-0"
+            >
+              {loading ? 'Generating…' : 'Get Meta Tag'}
+            </button>
+          </div>
+          <p className={`flex items-center gap-1.5 text-xs mt-2 ${sub}`}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            You need to have access to your website's HTML &lt;head&gt; section to add the meta tag.
+          </p>
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <div>
+            <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 1 — Add this tag to your website's &lt;head&gt;</p>
+            <p className={`text-xs mb-2 ${sub}`}>Open your website's HTML and paste the following tag inside the &lt;head&gt; section.</p>
+            <div className={`rounded-xl border p-3 font-mono text-xs break-all ${codeBg}`}>
+              {metaTag}
+            </div>
+            <button
+              onClick={() => navigator.clipboard.writeText(metaTag)}
+              className="mt-1 text-xs text-violet-500 hover:text-violet-700"
+            >
+              Copy to clipboard
+            </button>
+          </div>
+
+          {dnsInfo && (
+            <div className={`mt-4 rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <button
+                type="button"
+                onClick={() => setShowDns((v) => !v)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium ${sub}`}
+              >
+                <span>Can't edit your &lt;head&gt;? Verify with a DNS record instead</span>
+                <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${showDns ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showDns && (
+                <div className={`px-3 pb-3 space-y-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <p className={`text-xs pt-2 ${sub}`}>
+                    Some sites sit behind a firewall (Cloudflare and similar) that blocks our check even when the
+                    meta tag is correct. Adding this TXT record in your DNS works either way.
+                  </p>
+                  <div>
+                    <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Type</p>
+                    <div className={`rounded-lg border p-2 font-mono text-xs ${codeBg}`}>TXT</div>
+                  </div>
+                  <div>
+                    <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name / Host</p>
+                    <div className={`rounded-lg border p-2 font-mono text-xs break-all ${codeBg}`}>{dnsInfo.host}</div>
+                  </div>
+                  <div>
+                    <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Value</p>
+                    <div className={`rounded-lg border p-2 font-mono text-xs break-all ${codeBg}`}>{dnsInfo.value}</div>
+                  </div>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(dnsInfo.value)}
+                    className="text-xs text-violet-500 hover:text-violet-700"
+                  >
+                    Copy value
+                  </button>
+                  <p className={`text-xs ${sub}`}>DNS changes can take a few minutes to propagate before Verify will find them.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4">
+            <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 2 — Click Verify</p>
+            <p className={`text-xs mb-3 ${sub}`}>
+              Once the tag {dnsInfo ? 'or DNS record is' : 'is'} live on <span className="font-medium">{url}</span>, click Verify below.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setStep(1); setMetaTag(null); setError('') }}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold border transition-colors ${
+                darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Back
+            </button>
+            <button
+              onClick={handleVerify}
+              disabled={loading}
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Verifying…' : 'Verify'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-4">
@@ -694,6 +854,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             </div>
           )}
 
+          {addOpen && verifiedWebsites.length > 0 && addFormBlock}
+
           {/* Pending representation requests (only shown when owner has verified websites) */}
           {verifiedWebsites.length > 0 && pendingRequests.length > 0 && (
             <div className={`${card} p-4 space-y-3`}>
@@ -816,94 +978,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             </div>
           )}
 
-          {/* Add-website form (step 1 / step 2) */}
-          {(verifiedWebsites.length === 0 || addOpen) && (
-            <div className={`${card} p-5`}>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {verifiedWebsites.length === 0 ? 'Verify a Website You Own' : 'Verify Another Website'}
-                </h4>
-                {verifiedWebsites.length > 0 && (
-                  <button onClick={() => { resetAddForm(); setAddOpen(false) }} className={`text-xs ${sub} hover:text-gray-700`}>
-                    Cancel
-                  </button>
-                )}
-              </div>
-
-              {error && (
-                <p className="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mb-3">{error}</p>
-              )}
-
-              {step === 1 && (
-                <>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      placeholder="https://yoursite.com"
-                      className={`${inp} flex-1`}
-                    />
-                    <button
-                      onClick={handleInit}
-                      disabled={loading}
-                      className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors shrink-0"
-                    >
-                      {loading ? 'Generating…' : 'Get Meta Tag'}
-                    </button>
-                  </div>
-                  <p className={`flex items-center gap-1.5 text-xs mt-2 ${sub}`}>
-                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    You need to have access to your website's HTML &lt;head&gt; section to add the meta tag.
-                  </p>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <div>
-                    <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 1 — Add this tag to your website's &lt;head&gt;</p>
-                    <p className={`text-xs mb-2 ${sub}`}>Open your website's HTML and paste the following tag inside the &lt;head&gt; section.</p>
-                    <div className={`rounded-xl border p-3 font-mono text-xs break-all ${codeBg}`}>
-                      {metaTag}
-                    </div>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(metaTag)}
-                      className="mt-1 text-xs text-violet-500 hover:text-violet-700"
-                    >
-                      Copy to clipboard
-                    </button>
-                  </div>
-
-                  <div className="mt-4">
-                    <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 2 — Click Verify</p>
-                    <p className={`text-xs mb-3 ${sub}`}>
-                      Once the tag is live on <span className="font-medium">{url}</span>, click Verify below.
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => { setStep(1); setMetaTag(null); setError('') }}
-                      className={`flex-1 rounded-xl py-2.5 text-sm font-semibold border transition-colors ${
-                        darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={handleVerify}
-                      disabled={loading}
-                      className="flex-1 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
-                    >
-                      {loading ? 'Verifying…' : 'Verify'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          {verifiedWebsites.length === 0 && addFormBlock}
 
           <HelpCard darkMode={darkMode} />
         </>

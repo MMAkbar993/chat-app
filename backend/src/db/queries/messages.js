@@ -10,7 +10,7 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
   }
   const result = await query(
     `SELECT
-       m.id, m.conversation_id, m.content, m.message_type, m.media_url,
+       m.id, m.conversation_id, m.content, m.message_type, m.media_url, m.file_name,
        m.is_deleted, m.created_at, m.reply_to_message_id, m.status, m.edited_at,
        u.id AS sender_id, u.full_name AS sender_name, u.avatar_url AS sender_avatar,
        u.display_name AS sender_display_name,
@@ -43,12 +43,12 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
   return messages
 }
 
-export async function createMessage({ conversationId, senderId, content, messageType = 'text', mediaUrl = null, replyToMessageId = null, status = 'sent' }) {
+export async function createMessage({ conversationId, senderId, content, messageType = 'text', mediaUrl = null, fileName = null, replyToMessageId = null, status = 'sent' }) {
   const result = await query(
-    `INSERT INTO messages (conversation_id, sender_id, content, message_type, media_url, reply_to_message_id, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, conversation_id, sender_id, content, message_type, media_url, is_deleted, created_at, reply_to_message_id, status`,
-    [conversationId, senderId, content, messageType, mediaUrl, replyToMessageId || null, status]
+    `INSERT INTO messages (conversation_id, sender_id, content, message_type, media_url, file_name, reply_to_message_id, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id, conversation_id, sender_id, content, message_type, media_url, file_name, is_deleted, created_at, reply_to_message_id, status`,
+    [conversationId, senderId, content, messageType, mediaUrl, fileName, replyToMessageId || null, status]
   )
   return result.rows[0]
 }
@@ -75,7 +75,7 @@ export async function markMessagesRead(conversationId, userId) {
 
 export async function getMessageById(id) {
   const result = await query(
-    `SELECT m.id, m.conversation_id, m.sender_id, m.content, m.message_type, m.media_url, m.is_deleted, m.created_at,
+    `SELECT m.id, m.conversation_id, m.sender_id, m.content, m.message_type, m.media_url, m.file_name, m.is_deleted, m.created_at,
             u.full_name AS sender_name, u.display_name AS sender_display_name
      FROM messages m
      LEFT JOIN users u ON u.id = m.sender_id

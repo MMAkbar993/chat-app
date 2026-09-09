@@ -175,7 +175,12 @@ const PLATFORMS = {
     clientId: () => process.env.TWITTER_CLIENT_ID,
     clientSecret: () => process.env.TWITTER_CLIENT_SECRET,
     redirectUri: () => getRedirectUri('twitter', 'TWITTER_REDIRECT_URI'),
-    scope: () => process.env.TWITTER_SCOPE || 'users.read offline.access',
+    // `tweet.read` is not optional here even though we never read a single post: X's OpenAPI
+    // spec lists GET /2/users/me as requiring tweet.read AND users.read together, and a token
+    // minted without it gets a bare 403 on the profile fetch — which is exactly what "Twitter
+    // not working" was. Tokens issued under the old scope stay broken, so anyone who connected
+    // before this has to disconnect and reconnect to get a token with the right scope.
+    scope: () => process.env.TWITTER_SCOPE || 'tweet.read users.read offline.access',
     pkce: true,
     shortState: true,
     extractProfile: (data) => ({

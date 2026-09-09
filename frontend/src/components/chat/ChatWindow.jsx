@@ -314,7 +314,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
   const isTyping = typingUsers[activeConversation.id]
 
-  function handleMediaPreview(localUrl, messageType, caption = null) {
+  function handleMediaPreview(localUrl, messageType, caption = null, fileName = null) {
     if (!localUrl) {
       if (tempMediaRef.current) {
         setMessages((prev) => prev.filter((m) => m.id !== tempMediaRef.current))
@@ -330,14 +330,16 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       sender_display_name: user.display_name || user.full_name,
       message_type: messageType,
       media_url: localUrl,
+      // So the sender's own optimistic bubble is labelled the same as the one that lands.
+      file_name: fileName,
       content: caption,
       created_at: new Date().toISOString(),
       uploading: true,
     }])
   }
 
-  async function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null) {
-    const sent = await sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption)
+  async function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null, fileName = null) {
+    const sent = await sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption, fileName)
     if (!sent) showToast("You're offline — reconnecting. Your message wasn't sent.", 'error')
     return sent
   }

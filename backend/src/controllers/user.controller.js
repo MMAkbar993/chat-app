@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import axios from 'axios'
+import dns from 'dns/promises'
 import { query } from '../config/database.js'
 import { findUserById, markTourSeen } from '../db/queries/users.js'
 import {
@@ -16,6 +17,82 @@ const URL_PATTERN = /(https?:\/\/|www\.)\S+|\b[a-z0-9-]+\.(com|net|org|io|co|inf
 
 function containsUrl(text) {
   return Boolean(text) && URL_PATTERN.test(text)
+}
+
+// ─── Website verification helpers ───────────────────────────────────────────
+//
+// Verification fetches the customer's homepage and looks for their token. Two things
+// routinely break that and used to collapse into one useless "Could not reach your website":
+//   * WAFs (Cloudflare, Sucuri, Imperva) answer 403 to anything that isn't a real browser,
+//     so the page is perfectly public and we still never see the HTML.
+//   * apex vs. www — the URL they typed may redirect, or only one of the two may resolve.
+// So we try both hostname variants, and when HTTP is walled off we fall back to a DNS TXT
+// record, which no WAF can block.
+
+const VERIFY_TXT_HOST = '_pulse-verification'
+
+function hostOf(url) {
+  try {
+    return new URL(url.startsWith('http') ? url : `https://${url}`).hostname
+  } catch {
+    return null
+  }
+}
+
+// The typed URL first, then the other of apex/www — sites commonly serve only one.
+function urlVariants(url) {
+  const base = url.startsWith('http') ? url : `https://${url}`
+  const out = [base]
+  try {
+    const u = new URL(base)
+    const alt = new URL(base)
+    alt.hostname = u.hostname.startsWith('www.') ? u.hostname.slice(4) : `www.${u.hostname}`
+    out.push(alt.toString().replace(/\/$/, ''))
+  } catch {}
+  return [...new Set(out)]
+}
+
+// Cloudflare and friends serve their block/challenge page with a 200 as often as a 403,
+// so a status check alone isn't enough — sniff the body too.
+function looksLikeBotWall(status, body) {
+  if ([401, 403, 406, 429, 503].includes(status)) return true
+  const html = String(body || '').slice(0, 4000)
+  return /Attention Required!|Just a moment\.\.\.|cf-browser-verification|Checking your browser|Access denied|Sucuri WebSite Firewall/i.test(html)
+}
+
+async function fetchPage(url) {
+  try {
+    const resp = await axios.get(url, {
+      timeout: 10000,
+      maxRedirects: 5,
+      // Read the body on error statuses too: we need it to tell a firewall page apart from a 404.
+      validateStatus: () => true,
+      headers: {
+        // A plain "SiteVerifier" UA gets refused by most WAFs on sight.
+        'User-Agent': 'Mozilla/5.0 (compatible; PulseSiteVerifier/1.0; +https://pulse.affiliateroulette.com)',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    })
+    return { reached: true, status: resp.status, html: typeof resp.data === 'string' ? resp.data : '' }
+  } catch {
+    return { reached: false, status: 0, html: '' }
+  }
+}
+
+// TXT lookup on both `_pulse-verification.example.com` and the apex, so either placement works.
+async function dnsHasToken(host, token) {
+  if (!host) return false
+  const bare = host.replace(/^www\./, '')
+  for (const name of [`${VERIFY_TXT_HOST}.${bare}`, bare]) {
+    try {
+      const records = await dns.resolveTxt(name)
+      if (records.some((parts) => parts.join('').includes(token))) return true
+    } catch {
+      // NXDOMAIN / no TXT records — just try the next name.
+    }
+  }
+  return false
 }
 
 async function createNotification(userId, type, data = {}) {
@@ -365,9 +442,13 @@ export async function initWebsiteVerification(req, res, next) {
       [req.user.id, normalised, token]
     )
     const row = inserted.rows[0]
+    const bareHost = (hostOf(normalised) || '').replace(/^www\./, '')
     res.json({
       token: row.verify_token,
       metaTag: `<meta name="site-verification" content="${row.verify_token}">`,
+      // DNS is the escape hatch for sites behind a WAF that refuses our HTTP check.
+      dnsHost: bareHost ? `${VERIFY_TXT_HOST}.${bareHost}` : null,
+      dnsValue: row.verify_token,
       websiteId: row.id,
       verified: row.verified,
     })
@@ -764,15 +845,47 @@ export async function confirmWebsiteVerification(req, res, next) {
     if (!pending.rows[0]) return res.status(400).json({ error: 'No pending verification found' })
 
     const { url, verify_token } = pending.rows[0]
-    let html = ''
-    try {
-      const resp = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 SiteVerifier/1.0' } })
-      html = resp.data || ''
-    } catch {
-      return res.status(400).json({ error: 'Could not reach your website. Make sure it is publicly accessible.' })
+
+    // Try the meta tag over HTTP on both apex and www, then fall back to DNS TXT. We keep
+    // track of *why* HTTP failed so the error we hand back names the real obstacle instead
+    // of the old catch-all "Could not reach your website", which sent people hunting for a
+    // typo in a meta tag that was actually sitting there correctly behind a firewall.
+    let found = false
+    let anyReached = false
+    let walled = false
+    for (const candidate of urlVariants(url)) {
+      const { reached, status, html } = await fetchPage(candidate)
+      if (!reached) continue
+      if (html.includes(verify_token)) { found = true; break }
+      if (looksLikeBotWall(status, html)) { walled = true; continue }
+      if (status >= 200 && status < 400) anyReached = true
     }
-    if (!html.includes(verify_token)) {
-      return res.status(400).json({ error: 'Verification tag not found. Make sure you added the meta tag to your page <head>.' })
+
+    const host = hostOf(url)
+    if (!found) found = await dnsHasToken(host, verify_token)
+
+    if (!found) {
+      const bare = (host || 'yourdomain.com').replace(/^www\./, '')
+      if (walled) {
+        return res.status(400).json({
+          error: `Your site's firewall (Cloudflare or similar) is blocking our check, so we can't read the meta tag even if it is there. Either allow the user agent "PulseSiteVerifier" in your firewall rules, or verify by DNS instead: add a TXT record on ${VERIFY_TXT_HOST}.${bare} with the value ${verify_token}, then click Verify again.`,
+          reason: 'blocked',
+          dnsHost: `${VERIFY_TXT_HOST}.${bare}`,
+          dnsValue: verify_token,
+        })
+      }
+      if (!anyReached) {
+        return res.status(400).json({
+          error: 'Could not reach your website. Make sure it is publicly accessible over https.',
+          reason: 'unreachable',
+        })
+      }
+      return res.status(400).json({
+        error: 'We loaded your site but the verification tag was not in the HTML. Make sure the meta tag is in the <head> of your homepage and that the change is published live.',
+        reason: 'tag_missing',
+        dnsHost: `${VERIFY_TXT_HOST}.${bare}`,
+        dnsValue: verify_token,
+      })
     }
 
     await query(

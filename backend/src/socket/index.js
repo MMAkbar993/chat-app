@@ -91,7 +91,7 @@ export function initSocket(httpServer) {
 
     // `ack` lets the sender find out whether this actually landed. Without it a send into a
     // half-dead socket looks identical to a successful one from the client's side.
-    socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, replyToMessageId }, ack) => {
+    socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, fileName, replyToMessageId }, ack) => {
       try {
         const ok = await isParticipant(conversationId, userId)
         if (!ok) return ack?.({ ok: false, error: 'Not a participant' })
@@ -101,7 +101,7 @@ export function initSocket(httpServer) {
         const isRecipientOnline = recipient && (onlineUsers.get(recipient.id) || 0) > 0
         const status = isRecipientOnline ? 'delivered' : 'sent'
 
-        const msg = await createMessage({ conversationId, senderId: userId, content, messageType, mediaUrl, replyToMessageId, status })
+        const msg = await createMessage({ conversationId, senderId: userId, content, messageType, mediaUrl, fileName, replyToMessageId, status })
         await unhideParticipants(conversationId)
 
         const [sender, replyMsg] = await Promise.all([

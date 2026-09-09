@@ -24,10 +24,24 @@ import IncomingCallModal from '../components/calls/IncomingCallModal'
 import UpgradeModal from '../features/payment/UpgradeModal'
 import ProductTour from '../components/onboarding/ProductTour'
 
+const DARK_MODE_KEY = 'pulse:darkMode'
+
+// Lazy initialiser. Storage can throw outright in private-browsing modes, so a failed read
+// just means "light mode" rather than a blank screen.
+function readStoredDarkMode() {
+  try {
+    return localStorage.getItem(DARK_MODE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 export default function ChatPage() {
   const [section, setSection] = useState('chats')
   const [settingsSection, setSettingsSection] = useState(null)
-  const [darkMode, setDarkMode] = useState(false)
+  // Persisted: the toggle used to live only in component state, so every reload — and every
+  // OAuth round-trip that re-mounts the app — dropped the user back to light mode.
+  const [darkMode, setDarkMode] = useState(readStoredDarkMode)
   const [activeCall, setActiveCall] = useState(null)
   const [incomingCall, setIncomingCall] = useState(null)
   const [showCallLimitUpgrade, setShowCallLimitUpgrade] = useState(false)
@@ -37,6 +51,14 @@ export default function ChatPage() {
   const { activeConversation, openConversation } = useChat()
   const { showToast } = useToast()
   const activeCallRef = useRef(null)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DARK_MODE_KEY, darkMode ? '1' : '0')
+    } catch {
+      // Storage unavailable — the choice just won't survive this session.
+    }
+  }, [darkMode])
 
   useEffect(() => { activeCallRef.current = activeCall }, [activeCall])
 
