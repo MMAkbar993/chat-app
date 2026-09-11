@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAd } from '../../context/AdContext'
+import UpgradeModal from '../../features/payment/UpgradeModal'
 
 // Dismissing hides this one ad for a week and rotates another in. A time-limited "mute all
 // ads" was considered and dropped: people don't think in hours, and an ad-free state that
@@ -45,12 +46,12 @@ function DismissMenu({ darkMode, onDismiss, onUpgrade, onClose }) {
   )
 }
 
-function DismissButton({ darkMode, onUpgrade, className = '' }) {
+function DismissButton({ darkMode, onUpgrade }) {
   const { dismiss } = useAd()
   const [open, setOpen] = useState(false)
 
   return (
-    <div className={`relative shrink-0 ${className}`}>
+    <div className="relative shrink-0">
       <button
         type="button"
         aria-label="Ad options"
@@ -164,6 +165,10 @@ export function SponsoredSidebarCard({ darkMode, collapsed, onUpgrade }) {
  */
 export function SponsoredChatRow({ darkMode }) {
   const { ad, click } = useAd()
+  // The sidebar card borrows the upgrade modal already mounted next to it; the chat list
+  // has none, so this placement carries its own — otherwise "Remove ads" would be offered
+  // on desktop only, which is where the ad matters least.
+  const [showUpgrade, setShowUpgrade] = useState(false)
   if (!ad) return null
 
   return (
@@ -205,7 +210,10 @@ export function SponsoredChatRow({ darkMode }) {
           </span>
         </div>
       </a>
-      <DismissButton darkMode={darkMode} className="absolute right-3 top-3" />
+      <div className="absolute right-3 top-3">
+        <DismissButton darkMode={darkMode} onUpgrade={() => setShowUpgrade(true)} />
+      </div>
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </div>
   )
 }

@@ -396,6 +396,10 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             </p>
           )}
 
+          {/* Clamp to the end of a short list: a new account with two chats would never
+              reach a fixed index, and the slot would silently never render. */}
+          {all.length === 0 && <SponsoredChatRow darkMode={darkMode} />}
+
           {all.map((c, rowIndex) => {
             const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Account Deleted')
             const avatar = c.other_user_avatar || c.avatar_url
@@ -497,7 +501,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
               </div>
               {/* Sponsored slot sits below the first few conversations — visible without
                   scrolling, but never interleaved among the newest chats. */}
-              {rowIndex === AD_SLOT_AFTER_ROW && <SponsoredChatRow darkMode={darkMode} />}
+              {rowIndex === Math.min(AD_SLOT_AFTER_ROW, all.length - 1) && <SponsoredChatRow darkMode={darkMode} />}
               </Fragment>
             )
           })}
