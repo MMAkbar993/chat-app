@@ -16,37 +16,57 @@ const AFFILIATE_ROULETTE_ROLES = [
   'event_organizer',
 ]
 
+// `blurb` is what the card shows before anything is connected. Once connected the card shows
+// the actual handle instead, which is the more useful thing at that point.
 const RECOMMENDED = [
-  { key: 'instagram', label: 'Instagram' },
-  { key: 'twitter',   label: 'X (Twitter)', connectKey: 'x' },
-  { key: 'linkedin',  label: 'LinkedIn',    urlOnly: true },
+  { key: 'instagram', label: 'Instagram',   blurb: 'Show your Instagram profile on your Pulse profile.' },
+  { key: 'twitter',   label: 'X (Twitter)', blurb: 'Connect your X account to your Pulse profile.', connectKey: 'x' },
+  { key: 'linkedin',  label: 'LinkedIn',    blurb: 'Show your LinkedIn profile on your Pulse profile.', urlOnly: true },
 ]
 
 const GAMING = [
-  { key: 'youtube', label: 'YouTube' },
-  { key: 'kick',    label: 'Kick' },
-  { key: 'twitch',  label: 'Twitch' },
+  { key: 'youtube', label: 'YouTube', blurb: 'Connect your YouTube channel to your Pulse profile.' },
+  { key: 'kick',    label: 'Kick',    blurb: 'Connect your Kick channel to your Pulse profile.' },
+  { key: 'twitch',  label: 'Twitch',  blurb: 'Connect your Twitch channel to your Pulse profile.' },
 ]
 
 const OTHER = [
-  { key: 'affiliate_roulette', label: 'Affiliate Roulette', urlOnly: true, affiliateRoulette: true },
+  { key: 'affiliate_roulette', label: 'Affiliate Roulette', blurb: 'Link your Affiliate Roulette listing to your Pulse profile.', urlOnly: true, affiliateRoulette: true },
 ]
-
-function InfoTile({ darkMode, icon, title, desc }) {
-  return (
-    <div className="flex-1 min-w-0">
-      <span className={`w-9 h-9 rounded-full flex items-center justify-center mb-2 ${darkMode ? 'bg-gray-700 text-pink-300' : 'bg-pink-50 text-pink-600'}`}>
-        {icon}
-      </span>
-      <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</p>
-      <p className={`text-xs mt-0.5 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{desc}</p>
-    </div>
-  )
-}
 
 function GroupLabel({ darkMode, children }) {
   return (
-    <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{children}</p>
+    <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      {children}
+    </p>
+  )
+}
+
+function StatusPill({ darkMode, state }) {
+  if (state === 'none') {
+    return (
+      <span className={`shrink-0 text-xs font-medium rounded-full px-2.5 py-1 ${
+        darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+      }`}>
+        Not connected
+      </span>
+    )
+  }
+  // OAuth-verified and self-declared links are deliberately worded differently: one proves
+  // control of the account, the other is a link the user typed. Showing both as "Verified"
+  // would overstate what a plain URL actually establishes.
+  const verified = state === 'verified'
+  return (
+    <span className={`shrink-0 inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-1 ${
+      verified
+        ? darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-700'
+        : darkMode ? 'bg-violet-900/30 text-violet-300' : 'bg-violet-50 text-violet-700'
+    }`}>
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" clipRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.3a1 1 0 00-1.4-1.4L9 10.6 7.7 9.3a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" />
+      </svg>
+      {verified ? 'Verified' : 'Connected'}
+    </span>
   )
 }
 
@@ -63,8 +83,8 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
 
   const sub  = darkMode ? 'text-gray-400' : 'text-gray-500'
   const text = darkMode ? 'text-white' : 'text-gray-900'
-  const rowBg = darkMode ? 'bg-gray-900' : 'bg-white'
   const card = `rounded-2xl border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
+  const tile = `rounded-2xl border p-4 flex flex-col ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
 
   const refreshConnections = useCallback(() => {
     return client.get('/users/me/social')
@@ -171,12 +191,36 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
 
   const connectedCount = connections.length
   const totalCount = RECOMMENDED.length + GAMING.length + (showAffiliateRoulette ? OTHER.length : 0)
+  const pct = totalCount ? Math.round((connectedCount / totalCount) * 100) : 0
 
-  function renderRow(p) {
+  const primaryBtn = 'w-full rounded-xl py-2.5 text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-50'
+  const quietBtn = `w-full rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-100' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-100'
+  }`
+  const manageBtn = `inline-flex items-center gap-1.5 text-xs font-medium mt-2 transition-colors ${
+    darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+  }`
+
+  function CardShell({ p, pill, children, footer }) {
+    return (
+      <div key={p.key} className={tile}>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <SocialIcon platform={p.key} size={44} />
+          {pill}
+        </div>
+        <p className={`text-base font-bold ${text}`}>{p.label}</p>
+        {children}
+        {/* mt-auto keeps every action button on the same baseline no matter how long the
+            blurb or handle above it runs — a ragged grid was most of why this looked unfinished. */}
+        <div className="mt-auto pt-3">{footer}</div>
+      </div>
+    )
+  }
+
+  function renderCard(p) {
     if (p.affiliateRoulette && !showAffiliateRoulette) return null
 
     const conn = connections.find((c) => c.platform === p.key)
-    const isConnected = !!conn
 
     if (p.urlOnly) {
       const isAR = p.affiliateRoulette
@@ -190,211 +234,210 @@ export default function SocialLinksSection({ darkMode, onToast, profile }) {
       const isEditingThis = editing === p.key
       const savedUrl = conn?.profile_url
 
-      return (
-        <div key={p.key} className={`rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-100'} ${rowBg}`}>
-          {/* Main row — always visible */}
-          <div className="flex items-center gap-3 p-3">
-            <SocialIcon platform={p.key} size={32} />
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <p className={`text-sm font-medium ${text}`}>{p.label}</p>
-              <span className="relative group shrink-0">
-                <span
-                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold ${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'}`}
+      if (isEditingThis) {
+        return (
+          <CardShell
+            key={p.key}
+            p={p}
+            pill={<StatusPill darkMode={darkMode} state={savedUrl ? 'linked' : 'none'} />}
+            footer={
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditing(null)}
+                  className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100'
+                  }`}
                 >
-                  i
-                </span>
-                <span className={`absolute left-0 top-full mt-1.5 w-52 text-xs rounded-lg px-2.5 py-1.5 z-20 leading-snug opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-800 text-white'}`}>
-                  {p.label} can't be verified with OAuth, so this is added as a plain link instead.
-                </span>
-              </span>
-            </div>
+                  Cancel
+                </button>
+                <button onClick={saveFn} disabled={saving} className={`${primaryBtn} flex-1`}>
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            }
+          >
+            <input
+              value={urlValue}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder={placeholder}
+              autoFocus
+              className={`w-full mt-2 rounded-xl px-3 py-2 text-xs outline-none border focus:ring-2 focus:ring-violet-400 transition-colors ${
+                darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+              }`}
+            />
+          </CardShell>
+        )
+      }
 
-            {savedUrl && !isEditingThis ? (
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Connected</span>
-                {/* Open URL arrow */}
+      return (
+        <CardShell
+          key={p.key}
+          p={p}
+          pill={<StatusPill darkMode={darkMode} state={savedUrl ? 'linked' : 'none'} />}
+          footer={
+            savedUrl ? (
+              <>
                 <a
                   href={savedUrl.startsWith('http') ? savedUrl : `https://${savedUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-500'}`}
-                  title={`Open ${p.label}`}
+                  className={`${quietBtn} flex items-center justify-center gap-1.5`}
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  View profile
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
-                {/* Edit pencil */}
-                <button
-                  onClick={() => setEditing(p.key)}
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-400'}`}
-                  title="Edit URL"
-                >
+                <button onClick={() => setEditing(p.key)} className={manageBtn}>
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
+                  Edit link
                 </button>
-              </div>
-            ) : !isEditingThis ? (
-              <button
-                onClick={() => setEditing(p.key)}
-                className="text-xs bg-violet-600 hover:bg-violet-700 text-white rounded-lg px-3 py-1 font-medium shrink-0 transition-colors"
-              >
-                Add URL
-              </button>
+              </>
             ) : (
-              <button
-                onClick={() => setEditing(null)}
-                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-400'}`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Inline edit form — only when editing */}
-          {isEditingThis && (
-            <div className={`px-3 pb-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-              <div className="flex gap-2 mt-3">
-                <input
-                  value={urlValue}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder={placeholder}
-                  autoFocus
-                  className={`flex-1 min-w-0 rounded-xl px-3 py-1.5 text-xs outline-none border focus:ring-2 focus:ring-violet-400 transition-colors ${
-                    darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
-                  }`}
-                />
-                <button
-                  onClick={saveFn}
-                  disabled={saving}
-                  className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 shrink-0 transition-colors"
-                >
-                  {saving ? '…' : 'Save'}
-                </button>
-              </div>
-            </div>
+              <button onClick={() => setEditing(p.key)} className={primaryBtn}>Add link</button>
+            )
+          }
+        >
+          {savedUrl ? (
+            <p className="text-sm text-violet-500 truncate mt-0.5" title={savedUrl}>
+              {savedUrl.replace(/^https?:\/\//, '')}
+            </p>
+          ) : (
+            <p className={`text-sm mt-1 leading-relaxed ${sub}`}>{p.blurb}</p>
           )}
-        </div>
+          {/* Worth saying once per card rather than in a tooltip: these two can't be proven
+              with OAuth, so the pill says "Connected", not "Verified". */}
+          {!savedUrl && (
+            <p className={`text-xs mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              Added as a link — not OAuth verified.
+            </p>
+          )}
+        </CardShell>
       )
     }
 
+    const isConnected = !!conn
     return (
-      <div
+      <CardShell
         key={p.key}
-        className={`flex items-center gap-3 rounded-xl p-3 border ${darkMode ? 'border-gray-700' : 'border-gray-100'} ${rowBg}`}
+        p={p}
+        pill={<StatusPill darkMode={darkMode} state={isConnected ? 'verified' : 'none'} />}
+        footer={
+          isConnected ? (
+            <>
+              {conn.profile_url ? (
+                <a
+                  href={conn.profile_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${quietBtn} flex items-center justify-center gap-1.5`}
+                >
+                  View profile
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              ) : null}
+              <button
+                onClick={() => setConfirmDisconnect(p.key)}
+                disabled={disconnecting === p.key}
+                className={`${manageBtn} disabled:opacity-50`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {disconnecting === p.key ? 'Removing…' : 'Manage connection'}
+              </button>
+            </>
+          ) : (
+            <button onClick={() => connectPlatform(p.key)} className={primaryBtn}>Connect</button>
+          )
+        }
       >
-        <SocialIcon platform={p.key} size={32} />
-
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium whitespace-nowrap ${text}`}>{p.label}</p>
-          {conn?.username && (
-            <p className={`text-xs truncate ${sub}`}>@{conn.username}</p>
-          )}
-        </div>
-
-        {isConnected ? (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Verified</span>
-            <button
-              onClick={() => setConfirmDisconnect(p.key)}
-              disabled={disconnecting === p.key}
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 ${
-                darkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-50'
-              }`}
-              title="Remove connection"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+        {isConnected && conn.username ? (
+          <p className="text-sm text-violet-500 truncate mt-0.5">@{conn.username}</p>
         ) : (
-          <button
-            onClick={() => connectPlatform(p.key)}
-            className="text-xs bg-red-500 hover:bg-red-600 text-white rounded-lg px-3 py-1 font-medium shrink-0 transition-colors"
-          >
-            Connect
-          </button>
+          <p className={`text-sm mt-1 leading-relaxed ${sub}`}>{p.blurb}</p>
         )}
-      </div>
+      </CardShell>
     )
   }
+
+  const grid = 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'
 
   return (
     <div className="space-y-4">
 
-      {/* Hero */}
-      <div className={`${card} p-6 flex items-center gap-6 flex-wrap`}>
-        <span className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${darkMode ? 'bg-pink-900/30 text-pink-300' : 'bg-pink-50 text-pink-600'}`}>
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-        </span>
-        <div className="flex-1 min-w-[220px]">
-          <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Connect Your Social Accounts</h3>
-          <p className={`text-sm mt-1 ${sub}`}>
-            {connectedCount > 0
-              ? `${connectedCount} of ${totalCount} accounts connected.`
-              : "Verify your accounts to earn a trusted badge on your profile."}
+      {/* Banner. The trust line lives here rather than in its own callout — it's reassurance,
+          not an instruction, and a separate strip for it made the page feel like a form. */}
+      <div className={`relative overflow-hidden rounded-2xl px-6 py-7 sm:px-8 ${
+        darkMode
+          ? 'bg-gradient-to-br from-violet-900/50 via-gray-800 to-pink-900/30 border border-gray-700'
+          : 'bg-gradient-to-br from-violet-100 via-violet-50 to-pink-50'
+      }`}>
+        <div className="relative z-10 max-w-lg">
+          <p className={`text-[11px] font-bold uppercase tracking-[0.12em] mb-1.5 ${darkMode ? 'text-violet-300' : 'text-violet-500'}`}>
+            Social Profiles
           </p>
+          <h3 className={`text-2xl sm:text-3xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Connect Your Social Accounts
+          </h3>
+          <p className={`text-sm mt-2 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            Verify your online presence and display your social profiles on your Pulse profile.
+          </p>
+          <p className={`inline-flex items-center gap-2 text-xs font-medium mt-4 rounded-full px-3 py-1.5 ${
+            darkMode ? 'bg-gray-900/60 text-gray-300' : 'bg-white/70 text-gray-600'
+          }`}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Pulse never receives your social media passwords.
+          </p>
+        </div>
+
+        {/* Decorative platform marks. Hidden below lg so they can never crowd the text. */}
+        <div aria-hidden="true" className="hidden lg:block absolute inset-y-0 right-6 w-80 pointer-events-none select-none">
+          <span className="absolute top-7 right-40 opacity-90 rotate-[-8deg]"><SocialIcon platform="instagram" size={54} /></span>
+          <span className="absolute top-4 right-20 opacity-90 rotate-[6deg]"><SocialIcon platform="twitter" size={50} /></span>
+          <span className="absolute top-10 right-0 opacity-90 rotate-[-4deg]"><SocialIcon platform="linkedin" size={52} /></span>
+          <span className="absolute bottom-6 right-44 opacity-80 rotate-[7deg]"><SocialIcon platform="youtube" size={46} /></span>
+          <span className="absolute bottom-4 right-24 opacity-80 rotate-[-6deg]"><SocialIcon platform="twitch" size={44} /></span>
+          <span className="absolute bottom-9 right-2 opacity-80 rotate-[5deg]"><SocialIcon platform="kick" size={42} /></span>
         </div>
       </div>
 
-      {/* OAuth info */}
-      <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs ${darkMode ? 'bg-violet-900/20 text-violet-300' : 'bg-violet-50 text-violet-700'}`}>
-        <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>
-          We use secure sign-in (OAuth) to confirm ownership, unless otherwise stated. We never see your passwords and cannot post on your behalf.
-        </span>
-      </div>
-
-      {/* Why connect */}
-      <div className={`${card} grid grid-cols-1 sm:grid-cols-3 gap-4 p-5`}>
-        <InfoTile
-          darkMode={darkMode}
-          icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-          title="Show You're Real" desc="Verified accounts prove you're who you say you are."
-        />
-        <InfoTile
-          darkMode={darkMode}
-          icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>}
-          title="Build Trust" desc="Members are more likely to connect with verified professionals."
-        />
-        <InfoTile
-          darkMode={darkMode}
-          icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
-          title="Display Verified Links" desc="Your connected accounts appear publicly on your profile."
-        />
+      {/* Connected summary */}
+      <div className={`${card} px-5 py-4 flex items-center gap-4 flex-wrap`}>
+        <div className="min-w-[160px]">
+          <p className={`text-sm font-bold ${text}`}>Connected accounts</p>
+          <p className={`text-xs mt-0.5 ${sub}`}>{connectedCount} of {totalCount} connected</p>
+        </div>
+        <div className={`flex-1 min-w-[120px] h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className="h-full rounded-full bg-violet-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
+        <span className={`text-sm font-semibold tabular-nums ${text}`}>{pct}%</span>
       </div>
 
       {/* Platform groups */}
-      <div className={`${card} p-5`}>
-        <GroupLabel darkMode={darkMode}>Recommended Accounts</GroupLabel>
-        <div className="space-y-2 mb-5">
-          {RECOMMENDED.map(renderRow)}
-        </div>
-
-        <GroupLabel darkMode={darkMode}>Gaming &amp; Streaming</GroupLabel>
-        <div className="space-y-2">
-          {GAMING.map(renderRow)}
-        </div>
-
-        {showAffiliateRoulette && (
-          <>
-            <GroupLabel darkMode={darkMode}>
-              <span className="mt-5 block">Other</span>
-            </GroupLabel>
-            <div className="space-y-2">
-              {OTHER.map(renderRow)}
-            </div>
-          </>
-        )}
+      <div>
+        <GroupLabel darkMode={darkMode}>Recommended</GroupLabel>
+        <div className={grid}>{RECOMMENDED.map(renderCard)}</div>
       </div>
+
+      <div className="pt-1">
+        <GroupLabel darkMode={darkMode}>Gaming &amp; Streaming</GroupLabel>
+        <div className={grid}>{GAMING.map(renderCard)}</div>
+      </div>
+
+      {showAffiliateRoulette && (
+        <div className="pt-1">
+          <GroupLabel darkMode={darkMode}>Other</GroupLabel>
+          <div className={grid}>{OTHER.map(renderCard)}</div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={!!confirmDisconnect}
