@@ -545,6 +545,14 @@ const FAQ = [
         ],
       },
       {
+        q: 'Why am I seeing sponsored content, and how is it targeted?',
+        a: [
+          'Pulse shows a small amount of sponsored content from iGaming businesses — conferences, networks and industry suppliers — to accounts on the Free plan. Pulse Pro accounts see no ads at all.',
+          'Sponsored items are selected using the professional role on your profile and nothing else. Your messages are never used to target advertising, and no information about you is shared with advertisers — we serve the content ourselves, so no advertiser tracking code runs in your session.',
+          'You can dismiss any sponsored item to hide it for a week, or upgrade to Pulse Pro to remove them entirely.',
+        ],
+      },
+      {
         q: 'Does Pulse eliminate fraud?',
         a: [
           'No platform can guarantee that fraud will never occur.',

@@ -6,6 +6,7 @@ import { config } from '../config/env.js'
 import { findUserByEmail } from '../db/queries/users.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
+import { listAds, createAd, updateAd, deleteAd } from '../db/queries/ads.js'
 import {
   findAdminById,
   getDashboardStats,
@@ -455,6 +456,80 @@ export async function changePassword(req, res, next) {
     const { query } = await import('../config/database.js')
     await query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [hash, req.admin.id])
     res.json({ message: 'Password changed' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Sponsored ads ─────────────────────────────────────────────────────────────
+
+// Creative is stored in our own uploads directory and served from our own domain. Keeping
+// it first-party is deliberate: no third-party ad script runs in a user's session, nothing
+// about who saw what leaves the platform, and there is no external tag to be tampered with.
+function adPayload(body) {
+  const roles = Array.isArray(body.target_roles) ? body.target_roles.filter(Boolean) : []
+  const weight = Number.parseInt(body.weight, 10)
+  return {
+    title: (body.title || '').trim(),
+    body: (body.body || '').trim() || null,
+    image_url: (body.image_url || '').trim() || null,
+    link_url: (body.link_url || '').trim(),
+    link_text: (body.link_text || '').trim() || 'Learn More',
+    target_roles: roles,
+    active: body.active !== false,
+    starts_at: body.starts_at || null,
+    ends_at: body.ends_at || null,
+    weight: Number.isFinite(weight) && weight > 0 ? weight : 1,
+  }
+}
+
+export async function adminListAds(req, res, next) {
+  try {
+    res.json({ ads: await listAds() })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function adminCreateAd(req, res, next) {
+  try {
+    const data = adPayload(req.body)
+    if (!data.title || !data.link_url) {
+      return res.status(400).json({ error: 'Title and link URL are required' })
+    }
+    res.json({ ad: await createAd(data) })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function adminUpdateAd(req, res, next) {
+  try {
+    const data = adPayload(req.body)
+    if (!data.title || !data.link_url) {
+      return res.status(400).json({ error: 'Title and link URL are required' })
+    }
+    const ad = await updateAd(req.params.id, data)
+    if (!ad) return res.status(404).json({ error: 'Ad not found' })
+    res.json({ ad })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function adminDeleteAd(req, res, next) {
+  try {
+    await deleteAd(req.params.id)
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function adminUploadAdImage(req, res, next) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' })
+    res.json({ imageUrl: `/uploads/${req.file.filename}` })
   } catch (err) {
     next(err)
   }

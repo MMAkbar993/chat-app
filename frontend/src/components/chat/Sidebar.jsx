@@ -5,6 +5,7 @@ import { useChat } from '../../context/ChatContext'
 import { getNotifications, markNotificationsRead, clearNotifications } from '../../api/users'
 import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
+import { SponsoredSidebarCard } from '../ads/SponsoredAd'
 import { isProUser } from '../../utils/plan'
 
 const NAV = [
@@ -219,6 +220,12 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
           )
         })}
       </nav>
+
+      {/* Sponsored slot — between the nav and the utility block, so it never reads as
+          another menu item. Pro accounts are served no ad at all by the API. */}
+      <div className={`px-3 pt-3 ${collapsed ? 'px-2' : ''}`}>
+        <SponsoredSidebarCard darkMode={darkMode} collapsed={collapsed} onUpgrade={() => setShowUpgrade(true)} />
+      </div>
 
       <div className={`pt-3 mt-1 space-y-3 border-t shrink-0 ${collapsed ? 'px-2' : 'px-3'} ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
         {/* Upgrade — hidden once the account is already Pro, nothing left to upgrade to */}

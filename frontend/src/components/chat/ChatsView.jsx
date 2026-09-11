@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
@@ -8,6 +8,7 @@ import { getOrCreateDirect, getConversation, searchMessagesApi } from '../../api
 import ConfirmDialog from '../ui/ConfirmDialog'
 import ChatItemMenu from './ChatItemMenu'
 import ChatFilterMenu from './ChatFilterMenu'
+import { SponsoredChatRow } from '../ads/SponsoredAd'
 import SearchScopeMenu from './SearchScopeMenu'
 
 const SEARCH_PLACEHOLDERS = {
@@ -45,6 +46,10 @@ function MessageResultRow({ m, darkMode, onOpen }) {
     </button>
   )
 }
+
+// Far enough down that it is clearly not the newest chat, near enough to be seen without
+// scrolling on a phone.
+const AD_SLOT_AFTER_ROW = 3
 
 const FILTER_LABELS = {
   all: 'All Chats',
@@ -391,13 +396,13 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             </p>
           )}
 
-          {all.map((c) => {
+          {all.map((c, rowIndex) => {
             const name = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Account Deleted')
             const avatar = c.other_user_avatar || c.avatar_url
             const isActive = activeConversation?.id === c.id
             return (
+              <Fragment key={c.id}>
               <div
-                key={c.id}
                 className={`relative overflow-hidden mx-4 mb-2 rounded-2xl shadow-sm md:shadow-none md:mx-0 md:mb-0 md:rounded-none md:border-b ${
                   darkMode ? 'bg-gray-800 md:bg-transparent md:border-gray-800' : 'bg-white md:bg-transparent md:border-gray-50'
                 }`}
@@ -490,6 +495,10 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                   </div>
                 )}
               </div>
+              {/* Sponsored slot sits below the first few conversations — visible without
+                  scrolling, but never interleaved among the newest chats. */}
+              {rowIndex === AD_SLOT_AFTER_ROW && <SponsoredChatRow darkMode={darkMode} />}
+              </Fragment>
             )
           })}
         </div>

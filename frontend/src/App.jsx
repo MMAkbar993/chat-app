@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { SocketProvider } from './context/SocketContext'
 import { ChatProvider } from './context/ChatContext'
+import { AdProvider } from './context/AdContext'
 import { ToastProvider } from './context/ToastContext'
 import SignupPage from './pages/SignupPage'
 import LoginPage from './pages/LoginPage'
@@ -32,6 +33,7 @@ import AdminCallsPage from './admin/pages/AdminCallsPage'
 import AdminBillingPage from './admin/pages/AdminBillingPage'
 import AdminWebsitesPage from './admin/pages/AdminWebsitesPage'
 import AdminReportsPage from './admin/pages/AdminReportsPage'
+import AdminAdsPage from './admin/pages/AdminAdsPage'
 import AdminToolsPage from './admin/pages/AdminToolsPage'
 import AdminSettingsPage from './admin/pages/AdminSettingsPage'
 import AdminLayout from './admin/components/AdminLayout'
@@ -63,7 +65,9 @@ function ChatApp() {
     <ToastProvider>
       <SocketProvider>
         <ChatProvider>
-          <ChatPage />
+          <AdProvider>
+            <ChatPage />
+          </AdProvider>
         </ChatProvider>
       </SocketProvider>
     </ToastProvider>
@@ -141,6 +145,7 @@ export default function App() {
                 <Route path="billing" element={<AdminProtectedRoute><AdminBillingPage /></AdminProtectedRoute>} />
                 <Route path="websites" element={<AdminProtectedRoute><AdminWebsitesPage /></AdminProtectedRoute>} />
                 <Route path="reports" element={<AdminProtectedRoute><AdminReportsPage /></AdminProtectedRoute>} />
+                <Route path="ads" element={<AdminProtectedRoute><AdminAdsPage /></AdminProtectedRoute>} />
                 <Route path="tools" element={<AdminProtectedRoute><AdminToolsPage /></AdminProtectedRoute>} />
                 <Route path="settings" element={<AdminProtectedRoute><AdminSettingsPage /></AdminProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/admin/login" replace />} />

@@ -1,5 +1,9 @@
 import { Router } from 'express'
+import multer from 'multer'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { adminAuthMiddleware } from '../middleware/adminAuth.js'
+import { imageOnlyFilter } from '../middleware/fileFilters.js'
 import { adminAuthLimiter, adminSignupLimiter } from '../middleware/rateLimit.js'
 import {
   adminSignup,
@@ -29,6 +33,11 @@ import {
   listCalls,
   updateProfile,
   changePassword,
+  adminListAds,
+  adminCreateAd,
+  adminUpdateAd,
+  adminDeleteAd,
+  adminUploadAdImage,
 } from '../controllers/admin.controller.js'
 
 export const adminRouter = Router()
@@ -73,3 +82,18 @@ adminRouter.get('/calls', listCalls)
 
 adminRouter.put('/settings/profile', updateProfile)
 adminRouter.post('/settings/password', changePassword)
+
+// Ad creative is stored alongside other uploads and served from our own domain, so a
+// sponsored slot never pulls an image from an advertiser-controlled host.
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const adImageStorage = multer.diskStorage({
+  destination: path.join(__dirname, '../../uploads'),
+  filename: (req, file, cb) => cb(null, `ad-${Date.now()}${path.extname(file.originalname)}`),
+})
+const adImageUpload = multer({ storage: adImageStorage, limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: imageOnlyFilter })
+
+adminRouter.get('/ads', adminListAds)
+adminRouter.post('/ads', adminCreateAd)
+adminRouter.put('/ads/:id', adminUpdateAd)
+adminRouter.delete('/ads/:id', adminDeleteAd)
+adminRouter.post('/ads/upload', adImageUpload.single('image'), adminUploadAdImage)
