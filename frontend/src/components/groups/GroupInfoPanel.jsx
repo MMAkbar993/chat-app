@@ -366,12 +366,12 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                 onClick={() => setShowEncryption((v) => !v)}
                 className={`w-full flex items-center gap-3 ${txt}`}
               >
-                <svg className="w-5 h-5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <div className="text-left flex-1">
                   <p className="text-sm font-medium">Encryption</p>
-                  <p className={`text-xs ${sub}`}>Messages are end-to-end encrypted</p>
+                  <p className={`text-xs ${sub}`}>Private and encrypted in transit</p>
                 </div>
                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -379,7 +379,10 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
               </button>
               {showEncryption && (
                 <p className={`mt-2 text-xs leading-relaxed ${sub}`}>
-                  Text messages in this group are protected with end-to-end encryption. Only members of this group can read them — not even the server.
+                  Messages in this group are private to its members and are encrypted in transit
+                  between your device and Pulse. They are not end-to-end encrypted, so please avoid
+                  sharing passwords or other highly sensitive material here. Anyone in the group can
+                  also copy, forward or screenshot what you send.
                 </p>
               )}
             </div>
