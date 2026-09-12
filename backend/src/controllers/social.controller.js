@@ -148,7 +148,12 @@ const PLATFORMS = {
     }),
   },
   instagram: {
-    authUrl: 'https://api.instagram.com/oauth/authorize',
+    // www.instagram.com, NOT api.instagram.com. The api.* authorize endpoint belonged to
+    // Instagram Basic Display, retired in Dec 2024; Instagram API with Instagram Login —
+    // the one `instagram_business_basic` is granted against — authorizes on www. Sending
+    // users to the old host is what produced the bare "Could not connect account" even
+    // after the permission was approved. (The token exchange below stays on api.*.)
+    authUrl: 'https://www.instagram.com/oauth/authorize',
     tokenUrl: 'https://api.instagram.com/oauth/access_token',
     // Must be version-prefixed. The unversioned /me path belonged to the Instagram Basic
     // Display API, which Meta shut down in Dec 2024 — calling it now returns a 400
@@ -497,9 +502,14 @@ export async function socialCallback(req, res) {
     console.error(`Social auth error (${platform}, status ${err.response?.status ?? 'n/a'}):`, detail || err.message)
 
     let reason = 'Could not connect account. Please try again.'
-    if (platform === 'facebook' && detail?.error?.message) {
+    // Graph-family APIs (Facebook AND graph.instagram.com) nest the real message under
+    // error.message. This used to be checked for Facebook only, so an Instagram /me failure
+    // fell through every branch — detail.error is an object, not a string — and the user got
+    // the bare fallback with no reason. That is the "not showing why" complaint.
+    if (detail?.error?.message) {
       reason = detail.error.message
-    } else if (platform === 'instagram' && detail?.error_message) {
+    } else if (detail?.error_message) {
+      // Instagram's token endpoint uses a flat error_type/code/error_message shape instead.
       reason = detail.error_message
     } else if (detail?.error_description) {
       reason = detail.error_description

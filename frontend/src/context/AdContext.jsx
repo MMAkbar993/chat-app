@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useAuth } from './AuthContext'
 import { getCurrentAd, trackAdClick, dismissAdApi } from '../api/ads'
 
-const AdContext = createContext({ ad: null, dismiss: () => {}, click: () => {} })
+const AdContext = createContext({ ad: null, canHide: false, dismiss: () => {}, click: () => {} })
 
 // One fetch feeds both placements. The sidebar card and the chat-list row are never visible
 // at the same time (one is desktop-only, the other mobile-only), but they mount together, so
@@ -10,6 +10,9 @@ const AdContext = createContext({ ad: null, dismiss: () => {}, click: () => {} }
 export function AdProvider({ children }) {
   const { user } = useAuth()
   const [ad, setAd] = useState(null)
+  // Whether this account may dismiss an ad. Comes from the server, not from reading the
+  // plan client-side, so the UI and the endpoint agree on who gets the option.
+  const [canHide, setCanHide] = useState(false)
   // Bumped to pull a fresh ad into the slot after one is dismissed.
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -17,7 +20,7 @@ export function AdProvider({ children }) {
     if (!user) return undefined
     let cancelled = false
     getCurrentAd()
-      .then((d) => { if (!cancelled) setAd(d.ad || null) })
+      .then((d) => { if (!cancelled) { setAd(d.ad || null); setCanHide(!!d.canHide) } })
       .catch(() => { if (!cancelled) setAd(null) })
     return () => { cancelled = true }
   }, [user, reloadKey])
@@ -37,7 +40,7 @@ export function AdProvider({ children }) {
     if (ad) trackAdClick(ad.id).catch(() => {})
   }, [ad])
 
-  return <AdContext.Provider value={{ ad, dismiss, click }}>{children}</AdContext.Provider>
+  return <AdContext.Provider value={{ ad, canHide, dismiss, click }}>{children}</AdContext.Provider>
 }
 
 export function useAd() {

@@ -191,8 +191,8 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
               title={label}
               data-tour={`sidebar-${key}`}
               onClick={() => onNav(key)}
-              className={`relative w-full flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                collapsed ? 'justify-center px-0' : 'justify-start px-3'
+              className={`relative flex items-center gap-3 rounded-xl text-sm font-medium transition-colors ${
+                collapsed ? 'w-11 h-11 mx-auto justify-center px-0' : 'w-full py-2.5 justify-start px-3'
               } ${
                 active === key
                   ? 'bg-violet-600 text-white'
@@ -222,26 +222,30 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
       </nav>
 
       {/* Sponsored slot — between the nav and the utility block, so it never reads as
-          another menu item. Pro accounts are served no ad at all by the API. */}
-      <div className={`px-3 pt-3 ${collapsed ? 'px-2' : ''}`}>
+          another menu item. py matches px so the gap under the card equals its side
+          margins; the divider below previously sat 4px further away than the sides. */}
+      <div className={collapsed ? 'px-2 py-2' : 'px-3 py-3'}>
         <SponsoredSidebarCard darkMode={darkMode} collapsed={collapsed} onUpgrade={() => setShowUpgrade(true)} />
       </div>
 
-      <div className={`pt-3 mt-1 space-y-3 border-t shrink-0 ${collapsed ? 'px-2' : 'px-3'} ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+      <div className={`pt-3 space-y-3 border-t shrink-0 ${collapsed ? 'px-2' : 'px-3'} ${darkMode ? 'border-gray-800' : 'border-gray-100'}`}>
         {/* Upgrade — hidden once the account is already Pro, nothing left to upgrade to */}
         {!isProUser(user) && (
           <button
             title="Upgrade to Premium"
             data-tour="sidebar-upgrade"
             onClick={() => setShowUpgrade(true)}
-            className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm hover:shadow-md hover:brightness-105 transition-all ${
-              collapsed ? 'justify-center px-0' : 'justify-start px-3'
+            className={`flex items-center gap-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm hover:shadow-md hover:brightness-105 transition-all ${
+              collapsed ? 'w-11 h-11 mx-auto justify-center px-0' : 'w-full py-2.5 justify-center px-3'
             }`}
           >
-            <svg className="w-4.5 h-4.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            {/* Bigger, with a light fill and a drop shadow so it reads as a badge rather
+                than another line icon. The label keeps white: gold text on the gold
+                gradient fails contrast, so the star carries the gold instead. */}
+            <svg className="w-5 h-5 shrink-0 text-amber-100 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
             </svg>
-            <span className={`flex-1 text-left ${collapsed ? 'hidden' : 'inline'}`}>Upgrade to Pro</span>
+            <span className={collapsed ? 'hidden' : 'inline'}>Upgrade to Pro</span>
           </button>
         )}
 
@@ -249,8 +253,8 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
         <button
           title="Notifications"
           onClick={handleOpenPanel}
-          className={`relative w-full flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-            collapsed ? 'justify-center px-0' : 'justify-start px-3'
+          className={`relative flex items-center gap-3 rounded-xl text-sm font-medium transition-colors ${
+            collapsed ? 'w-11 h-11 mx-auto justify-center px-0' : 'w-full py-2.5 justify-start px-3'
           } ${darkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           <svg className="w-4.5 h-4.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -273,8 +277,8 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
         <button
           title="Toggle dark mode"
           onClick={onDarkMode}
-          className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-            collapsed ? 'justify-center px-0' : 'justify-start px-3'
+          className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-colors ${
+            collapsed ? 'w-11 h-11 mx-auto justify-center px-0' : 'w-full py-2.5 justify-start px-3'
           } ${darkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           {darkMode ? (

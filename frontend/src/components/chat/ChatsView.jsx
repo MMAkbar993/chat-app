@@ -658,7 +658,11 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                 className={`bg-transparent flex-1 outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}`}
               />
             </div>
-            <div className="overflow-y-auto flex-1 pb-2">
+            {/* Caps the list at roughly four and a half rows: four whole entries plus a
+                sliver of the fifth, which is what tells people the list scrolls. The modal
+                grew to full height with eight contacts and will only get worse as accounts
+                add more. */}
+            <div className="overflow-y-auto flex-1 pb-2 max-h-72">
               {newChatContacts
                 .filter((c) => {
                   const name = (c.custom_first_name ? `${c.custom_first_name} ${c.custom_last_name || ''}` : c.display_name || c.full_name || c.username || '').toLowerCase()

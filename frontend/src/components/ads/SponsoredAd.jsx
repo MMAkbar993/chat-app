@@ -5,7 +5,10 @@ import UpgradeModal from '../../features/payment/UpgradeModal'
 // Dismissing hides this one ad for a week and rotates another in. A time-limited "mute all
 // ads" was considered and dropped: people don't think in hours, and an ad-free state that
 // silently expires reads as nagging. Upgrading is the permanent answer, so it lives here.
-function DismissMenu({ darkMode, onDismiss, onUpgrade, onClose }) {
+// What Pro buys here is control, not absence: everyone sees ads, but only a Pro account can
+// hide one for a week. A Free account gets the upsell in the same place the option would be,
+// so the benefit is discoverable at the exact moment someone wants it.
+function DismissMenu({ darkMode, canHide, onDismiss, onUpgrade, onClose }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -19,27 +22,31 @@ function DismissMenu({ darkMode, onDismiss, onUpgrade, onClose }) {
     }
   }, [onClose])
 
-  const item = `w-full text-left px-3 py-2 text-xs transition-colors ${
+  const item = `w-full text-left px-3 py-2.5 text-xs transition-colors ${
     darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'
   }`
 
   return (
     <div
       ref={ref}
-      className={`absolute right-0 top-6 z-30 w-48 rounded-xl border shadow-lg overflow-hidden ${
+      className={`absolute right-0 top-6 z-30 w-52 rounded-lg border shadow-lg overflow-hidden ${
         darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
       }`}
     >
-      <button type="button" className={item} onClick={() => { onDismiss(); onClose() }}>
-        Hide this ad for 7 days
-      </button>
-      {onUpgrade && (
+      {canHide ? (
+        <button type="button" className={item} onClick={() => { onDismiss(); onClose() }}>
+          Hide this ad for 7 days
+        </button>
+      ) : (
         <button
           type="button"
-          className={`${item} font-semibold ${darkMode ? 'text-violet-300' : 'text-violet-600'}`}
-          onClick={() => { onUpgrade(); onClose() }}
+          className={`${item} font-semibold flex items-center gap-1.5 ${darkMode ? 'text-amber-300' : 'text-amber-600'}`}
+          onClick={() => { onUpgrade?.(); onClose() }}
         >
-          Remove ads — Upgrade to Pro
+          <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+          </svg>
+          Upgrade to Pro to hide ads
         </button>
       )}
     </div>
@@ -47,7 +54,7 @@ function DismissMenu({ darkMode, onDismiss, onUpgrade, onClose }) {
 }
 
 function DismissButton({ darkMode, onUpgrade }) {
-  const { dismiss } = useAd()
+  const { dismiss, canHide } = useAd()
   const [open, setOpen] = useState(false)
 
   return (
@@ -67,6 +74,7 @@ function DismissButton({ darkMode, onUpgrade }) {
       {open && (
         <DismissMenu
           darkMode={darkMode}
+          canHide={canHide}
           onDismiss={dismiss}
           onUpgrade={onUpgrade}
           onClose={() => setOpen(false)}
@@ -120,38 +128,57 @@ export function SponsoredSidebarCard({ darkMode, collapsed, onUpgrade }) {
     )
   }
 
+  // A soft dot texture so the card reads as a placed unit rather than an empty panel —
+  // the flat tint left the block looking like unused space.
+  const texture = darkMode
+    ? 'radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)'
+    : 'radial-gradient(rgba(109,40,217,0.07) 1px, transparent 1px)'
+
   return (
-    <div className={`relative rounded-2xl border p-3 ${darkMode ? 'border-gray-700 bg-gray-800/60' : 'border-gray-100 bg-violet-50/40'}`}>
-      <div className="flex items-start gap-2.5">
-        {ad.image_url && (
-          <img src={ad.image_url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-1.5">
-            <p className={`text-xs font-bold truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{ad.title}</p>
-            <DismissButton darkMode={darkMode} onUpgrade={onUpgrade} />
-          </div>
-          {ad.body && (
-            <p className={`text-[11px] leading-snug mt-0.5 line-clamp-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {ad.body}
-            </p>
-          )}
-          <a
-            href={ad.link_url}
-            target="_blank"
-            rel={LINK_REL}
-            onClick={click}
-            className={`inline-flex items-center gap-1 text-[11px] font-semibold mt-1.5 ${
-              darkMode ? 'text-violet-300 hover:text-violet-200' : 'text-violet-600 hover:text-violet-700'
-            }`}
-          >
-            {ad.link_text}
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </a>
-        </div>
+    <div
+      className={`relative rounded-lg border px-3 pt-4 pb-3.5 text-center overflow-hidden ${
+        darkMode ? 'border-gray-700 bg-gray-800/70' : 'border-violet-100 bg-violet-50/60'
+      }`}
+      style={{ backgroundImage: texture, backgroundSize: '10px 10px' }}
+    >
+      <div className="absolute right-2 top-2">
+        <DismissButton darkMode={darkMode} onUpgrade={onUpgrade} />
       </div>
+
+      {ad.image_url && (
+        <img
+          src={ad.image_url}
+          alt=""
+          className={`w-14 h-14 rounded-xl object-cover mx-auto mb-2.5 border ${
+            darkMode ? 'border-gray-700' : 'border-white'
+          }`}
+        />
+      )}
+
+      <p className={`text-sm font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        {ad.title}
+      </p>
+
+      {ad.body && (
+        <p className={`text-xs leading-snug mt-1 line-clamp-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {ad.body}
+        </p>
+      )}
+
+      <a
+        href={ad.link_url}
+        target="_blank"
+        rel={LINK_REL}
+        onClick={click}
+        className={`inline-flex items-center justify-center gap-1 text-xs font-bold mt-2.5 ${
+          darkMode ? 'text-violet-300 hover:text-violet-200' : 'text-violet-600 hover:text-violet-700'
+        }`}
+      >
+        {ad.link_text}
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </a>
     </div>
   )
 }
