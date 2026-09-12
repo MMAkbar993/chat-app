@@ -91,7 +91,7 @@ function SectionLabel({ darkMode, children }) {
   )
 }
 
-function WebsiteCard({ darkMode, url, verified, busy, onRemove, onContinue }) {
+function WebsiteCard({ darkMode, url, verified, busy, onRemove, onContinue, onCancel }) {
   const host = url.replace(/^https?:\/\//, '').replace(/\/$/, '')
   const card = `rounded-2xl border p-4 flex flex-col ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
   return (
@@ -156,12 +156,23 @@ function WebsiteCard({ darkMode, url, verified, busy, onRemove, onContinue }) {
             </button>
           </>
         ) : (
-          <button
-            onClick={onContinue}
-            className="w-full rounded-xl py-2.5 text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors"
-          >
-            Continue setup
-          </button>
+          <>
+            <button
+              onClick={onContinue}
+              className="w-full rounded-xl py-2.5 text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+            >
+              Continue setup
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={busy}
+              className={`mt-2 text-xs font-medium transition-colors disabled:opacity-50 ${
+                darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'
+              }`}
+            >
+              {busy ? 'Cancelling…' : 'Cancel verification'}
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -384,6 +395,24 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       if (res?.reason === 'blocked') setShowDns(true)
     }
     setLoading(false)
+  }
+
+  // Pending sites skip the representative and transfer machinery entirely: nothing is
+  // verified, so nobody can be representing it and there is nothing to hand over. Without
+  // this there was no way to get rid of a half-finished verification at all — testing a few
+  // URLs left them stuck on the page permanently.
+  async function handleCancelPending(website) {
+    if (!window.confirm(`Cancel verification for ${website.url}? You can start again later.`)) return
+    setRemovingId(website.id)
+    try {
+      await removeWebsiteVerify(website.id)
+      setWebsites((prev) => prev.filter((w) => w.id !== website.id))
+      // If the form was open on this site, it now points at a row that no longer exists.
+      if (websiteId === website.id) resetAddForm()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to cancel verification.')
+    }
+    setRemovingId(null)
   }
 
   async function handleRemoveClick(website) {
@@ -890,6 +919,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                   darkMode={darkMode}
                   url={w.url}
                   verified={false}
+                  busy={removingId === w.id}
+                  onCancel={() => handleCancelPending(w)}
                   onContinue={() => {
                     setUrl(w.url)
                     setMetaTag(`<meta name="site-verification" content="${w.verify_token}">`)

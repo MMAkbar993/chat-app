@@ -136,49 +136,60 @@ export function SponsoredSidebarCard({ darkMode, collapsed, onUpgrade }) {
 
   return (
     <div
-      className={`relative rounded-lg border px-3 pt-4 pb-3.5 text-center overflow-hidden ${
-        darkMode ? 'border-gray-700 bg-gray-800/70' : 'border-violet-100 bg-violet-50/60'
+      className={`group relative rounded-lg border overflow-hidden transition-colors ${
+        darkMode
+          ? 'border-gray-700 bg-gray-800/70 hover:border-gray-600'
+          : 'border-violet-100 bg-violet-50/60 hover:border-violet-200'
       }`}
       style={{ backgroundImage: texture, backgroundSize: '10px 10px' }}
     >
-      <div className="absolute right-2 top-2">
-        <DismissButton darkMode={darkMode} onUpgrade={onUpgrade} />
-      </div>
-
-      {ad.image_url && (
-        <img
-          src={ad.image_url}
-          alt=""
-          className={`w-14 h-14 rounded-xl object-cover mx-auto mb-2.5 border ${
-            darkMode ? 'border-gray-700' : 'border-white'
-          }`}
-        />
-      )}
-
-      <p className={`text-sm font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-        {ad.title}
-      </p>
-
-      {ad.body && (
-        <p className={`text-xs leading-snug mt-1 line-clamp-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          {ad.body}
-        </p>
-      )}
-
+      {/* The whole card is the link — a separate "Learn More" button was one more thing to
+          read in a slot this small, and a card that looks clickable already is. */}
       <a
         href={ad.link_url}
         target="_blank"
         rel={LINK_REL}
         onClick={click}
-        className={`inline-flex items-center justify-center gap-1 text-xs font-bold mt-2.5 ${
-          darkMode ? 'text-violet-300 hover:text-violet-200' : 'text-violet-600 hover:text-violet-700'
+        className="flex items-center gap-3 px-3 py-3.5 pr-7"
+      >
+        {ad.image_url && (
+          <img
+            src={ad.image_url}
+            alt=""
+            className={`w-12 h-12 rounded-xl object-cover shrink-0 border ${
+              darkMode ? 'border-gray-700' : 'border-white'
+            }`}
+          />
+        )}
+
+        <div className="flex-1 min-w-0 text-left">
+          <p className={`text-sm font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            {ad.title}
+          </p>
+          {ad.body && (
+            <p className={`text-xs leading-snug mt-1 line-clamp-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {ad.body}
+            </p>
+          )}
+        </div>
+      </a>
+
+      {/* Sits outside the anchor so dismissing never counts as a click on the advertiser. */}
+      <div className="absolute right-2 top-2">
+        <DismissButton darkMode={darkMode} onUpgrade={onUpgrade} />
+      </div>
+
+      {/* The only affordance that this goes somewhere. */}
+      <span
+        aria-hidden="true"
+        className={`absolute right-2.5 bottom-2.5 pointer-events-none transition-colors ${
+          darkMode ? 'text-gray-600 group-hover:text-violet-300' : 'text-violet-300 group-hover:text-violet-600'
         }`}
       >
-        {ad.link_text}
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
         </svg>
-      </a>
+      </span>
     </div>
   )
 }
