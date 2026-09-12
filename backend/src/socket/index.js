@@ -315,18 +315,6 @@ export function initSocket(httpServer) {
     })
 
     // WebRTC negotiation relay
-    socket.on('webrtc-offer', ({ callId, targetUserId, offer }) => {
-      io.to(`user:${targetUserId}`).emit('webrtc-offer', { callId, offer, fromUserId: userId })
-    })
-
-    socket.on('webrtc-answer', ({ callId, targetUserId, answer }) => {
-      io.to(`user:${targetUserId}`).emit('webrtc-answer', { callId, answer })
-    })
-
-    socket.on('webrtc-ice-candidate', ({ callId, targetUserId, candidate }) => {
-      io.to(`user:${targetUserId}`).emit('webrtc-ice-candidate', { callId, candidate })
-    })
-
     // --- Group Call Room ---
 
     socket.on('group-call-join', async ({ callId, conversationId }) => {
@@ -366,19 +354,6 @@ export function initSocket(httpServer) {
       }
       socket.leave(`groupCall:${callId}`)
       socket.to(`groupCall:${callId}`).emit('group-call-user-left', { callId, userId })
-    })
-
-    // Point-to-point WebRTC relay within a group call
-    socket.on('group-webrtc-offer', ({ callId, targetUserId, offer }) => {
-      io.to(`user:${targetUserId}`).emit('group-webrtc-offer', { callId, fromUserId: userId, offer })
-    })
-
-    socket.on('group-webrtc-answer', ({ callId, targetUserId, answer }) => {
-      io.to(`user:${targetUserId}`).emit('group-webrtc-answer', { callId, fromUserId: userId, answer })
-    })
-
-    socket.on('group-webrtc-ice', ({ callId, targetUserId, candidate }) => {
-      io.to(`user:${targetUserId}`).emit('group-webrtc-ice', { callId, fromUserId: userId, candidate })
     })
 
     // Emit current online list to the newly connected user

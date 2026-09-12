@@ -2,32 +2,24 @@ import { useEffect, useRef, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
 import { useAuth } from '../../context/AuthContext'
 import { playCallConnected, playCallEnded } from '../../utils/sounds'
-import { getIceServers } from '../../api/calls'
+import { useAgoraCall, useAgoraVideo } from '../../hooks/useAgoraCall'
 
-// Fallback only; the server supplies TURN on top of these. See CallModal for why STUN alone
-// leaves mobile callers connected-but-silent.
-const FALLBACK_ICE = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ],
-}
+// Two layers, deliberately separate. Socket.IO tracks who is *in* the call — names and avatars,
+// so a tile can appear the moment someone joins rather than when their camera finally starts.
+// Agora carries the media.
+//
+// This replaced a full peer-to-peer mesh: every participant held an RTCPeerConnection to every
+// other, so a five-person call meant four uploads of your own camera from one laptop. Agora's
+// SFU takes one upload per person regardless of how many are in the room.
 
-// Group calls build peer connections one at a time as people join, and makePc has to stay
-// synchronous for that. So the config is fetched once when the modal mounts and cached here
-// rather than awaited inside makePc.
-let cachedIce = null
-
-function PeerVideo({ stream, name, avatar }) {
+function VideoTile({ track, name, avatar, muted }) {
   const ref = useRef(null)
-  useEffect(() => {
-    if (ref.current) ref.current.srcObject = stream || null
-  }, [stream])
+  useAgoraVideo(track, ref)
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gray-800 flex items-center justify-center min-h-0">
-      {stream
-        ? <video ref={ref} autoPlay playsInline className="w-full h-full object-cover" />
+      {track
+        ? <div ref={ref} className="w-full h-full [&_video]:object-cover" />
         : (
           <div className="flex flex-col items-center gap-3">
             <div className="w-16 h-16 rounded-full bg-violet-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
@@ -38,22 +30,25 @@ function PeerVideo({ stream, name, avatar }) {
             <p className="text-white/50 text-xs">Connecting…</p>
           </div>
         )}
-      <div className="absolute bottom-2 left-3 pointer-events-none">
+      <div className="absolute bottom-2 left-3 pointer-events-none flex items-center gap-1.5">
         <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">{name || 'Unknown'}</span>
+        {muted && (
+          <span className="bg-red-500 rounded-full p-0.5">
+            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+            </svg>
+          </span>
+        )}
       </div>
     </div>
   )
 }
 
-function AudioPeer({ name, avatar, stream }) {
-  const ref = useRef(null)
-  useEffect(() => {
-    if (ref.current) ref.current.srcObject = stream || null
-  }, [stream])
-
+function AudioTile({ name, avatar }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      {stream && <audio ref={ref} autoPlay />}
+      {/* No element needed — Agora plays remote audio itself once subscribed. */}
       <div className="w-20 h-20 rounded-full overflow-hidden bg-violet-600 flex items-center justify-center text-white text-2xl font-bold ring-2 ring-white/20">
         {avatar
           ? <img src={avatar} alt="" className="w-full h-full object-cover" />
@@ -73,216 +68,87 @@ export default function GroupCallModal({ call, onEnd }) {
   const { user } = useAuth()
 
   const callId = call.id || call.callId
+  const conversationId = call.conversationId || call.conversation_id
   const isVideo = call.callType === 'video' || call.call_type === 'video'
   const groupName = call.calleeName || call.callerName || call.conversationName || 'Group Call'
 
-  const [peers, setPeers] = useState({})   // peerId → { name, avatar, stream }
-  const [muted, setMuted] = useState(false)
-  const [videoOff, setVideoOff] = useState(false)
+  // userId → { name, avatar }, straight from the socket room.
+  const [directory, setDirectory] = useState({})
   const [elapsed, setElapsed] = useState(0)
-
-  const pcsRef = useRef({})                // peerId → RTCPeerConnection
-  const localStreamRef = useRef(null)
   const localVideoRef = useRef(null)
-  const pendingCandidates = useRef({})     // peerId → RTCIceCandidate[]
-  const peerInfoCache = useRef({})         // peerId → { name, avatar } (stable across re-renders)
+  const connectedOnceRef = useRef(false)
 
-  // Timer
+  const {
+    status, remoteUsers, muted, videoOff, localVideoTrack, toggleMute, toggleVideo,
+  } = useAgoraCall({ callId, isVideo })
+
+  useAgoraVideo(localVideoTrack, localVideoRef)
+
   useEffect(() => {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000)
     return () => clearInterval(t)
   }, [])
 
-  // Boot: get media → join room
   useEffect(() => {
-    async function boot() {
-      try {
-        // Fetched before anyone can join, so the first peer connection already has TURN.
-        cachedIce = await getIceServers()
-          .then((d) => (d?.iceServers?.length ? { iceServers: d.iceServers } : FALLBACK_ICE))
-          .catch(() => FALLBACK_ICE)
-
-        const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true })
-        localStreamRef.current = stream
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream
-        playCallConnected()
-        socket?.emit('group-call-join', {
-          callId,
-          conversationId: call.conversationId || call.conversation_id,
-        })
-      } catch (err) {
-        console.error('GroupCallModal boot error:', err)
-      }
+    if (status === 'connected' && !connectedOnceRef.current) {
+      connectedOnceRef.current = true
+      playCallConnected()
     }
-    boot()
-    return () => {
-      playCallEnded()
-      stopMedia()
-      Object.values(pcsRef.current).forEach((pc) => pc.close())
-      pcsRef.current = {}
-    }
-  }, [])
+  }, [status])
 
-  function stopMedia() {
-    localStreamRef.current?.getTracks().forEach((t) => t.stop())
-  }
-
-  function makePc(peerId) {
-    if (pcsRef.current[peerId]) return pcsRef.current[peerId]
-    const pc = new RTCPeerConnection(cachedIce || FALLBACK_ICE)
-    pcsRef.current[peerId] = pc
-
-    localStreamRef.current?.getTracks().forEach((t) =>
-      pc.addTrack(t, localStreamRef.current)
-    )
-
-    pc.ontrack = (e) => {
-      const stream = e.streams[0]
-      setPeers((prev) => ({
-        ...prev,
-        [peerId]: { ...(peerInfoCache.current[peerId] || {}), ...prev[peerId], stream },
-      }))
-    }
-
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        socket?.emit('group-webrtc-ice', { callId, targetUserId: peerId, candidate: e.candidate })
-      }
-    }
-
-    pc.onconnectionstatechange = () => {
-      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
-        dropPeer(peerId)
-      }
-    }
-
-    return pc
-  }
-
-  async function offerTo(peerId) {
-    const pc = makePc(peerId)
-    const offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    socket?.emit('group-webrtc-offer', { callId, targetUserId: peerId, offer })
-  }
-
-  async function answerOffer(peerId, offer) {
-    const pc = makePc(peerId)
-    await pc.setRemoteDescription(new RTCSessionDescription(offer))
-    const pending = pendingCandidates.current[peerId] || []
-    for (const c of pending) {
-      try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch {}
-    }
-    delete pendingCandidates.current[peerId]
-    const answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-    socket?.emit('group-webrtc-answer', { callId, targetUserId: peerId, answer })
-  }
-
-  function dropPeer(peerId) {
-    pcsRef.current[peerId]?.close()
-    delete pcsRef.current[peerId]
-    delete peerInfoCache.current[peerId]
-    setPeers((prev) => {
-      const next = { ...prev }
-      delete next[peerId]
-      return next
-    })
-  }
-
-  // Socket listeners
   useEffect(() => {
     if (!socket) return
 
-    const onJoined = async ({ participants }) => {
-      for (const p of participants) {
-        if (p.id === user?.id) continue
-        peerInfoCache.current[p.id] = { name: p.name, avatar: p.avatar }
-        setPeers((prev) => ({
-          ...prev,
-          [p.id]: { name: p.name, avatar: p.avatar, stream: null, ...prev[p.id] },
-        }))
-        await offerTo(p.id)
-      }
+    const onJoined = ({ participants }) => {
+      setDirectory(Object.fromEntries((participants || []).map((p) => [p.id, { name: p.name, avatar: p.avatar }])))
     }
-
-    const onUserJoined = ({ user: u }) => {
-      if (u.id === user?.id) return
-      peerInfoCache.current[u.id] = { name: u.name, avatar: u.avatar }
-      setPeers((prev) => ({
-        ...prev,
-        [u.id]: { name: u.name, avatar: u.avatar, stream: null, ...prev[u.id] },
-      }))
-      // New joiner will send us an offer — just wait
+    const onUserJoined = ({ user: joined }) => {
+      setDirectory((d) => ({ ...d, [joined.id]: { name: joined.name, avatar: joined.avatar } }))
     }
-
-    const onUserLeft = ({ userId: uid }) => dropPeer(uid)
-
-    const onOffer = ({ fromUserId, offer }) => answerOffer(fromUserId, offer)
-
-    const onAnswer = async ({ fromUserId, answer }) => {
-      const pc = pcsRef.current[fromUserId]
-      if (!pc || pc.signalingState !== 'have-local-offer') return
-      await pc.setRemoteDescription(new RTCSessionDescription(answer))
-      const pending = pendingCandidates.current[fromUserId] || []
-      for (const c of pending) {
-        try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch {}
-      }
-      delete pendingCandidates.current[fromUserId]
+    const onUserLeft = ({ userId }) => {
+      setDirectory((d) => {
+        const next = { ...d }
+        delete next[userId]
+        return next
+      })
     }
-
-    const onIce = async ({ fromUserId, candidate }) => {
-      const pc = pcsRef.current[fromUserId]
-      if (!pc?.remoteDescription) {
-        if (!pendingCandidates.current[fromUserId]) pendingCandidates.current[fromUserId] = []
-        pendingCandidates.current[fromUserId].push(candidate)
-        return
-      }
-      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)) } catch {}
-    }
+    const onCallEnded = () => { playCallEnded(); onEnd?.() }
 
     socket.on('group-call-joined', onJoined)
     socket.on('group-call-user-joined', onUserJoined)
     socket.on('group-call-user-left', onUserLeft)
-    socket.on('group-webrtc-offer', onOffer)
-    socket.on('group-webrtc-answer', onAnswer)
-    socket.on('group-webrtc-ice', onIce)
+    socket.on('call-ended', onCallEnded)
+    socket.emit('group-call-join', { callId, conversationId })
 
     return () => {
       socket.off('group-call-joined', onJoined)
       socket.off('group-call-user-joined', onUserJoined)
       socket.off('group-call-user-left', onUserLeft)
-      socket.off('group-webrtc-offer', onOffer)
-      socket.off('group-webrtc-answer', onAnswer)
-      socket.off('group-webrtc-ice', onIce)
+      socket.off('call-ended', onCallEnded)
+      socket.emit('group-call-leave', { callId })
     }
-  }, [socket, user])
+  }, [socket, callId, conversationId])
 
   function handleLeave() {
+    playCallEnded()
     socket?.emit('group-call-leave', { callId })
-    stopMedia()
-    Object.values(pcsRef.current).forEach((pc) => pc.close())
-    pcsRef.current = {}
+    // Agora tracks and channel membership are released by the hook's cleanup on unmount.
     onEnd?.()
   }
 
-  function toggleMute() {
-    localStreamRef.current?.getAudioTracks().forEach((t) => { t.enabled = !t.enabled })
-    setMuted((m) => !m)
-  }
+  // Anyone the socket knows about, plus anyone Agora is already carrying — a person who joined
+  // but hasn't published yet still deserves a tile, and a publisher whose join event was missed
+  // shouldn't be invisible.
+  const mediaByUid = Object.fromEntries(remoteUsers.map((u) => [String(u.uid), u]))
+  const peerIds = [...new Set([...Object.keys(directory), ...Object.keys(mediaByUid)])]
+    .filter((id) => id !== user?.id)
 
-  function toggleVideo() {
-    localStreamRef.current?.getVideoTracks().forEach((t) => { t.enabled = !t.enabled })
-    setVideoOff((v) => !v)
-  }
-
-  const peerList = Object.entries(peers)
-  const total = peerList.length + 1
+  const total = peerIds.length + 1
   const gridCols =
     total === 1 ? 'grid-cols-1' :
     total === 2 ? 'grid-cols-2' :
-    total <= 4  ? 'grid-cols-2' :
-                  'grid-cols-3'
+    total <= 4 ? 'grid-cols-2' :
+      'grid-cols-3'
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
@@ -291,7 +157,9 @@ export default function GroupCallModal({ call, onEnd }) {
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-lg truncate">{groupName}</p>
           <p className="text-white/60 text-sm">
-            {fmt(elapsed)} · {total} participant{total !== 1 ? 's' : ''}
+            {status === 'failed'
+              ? "Couldn't connect — check your network"
+              : `${fmt(elapsed)} · ${total} participant${total !== 1 ? 's' : ''}`}
           </p>
         </div>
         <span className={`text-xs px-2 py-0.5 rounded-full ${isVideo ? 'bg-violet-600/40 text-violet-300' : 'bg-white/10 text-white/60'}`}>
@@ -305,7 +173,7 @@ export default function GroupCallModal({ call, onEnd }) {
           <div className={`h-full grid gap-3 ${gridCols}`}>
             {/* Local tile */}
             <div className="relative rounded-2xl overflow-hidden bg-gray-800 min-h-0">
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+              <div ref={localVideoRef} className="w-full h-full [&_video]:object-cover" />
               {videoOff && (
                 <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-violet-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
@@ -328,8 +196,14 @@ export default function GroupCallModal({ call, onEnd }) {
               </div>
             </div>
             {/* Remote tiles */}
-            {peerList.map(([peerId, peer]) => (
-              <PeerVideo key={peerId} stream={peer.stream} name={peer.name} avatar={peer.avatar} />
+            {peerIds.map((id) => (
+              <VideoTile
+                key={id}
+                track={mediaByUid[id]?.videoTrack || null}
+                name={directory[id]?.name}
+                avatar={directory[id]?.avatar}
+                muted={mediaByUid[id] ? !mediaByUid[id].hasAudio : false}
+              />
             ))}
           </div>
         ) : (
@@ -343,8 +217,8 @@ export default function GroupCallModal({ call, onEnd }) {
               </div>
               <p className="text-white text-sm font-medium">You{muted ? ' (muted)' : ''}</p>
             </div>
-            {peerList.map(([peerId, peer]) => (
-              <AudioPeer key={peerId} name={peer.name} avatar={peer.avatar} stream={peer.stream} />
+            {peerIds.map((id) => (
+              <AudioTile key={id} name={directory[id]?.name} avatar={directory[id]?.avatar} />
             ))}
           </div>
         )}

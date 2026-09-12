@@ -3,45 +3,36 @@ import { useSocket } from '../../context/SocketContext'
 import { useAuth } from '../../context/AuthContext'
 import { playCallConnected, playCallEnded } from '../../utils/sounds'
 import { isProUser } from '../../utils/plan'
-import { getCallUsage, getIceServers } from '../../api/calls'
+import { getCallUsage } from '../../api/calls'
+import { useAgoraCall, useAgoraVideo } from '../../hooks/useAgoraCall'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 
-// Fallback only — the real list comes from the server, which adds TURN. STUN alone cannot
-// relay media, so on mobile data (carrier-grade NAT) the connection negotiates and then
-// carries nothing: the call shows as connected with no audio or video.
-const FALLBACK_ICE = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ],
+// Media runs over Agora rather than a direct peer connection. The previous hand-rolled WebRTC
+// path had no relay, so on mobile networks — where carrier-grade NAT blocks inbound connections
+// — signalling completed and no media ever arrived: the call showed "Connected" with a running
+// timer while neither side could see or hear anything. Socket.IO still carries the ringing
+// (initiate / accept / reject / end); only the media transport moved.
+
+function RemoteVideo({ track, className }) {
+  const ref = useRef(null)
+  useAgoraVideo(track, ref)
+  return <div ref={ref} className={className} />
 }
 
 export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReached }) {
   const { socket } = useSocket()
   const { user } = useAuth()
   const localVideoRef = useRef(null)
-  const remoteVideoRef = useRef(null)
-  const remoteAudioRef = useRef(null)
-  const pcRef = useRef(null)
-  const localStreamRef = useRef(null)
-  const screenStreamRef = useRef(null)
   const startTimeRef = useRef(Date.now())
-  const pendingOfferRef = useRef(null)
-  const pendingCandidatesRef = useRef([])
   const endedRef = useRef(false)
 
-  const [status, setStatus] = useState(isCaller ? 'calling' : 'connecting')
-  const [muted, setMuted] = useState(false)
-  const [videoOff, setVideoOff] = useState(false)
-  const [speakerOn, setSpeakerOn] = useState(false)
-  const [speakerSupported, setSpeakerSupported] = useState(true)
   const [elapsed, setElapsed] = useState(0)
-  const [sharingScreen, setSharingScreen] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const remainingSecondsRef = useRef(null) // null = unlimited (Pro) or not yet loaded
 
   const canScreenShare = isProUser(user)
 
+  const callId = call.id || call.callId
   const targetUserId = isCaller ? call.calleeId || call.callee_id : call.callerId || call.caller_id
   const isVideo = call.callType === 'video' || call.call_type === 'video'
   const remoteName = isCaller
@@ -50,6 +41,25 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   const remoteAvatar = isCaller
     ? call.calleeAvatar || call.callerAvatar
     : call.callerAvatar || call.calleeAvatar
+
+  const {
+    status: agoraStatus, remoteUsers, muted, videoOff, sharingScreen,
+    localVideoTrack, toggleMute, toggleVideo, startScreenShare, stopScreenShare,
+    speakerOn, speakerSupported, toggleSpeaker,
+  } = useAgoraCall({ callId, isVideo })
+
+  // The caller sits in "Calling..." until the callee actually joins the channel — Agora
+  // reports us connected the moment we publish, which is before anyone is listening.
+  const someoneElseHere = remoteUsers.length > 0
+  const status =
+    agoraStatus === 'failed' ? 'failed'
+    : someoneElseHere ? 'connected'
+    : agoraStatus === 'connected' ? (isCaller ? 'calling' : 'connecting')
+    : agoraStatus
+
+  const remoteVideoTrack = remoteUsers.find((u) => u.videoTrack)?.videoTrack || null
+
+  useAgoraVideo(localVideoTrack, localVideoRef)
 
   useEffect(() => {
     if (isProUser(user)) return
@@ -78,140 +88,15 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   }, [status])
 
   useEffect(() => {
-    startCall()
-    return () => cleanup()
-  }, [])
-
-  async function handleOffer(offer) {
-    if (!pcRef.current) return
-    await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer))
-    for (const c of pendingCandidatesRef.current) {
-      try { await pcRef.current.addIceCandidate(new RTCIceCandidate(c)) } catch {}
-    }
-    pendingCandidatesRef.current = []
-    const answer = await pcRef.current.createAnswer()
-    await pcRef.current.setLocalDescription(answer)
-    socket?.emit('webrtc-answer', { callId: call.id || call.callId, targetUserId, answer })
-  }
-
-  async function startCall() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true })
-      localStreamRef.current = stream
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream
-
-      const iceConfig = await getIceServers()
-        .then((d) => (d?.iceServers?.length ? { iceServers: d.iceServers } : FALLBACK_ICE))
-        .catch(() => FALLBACK_ICE)
-
-      const pc = new RTCPeerConnection(iceConfig)
-      pcRef.current = pc
-
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream))
-
-      pc.ontrack = (e) => {
-        const remoteStream = e.streams[0]
-        if (isVideo && remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream
-        } else if (!isVideo && remoteAudioRef.current) {
-          remoteAudioRef.current.srcObject = remoteStream
-        }
-        // iOS will not start a media element on its own even after a tap elsewhere in the
-        // page; without this the stream arrives and stays silent.
-        const el = isVideo ? remoteVideoRef.current : remoteAudioRef.current
-        el?.play?.().catch(() => {})
-        // Deliberately NOT setStatus('connected') here. ontrack fires when tracks are
-        // negotiated, which happens well before ICE has a working path — so the UI used to
-        // say Connected on a call that never carried a single packet. Status now follows the
-        // actual connection state below.
-      }
-
-      pc.onconnectionstatechange = () => {
-        const st = pc.connectionState
-        if (st === 'connected') setStatus('connected')
-        else if (st === 'failed') setStatus('failed')
-        else if (st === 'disconnected') setStatus('reconnecting')
-      }
-
-      pc.oniceconnectionstatechange = () => {
-        // A failed ICE gather is the signature of no reachable relay. Surfacing it beats
-        // leaving people staring at a silent call wondering whether the other side muted.
-        if (pc.iceConnectionState === 'failed') {
-          console.error('ICE failed — no usable candidate pair. A TURN server is required for mobile networks.')
-          setStatus('failed')
-        }
-      }
-
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket?.emit('webrtc-ice-candidate', { callId: call.id || call.callId, targetUserId, candidate: e.candidate })
-        }
-      }
-
-      if (isCaller) {
-        const offer = await pc.createOffer()
-        await pc.setLocalDescription(offer)
-        socket?.emit('webrtc-offer', { callId: call.id || call.callId, targetUserId, offer })
-      } else if (pendingOfferRef.current) {
-        // Offer arrived before PC was ready — process it now
-        const buffered = pendingOfferRef.current
-        pendingOfferRef.current = null
-        await handleOffer(buffered)
-      }
-    } catch (err) {
-      console.error('startCall error:', err)
-      setStatus('error')
-    }
-  }
-
-  useEffect(() => {
     if (!socket) return
-
-    const onOffer = async ({ offer }) => {
-      if (!pcRef.current) {
-        pendingOfferRef.current = offer
-        return
-      }
-      await handleOffer(offer)
-    }
-
-    const onAnswer = async ({ answer }) => {
-      if (!pcRef.current) return
-      if (pcRef.current.signalingState !== 'have-local-offer') return
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer))
-    }
-
-    const onIce = async ({ candidate }) => {
-      if (!candidate) return
-      if (!pcRef.current?.remoteDescription) {
-        pendingCandidatesRef.current.push(candidate)
-        return
-      }
-      try { await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)) } catch {}
-    }
-
     const onEnded = () => endCall(false)
-
-    socket.on('webrtc-offer', onOffer)
-    socket.on('webrtc-answer', onAnswer)
-    socket.on('webrtc-ice-candidate', onIce)
     socket.on('call-ended', onEnded)
     socket.on('call-rejected', onEnded)
-
     return () => {
-      socket.off('webrtc-offer', onOffer)
-      socket.off('webrtc-answer', onAnswer)
-      socket.off('webrtc-ice-candidate', onIce)
       socket.off('call-ended', onEnded)
       socket.off('call-rejected', onEnded)
     }
   }, [socket])
-
-  function cleanup() {
-    localStreamRef.current?.getTracks().forEach((t) => t.stop())
-    screenStreamRef.current?.getTracks().forEach((t) => t.stop())
-    pcRef.current?.close()
-  }
 
   function endCall(emitEnd = true) {
     if (endedRef.current) return
@@ -219,78 +104,19 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
     playCallEnded()
     if (emitEnd) {
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000)
-      socket?.emit('call-end', { callId: call.id || call.callId, targetUserId, durationSeconds: duration })
+      socket?.emit('call-end', { callId, targetUserId, durationSeconds: duration })
     }
-    cleanup()
+    // Agora tracks and the channel are released by the hook's own cleanup on unmount.
     onEnd?.()
   }
 
-  useEffect(() => {
-    if (isVideo) return
-    // setSinkId (output-device selection) is how the web platform exposes "which speaker plays this
-    // audio" — there is no separate earpiece/loudspeaker concept in browser APIs. Safari (desktop and
-    // iOS) and Firefox don't implement it at all, so on those the button can't actually do anything.
-    setSpeakerSupported(typeof remoteAudioRef.current?.setSinkId === 'function')
-  }, [isVideo])
-
-  async function toggleSpeaker() {
-    const audioEl = remoteAudioRef.current
-    if (!audioEl?.setSinkId) return
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const outputs = devices.filter((d) => d.kind === 'audiooutput')
-      const speakerDevice = outputs.find((d) => /speaker/i.test(d.label))
-      const nextOn = !speakerOn
-      await audioEl.setSinkId(nextOn ? (speakerDevice?.deviceId || '') : '')
-      setSpeakerOn(nextOn)
-    } catch {
-      // setSinkId rejected (e.g. permission not granted, device removed) — leave state unchanged
-    }
-  }
-
-  function toggleMute() {
-    localStreamRef.current?.getAudioTracks().forEach((t) => { t.enabled = !t.enabled })
-    setMuted((m) => !m)
-  }
-
-  function toggleVideo() {
-    localStreamRef.current?.getVideoTracks().forEach((t) => { t.enabled = !t.enabled })
-    setVideoOff((v) => !v)
-  }
-
-  async function stopScreenShare() {
-    const camTrack = localStreamRef.current?.getVideoTracks()[0]
-    const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === 'video')
-    if (sender && camTrack) {
-      try { await sender.replaceTrack(camTrack) } catch {}
-    }
-    screenStreamRef.current?.getTracks().forEach((t) => t.stop())
-    screenStreamRef.current = null
-    if (localVideoRef.current && localStreamRef.current) localVideoRef.current.srcObject = localStreamRef.current
-    setSharingScreen(false)
-  }
-
-  async function toggleScreenShare() {
+  function handleScreenShare() {
     if (!canScreenShare) {
       setShowUpgrade(true)
       return
     }
-    if (sharingScreen) {
-      await stopScreenShare()
-      return
-    }
-    try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
-      const screenTrack = screenStream.getVideoTracks()[0]
-      screenStreamRef.current = screenStream
-      const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === 'video')
-      if (sender) await sender.replaceTrack(screenTrack)
-      if (localVideoRef.current) localVideoRef.current.srcObject = screenStream
-      screenTrack.onended = stopScreenShare
-      setSharingScreen(true)
-    } catch {
-      // user cancelled the share picker — no-op
-    }
+    if (sharingScreen) stopScreenShare()
+    else startScreenShare()
   }
 
   function formatTime(s) {
@@ -302,27 +128,16 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   const statusLabel =
     status === 'connected' ? formatTime(elapsed)
     : status === 'calling' ? 'Calling...'
-    // Previously every non-connected state read "Connecting..." forever, including an ICE
-    // failure that was never going to recover.
     : status === 'failed' ? "Couldn't connect — check your network"
-    : status === 'reconnecting' ? 'Reconnecting...'
-    : status === 'error' ? 'Camera or microphone unavailable'
     : 'Connecting...'
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900">
 
-      {/* Remote audio for audio calls */}
-      {!isVideo && <audio ref={remoteAudioRef} autoPlay playsInline />}
-
-      {/* Background — remote video (video call) or gradient (audio call) */}
+      {/* Background — remote video (video call) or gradient (audio call). Agora renders into a
+          container it owns, so this is a div rather than a <video> we control. */}
       {isVideo ? (
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <RemoteVideo track={remoteVideoTrack} className="absolute inset-0 w-full h-full [&_video]:object-cover" />
       ) : (
         <div className="absolute inset-0 bg-linear-to-b from-violet-900 via-gray-900 to-gray-900" />
       )}
@@ -351,8 +166,8 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
 
       {/* Local PiP — video call */}
       {isVideo && (
-        <div className="absolute top-20 right-4 w-28 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
-          <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+        <div className="absolute top-20 right-4 w-28 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-gray-800">
+          <div ref={localVideoRef} className="w-full h-full [&_video]:object-cover" />
         </div>
       )}
 
@@ -395,8 +210,8 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
             <span className="text-white/70 text-xs">End</span>
           </div>
 
-          {/* Camera toggle (video) / Speaker (audio) */}
-          {isVideo ? (
+          {/* Camera toggle — video calls only */}
+          {isVideo && (
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={toggleVideo}
@@ -411,13 +226,13 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
               </button>
               <span className="text-white/70 text-xs">{videoOff ? 'Start Cam' : 'Stop Cam'}</span>
             </div>
-          ) : null}
+          )}
 
           {/* Screen share (video calls only) */}
           {isVideo && (
             <div className="flex flex-col items-center gap-2">
               <button
-                onClick={toggleScreenShare}
+                onClick={handleScreenShare}
                 title={canScreenShare ? undefined : 'Upgrade to Pro to share your screen'}
                 className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors relative ${
                   sharingScreen ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
@@ -435,6 +250,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
             </div>
           )}
 
+          {/* Speaker — audio calls only */}
           {!isVideo && (
             <div className="flex flex-col items-center gap-2">
               <button
@@ -456,9 +272,6 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
 
         </div>
       </div>
-
-      {/* Hidden local video element needed for track setup even on audio calls */}
-      {!isVideo && <video ref={localVideoRef} autoPlay muted playsInline className="hidden" />}
 
       <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </div>
