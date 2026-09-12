@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import { config } from '../config/env.js'
 import { query } from '../config/database.js'
 import { createMessage, markMessagesDelivered, markMessagesRead, getMessageById } from '../db/queries/messages.js'
-import { getParticipants, isParticipant, unhideParticipants } from '../db/queries/conversations.js'
+import { getParticipants, isParticipant, unhideParticipants, isAdminsOnlyMessaging } from '../db/queries/conversations.js'
 import { createCall, updateCallStatus, getMonthlyCallSecondsUsed } from '../db/queries/calls.js'
 import { findUserById } from '../db/queries/users.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
@@ -97,6 +97,18 @@ export function initSocket(httpServer) {
         if (!ok) return ack?.({ ok: false, error: 'Not a participant' })
 
         const participants = await getParticipants(conversationId)
+
+        // Announcement-mode groups: only admins may post. Checked here rather than only in the
+        // UI, since the UI hiding the input is a courtesy, not a security boundary — a member
+        // could otherwise still emit send-message by hand.
+        const convRestricted = await isAdminsOnlyMessaging(conversationId)
+        if (convRestricted) {
+          const senderRole = participants.find((p) => p.id === userId)?.role
+          if (senderRole !== 'admin') {
+            return ack?.({ ok: false, error: 'Only admins can send messages in this group' })
+          }
+        }
+
         const recipient = participants.find((p) => p.id !== userId)
         const isRecipientOnline = recipient && (onlineUsers.get(recipient.id) || 0) > 0
         const status = isRecipientOnline ? 'delivered' : 'sent'

@@ -3,7 +3,8 @@ import { query } from '../../config/database.js'
 export async function getConversationsForUser(userId) {
   const result = await query(
     `SELECT
-       c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at,
+       c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at, c.admins_only_messaging,
+       cp.role AS my_role,
        m.id AS last_message_id,
        m.content AS last_message,
        m.message_type AS last_message_type,
@@ -40,7 +41,8 @@ export async function getConversationsForUser(userId) {
      WHERE (c.type != 'direct' OR NOT EXISTS (
        SELECT 1 FROM blocked_users WHERE blocker_id = $1 AND blocked_id = other_user.id
      ))
-     GROUP BY c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at,
+     GROUP BY c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at, c.admins_only_messaging,
+              cp.role,
               m.id, m.content, m.message_type, m.created_at, m.status, m.sender_id, sender.full_name, cp.last_read_at,
               cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted, cp.is_deleted,
               other_user.id, other_user.full_name, other_user.avatar_url, other_user.display_name, other_user.last_seen_at
@@ -226,6 +228,26 @@ export async function updateConversation(id, { name, avatarUrl, description }) {
          description = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE description END
      WHERE id = $4 RETURNING *`,
     [name || null, avatarUrl || null, description !== undefined ? description : null, id]
+  )
+  return result.rows[0]
+}
+
+// Announcement-mode groups (Telegram-broadcast style): everyone can read, only admins can post.
+// One flag on the conversation rather than a separate "channel" type, since it's the one thing
+// that differs — membership, history, reactions, everything else about a group stays the same.
+export async function isAdminsOnlyMessaging(conversationId) {
+  const result = await query(
+    `SELECT admins_only_messaging FROM conversations WHERE id = $1`,
+    [conversationId]
+  )
+  return result.rows[0]?.admins_only_messaging || false
+}
+
+export async function setAdminsOnlyMessaging(conversationId, enabled) {
+  const result = await query(
+    `UPDATE conversations SET admins_only_messaging = $2, updated_at = NOW() WHERE id = $1
+     RETURNING id, admins_only_messaging`,
+    [conversationId, enabled]
   )
   return result.rows[0]
 }

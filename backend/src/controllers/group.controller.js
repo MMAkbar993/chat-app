@@ -4,6 +4,7 @@ import {
   getParticipants,
   isParticipant,
   updateConversation,
+  setAdminsOnlyMessaging,
   removeParticipant,
   setParticipantRole,
   getConversationById,
@@ -59,8 +60,25 @@ export async function getGroup(req, res, next) {
 
 export async function updateGroup(req, res, next) {
   try {
-    const { name, description } = req.body
-    const updated = await updateConversation(req.params.id, { name, description })
+    const { name, description, adminsOnlyMessaging } = req.body
+    let updated = await updateConversation(req.params.id, { name, description })
+
+    // Gated separately and only when present: this toggle controls who can post at all, unlike
+    // the name/description above which any member can already change, so it needs its own
+    // admin check rather than inheriting theirs.
+    if (adminsOnlyMessaging !== undefined) {
+      const participants = await getParticipants(req.params.id)
+      const role = participants.find((p) => p.id === req.user.id)?.role
+      if (role !== 'admin') return res.status(403).json({ error: 'Only admins can change this setting' })
+      updated = await setAdminsOnlyMessaging(req.params.id, Boolean(adminsOnlyMessaging))
+    }
+
+    const io = getIo()
+    if (io) {
+      const participants = await getParticipants(req.params.id)
+      participants.forEach((p) => io.to(`user:${p.id}`).emit('reload-conversations'))
+    }
+
     res.json({ group: updated })
   } catch (err) {
     next(err)

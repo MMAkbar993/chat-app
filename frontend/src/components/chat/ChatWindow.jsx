@@ -302,6 +302,11 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   if (!activeConversation) return null
 
   const isGroup = activeConversation.type === 'group'
+  // Announcement-mode groups: everyone can read, only admins can post. Enforced server-side
+  // too (both the socket send path and the REST fallback) — this is just what lets the
+  // composer disappear for a member instead of them finding out by having a send rejected.
+  const isRestrictedNonAdmin =
+    isGroup && activeConversation.admins_only_messaging && activeConversation.my_role !== 'admin'
   const otherName = isGroup
     ? activeConversation.name
     : activeConversation.other_user_display_name || activeConversation.other_user_name || 'Account Deleted'
@@ -714,18 +719,29 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           <div ref={bottomRef} />
         </div>
 
-        <MessageInput
-          conversationId={activeConversation.id}
-          onSend={handleSend}
-          darkMode={darkMode}
-          replyTo={replyTo}
-          onClearReply={clearReply}
-          onMediaPreview={handleMediaPreview}
-          editingMessage={editingMessage}
-          onClearEdit={() => setEditingMessage(null)}
-          onEditSubmit={handleEditMessage}
-          droppedFile={droppedFile}
-        />
+        {isRestrictedNonAdmin ? (
+          <div className={`flex items-center justify-center gap-2 px-4 py-4 text-sm border-t ${
+            darkMode ? 'border-gray-700 bg-gray-800 text-gray-400' : 'border-gray-100 bg-gray-50 text-gray-500'
+          }`}>
+            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Only admins can send messages in this group
+          </div>
+        ) : (
+          <MessageInput
+            conversationId={activeConversation.id}
+            onSend={handleSend}
+            darkMode={darkMode}
+            replyTo={replyTo}
+            onClearReply={clearReply}
+            onMediaPreview={handleMediaPreview}
+            editingMessage={editingMessage}
+            onClearEdit={() => setEditingMessage(null)}
+            onEditSubmit={handleEditMessage}
+            droppedFile={droppedFile}
+          />
+        )}
       </div>
 
       {/* Contact / Group Info Panel */}

@@ -146,6 +146,13 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const showReply = hasReplyPreview(msg)
   const emojiOnly = msg.message_type === 'text' && !showReply && isEmojiOnly(msg.content)
   const previewUrl = msg.message_type === 'text' && !emojiOnly ? firstUrl(msg.content) : null
+  // A caption-less photo/video gets no padded, coloured bubble around it — the image already
+  // fills the space, so wrapping it in the same card used for text just added a visible frame.
+  // Restricted to the simple case (no caption, no reply-quote) so the caption/quote layouts
+  // below keep the background they need to stay readable over an image.
+  const mediaSrc = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
+  const hasCaption = Boolean(msg.media_url && msg.message_type !== 'text' && msg.content)
+  const isBareMedia = ['image', 'video'].includes(msg.message_type) && mediaSrc && !hasCaption && !showReply
 
   return (
     <div
@@ -180,13 +187,17 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
 
         <div className="relative" onContextMenu={handleContextMenu}>
           {/* Bubble */}
-          <div className={emojiOnly ? 'text-sm' : `px-4 py-2 rounded-2xl text-sm ${
-            isMe
-              ? 'bg-violet-600 text-white rounded-br-sm'
-              : darkMode
-              ? 'bg-gray-700 text-white rounded-bl-sm'
-              : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
-          }`}>
+          <div className={
+            emojiOnly ? 'text-sm'
+            : isBareMedia ? `overflow-hidden rounded-2xl ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
+            : `px-4 py-2 rounded-2xl text-sm ${
+                isMe
+                  ? 'bg-violet-600 text-white rounded-br-sm'
+                  : darkMode
+                  ? 'bg-gray-700 text-white rounded-bl-sm'
+                  : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
+              }`
+          }>
             {showReply && (
               <div className={`mb-2 px-2 py-1.5 rounded-lg border-l-4 flex items-center gap-2 ${
                 isMe
@@ -234,7 +245,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         disabled={msg.uploading}
                         className={`block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-zoom-in'}`}
                       >
-                        <img src={src} alt="media" className={`rounded-lg max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
+                        <img src={src} alt="media" className={`block max-w-full max-h-80 ${isBareMedia ? '' : 'rounded-lg'} ${msg.uploading ? 'opacity-60' : ''}`} />
                       </button>
                       {msg.uploading && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
@@ -257,7 +268,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         disabled={msg.uploading}
                         className={`relative block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-pointer'}`}
                       >
-                        <video src={src} preload="metadata" className={`rounded-lg max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
+                        <video src={src} preload="metadata" className={`block max-w-full max-h-80 ${isBareMedia ? '' : 'rounded-lg'} ${msg.uploading ? 'opacity-60' : ''}`} />
                         {!msg.uploading && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center">

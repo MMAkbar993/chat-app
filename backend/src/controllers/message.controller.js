@@ -1,5 +1,5 @@
 import { getMessages, getMessageById, createMessage, deleteMessage, deleteMessageForMe, editMessage } from '../db/queries/messages.js'
-import { isParticipant, getParticipants } from '../db/queries/conversations.js'
+import { isParticipant, getParticipants, isAdminsOnlyMessaging } from '../db/queries/conversations.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 import { getIo } from '../socket/index.js'
 
@@ -21,8 +21,18 @@ export async function sendMessage(req, res, next) {
     const { content, messageType = 'text', mediaUrl, replyToMessageId } = req.body
     if (!content && !mediaUrl) return res.status(400).json({ error: 'content required' })
 
-    const ok = await isParticipant(conversationId, req.user.id)
+    const [ok, participants] = await Promise.all([
+      isParticipant(conversationId, req.user.id),
+      getParticipants(conversationId),
+    ])
     if (!ok) return res.status(403).json({ error: 'Not a participant' })
+
+    // Same announcement-mode gate as the socket send path — this REST route reaches the same
+    // table, so it needs the same check rather than relying on the UI to hide the composer.
+    if (await isAdminsOnlyMessaging(conversationId)) {
+      const role = participants.find((p) => p.id === req.user.id)?.role
+      if (role !== 'admin') return res.status(403).json({ error: 'Only admins can send messages in this group' })
+    }
 
     const msg = await createMessage({ conversationId, senderId: req.user.id, content, messageType, mediaUrl, replyToMessageId })
 
@@ -34,7 +44,6 @@ export async function sendMessage(req, res, next) {
       sender_display_name: req.user.display_name,
     }
 
-    const participants = await getParticipants(conversationId)
     const io = getIo()
     participants.forEach((p) => {
       if (p.id !== req.user.id) {
@@ -56,6 +65,14 @@ export async function forwardMessage(req, res, next) {
 
     const ok = await isParticipant(targetConversationId, req.user.id)
     if (!ok) return res.status(403).json({ error: 'Not a participant in target conversation' })
+
+    // Forwarding is a write into the target conversation same as sending — a non-admin member
+    // forwarding a message into a restricted group would otherwise route around the gate above.
+    if (await isAdminsOnlyMessaging(targetConversationId)) {
+      const targetParticipants = await getParticipants(targetConversationId)
+      const role = targetParticipants.find((p) => p.id === req.user.id)?.role
+      if (role !== 'admin') return res.status(403).json({ error: 'Only admins can send messages in this group' })
+    }
 
     const original = await getMessageById(messageId)
     if (!original) return res.status(404).json({ error: 'Message not found' })

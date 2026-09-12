@@ -134,6 +134,19 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
     }
   }
 
+  // The one setting that changes who can post at all, so it's server-checked against the
+  // caller's role independently of this button only being shown to admins in the first place.
+  async function handleToggleAdminsOnly() {
+    const next = !groupData?.admins_only_messaging
+    try {
+      const { group } = await updateGroup(conversation.id, { adminsOnlyMessaging: next })
+      setGroupData((prev) => ({ ...prev, ...group }))
+      showToast(next ? 'Only admins can send messages now' : 'Everyone can send messages now', 'success')
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Could not update this setting', 'error')
+    }
+  }
+
   async function handleAvatarChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -399,6 +412,30 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </button>
+              {isAdmin && (
+                <button
+                  onClick={handleToggleAdminsOnly}
+                  className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm border-t transition-colors ${dm ? 'border-gray-700 text-gray-200 hover:bg-gray-700' : 'border-gray-100 text-gray-700 hover:bg-gray-100'}`}
+                >
+                  <span className="text-left">
+                    Only Admins Can Send Messages
+                    <span className={`block text-xs mt-0.5 ${sub}`}>
+                      Turn this on for announcements — everyone can read, only admins can post.
+                    </span>
+                  </span>
+                  <span
+                    className={`shrink-0 w-9 h-5 rounded-full relative transition-colors ${
+                      groupData?.admins_only_messaging ? 'bg-violet-600' : dm ? 'bg-gray-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                        groupData?.admins_only_messaging ? 'translate-x-4' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* Participants */}
