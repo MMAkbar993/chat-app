@@ -383,6 +383,11 @@ export async function socialCallback(req, res) {
   }
 
   const redirectUri = cfg.redirectUri()
+  // Instagram makes two separate GET calls after the initial token POST (long-lived exchange,
+  // then the profile fetch) and both have failed with the same generic Graph error message in
+  // the wild. This says which one, so the next failure is diagnosable from the log alone
+  // instead of needing another round of guessing.
+  let instagramStep = null
 
   try {
     let tokenData
@@ -449,8 +454,10 @@ export async function socialCallback(req, res) {
     let tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : null
 
     if (platform === 'instagram') {
+      instagramStep = 'token-exchange (graph.instagram.com/access_token)'
       accessToken = await exchangeInstagramLongLivedToken(accessToken, cfg.clientSecret())
       tokenExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+      instagramStep = 'profile-fetch (graph.instagram.com/.../me)'
     }
 
     let profileData
@@ -499,7 +506,13 @@ export async function socialCallback(req, res) {
     sendOAuthPopupResponse(res, { success: true, platform })
   } catch (err) {
     const detail = err.response?.data
-    console.error(`Social auth error (${platform}, status ${err.response?.status ?? 'n/a'}):`, detail || err.message)
+    // Includes the resolved profile URL when Instagram fails on the fetch step — if
+    // INSTAGRAM_API_VERSION is overridden in the deployed .env to something unexpected, or the
+    // request otherwise didn't go where the code intends, this is what would show it.
+    const stepInfo = instagramStep
+      ? ` [failed during ${instagramStep}${instagramStep.startsWith('profile') ? `, url=${cfg.profileUrl}` : ''}]`
+      : ''
+    console.error(`Social auth error (${platform}, status ${err.response?.status ?? 'n/a'})${stepInfo}:`, detail || err.message)
 
     let reason = 'Could not connect account. Please try again.'
     // Graph-family APIs (Facebook AND graph.instagram.com) nest the real message under
