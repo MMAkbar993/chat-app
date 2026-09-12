@@ -3,10 +3,13 @@ import { useSocket } from '../../context/SocketContext'
 import { useAuth } from '../../context/AuthContext'
 import { playCallConnected, playCallEnded } from '../../utils/sounds'
 import { isProUser } from '../../utils/plan'
-import { getCallUsage } from '../../api/calls'
+import { getCallUsage, getIceServers } from '../../api/calls'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 
-const ICE_SERVERS = {
+// Fallback only — the real list comes from the server, which adds TURN. STUN alone cannot
+// relay media, so on mobile data (carrier-grade NAT) the connection negotiates and then
+// carries nothing: the call shows as connected with no audio or video.
+const FALLBACK_ICE = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -97,7 +100,11 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
       localStreamRef.current = stream
       if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
-      const pc = new RTCPeerConnection(ICE_SERVERS)
+      const iceConfig = await getIceServers()
+        .then((d) => (d?.iceServers?.length ? { iceServers: d.iceServers } : FALLBACK_ICE))
+        .catch(() => FALLBACK_ICE)
+
+      const pc = new RTCPeerConnection(iceConfig)
       pcRef.current = pc
 
       stream.getTracks().forEach((track) => pc.addTrack(track, stream))
@@ -109,7 +116,30 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
         } else if (!isVideo && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = remoteStream
         }
-        setStatus('connected')
+        // iOS will not start a media element on its own even after a tap elsewhere in the
+        // page; without this the stream arrives and stays silent.
+        const el = isVideo ? remoteVideoRef.current : remoteAudioRef.current
+        el?.play?.().catch(() => {})
+        // Deliberately NOT setStatus('connected') here. ontrack fires when tracks are
+        // negotiated, which happens well before ICE has a working path — so the UI used to
+        // say Connected on a call that never carried a single packet. Status now follows the
+        // actual connection state below.
+      }
+
+      pc.onconnectionstatechange = () => {
+        const st = pc.connectionState
+        if (st === 'connected') setStatus('connected')
+        else if (st === 'failed') setStatus('failed')
+        else if (st === 'disconnected') setStatus('reconnecting')
+      }
+
+      pc.oniceconnectionstatechange = () => {
+        // A failed ICE gather is the signature of no reachable relay. Surfacing it beats
+        // leaving people staring at a silent call wondering whether the other side muted.
+        if (pc.iceConnectionState === 'failed') {
+          console.error('ICE failed — no usable candidate pair. A TURN server is required for mobile networks.')
+          setStatus('failed')
+        }
       }
 
       pc.onicecandidate = (e) => {
@@ -272,13 +302,18 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   const statusLabel =
     status === 'connected' ? formatTime(elapsed)
     : status === 'calling' ? 'Calling...'
+    // Previously every non-connected state read "Connecting..." forever, including an ICE
+    // failure that was never going to recover.
+    : status === 'failed' ? "Couldn't connect — check your network"
+    : status === 'reconnecting' ? 'Reconnecting...'
+    : status === 'error' ? 'Camera or microphone unavailable'
     : 'Connecting...'
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900">
 
       {/* Remote audio for audio calls */}
-      {!isVideo && <audio ref={remoteAudioRef} autoPlay />}
+      {!isVideo && <audio ref={remoteAudioRef} autoPlay playsInline />}
 
       {/* Background — remote video (video call) or gradient (audio call) */}
       {isVideo ? (

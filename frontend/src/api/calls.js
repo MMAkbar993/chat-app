@@ -6,3 +6,4 @@ export const initiateCall = (calleeId, callType, conversationId) =>
 export const endCall = (callId, status, durationSeconds) =>
   client.patch(`/calls/${callId}`, { status, durationSeconds }).then((r) => r.data)
 export const getCallUsage = () => client.get('/calls/usage').then((r) => r.data)
+export const getIceServers = () => client.get('/calls/ice-servers').then((r) => r.data)

@@ -2,13 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
 import { useAuth } from '../../context/AuthContext'
 import { playCallConnected, playCallEnded } from '../../utils/sounds'
+import { getIceServers } from '../../api/calls'
 
-const ICE = {
+// Fallback only; the server supplies TURN on top of these. See CallModal for why STUN alone
+// leaves mobile callers connected-but-silent.
+const FALLBACK_ICE = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
   ],
 }
+
+// Group calls build peer connections one at a time as people join, and makePc has to stay
+// synchronous for that. So the config is fetched once when the modal mounts and cached here
+// rather than awaited inside makePc.
+let cachedIce = null
 
 function PeerVideo({ stream, name, avatar }) {
   const ref = useRef(null)
@@ -89,6 +97,11 @@ export default function GroupCallModal({ call, onEnd }) {
   useEffect(() => {
     async function boot() {
       try {
+        // Fetched before anyone can join, so the first peer connection already has TURN.
+        cachedIce = await getIceServers()
+          .then((d) => (d?.iceServers?.length ? { iceServers: d.iceServers } : FALLBACK_ICE))
+          .catch(() => FALLBACK_ICE)
+
         const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true })
         localStreamRef.current = stream
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
@@ -116,7 +129,7 @@ export default function GroupCallModal({ call, onEnd }) {
 
   function makePc(peerId) {
     if (pcsRef.current[peerId]) return pcsRef.current[peerId]
-    const pc = new RTCPeerConnection(ICE)
+    const pc = new RTCPeerConnection(cachedIce || FALLBACK_ICE)
     pcsRef.current[peerId] = pc
 
     localStreamRef.current?.getTracks().forEach((t) =>
