@@ -80,6 +80,93 @@ function StepConnector({ darkMode }) {
   )
 }
 
+// Section headings are what turn a stack of sibling cards into a page with an argument:
+// what you own, who represents it, how it works. Same treatment as the Social Profiles
+// group labels so the two settings pages feel like one product.
+function SectionLabel({ darkMode, children }) {
+  return (
+    <p className={`text-xs font-semibold uppercase tracking-wide pt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      {children}
+    </p>
+  )
+}
+
+function WebsiteCard({ darkMode, url, verified, busy, onRemove, onContinue }) {
+  const host = url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const card = `rounded-2xl border p-4 flex flex-col ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
+  return (
+    <div className={card}>
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <span className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+          verified
+            ? darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-600'
+            : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+        }`}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </span>
+        <span className={`shrink-0 inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-1 ${
+          verified
+            ? darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-700'
+            : darkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700'
+        }`}>
+          {verified ? (
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" clipRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.3a1 1 0 00-1.4-1.4L9 10.6 7.7 9.3a1 1 0 00-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" />
+            </svg>
+          ) : (
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+          {verified ? 'Verified' : 'Pending'}
+        </span>
+      </div>
+
+      <p className={`text-base font-bold truncate ${darkMode ? 'text-white' : 'text-gray-900'}`} title={host}>{host}</p>
+      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        {verified ? 'Showing on your public profile' : 'Waiting for the tag to go live'}
+      </p>
+
+      <div className="mt-auto pt-3">
+        {verified ? (
+          <>
+            <a
+              href={url.startsWith('http') ? url : `https://${url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`w-full rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-100' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-100'
+              }`}
+            >
+              Visit site
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+            <button
+              onClick={onRemove}
+              disabled={busy}
+              className={`mt-2 text-xs font-medium transition-colors disabled:opacity-50 ${
+                darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'
+              }`}
+            >
+              {busy ? 'Checking…' : 'Remove website'}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onContinue}
+            className="w-full rounded-xl py-2.5 text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+          >
+            Continue setup
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 function HelpCard({ darkMode }) {
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
   const card = `rounded-2xl border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
@@ -146,6 +233,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const approved = profile?.website_representation_approved || false
   // `websites` includes pending (unverified) rows too — only `.verified` rows count as actually owned.
   const verifiedWebsites = websites.filter((w) => w.verified)
+  // Sites that have a token but aren't verified yet. These had no home in the UI at all
+  // before, so a verification left half-finished simply vanished from the page.
+  const pendingWebsites = websites.filter((w) => !w.verified && w.verify_token)
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
   const inp = `w-full rounded-xl px-4 py-2.5 text-sm outline-none border ${
     darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
@@ -706,9 +796,35 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       {/* STATE B / C — no active "claimed" lookup */}
       {!claimedInfo && (
         <>
-          {/* Hero */}
-          {verifiedWebsites.length > 0 ? (
-            <div className={`${card} p-6 flex items-center gap-6 flex-wrap`}>
+          {/* Banner — same treatment as Social Profiles so the two settings pages read as
+              one product rather than two different eras of the app. */}
+          <div className={`relative overflow-hidden rounded-2xl px-6 py-7 sm:px-8 ${
+            darkMode
+              ? 'bg-gradient-to-br from-violet-900/50 via-gray-800 to-green-900/30 border border-gray-700'
+              : 'bg-gradient-to-br from-violet-100 via-violet-50 to-green-50'
+          }`}>
+            <div className="relative z-10 max-w-lg">
+              <p className={`text-[11px] font-bold uppercase tracking-[0.12em] mb-1.5 ${darkMode ? 'text-violet-300' : 'text-violet-500'}`}>
+                Website Verification
+              </p>
+              <h3 className={`text-2xl sm:text-3xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                {verifiedWebsites.length > 0 ? 'Your Verified Websites' : 'Verify Your Website'}
+              </h3>
+              <p className={`text-sm mt-2 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                {verifiedWebsites.length > 0
+                  ? 'Verified websites appear on your public profile and show others which companies you represent.'
+                  : 'KYC proves who you are. Verifying a website proves where you work — it shows others which company you represent.'}
+              </p>
+              <p className={`inline-flex items-center gap-2 text-xs font-medium mt-4 rounded-full px-3 py-1.5 ${
+                darkMode ? 'bg-gray-900/60 text-gray-300' : 'bg-white/70 text-gray-600'
+              }`}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                We only look for your verification tag — never the rest of your site.
+              </p>
+            </div>
+            <div aria-hidden="true" className="hidden lg:block absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none select-none">
               <Illustration darkMode={darkMode}
                 badgeColor="bg-green-500 text-white"
                 badge={
@@ -717,268 +833,239 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                   </svg>
                 }
               />
-              <div className="flex-1 min-w-[220px]">
-                <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Your Websites Are Verified!</h3>
-                <p className={`text-sm mt-1 ${sub}`}>Thank you for verifying your websites, they now appear on your public profile. You can manage your verified websites below.</p>
-              </div>
             </div>
-          ) : (
-            <div className={`${card} p-6 flex items-center gap-6 flex-wrap`}>
-              <Illustration darkMode={darkMode}
-                badgeColor="bg-violet-600 text-white"
-                badge={
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                }
-                lockColor="bg-green-500"
-              />
-              <div className="flex-1 min-w-[220px]">
-                <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Verify Your Website</h3>
-                <p className={`text-sm mt-1 ${sub}`}>
-                  Verifying your website proves that you own it. This helps us prevent fraud and misrepresentation, keeping our community trusted and safe.
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
 
-          {/* Benefit tiles — first-time / empty state only */}
-          {verifiedWebsites.length === 0 && (
-            <div className={`${card} grid grid-cols-1 sm:grid-cols-3 gap-4 p-5`}>
-              <InfoTile darkMode={darkMode}
-                color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
-                icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
-                title="Build Trust" desc="Show others you're the real owner."
-              />
-              <InfoTile darkMode={darkMode}
-                color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
-                icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                title="Avoid Fraud" desc="We verify ownership to prevent misuse."
-              />
-              <InfoTile darkMode={darkMode}
-                color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
-                icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>}
-                title="Boost Credibility" desc="Verified websites get more visibility."
-              />
-            </div>
-          )}
+          {/* ── SECTION 1 — the websites themselves ─────────────────────────── */}
+          <SectionLabel darkMode={darkMode}>Your Websites</SectionLabel>
 
-          {/* My pending representation requests (requester view — persists across refreshes) */}
-          {myPendingRequests.length > 0 && (
-            <div className={`rounded-2xl border p-4 space-y-2 ${darkMode ? 'border-yellow-800 bg-yellow-900/20' : 'border-yellow-200 bg-yellow-50'}`}>
-              <p className={`text-xs font-semibold ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                Awaiting Approval
+          <div className={`${card} px-5 py-4 flex items-center gap-4 flex-wrap`}>
+            <div className="flex-1 min-w-[180px]">
+              <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                {verifiedWebsites.length === 0
+                  ? 'No websites verified yet'
+                  : `${verifiedWebsites.length} website${verifiedWebsites.length === 1 ? '' : 's'} verified`}
               </p>
-              {error && <p className="text-xs text-red-500">{error}</p>}
-              {myPendingRequests.map((r) => {
-                const ownerName = r.owner_display_name || r.owner_full_name || 'the site owner'
-                return (
-                  <div key={r.id} className="flex items-center gap-2">
-                    <svg className="w-3.5 h-3.5 text-yellow-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className={`text-xs flex-1 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
-                      Awaiting approval from <span className="font-medium">{ownerName}</span> for{' '}
-                      <span className="font-medium">{r.website_url.replace(/^https?:\/\//, '')}</span>
-                    </span>
-                    <button
-                      onClick={() => handleCancelRequest(r.id)}
-                      disabled={cancellingId === r.id}
-                      className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 shrink-0 font-medium"
-                    >
-                      {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Verified websites list */}
-          {!loadingList && verifiedWebsites.length > 0 && (
-            <div className={`${card} p-5`}>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Verified Websites</h4>
-                <button
-                  onClick={() => setAddOpen((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-3 py-2 transition-colors shrink-0"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Verify a Website
-                </button>
-              </div>
-              {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
-              <div className="space-y-2">
-                {verifiedWebsites.map((w) => (
-                  <div
-                    key={w.id}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border ${darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-gray-50'}`}
-                  >
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${darkMode ? 'bg-gray-700 text-green-400' : 'bg-white text-green-500'}`}>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </span>
-                    <a
-                      href={w.url.startsWith('http') ? w.url : `https://${w.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 min-w-0 text-sm font-medium text-violet-500 hover:underline truncate"
-                    >
-                      {w.url}
-                    </a>
-                    <span className={`text-xs font-semibold rounded-full px-2.5 py-1 flex items-center gap-1 shrink-0 ${darkMode ? 'text-green-400 bg-green-900/30 border border-green-800' : 'text-green-600 bg-green-50 border border-green-200'}`}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      Verified
-                    </span>
-                    <button
-                      onClick={() => handleRemoveClick(w)}
-                      disabled={removingId === w.id}
-                      className={`text-xs shrink-0 disabled:opacity-50 ${darkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
-                    >
-                      {removingId === w.id ? 'Checking…' : 'Remove'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 mt-3 text-xs ${darkMode ? 'bg-violet-900/20 text-violet-300' : 'bg-violet-50 text-violet-700'}`}>
-                <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                If you remove a website, it will no longer be verified and may affect your profile visibility.
-              </div>
-            </div>
-          )}
-
-          {addOpen && verifiedWebsites.length > 0 && addFormBlock}
-
-          {/* Pending representation requests (only shown when owner has verified websites) */}
-          {verifiedWebsites.length > 0 && pendingRequests.length > 0 && (
-            <div className={`${card} p-4 space-y-3`}>
-              <p className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Pending Representation Requests
+              <p className={`text-xs mt-0.5 ${sub}`}>
+                {pendingWebsites.length > 0
+                  ? `${pendingWebsites.length} awaiting verification`
+                  : 'Verified websites appear on your public profile.'}
               </p>
-              {pendingRequests.map((r) => {
-                const name = r.display_name || r.full_name || r.username || 'Unknown'
-                return (
-                  <div key={r.id} className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                      {r.avatar_url
-                        ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
-                        : name[0].toUpperCase()}
-                    </div>
-                    <span className={`flex-1 text-xs ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{name}</span>
-                    <button
-                      onClick={() => handleReprAction(r.id, 'approve')}
-                      className="text-xs bg-violet-600 text-white px-2 py-1 rounded-lg hover:bg-violet-700"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleReprAction(r.id, 'reject')}
-                      className={`text-xs px-2 py-1 rounded-lg ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                )
-              })}
+            </div>
+            <button
+              onClick={() => setAddOpen((v) => !v)}
+              className="flex items-center gap-1.5 text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-4 py-2.5 transition-colors shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Verify a Website
+            </button>
+          </div>
+
+          {error && !addOpen && (
+            <p className="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2">{error}</p>
+          )}
+
+          {addOpen && addFormBlock}
+
+          {/* Cards, not rows — matches Social Profiles, and finally gives a site awaiting its
+              tag somewhere to live. Pending sites appeared nowhere before: the list was
+              filtered to verified only, so a half-finished verification was invisible. */}
+          {!loadingList && (verifiedWebsites.length > 0 || pendingWebsites.length > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {verifiedWebsites.map((w) => (
+                <WebsiteCard
+                  key={w.id}
+                  darkMode={darkMode}
+                  url={w.url}
+                  verified
+                  busy={removingId === w.id}
+                  onRemove={() => handleRemoveClick(w)}
+                />
+              ))}
+              {pendingWebsites.map((w) => (
+                <WebsiteCard
+                  key={w.id}
+                  darkMode={darkMode}
+                  url={w.url}
+                  verified={false}
+                  onContinue={() => {
+                    setUrl(w.url)
+                    setMetaTag(`<meta name="site-verification" content="${w.verify_token}">`)
+                    setDnsInfo(dnsInfoFor(w.url, w.verify_token))
+                    setWebsiteId(w.id)
+                    setStep(2)
+                    setAddOpen(true)
+                  }}
+                />
+              ))}
             </div>
           )}
 
-          {/* Approved representatives */}
           {verifiedWebsites.length > 0 && (
-            <div className={`${card} p-5`}>
-              <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Authorized Representatives</h4>
-              {representatives.length === 0 ? (
-                <p className={`text-xs ${sub}`}>
-                  No authorized representatives yet. Approve requests above to add one.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {representatives.map((r) => {
-                    const name = r.display_name || r.full_name || r.username || 'Unknown'
+            <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs ${darkMode ? 'bg-violet-900/20 text-violet-300' : 'bg-violet-50 text-violet-700'}`}>
+              <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Removing a website un-verifies it and may affect your profile visibility.
+            </div>
+          )}
+
+          {/* ── SECTION 2 — the people attached to those websites ───────────── */}
+          {(myPendingRequests.length > 0 || verifiedWebsites.length > 0) && (
+            <>
+              <SectionLabel darkMode={darkMode}>Representatives</SectionLabel>
+
+              {/* Requests this user sent to somebody else's site */}
+              {myPendingRequests.length > 0 && (
+                <div className={`rounded-2xl border p-4 space-y-2 ${darkMode ? 'border-yellow-800 bg-yellow-900/20' : 'border-yellow-200 bg-yellow-50'}`}>
+                  <p className={`text-xs font-semibold ${darkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                    Your requests — awaiting approval
+                  </p>
+                  {myPendingRequests.map((r) => {
+                    const ownerName = r.owner_display_name || r.owner_full_name || 'the site owner'
                     return (
-                      <div key={r.user_id} className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-sm font-bold">
-                          {r.avatar_url
-                            ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
-                            : name[0].toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{name}</p>
-                          <p className={`text-xs truncate ${sub}`}>{r.website_url}</p>
-                        </div>
+                      <div key={r.id} className="flex items-center gap-2">
+                        <svg className="w-3.5 h-3.5 text-yellow-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className={`text-xs flex-1 ${darkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>
+                          Awaiting approval from <span className="font-medium">{ownerName}</span> for{' '}
+                          <span className="font-medium">{r.website_url.replace(/^https?:\/\//, '')}</span>
+                        </span>
                         <button
-                          onClick={() => handleRevokeRep(r.user_id)}
-                          disabled={revokingRep === r.user_id}
-                          className="text-xs text-red-500 hover:text-red-700 shrink-0 disabled:opacity-50"
+                          onClick={() => handleCancelRequest(r.id)}
+                          disabled={cancellingId === r.id}
+                          className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50 shrink-0 font-medium"
                         >
-                          {revokingRep === r.user_id ? 'Removing…' : 'Remove'}
+                          {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
                         </button>
                       </div>
                     )
                   })}
                 </div>
               )}
-            </div>
+
+              {/* Requests waiting on this user, as the site owner */}
+              {verifiedWebsites.length > 0 && pendingRequests.length > 0 && (
+                <div className={`${card} p-5 space-y-3`}>
+                  <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Awaiting your approval
+                  </p>
+                  {pendingRequests.map((r) => {
+                    const name = r.display_name || r.full_name || r.username || 'Unknown'
+                    return (
+                      <div key={r.id} className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                          {r.avatar_url
+                            ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
+                            : name[0].toUpperCase()}
+                        </div>
+                        <span className={`flex-1 text-sm min-w-0 truncate ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{name}</span>
+                        <button
+                          onClick={() => handleReprAction(r.id, 'approve')}
+                          className="text-xs font-semibold bg-violet-600 text-white px-3 py-1.5 rounded-lg hover:bg-violet-700 shrink-0"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleReprAction(r.id, 'reject')}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* People already approved on this user's sites */}
+              {verifiedWebsites.length > 0 && (
+                <div className={`${card} p-5`}>
+                  <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Authorized representatives</h4>
+                  {representatives.length === 0 ? (
+                    <p className={`text-xs ${sub}`}>
+                      Nobody is authorized to represent your websites yet. Approving a request above adds one.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {representatives.map((r) => {
+                        const name = r.display_name || r.full_name || r.username || 'Unknown'
+                        return (
+                          <div key={r.user_id} className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-sm font-bold">
+                              {r.avatar_url
+                                ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
+                                : name[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{name}</p>
+                              <p className={`text-xs truncate ${sub}`}>{r.website_url}</p>
+                            </div>
+                            <button
+                              onClick={() => handleRevokeRep(r.user_id)}
+                              disabled={revokingRep === r.user_id}
+                              className="text-xs text-red-500 hover:text-red-700 shrink-0 disabled:opacity-50"
+                            >
+                              {revokingRep === r.user_id ? 'Removing…' : 'Remove'}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
-          {/* Why verification matters — already-verified state */}
-          {verifiedWebsites.length > 0 && (
-            <div className={`${card} p-5`}>
-              <h4 className={`text-sm font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Why Verification Matters</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <InfoTile darkMode={darkMode}
-                  color={darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-600'}
-                  icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
-                  title="Prove Ownership" desc="Verification proves you own the website you claim."
-                />
-                <InfoTile darkMode={darkMode}
-                  color={darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-600'}
-                  icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                  title="Prevent Fraud" desc="Helps us prevent fraud and misrepresentation."
-                />
-                <InfoTile darkMode={darkMode}
-                  color={darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-600'}
-                  icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
-                  title="Build Trust" desc="Verified websites get more visibility and trust."
-                />
-              </div>
-            </div>
-          )}
+          {/* ── SECTION 3 — the explanation, stated once ────────────────────── */}
+          <SectionLabel darkMode={darkMode}>How It Works</SectionLabel>
 
-          {/* How it works — first-time / empty state only */}
-          {verifiedWebsites.length === 0 && (
-            <div className={`${card} p-5`}>
-              <h4 className={`text-sm font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>How it works</h4>
-              <div className="flex flex-col sm:flex-row items-stretch gap-y-6">
-                <StepTile darkMode={darkMode}
-                  number={1} title="Add Meta Tag"
-                  desc="Copy the meta tag below and paste it into the <head> section of your website."
-                  icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16M6 8l-4 4 4 4m12-8l4 4-4 4" /></svg>}
-                />
-                <StepConnector darkMode={darkMode} />
-                <StepTile darkMode={darkMode}
-                  number={2} title="Confirm Placement"
-                  desc="Once the tag is added, click the button below to let us check your website."
-                  icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>}
-                />
-                <StepConnector darkMode={darkMode} />
-                <StepTile darkMode={darkMode}
-                  number={3} title="You're Verified!"
-                  desc="If everything is correct, your website will be verified and you'll get a confirmation."
-                  icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
-                />
-              </div>
+          <div className={`${card} p-5`}>
+            <div className="flex flex-col sm:flex-row items-stretch gap-y-6">
+              <StepTile darkMode={darkMode}
+                number={1} title="Add the tag"
+                desc="Paste the meta tag we generate into your site's head section, or add a DNS record instead."
+                icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16M6 8l-4 4 4 4m12-8l4 4-4 4" /></svg>}
+              />
+              <StepConnector darkMode={darkMode} />
+              <StepTile darkMode={darkMode}
+                number={2} title="Click verify"
+                desc="We check your site for it. Your tag stays the same until it verifies, so your developers can take their time."
+                icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>}
+              />
+              <StepConnector darkMode={darkMode} />
+              <StepTile darkMode={darkMode}
+                number={3} title="You're verified"
+                desc="The website shows on your profile, and you become its admin on Pulse."
+                icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+              />
             </div>
-          )}
+          </div>
 
-          {verifiedWebsites.length === 0 && addFormBlock}
+          {/* One set of benefit tiles covering both states. There used to be two
+              near-identical blocks — "Benefits" before verifying and "Why Verification
+              Matters" after — which is much of why the page read as repeated fragments. */}
+          <div className={`${card} grid grid-cols-1 sm:grid-cols-3 gap-4 p-5`}>
+            <InfoTile darkMode={darkMode}
+              color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
+              icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+              title="Prove ownership" desc="Shows you control the website you claim to represent."
+            />
+            <InfoTile darkMode={darkMode}
+              color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
+              icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+              title="Prevent impersonation" desc="Stops others adding your company to their profile."
+            />
+            <InfoTile darkMode={darkMode}
+              color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
+              icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+              title="Build credibility" desc="Verified websites carry more weight with other members."
+            />
+          </div>
 
           <HelpCard darkMode={darkMode} />
         </>
