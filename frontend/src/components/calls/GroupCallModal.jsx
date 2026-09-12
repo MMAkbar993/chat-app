@@ -63,7 +63,7 @@ function fmt(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
-export default function GroupCallModal({ call, onEnd }) {
+export default function GroupCallModal({ call, onEnd, minimized, onMinimize, onExpand }) {
   const { socket } = useSocket()
   const { user } = useAuth()
 
@@ -151,9 +151,29 @@ export default function GroupCallModal({ call, onEnd }) {
       'grid-cols-3'
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-4 px-6 py-4 bg-black/50">
+    <div className={
+      minimized
+        ? 'fixed bottom-4 right-4 z-50 w-64 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/20 bg-gray-900 flex flex-col'
+        : 'fixed inset-0 z-50 bg-gray-900 flex flex-col'
+    }>
+      {/* Compact header — minimized only */}
+      {minimized && (
+        <div className="shrink-0 flex items-center justify-between gap-2 px-2.5 py-2 bg-black/50">
+          <p className="text-white text-xs font-semibold truncate">{groupName}</p>
+          <button
+            onClick={onExpand}
+            className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white shrink-0"
+            title="Expand"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0-4h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Full header */}
+      <div className={`shrink-0 flex items-center gap-4 px-6 py-4 bg-black/50 ${minimized ? 'hidden' : ''}`}>
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-lg truncate">{groupName}</p>
           <p className="text-white/60 text-sm">
@@ -167,8 +187,10 @@ export default function GroupCallModal({ call, onEnd }) {
         </span>
       </div>
 
-      {/* Main area */}
-      <div className="flex-1 overflow-hidden p-3 min-h-0">
+      {/* Main area — always mounted, just hidden when minimized. It hosts the local video tile,
+          whose ref is owned by this component (via useAgoraVideo above); unmounting it would
+          mean the track never reattaches to a new node once the call is expanded again. */}
+      <div className={`flex-1 overflow-hidden p-3 min-h-0 ${minimized ? 'hidden' : ''}`}>
         {isVideo ? (
           <div className={`h-full grid gap-3 ${gridCols}`}>
             {/* Local tile */}
@@ -224,8 +246,39 @@ export default function GroupCallModal({ call, onEnd }) {
         )}
       </div>
 
-      {/* Controls */}
-      <div className="shrink-0 flex items-center justify-center gap-8 py-7 bg-black/50">
+      {/* Compact controls — minimized only */}
+      {minimized && (
+        <div className="shrink-0 flex items-center justify-center gap-2 py-2 bg-black/50">
+          <button
+            onClick={toggleMute}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              muted ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {muted ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              )}
+            </svg>
+          </button>
+          <button
+            onClick={handleLeave}
+            className="w-9 h-9 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors"
+          >
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Full controls */}
+      <div className={`shrink-0 flex items-center justify-center gap-8 py-7 bg-black/50 ${minimized ? 'hidden' : ''}`}>
         {/* Mute */}
         <div className="flex flex-col items-center gap-1.5">
           <button
@@ -283,6 +336,21 @@ export default function GroupCallModal({ call, onEnd }) {
             <span className="text-white/70 text-xs">{videoOff ? 'Start Cam' : 'Stop Cam'}</span>
           </div>
         )}
+
+        {/* Minimize — the grid area hides rather than unmounts, so tracks stay published and
+            everyone else in the call keeps hearing/seeing this participant while it's tucked
+            into the corner. */}
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            onClick={onMinimize}
+            className="w-14 h-14 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+          <span className="text-white/70 text-xs">Minimize</span>
+        </div>
       </div>
     </div>
   )

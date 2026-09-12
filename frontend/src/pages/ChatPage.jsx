@@ -43,6 +43,10 @@ export default function ChatPage() {
   // OAuth round-trip that re-mounts the app — dropped the user back to light mode.
   const [darkMode, setDarkMode] = useState(readStoredDarkMode)
   const [activeCall, setActiveCall] = useState(null)
+  // Whether a connected call is tucked into a small floating window instead of taking the
+  // whole screen. Reset at every call boundary (new call starts, current one ends) so a fresh
+  // call never inherits a "minimized" state left over from the last one.
+  const [callMinimized, setCallMinimized] = useState(false)
   const [incomingCall, setIncomingCall] = useState(null)
   const [showCallLimitUpgrade, setShowCallLimitUpgrade] = useState(false)
   const [tourRestartCount, setTourRestartCount] = useState(0)
@@ -97,6 +101,7 @@ export default function ChatPage() {
     const onCallBusy = () => {
       showToast('User is currently on another call', 'info')
       setActiveCall(null)
+      setCallMinimized(false)
     }
 
     const onCallAccepted = ({ callId }) => {
@@ -105,17 +110,20 @@ export default function ChatPage() {
         if (prev.callId === callId || prev.id === callId) return { ...prev, status: 'connected' }
         return prev
       })
+      setCallMinimized(false)
     }
 
     const onCallEnded = () => {
       setActiveCall(null)
+      setCallMinimized(false)
       setIncomingCall(null)
     }
 
-    const onCallRejected = () => setActiveCall(null)
+    const onCallRejected = () => { setActiveCall(null); setCallMinimized(false) }
 
     const onCallBlocked = () => {
       setActiveCall(null)
+      setCallMinimized(false)
       showToast("You've used your free monthly call minutes", 'info')
       setShowCallLimitUpgrade(true)
     }
@@ -165,6 +173,7 @@ export default function ChatPage() {
           // no status: 'connected' — CallingCard shows while members ring
           // GroupCallModal opens when first member accepts (onCallAccepted sets status:'connected')
         })
+        setCallMinimized(false)
       })
       return
     }
@@ -193,6 +202,7 @@ export default function ChatPage() {
         calleeAvatar: targetInfo?.avatar || null,
         isCaller: true,
       })
+      setCallMinimized(false)
     })
   }
 
@@ -205,6 +215,7 @@ export default function ChatPage() {
       status: 'connected',
       ...(incomingCall.isGroup && { isGroup: true, calleeId: null }),
     })
+    setCallMinimized(false)
     setIncomingCall(null)
   }
 
@@ -268,20 +279,34 @@ export default function ChatPage() {
           onEnd={() => {
             socket?.emit('call-end', { callId: activeCall.id || activeCall.callId, targetUserId: activeCall.calleeId || activeCall.callee_id, conversationId: activeCall.conversation_id })
             setActiveCall(null)
+            setCallMinimized(false)
           }}
         />
       )}
 
-      {/* Active call (connected) */}
+      {/* Active call (connected). Minimizing swaps CallModal/GroupCallModal's own layout down
+          to a small floating window rather than unmounting either — that's what keeps the
+          Agora client, published tracks and channel membership alive while the caller looks at
+          other chats, instead of the call silently dropping the moment they navigate away. */}
       {activeCall && activeCall.status === 'connected' && (
         activeCall.isGroup
-          ? <GroupCallModal call={activeCall} darkMode={darkMode} onEnd={() => setActiveCall(null)} />
+          ? <GroupCallModal
+              call={activeCall}
+              darkMode={darkMode}
+              onEnd={() => { setActiveCall(null); setCallMinimized(false) }}
+              minimized={callMinimized}
+              onMinimize={() => setCallMinimized(true)}
+              onExpand={() => setCallMinimized(false)}
+            />
           : <CallModal
               call={activeCall}
               darkMode={darkMode}
               isCaller={activeCall.isCaller}
-              onEnd={() => setActiveCall(null)}
+              onEnd={() => { setActiveCall(null); setCallMinimized(false) }}
               onLimitReached={() => setShowCallLimitUpgrade(true)}
+              minimized={callMinimized}
+              onMinimize={() => setCallMinimized(true)}
+              onExpand={() => setCallMinimized(false)}
             />
       )}
 
