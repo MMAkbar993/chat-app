@@ -1,5 +1,6 @@
 import express from 'express'
 import helmet from 'helmet'
+import { uploadsGuard } from './middleware/uploadsGuard.js'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import path from 'path'
@@ -69,8 +70,10 @@ export function createApp() {
 
   app.use(express.json())
 
-  // Serve uploaded files (avatars)
-  app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+  // Uploaded files. The guard decides who may read each file — avatars and ad creative are
+  // public, message attachments require a signed-in participant of that conversation — and
+  // only then does express.static get to serve it.
+  app.use('/uploads', uploadsGuard, express.static(path.join(__dirname, '../uploads')))
 
   // Static assets referenced by server-rendered pages (e.g. the OAuth popup close/notify script —
   // it has to be an external file, not inline, since the CSP's script-src 'self' blocks inline
