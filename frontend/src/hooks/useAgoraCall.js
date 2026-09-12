@@ -48,7 +48,20 @@ export function useAgoraCall({ callId, isVideo, enabled = true }) {
 
     // Agora hands over a user only after its track is ready to subscribe to, so the modal
     // re-renders once per publish rather than once per connection state change.
-    const syncUsers = () => setRemoteUsers(client.remoteUsers.map((u) => ({ ...u })))
+    //
+    // videoTrack/audioTrack are getters on Agora's prototype, not own properties on the user
+    // object — object-spreading a remote user (`{ ...u }`) silently drops both, since spread
+    // only copies own enumerable properties. Every remote user reaching React state came out
+    // with no video track at all, which is why video never rendered while audio (read from the
+    // live object inside onUserPublished, before any copy was made) worked. Read each field
+    // explicitly instead, which does invoke the getter.
+    const syncUsers = () => setRemoteUsers(client.remoteUsers.map((u) => ({
+      uid: u.uid,
+      hasAudio: u.hasAudio,
+      hasVideo: u.hasVideo,
+      audioTrack: u.audioTrack,
+      videoTrack: u.videoTrack,
+    })))
 
     const onUserPublished = async (remoteUser, mediaType) => {
       try {
