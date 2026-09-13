@@ -235,15 +235,30 @@ const PLATFORMS = {
   },
 }
 
+// Upgrades the 1-hour token from the code exchange to a 60-day one. Best-effort: if Meta
+// refuses, we keep the short-lived token rather than failing the whole connection.
+//
+// Connecting Instagram exists to read the profile once and show it on a Pulse profile, and that
+// read happens seconds later while even a short-lived token is valid. Letting this step abort
+// the flow meant a user who had authorised successfully still saw "Could not connect account",
+// which is a much worse outcome than a token that expires sooner than we'd like.
 async function exchangeInstagramLongLivedToken(shortLivedToken, clientSecret) {
-  const response = await axios.get('https://graph.instagram.com/access_token', {
-    params: {
-      grant_type: 'ig_exchange_token',
-      client_secret: clientSecret,
-      access_token: shortLivedToken,
-    },
-  })
-  return response.data.access_token || shortLivedToken
+  try {
+    const response = await axios.get('https://graph.instagram.com/access_token', {
+      params: {
+        grant_type: 'ig_exchange_token',
+        client_secret: clientSecret,
+        access_token: shortLivedToken,
+      },
+    })
+    return { token: response.data.access_token || shortLivedToken, longLived: true }
+  } catch (err) {
+    console.error(
+      'Instagram long-lived token exchange failed (continuing with the short-lived token):',
+      err.response?.data || err.message,
+    )
+    return { token: shortLivedToken, longLived: false }
+  }
 }
 
 async function fetchYoutubeProfile(accessToken, baseProfile) {
@@ -455,8 +470,13 @@ export async function socialCallback(req, res) {
 
     if (platform === 'instagram') {
       instagramStep = 'token-exchange (graph.instagram.com/access_token)'
-      accessToken = await exchangeInstagramLongLivedToken(accessToken, cfg.clientSecret())
-      tokenExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+      const exchanged = await exchangeInstagramLongLivedToken(accessToken, cfg.clientSecret())
+      accessToken = exchanged.token
+      // Only claim 60 days if the exchange actually succeeded — recording a long expiry against
+      // a token that still dies in an hour would hide the problem rather than surface it.
+      tokenExpiresAt = exchanged.longLived
+        ? new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+        : new Date(Date.now() + 60 * 60 * 1000)
       instagramStep = 'profile-fetch (graph.instagram.com/.../me)'
     }
 

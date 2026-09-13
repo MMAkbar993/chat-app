@@ -235,17 +235,38 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
             title="Upgrade to Premium"
             data-tour="sidebar-upgrade"
             onClick={() => setShowUpgrade(true)}
-            className={`flex items-center gap-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm hover:shadow-md hover:brightness-105 transition-all ${
-              collapsed ? 'w-11 h-11 mx-auto justify-center px-0' : 'w-full py-2.5 justify-center px-3'
+            style={collapsed ? undefined : {
+              // Faint diagonal weave, the same trick the sponsored card uses. It gives the
+              // panel some surface without the saturated orange-to-amber gradient, which read
+              // as cartoonish next to the rest of the sidebar.
+              backgroundImage:
+                'repeating-linear-gradient(135deg, rgba(217,119,6,0.05) 0px, rgba(217,119,6,0.05) 1px, transparent 1px, transparent 7px)',
+            }}
+            className={`group relative flex items-center gap-3 rounded-xl text-sm transition-colors ${
+              collapsed
+                ? 'w-11 h-11 mx-auto justify-center px-0 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                : 'w-full py-3 justify-start px-3 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70'
             }`}
           >
-            {/* Bigger, with a light fill and a drop shadow so it reads as a badge rather
-                than another line icon. The label keeps white: gold text on the gold
-                gradient fails contrast, so the star carries the gold instead. */}
-            <svg className="w-5 h-5 shrink-0 text-amber-100 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+            {/* The gold now sits in a soft badge and in the label, on a light ground — so it
+                reads as a premium prompt rather than a saturated call-to-action bar. */}
+            <span className={`shrink-0 flex items-center justify-center rounded-lg bg-linear-to-br from-amber-400 to-orange-500 shadow-sm ${
+              collapsed ? 'w-6 h-6' : 'w-8 h-8'
+            }`}>
+              <svg className={`text-white drop-shadow-sm ${collapsed ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'}`} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+              </svg>
+            </span>
+            <span className={`flex-1 text-left min-w-0 ${collapsed ? 'hidden' : 'block'}`}>
+              <span className="block font-bold text-amber-900 leading-tight">Upgrade to Pro</span>
+              <span className="block text-[11px] text-amber-700/80 leading-tight mt-0.5">Unlock all features</span>
+            </span>
+            <svg
+              className={`w-3.5 h-3.5 shrink-0 text-amber-500 transition-transform group-hover:translate-x-0.5 ${collapsed ? 'hidden' : 'block'}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
-            <span className={collapsed ? 'hidden' : 'inline'}>Upgrade to Pro</span>
           </button>
         )}
 

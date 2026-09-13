@@ -10,6 +10,31 @@ import { playSentSound } from '../../utils/sounds'
 import { getReplyPreviewText, getReplyImageUrl } from '../../utils/replyPreview'
 import { getUploadErrorMessage } from '../../utils/uploadError'
 
+// mp4/AAC first: it's the only container Safari and Chrome can both decode, so a note recorded
+// in one plays in the other. WebM/Opus is the fallback for browsers that can't record mp4 —
+// those recordings still won't open in Safari, which is a browser limitation rather than
+// something the app can fix without transcoding on the server.
+const RECORDING_FORMATS = [
+  { mimeType: 'audio/mp4', ext: 'm4a' },
+  { mimeType: 'audio/mp4;codecs=mp4a.40.2', ext: 'm4a' },
+  { mimeType: 'audio/webm;codecs=opus', ext: 'webm' },
+  { mimeType: 'audio/webm', ext: 'webm' },
+]
+
+function pickRecordingFormat() {
+  const supported = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported
+  if (!supported) return { mimeType: '', ext: 'webm' }
+  return RECORDING_FORMATS.find((f) => MediaRecorder.isTypeSupported(f.mimeType)) || { mimeType: '', ext: 'webm' }
+}
+
+function extFor(mimeType) {
+  if (!mimeType) return ''
+  if (mimeType.includes('mp4')) return 'm4a'
+  if (mimeType.includes('ogg')) return 'ogg'
+  if (mimeType.includes('webm')) return 'webm'
+  return ''
+}
+
 function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
@@ -226,14 +251,22 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   async function startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mr = new MediaRecorder(stream)
+      const { mimeType, ext } = pickRecordingFormat()
+      // Passing no options at all meant Chrome recorded WebM/Opus, which Safari cannot decode —
+      // every voice note sent from Chrome showed as "Error" in Safari, and vice versa. mp4/AAC
+      // is the one container both can play, so it's preferred wherever the browser can produce
+      // it, with WebM kept as the fallback for browsers that can't.
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
       mediaRecorderRef.current = mr
       chunksRef.current = []
       mr.ondataavailable = (e) => chunksRef.current.push(e.data)
       mr.onstop = () => {
         stream.getTracks().forEach((t) => t.stop())
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' })
+        // Use what the recorder actually produced, not what we asked for — a browser may
+        // silently fall back, and a wrong extension/type here is what makes playback fail.
+        const actualType = mr.mimeType || mimeType || 'audio/webm'
+        const blob = new Blob(chunksRef.current, { type: actualType })
+        const file = new File([blob], `voice-${Date.now()}.${extFor(actualType) || ext}`, { type: actualType })
         const url = URL.createObjectURL(blob)
         setPreview({ url, file, duration: recordSecs })
         setRecording(false)

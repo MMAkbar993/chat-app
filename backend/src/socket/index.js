@@ -4,7 +4,7 @@ import { config } from '../config/env.js'
 import { query } from '../config/database.js'
 import { createMessage, markMessagesDelivered, markMessagesRead, getMessageById } from '../db/queries/messages.js'
 import { getParticipants, isParticipant, unhideParticipants, isAdminsOnlyMessaging } from '../db/queries/conversations.js'
-import { createCall, updateCallStatus, getMonthlyCallSecondsUsed } from '../db/queries/calls.js'
+import { createCall, updateCallStatus, getMonthlyCallSecondsUsed, getCallById } from '../db/queries/calls.js'
 import { findUserById } from '../db/queries/users.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 import { isProUser, FREE_CALL_SECONDS_PER_MONTH } from '../utils/plan.js'
@@ -251,6 +251,11 @@ export function initSocket(httpServer) {
         activeCalls.set(userId, callId)
         pendingGroupCalls.delete(callId) // call is now live; remaining declines don't affect caller
         io.to(`user:${callerId}`).emit('call-accepted', { callId })
+        // Every device this user is signed in on received the incoming-call ring. Only the one
+        // that answered knows about it, so the others sit there ringing and — after their
+        // 30s no-answer timer — emit call-reject, which used to tear down the live call and
+        // log it as missed. Tell the rest to dismiss. socket.to() excludes this socket.
+        socket.to(`user:${userId}`).emit('call-handled', { callId })
       } catch (err) {
         console.error('call-accept error:', err)
       }
@@ -258,6 +263,12 @@ export function initSocket(httpServer) {
 
     socket.on('call-reject', async ({ callId, callerId }) => {
       try {
+        // A call that is already answered cannot be rejected. Without this, any stale ringing
+        // modal — another device, a backgrounded tab, a reconnect replaying state — could end
+        // a conversation that is actively in progress.
+        const existing = await getCallById(callId)
+        if (existing?.status === 'answered') return
+        socket.to(`user:${userId}`).emit('call-handled', { callId })
         const groupPending = pendingGroupCalls.get(callId)
         if (groupPending) {
           // Group call — one person declining should not end the call for everyone

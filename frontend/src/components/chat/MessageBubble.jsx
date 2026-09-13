@@ -6,6 +6,7 @@ import MessageContextMenu from './MessageContextMenu'
 import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
 import LinkPreviewCard from './LinkPreviewCard'
+import VoiceMessage from './VoiceMessage'
 import { forwardMessageApi } from '../../api/conversations'
 import { getReplyPreviewText, getReplyImageUrl, hasReplyPreview } from '../../utils/replyPreview'
 
@@ -257,7 +258,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                   </div>
                 )
               if (msg.message_type === 'audio' && src)
-                return <audio controls src={src} className="max-w-xs" />
+                return <VoiceMessage src={src} isMe={isMe} darkMode={darkMode} />
               if (msg.message_type === 'video' && src)
                 return (
                   <div>

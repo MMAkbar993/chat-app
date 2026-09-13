@@ -128,12 +128,18 @@ export default function ChatPage() {
       setShowCallLimitUpgrade(true)
     }
 
+    // Answered or declined on another device this account is signed in on. Dismiss the ring
+    // here — otherwise this device keeps ringing and its 30s no-answer timer eventually fires
+    // a reject that would end the call the other device is actively on.
+    const onCallHandled = () => setIncomingCall(null)
+
     const onRepUpdate = () => refreshUser()
 
     socket.on('incoming-call', onIncoming)
     socket.on('call-accepted', onCallAccepted)
     socket.on('call-ended', onCallEnded)
     socket.on('call-rejected', onCallRejected)
+    socket.on('call-handled', onCallHandled)
     socket.on('call-busy', onCallBusy)
     socket.on('call-blocked', onCallBlocked)
     socket.on('rep-request-update', onRepUpdate)
@@ -143,6 +149,7 @@ export default function ChatPage() {
       socket.off('call-accepted', onCallAccepted)
       socket.off('call-ended', onCallEnded)
       socket.off('call-rejected', onCallRejected)
+      socket.off('call-handled', onCallHandled)
       socket.off('call-busy', onCallBusy)
       socket.off('call-blocked', onCallBlocked)
       socket.off('rep-request-update', onRepUpdate)

@@ -305,11 +305,15 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       if (action === 'revoked') {
         // Owner removed us — hide the "Authorized Representative" panel immediately
         setReprRevoked(true)
-        // Also clear any stale "already claimed / request sent" lookup state so the
-        // tab falls back to the default Website Verification view, not a stuck page.
-        setClaimedInfo(null)
-        setReprRequested(false)
       }
+      // Whatever the decision was, the request is no longer outstanding, so the lookup state
+      // that produced it has to go. Only 'revoked' used to clear this, which is why an
+      // approval left "This website is already verified" and "Your representation request has
+      // been sent" sitting underneath the new "You're an Authorized Representative" card —
+      // three panels disagreeing about the same request.
+      setClaimedInfo(null)
+      setReprRequested(false)
+      if (action === 'approve') setReprRevoked(false)
       getMyRepresentationStatus()
         .then((d) => setMyPendingRequests(d.requests || []))
         .catch(() => {})
@@ -518,6 +522,18 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   // approved. Now it's just a header shown above the normal flow instead of replacing it.
   const isPureRepresentative = (approved && verifiedWebsites.length === 0) && !reprRevoked
 
+  // The "already claimed by someone else" lookup and the "you represent this company" panel
+  // describe the same site in two contradictory ways, so once the request is approved the
+  // lookup is suppressed outright. The state clearing above handles the live case; this covers
+  // a page loaded fresh while that state still exists server-side.
+  const alreadyRepresentsClaimedSite = Boolean(
+    claimedInfo && (profile?.rep_websites || []).some(
+      (w) => w.url?.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase()
+        === claimedInfo.websiteUrl?.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase(),
+    ),
+  )
+  const showClaimedPanel = Boolean(claimedInfo) && !alreadyRepresentsClaimedSite
+
   // Hoisted so it can render in two places. When the user already has verified sites this
   // belongs directly under that list — the natural place to look after clicking "Verify a
   // Website" — rather than at the very bottom of the page below the reps and info cards,
@@ -701,7 +717,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       )}
 
       {/* STATE A — this website is already claimed by someone else */}
-      {claimedInfo && (
+      {showClaimedPanel && (
         <>
           {error && <p className="text-xs text-red-500">{error}</p>}
 
@@ -823,7 +839,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       )}
 
       {/* STATE B / C — no active "claimed" lookup */}
-      {!claimedInfo && (
+      {!showClaimedPanel && (
         <>
           {/* Banner — same treatment as Social Profiles so the two settings pages read as
               one product rather than two different eras of the app. */}
