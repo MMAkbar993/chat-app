@@ -78,7 +78,7 @@ function isEmojiOnly(text) {
   return count > 0 && count <= 6
 }
 
-export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch }) {
+export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch, isJumpTarget, onJumpToMessage, onTogglePin, canPin, isPinned }) {
   const { user } = useAuth()
   const { socket } = useSocket()
   const { showToast } = useToast()
@@ -158,7 +158,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   return (
     <div
       id={`msg-${msg.id}`}
-      className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-1 items-end gap-2 ${isCurrentMatch ? 'rounded-xl ring-2 ring-violet-400 ring-offset-2' : ''}`}
+      className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-1 items-end gap-2 ${isCurrentMatch || isJumpTarget ? 'rounded-xl ring-2 ring-violet-400 ring-offset-2' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setShowMenu(false) }}
     >
@@ -200,13 +200,20 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               }`
           }>
             {showReply && (
-              <div className={`mb-2 px-2 py-1.5 rounded-lg border-l-4 flex items-center gap-2 ${
-                isMe
-                  ? 'border-violet-300 bg-white/15'
-                  : darkMode
-                  ? 'border-violet-400 bg-black/20'
-                  : 'border-violet-400 bg-violet-50'
-              }`}>
+              // A quote is a pointer to another message, so the whole block — thumbnail
+              // included — jumps to it. Rendered as a button so keyboard and screen-reader
+              // users get the same affordance the pointer does.
+              <button
+                type="button"
+                onClick={() => onJumpToMessage?.(msg.reply_to_message_id)}
+                aria-label="Go to the quoted message"
+                className={`w-full text-left mb-2 px-2 py-1.5 rounded-lg border-l-4 flex items-center gap-2 cursor-pointer transition-colors ${
+                  isMe
+                    ? 'border-violet-300 bg-white/15 hover:bg-white/25'
+                    : darkMode
+                    ? 'border-violet-400 bg-black/20 hover:bg-black/30'
+                    : 'border-violet-400 bg-violet-50 hover:bg-violet-100'
+                }`}>
                 <div className="min-w-0 flex-1">
                   <p className={`text-xs font-semibold truncate ${
                     isMe ? 'text-violet-200' : 'text-violet-600'
@@ -228,7 +235,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                     className="w-10 h-10 rounded object-cover shrink-0"
                   />
                 )}
-              </div>
+              </button>
             )}
             {(() => {
               const src = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
@@ -345,6 +352,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               onEdit={() => onEdit?.(msg)}
               onDelete={() => onDelete?.(msg.id)}
               onDeleteForMe={() => onDeleteForMe?.(msg.id)}
+              canPin={canPin && !msg.is_deleted}
+              isPinned={isPinned}
+              onPin={() => onTogglePin?.(msg)}
             />
           )}
         </div>

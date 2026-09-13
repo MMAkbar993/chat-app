@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useSocket } from '../../context/SocketContext'
 import { useToast } from '../../context/ToastContext'
-import { deleteMessageApi, deleteMessageForMeApi, editMessageApi } from '../../api/conversations'
+import { deleteMessageApi, deleteMessageForMeApi, editMessageApi, getPinnedMessageApi, pinMessageApi, unpinMessageApi } from '../../api/conversations'
+import { getReplyPreviewText } from '../../utils/replyPreview'
 import { blockUser, unblockUser, getBlockedUsers, reportUser } from '../../api/users'
 import { getGroup } from '../../api/groups'
 import { addContact } from '../../api/contacts'
@@ -168,6 +169,51 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       .map((m) => m.id)
   }, [messages, searchQuery])
 
+  const [pinned, setPinned] = useState(null)
+
+  // The pinned message is fetched separately from the message page: a welcome note pinned
+  // months ago is usually far outside the slice of history loaded on open, so deriving the
+  // banner from `messages` would leave it blank exactly when it matters most.
+  useEffect(() => {
+    const id = activeConversation?.id
+    if (!id) return undefined
+    let cancelled = false
+    getPinnedMessageApi(id)
+      .then((p) => { if (!cancelled) setPinned(p) })
+      .catch(() => { if (!cancelled) setPinned(null) })
+    return () => { cancelled = true }
+  }, [activeConversation?.id])
+
+  useEffect(() => {
+    if (!socket) return undefined
+    const onPinChanged = ({ conversationId, pinned: next }) => {
+      if (conversationId === activeConversation?.id) setPinned(next)
+    }
+    socket.on('pinned-message-changed', onPinChanged)
+    return () => socket.off('pinned-message-changed', onPinChanged)
+  }, [socket, activeConversation?.id])
+
+  async function handleTogglePin(msg) {
+    const convId = activeConversation?.id
+    if (!convId) return
+    try {
+      if (pinned?.id === msg.id) {
+        await unpinMessageApi(convId)
+        setPinned(null)
+        showToast('Message unpinned', 'success')
+      } else {
+        setPinned(await pinMessageApi(convId, msg.id))
+        showToast('Message pinned', 'success')
+      }
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Could not change the pinned message', 'warning')
+    }
+  }
+
+  const [jumpedId, setJumpedId] = useState(null)
+  const jumpTimerRef = useRef(null)
+  useEffect(() => () => clearTimeout(jumpTimerRef.current), [])
+
   useEffect(() => { setSearchIndex(0) }, [searchQuery])
 
   useEffect(() => {
@@ -179,6 +225,21 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     if (!id) return
     document.getElementById(`msg-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [matchIds, searchIndex])
+
+  // Following a reply quote back to the message it answers. The original may be older than
+  // the page of history currently loaded, in which case there is no node to scroll to — say so
+  // instead of appearing to ignore the tap.
+  function jumpToMessage(id) {
+    const el = document.getElementById(`msg-${id}`)
+    if (!el) {
+      showToast('That message is further back — scroll up to load it', 'info')
+      return
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setJumpedId(id)
+    clearTimeout(jumpTimerRef.current)
+    jumpTimerRef.current = setTimeout(() => setJumpedId(null), 1800)
+  }
 
   function goNext() { if (matchIds.length) setSearchIndex((i) => (i + 1) % matchIds.length) }
   function goPrev() { if (matchIds.length) setSearchIndex((i) => (i - 1 + matchIds.length) % matchIds.length) }
@@ -307,6 +368,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   // composer disappear for a member instead of them finding out by having a send rejected.
   const isRestrictedNonAdmin =
     isGroup && activeConversation.admins_only_messaging && activeConversation.my_role !== 'admin'
+  // In a group the pin is the notice board, so only admins may change it; in a DM the two
+  // people are equals and either can. Mirrored server-side — this only decides whether the
+  // menu item is worth showing.
+  const canPin = isGroup ? activeConversation.my_role === 'admin' : true
   const otherName = isGroup
     ? activeConversation.name
     : activeConversation.other_user_display_name || activeConversation.other_user_name || 'Account Deleted'
@@ -674,6 +739,48 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           </div>
         )}
 
+        {/* The pinned message rides above the thread so it stays visible however far back
+            the conversation is scrolled. Tapping it jumps to the message in place. */}
+        {pinned && (
+          <div className={`flex items-center gap-3 px-4 py-2 border-b ${
+            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-violet-50/70 border-violet-100'
+          }`}>
+            <svg className="w-4 h-4 shrink-0 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M15 4l5 5-3 1-1.5 4.5L9 8 13.5 6.5 15 4zM9 15l-4 4" />
+            </svg>
+            <button
+              type="button"
+              onClick={() => jumpToMessage(pinned.id)}
+              className="min-w-0 flex-1 text-left cursor-pointer"
+            >
+              <p className="text-xs font-semibold text-violet-500">Pinned message</p>
+              <p className={`text-xs truncate ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                {getReplyPreviewText({
+                  content: pinned.content,
+                  messageType: pinned.message_type,
+                  mediaUrl: pinned.media_url,
+                })}
+              </p>
+            </button>
+            {canPin && (
+              <button
+                type="button"
+                onClick={() => handleTogglePin(pinned)}
+                aria-label="Unpin this message"
+                title="Unpin"
+                className={`w-7 h-7 flex items-center justify-center rounded-full shrink-0 ${
+                  darkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-400 hover:bg-violet-100'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Messages */}
         <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
           {loadingMessages && (
@@ -713,6 +820,11 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                 onDeleteForMe={handleDeleteMessageForMe}
                 searchQuery={searchQuery}
                 isCurrentMatch={item.msg.id === matchIds[searchIndex]}
+                isJumpTarget={item.msg.id === jumpedId}
+                onJumpToMessage={jumpToMessage}
+                canPin={canPin}
+                isPinned={pinned?.id === item.msg.id}
+                onTogglePin={handleTogglePin}
               />
             )
           )}

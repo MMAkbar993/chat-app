@@ -14,9 +14,12 @@ import {
   toggleMute,
   deleteConversationForUser,
   clearConversationMessages,
+  setPinnedMessage,
+  getPinnedMessage,
 } from '../db/queries/conversations.js'
 import { isContact } from '../db/queries/contacts.js'
-import { searchMessages } from '../db/queries/messages.js'
+import { searchMessages, getMessageById } from '../db/queries/messages.js'
+import { getIo } from '../socket/index.js'
 
 export async function searchMessagesHandler(req, res, next) {
   try {
@@ -163,6 +166,69 @@ export async function clearConversation(req, res, next) {
     if (!ok) return res.status(403).json({ error: 'Not a participant' })
     await clearConversationMessages(req.params.id, req.user.id)
     res.status(204).end()
+  } catch (err) {
+    next(err)
+  }
+}
+
+// Who may change the pin: in a group, admins only — the pin is the group's notice board, and
+// letting any member overwrite it turns it into a race. In a DM both people are equals, so
+// either side can set it.
+async function canPin(conversation, userId) {
+  if (conversation.type !== 'group') return isParticipant(conversation.id, userId)
+  const participants = await getParticipants(conversation.id)
+  return participants.find((p) => p.id === userId)?.role === 'admin'
+}
+
+async function broadcastPin(conversationId, pinned) {
+  const participants = await getParticipants(conversationId)
+  const io = getIo()
+  participants.forEach((p) => io.to(`user:${p.id}`).emit('pinned-message-changed', { conversationId, pinned }))
+}
+
+export async function getPinnedMessageHandler(req, res, next) {
+  try {
+    if (!(await isParticipant(req.params.id, req.user.id))) {
+      return res.status(403).json({ error: 'Not a participant' })
+    }
+    res.json({ pinned: await getPinnedMessage(req.params.id) })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function pinMessage(req, res, next) {
+  try {
+    const conversation = await getConversationById(req.params.id)
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found' })
+    if (!(await canPin(conversation, req.user.id))) {
+      return res.status(403).json({ error: 'Only group admins can pin a message' })
+    }
+    // The message has to belong to this conversation, or a pin becomes a way to pull an
+    // arbitrary message id out of a thread you are not in.
+    const message = await getMessageById(req.body.messageId)
+    if (!message || message.conversation_id !== conversation.id || message.is_deleted) {
+      return res.status(404).json({ error: 'Message not found in this conversation' })
+    }
+    await setPinnedMessage(conversation.id, message.id, req.user.id)
+    const pinned = await getPinnedMessage(conversation.id)
+    await broadcastPin(conversation.id, pinned)
+    res.json({ pinned })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function unpinMessage(req, res, next) {
+  try {
+    const conversation = await getConversationById(req.params.id)
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found' })
+    if (!(await canPin(conversation, req.user.id))) {
+      return res.status(403).json({ error: 'Only group admins can unpin a message' })
+    }
+    await setPinnedMessage(conversation.id, null, null)
+    await broadcastPin(conversation.id, null)
+    res.json({ pinned: null })
   } catch (err) {
     next(err)
   }

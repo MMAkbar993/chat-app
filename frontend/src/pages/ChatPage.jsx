@@ -100,6 +100,32 @@ export default function ChatPage() {
       })
   }, [openConversation])
 
+  // A ?conversation=<id> deep link opens that thread. Group invite links land here after
+  // joining, and nothing was reading the parameter, so following one dropped people on an
+  // empty chat pane with the group they had just joined sitting unopened in the list.
+  // Read once into a ref so a re-render can't reopen it after the user navigates away.
+  const pendingConvRef = useRef(new URLSearchParams(window.location.search).get('conversation'))
+  useEffect(() => {
+    const id = pendingConvRef.current
+    if (!id) return
+    pendingConvRef.current = null
+    client.get(`/conversations/${id}`)
+      .then(({ data }) => {
+        const conv = data.conversation
+        // The list endpoint supplies my_role, but a direct fetch doesn't — derive it from the
+        // participants so admin-only affordances (pinning, posting in announcement groups)
+        // don't silently disappear for an admin arriving through a link.
+        const myRole = conv.participants?.find((p) => p.id === user?.id)?.role
+        openConversation({ ...conv, my_role: myRole })
+        setSection(conv.type === 'group' ? 'groups' : 'chats')
+        // Drop the parameter so a reload doesn't fight with whatever they opened since.
+        window.history.replaceState({}, '', window.location.pathname)
+      })
+      .catch(() => {
+        // Not a participant, or the conversation is gone. They're in the app either way.
+      })
+  }, [openConversation, user?.id])
+
   // Mobile: only one panel (list vs. detail) is shown at a time, Telegram-style.
   const mobileDetail = section === 'settings'
     ? !!settingsSection

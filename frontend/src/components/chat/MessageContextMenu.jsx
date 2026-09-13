@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
 
-export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onReact, onMoreReactions, onClose, isMe, canEdit, darkMode, dir = 'down' }) {
+export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onReact, onMoreReactions, onPin, isPinned, canPin, onClose, isMe, canEdit, darkMode, dir = 'down' }) {
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -63,6 +63,15 @@ export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit,
         </svg>
         Copy
       </button>
+      {canPin && (
+        <button className={itemClass} onClick={() => { onPin(); onClose() }}>
+          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M5 5l14 14M15 4l5 5-3 1-1.5 4.5L9 8 13.5 6.5 15 4zM9 15l-4 4" />
+          </svg>
+          {isPinned ? 'Unpin' : 'Pin'}
+        </button>
+      )}
       {canEdit && (
         <button className={itemClass} onClick={() => { onEdit(); onClose() }}>
           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

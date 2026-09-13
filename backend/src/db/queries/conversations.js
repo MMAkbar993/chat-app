@@ -282,3 +282,34 @@ export async function getGroupByInviteCode(code) {
 export async function deleteConversation(conversationId) {
   await query(`DELETE FROM conversations WHERE id = $1`, [conversationId])
 }
+
+// Pinning a message is a property of the conversation, not of the viewer: everyone in the
+// thread sees the same pin, the way a notice on a wall works.
+export async function setPinnedMessage(conversationId, messageId, pinnedBy) {
+  const result = await query(
+    `UPDATE conversations
+     SET pinned_message_id = $2, pinned_at = CASE WHEN $2::uuid IS NULL THEN NULL ELSE NOW() END,
+         pinned_by = CASE WHEN $2::uuid IS NULL THEN NULL ELSE $3::uuid END
+     WHERE id = $1
+     RETURNING pinned_message_id`,
+    [conversationId, messageId, pinnedBy]
+  )
+  return result.rows[0] || null
+}
+
+// Returns the pinned message already joined to its sender, so the banner can render without
+// depending on that message still being inside the page of history the client has loaded —
+// a welcome note pinned months ago is exactly the case that would otherwise come back empty.
+export async function getPinnedMessage(conversationId) {
+  const result = await query(
+    `SELECT m.id, m.content, m.message_type, m.media_url, m.file_name, m.created_at,
+            m.sender_id, u.full_name AS sender_name, u.display_name AS sender_display_name,
+            c.pinned_at, c.pinned_by
+     FROM conversations c
+     JOIN messages m ON m.id = c.pinned_message_id AND m.is_deleted = false
+     LEFT JOIN users u ON u.id = m.sender_id
+     WHERE c.id = $1`,
+    [conversationId]
+  )
+  return result.rows[0] || null
+}

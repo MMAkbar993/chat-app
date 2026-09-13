@@ -4,6 +4,7 @@ import {
   listConversations, getOrCreateDirect, getConversation, markConversationRead, markConversationUnread,
   archiveConversation, pinConversation, favoriteConversation, muteConversation,
   deleteConversation, clearConversation, searchMessagesHandler,
+  getPinnedMessageHandler, pinMessage, unpinMessage,
 } from '../controllers/conversation.controller.js'
 
 export const conversationRouter = Router()
@@ -20,5 +21,8 @@ conversationRouter.patch('/:id/archive', archiveConversation)
 conversationRouter.patch('/:id/pin', pinConversation)
 conversationRouter.patch('/:id/favorite', favoriteConversation)
 conversationRouter.patch('/:id/mute', muteConversation)
+conversationRouter.get('/:id/pinned-message', getPinnedMessageHandler)
+conversationRouter.put('/:id/pinned-message', pinMessage)
+conversationRouter.delete('/:id/pinned-message', unpinMessage)
 conversationRouter.delete('/:id/messages', clearConversation)
 conversationRouter.delete('/:id', deleteConversation)

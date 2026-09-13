@@ -443,9 +443,9 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
               {showEncryption && (
                 <p className={`mt-2 text-xs leading-relaxed ${sub}`}>
                   Messages in this group are private to its members and are encrypted in transit
-                  between your device and Pulse. They are not end-to-end encrypted, so please avoid
-                  sharing passwords or other highly sensitive material here. Anyone in the group can
-                  also copy, forward or screenshot what you send.
+                  between your device and Pulse. As in any group, anyone here can copy, forward or
+                  screenshot what you send, so avoid sharing passwords or other highly sensitive
+                  material.
                 </p>
               )}
             </div>

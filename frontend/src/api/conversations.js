@@ -25,3 +25,9 @@ export const deleteMessageApi        = (id) => client.delete(`/conversations/mes
 export const deleteMessageForMeApi   = (id) => client.delete(`/conversations/messages/${id}/for-me`).then((r) => r.data)
 export const toggleReactionApi    = (messageId, emoji) =>
   client.post(`/conversations/messages/${messageId}/reactions`, { emoji }).then((r) => r.data)
+export const getPinnedMessageApi = (id) =>
+  client.get(`/conversations/${id}/pinned-message`).then((r) => r.data.pinned)
+export const pinMessageApi       = (id, messageId) =>
+  client.put(`/conversations/${id}/pinned-message`, { messageId }).then((r) => r.data.pinned)
+export const unpinMessageApi     = (id) =>
+  client.delete(`/conversations/${id}/pinned-message`).then((r) => r.data)

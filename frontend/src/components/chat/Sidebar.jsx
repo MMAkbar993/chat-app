@@ -238,14 +238,24 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
             style={collapsed ? undefined : {
               // Faint diagonal weave, the same trick the sponsored card uses. It gives the
               // panel some surface without the saturated orange-to-amber gradient, which read
-              // as cartoonish next to the rest of the sidebar.
-              backgroundImage:
-                'repeating-linear-gradient(135deg, rgba(217,119,6,0.05) 0px, rgba(217,119,6,0.05) 1px, transparent 1px, transparent 7px)',
+              // as cartoonish next to the rest of the sidebar. Lighter stroke on dark, since a
+              // dark-amber line over a dark panel is invisible.
+              backgroundImage: darkMode
+                ? 'repeating-linear-gradient(135deg, rgba(251,191,36,0.06) 0px, rgba(251,191,36,0.06) 1px, transparent 1px, transparent 7px)'
+                : 'repeating-linear-gradient(135deg, rgba(217,119,6,0.05) 0px, rgba(217,119,6,0.05) 1px, transparent 1px, transparent 7px)',
             }}
             className={`group relative flex items-center gap-3 rounded-xl text-sm transition-colors ${
               collapsed
-                ? 'w-11 h-11 mx-auto justify-center px-0 bg-amber-50 hover:bg-amber-100 border border-amber-200'
-                : 'w-full py-3 justify-start px-3 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70'
+                ? `w-11 h-11 mx-auto justify-center px-0 border ${
+                    darkMode
+                      ? 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/25'
+                      : 'bg-amber-50 hover:bg-amber-100 border-amber-200'
+                  }`
+                : `w-full py-3 justify-start px-3 border ${
+                    darkMode
+                      ? 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/25'
+                      : 'bg-amber-50/80 hover:bg-amber-100/80 border-amber-200/70'
+                  }`
             }`}
           >
             {/* The gold now sits in a soft badge and in the label, on a light ground — so it
@@ -258,11 +268,11 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
               </svg>
             </span>
             <span className={`flex-1 text-left min-w-0 ${collapsed ? 'hidden' : 'block'}`}>
-              <span className="block font-bold text-amber-900 leading-tight">Upgrade to Pro</span>
-              <span className="block text-[11px] text-amber-700/80 leading-tight mt-0.5">Unlock all features</span>
+              <span className={`block font-bold leading-tight ${darkMode ? 'text-amber-200' : 'text-amber-900'}`}>Upgrade to Pro</span>
+              <span className={`block text-[11px] leading-tight mt-0.5 ${darkMode ? 'text-amber-300/70' : 'text-amber-700/80'}`}>Unlock all features</span>
             </span>
             <svg
-              className={`w-3.5 h-3.5 shrink-0 text-amber-500 transition-transform group-hover:translate-x-0.5 ${collapsed ? 'hidden' : 'block'}`}
+              className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 ${darkMode ? 'text-amber-400/70' : 'text-amber-500'} ${collapsed ? 'hidden' : 'block'}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
