@@ -251,3 +251,34 @@ export async function setAdminsOnlyMessaging(conversationId, enabled) {
   )
   return result.rows[0]
 }
+
+// ── Group invite links ───────────────────────────────────────────────────────
+
+export async function setInviteCode(conversationId, code) {
+  const result = await query(
+    `UPDATE conversations SET invite_code = $2, updated_at = NOW()
+     WHERE id = $1 AND type = 'group'
+     RETURNING id, invite_code`,
+    [conversationId, code]
+  )
+  return result.rows[0] || null
+}
+
+// Deliberately returns only what a join page needs to show before someone commits to joining —
+// name, icon, size. Not the message history, and not the member list.
+export async function getGroupByInviteCode(code) {
+  const result = await query(
+    `SELECT c.id, c.name, c.avatar_url, c.admins_only_messaging,
+            (SELECT COUNT(*)::int FROM conversation_participants cp WHERE cp.conversation_id = c.id) AS member_count
+     FROM conversations c
+     WHERE c.invite_code = $1 AND c.type = 'group'`,
+    [code]
+  )
+  return result.rows[0] || null
+}
+
+// Hard-deletes a group and everything hanging off it. Messages and participants go via the
+// ON DELETE CASCADE on their conversation_id foreign keys.
+export async function deleteConversation(conversationId) {
+  await query(`DELETE FROM conversations WHERE id = $1`, [conversationId])
+}

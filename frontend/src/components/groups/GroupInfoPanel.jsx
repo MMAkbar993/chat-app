@@ -3,7 +3,10 @@ import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { useSocket } from '../../context/SocketContext'
-import { getGroup, updateGroup, addMember, removeMember, uploadGroupAvatar } from '../../api/groups'
+import {
+  getGroup, updateGroup, addMember, removeMember, uploadGroupAvatar,
+  createInviteLink, revokeInviteLink, deleteGroup,
+} from '../../api/groups'
 import { getContacts, searchUsers } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
 import ConfirmDialog from '../ui/ConfirmDialog'
@@ -50,6 +53,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const [loading, setLoading] = useState(true)
   const [memberSearch, setMemberSearch] = useState('')
   const [showMemberSearch, setShowMemberSearch] = useState(false)
+  const [inviteBusy, setInviteBusy] = useState(false)
   const [showAddMembers, setShowAddMembers] = useState(false)
   const [contacts, setContacts] = useState([])
   const [addSearch, setAddSearch] = useState('')
@@ -131,6 +135,52 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
       showToast('Description updated', 'success')
     } catch {
       showToast('Could not update description', 'error')
+    }
+  }
+
+  const inviteUrl = groupData?.invite_code
+    ? `${window.location.origin}/join/${groupData.invite_code}`
+    : ''
+
+  async function handleCreateInvite() {
+    setInviteBusy(true)
+    try {
+      const { inviteCode } = await createInviteLink(conversation.id)
+      setGroupData((prev) => ({ ...prev, invite_code: inviteCode }))
+      showToast('Invite link created', 'success')
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Could not create an invite link', 'error')
+    }
+    setInviteBusy(false)
+  }
+
+  // Rotating the code is the revoke: every copy of the old link stops working immediately.
+  async function handleRevokeInvite() {
+    setInviteBusy(true)
+    try {
+      await revokeInviteLink(conversation.id)
+      setGroupData((prev) => ({ ...prev, invite_code: null }))
+      showToast('Invite link revoked', 'info')
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Could not revoke the link', 'error')
+    }
+    setInviteBusy(false)
+  }
+
+  function handleCopyInvite() {
+    navigator.clipboard?.writeText(inviteUrl)
+      .then(() => showToast('Invite link copied', 'success'))
+      .catch(() => showToast('Could not copy — select the link and copy it manually', 'error'))
+  }
+
+  async function handleDeleteGroup() {
+    try {
+      await deleteGroup(conversation.id)
+      dropConversation(conversation.id)
+      onClose()
+      showToast('Group deleted', 'info')
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Could not delete the group', 'error')
     }
   }
 
@@ -436,6 +486,60 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                   </span>
                 </button>
               )}
+
+              {/* Invite link — admins only, since holding the link is enough to join. */}
+              {isAdmin && (
+                <div className={`px-3 py-3 border-t ${dm ? 'border-gray-700' : 'border-gray-100'}`}>
+                  <p className={`text-sm ${dm ? 'text-gray-200' : 'text-gray-700'}`}>Invite Link</p>
+                  <p className={`text-xs mt-0.5 ${sub}`}>
+                    Anyone with this link can join. Share it anywhere — no need to add people one
+                    by one.
+                  </p>
+
+                  {inviteUrl ? (
+                    <>
+                      <div className={`mt-2.5 rounded-lg border px-2.5 py-2 text-xs font-mono break-all ${
+                        dm ? 'bg-gray-900 border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'
+                      }`}>
+                        {inviteUrl}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={handleCopyInvite}
+                          className="flex-1 rounded-lg py-2 text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+                        >
+                          Copy link
+                        </button>
+                        <button
+                          onClick={handleCreateInvite}
+                          disabled={inviteBusy}
+                          title="Generates a new link and stops the old one working"
+                          className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                            dm ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={handleRevokeInvite}
+                          disabled={inviteBusy}
+                          className="rounded-lg px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleCreateInvite}
+                      disabled={inviteBusy}
+                      className="w-full mt-2.5 rounded-lg py-2 text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-50"
+                    >
+                      {inviteBusy ? 'Creating…' : 'Create invite link'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Participants */}
@@ -552,6 +656,23 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                 </svg>
                 Report Group
               </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setConfirm({
+                    title: 'Delete Group',
+                    message: `Delete "${name}" for everyone? All messages in this group are permanently removed. This cannot be undone.`,
+                    confirmLabel: 'Delete Group',
+                    variant: 'danger',
+                    onConfirm: handleDeleteGroup,
+                  })}
+                  className={`w-full flex items-center gap-3 px-3 py-3 text-sm text-red-500 border-t transition-colors ${dm ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-red-50'}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Group
+                </button>
+              )}
             </div>
           </>
         )}

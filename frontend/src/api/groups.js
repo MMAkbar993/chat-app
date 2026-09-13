@@ -11,3 +11,8 @@ export const uploadGroupAvatar = (groupId, file) => {
   form.append('avatar', file)
   return client.post(`/groups/${groupId}/avatar`, form).then((r) => r.data)
 }
+export const createInviteLink = (id) => client.post(`/groups/${id}/invite`).then((r) => r.data)
+export const revokeInviteLink = (id) => client.delete(`/groups/${id}/invite`).then((r) => r.data)
+export const getInvitePreview = (code) => client.get(`/groups/invite/${code}`).then((r) => r.data)
+export const joinGroupByInvite = (code) => client.post(`/groups/invite/${code}/join`).then((r) => r.data)
+export const deleteGroup = (id) => client.delete(`/groups/${id}`).then((r) => r.data)

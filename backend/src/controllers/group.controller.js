@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import {
   createConversation,
   addParticipant,
@@ -9,6 +10,9 @@ import {
   setParticipantRole,
   getConversationById,
   getConversationsForUser,
+  setInviteCode,
+  getGroupByInviteCode,
+  deleteConversation,
 } from '../db/queries/conversations.js'
 import { getIo } from '../socket/index.js'
 import { isProUser } from '../utils/plan.js'
@@ -155,6 +159,117 @@ export async function leaveGroup(req, res, next) {
       remaining.forEach((p) =>
         io.to(`user:${p.id}`).emit('group-members-updated', { conversationId, participants: remaining })
       )
+    }
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Invite links ─────────────────────────────────────────────────────────────
+
+// 16 bytes of randomness, URL-safe. The code IS the credential — anyone holding the link can
+// join — so it must not be guessable or derivable from the group id.
+function newInviteCode() {
+  return crypto.randomBytes(16).toString('base64url')
+}
+
+async function requireGroupAdmin(conversationId, userId) {
+  const participants = await getParticipants(conversationId)
+  const me = participants.find((p) => p.id === userId)
+  return me?.role === 'admin'
+}
+
+// Creates the link, or rotates it. Rotating is how you revoke: every previously shared copy
+// stops working the moment a new code replaces it.
+export async function createInviteLink(req, res, next) {
+  try {
+    if (!(await requireGroupAdmin(req.params.id, req.user.id))) {
+      return res.status(403).json({ error: 'Only admins can manage the invite link' })
+    }
+    const updated = await setInviteCode(req.params.id, newInviteCode())
+    if (!updated) return res.status(404).json({ error: 'Group not found' })
+    res.json({ inviteCode: updated.invite_code })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function revokeInviteLink(req, res, next) {
+  try {
+    if (!(await requireGroupAdmin(req.params.id, req.user.id))) {
+      return res.status(403).json({ error: 'Only admins can manage the invite link' })
+    }
+    await setInviteCode(req.params.id, null)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// Preview for the join page — deliberately minimal, since the caller is not a member yet.
+export async function getInvitePreview(req, res, next) {
+  try {
+    const group = await getGroupByInviteCode(req.params.code)
+    if (!group) return res.status(404).json({ error: 'This invite link is no longer valid' })
+    res.json({
+      group: {
+        id: group.id,
+        name: group.name,
+        avatarUrl: group.avatar_url,
+        memberCount: group.member_count,
+        adminsOnlyMessaging: group.admins_only_messaging,
+      },
+      alreadyMember: await isParticipant(group.id, req.user.id),
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function joinByInvite(req, res, next) {
+  try {
+    const group = await getGroupByInviteCode(req.params.code)
+    if (!group) return res.status(404).json({ error: 'This invite link is no longer valid' })
+
+    const already = await isParticipant(group.id, req.user.id)
+    if (!already) {
+      await addParticipant(group.id, req.user.id)
+      const participants = await getParticipants(group.id)
+      const io = getIo()
+      if (io) {
+        io.to(`user:${req.user.id}`).emit('reload-conversations')
+        participants.forEach((p) =>
+          io.to(`user:${p.id}`).emit('group-members-updated', { conversationId: group.id, participants })
+        )
+      }
+    }
+    res.json({ conversationId: group.id, alreadyMember: already })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Delete ───────────────────────────────────────────────────────────────────
+
+// Admin-only, and irreversible: the group and its whole message history go, for everyone.
+// Distinct from "Exit Group", which only removes the caller.
+export async function deleteGroup(req, res, next) {
+  try {
+    const conversationId = req.params.id
+    if (!(await requireGroupAdmin(conversationId, req.user.id))) {
+      return res.status(403).json({ error: 'Only admins can delete this group' })
+    }
+    const participants = await getParticipants(conversationId)
+    await deleteConversation(conversationId)
+
+    const io = getIo()
+    if (io) {
+      // Tell everyone before their client next asks for a conversation that no longer exists.
+      participants.forEach((p) => {
+        io.to(`user:${p.id}`).emit('group-deleted', { conversationId })
+        io.to(`user:${p.id}`).emit('reload-conversations')
+      })
     }
     res.json({ ok: true })
   } catch (err) {

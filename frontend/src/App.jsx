@@ -17,6 +17,7 @@ import TermsPage from './pages/TermsPage'
 import CookiePolicyPage from './pages/CookiePolicyPage'
 import KycPolicyPage from './pages/KycPolicyPage'
 import PublicProfilePage from './pages/PublicProfilePage'
+import JoinGroupPage from './pages/JoinGroupPage'
 import SocialConnectErrorPage from './pages/SocialConnectErrorPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import PaymentCancelPage from './pages/PaymentCancelPage'
@@ -115,6 +116,8 @@ export default function App() {
           <Route path="/cookies" element={<CookiePolicyPage />} />
           <Route path="/kyc-policy" element={<KycPolicyPage />} />
           <Route path="/u/:username" element={<PublicProfilePage />} />
+          {/* Public on purpose — an invite link is usually opened signed out. */}
+          <Route path="/join/:code" element={<JoinGroupPage />} />
           <Route path="/social-error" element={<SocialConnectErrorPage />} />
 
           {/* Payment popup pages */}

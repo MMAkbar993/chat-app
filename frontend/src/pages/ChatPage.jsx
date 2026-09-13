@@ -7,6 +7,8 @@ import { getOrCreateDirect } from '../api/conversations'
 import { markTourSeen } from '../api/users'
 import client from '../api/client'
 import { PENDING_DM_KEY } from '../utils/pendingDm'
+import { PENDING_JOIN_KEY } from '../utils/pendingJoin'
+import { joinGroupByInvite } from '../api/groups'
 import { playRingtone, stopRingtone } from '../utils/sounds'
 import Sidebar from '../components/chat/Sidebar'
 import ChatsView from '../components/chat/ChatsView'
@@ -79,6 +81,23 @@ export default function ChatPage() {
         setSection('chats')
       })
       .catch(() => {})
+  }, [openConversation])
+
+  // Same idea for a group invite link opened while signed out: JoinGroupPage stashes the code
+  // before sending them to log in, and it's redeemed here once they finally arrive.
+  useEffect(() => {
+    const code = localStorage.getItem(PENDING_JOIN_KEY)
+    if (!code) return
+    localStorage.removeItem(PENDING_JOIN_KEY)
+    joinGroupByInvite(code)
+      .then(({ conversationId }) => client.get(`/groups/${conversationId}`))
+      .then(({ data }) => {
+        openConversation(data.group)
+        setSection('groups')
+      })
+      .catch(() => {
+        // Revoked while they were signing up, most likely. They're in the app either way.
+      })
   }, [openConversation])
 
   // Mobile: only one panel (list vs. detail) is shown at a time, Telegram-style.
