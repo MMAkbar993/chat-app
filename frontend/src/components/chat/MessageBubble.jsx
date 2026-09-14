@@ -78,6 +78,33 @@ function isEmojiOnly(text) {
   return count > 0 && count <= 6
 }
 
+// A captioned image's bubble has no width of its own to anchor to — CSS shrink-to-fit sizes a
+// plain block container to its widest child's *preferred* width, and an unbroken caption
+// paragraph's preferred width (how wide it would render on one line) routinely exceeds a
+// moderately-sized image's actual rendered width. The container then ends up wider than the
+// image, leaving a gap of bubble colour beside it — the "right border" that kept coming back
+// no matter how the image/caption CSS was tuned, because the image was never what was
+// actually determining the container's size. Fixed properly here: once the image reports its
+// real pixel dimensions, this computes the exact width it will render at (mirroring the
+// max-w-380/max-h-320 box it's displayed in) and applies that as a hard, non-percentage width
+// on the block wrapping both the image and the caption — a block with an explicit width does
+// not get overridden wider by a child's preferred width, so the caption is forced to wrap
+// within it instead of setting the container's size itself.
+const MEDIA_BOX_MAX_W = 380
+const MEDIA_BOX_MAX_H = 320
+const MEDIA_BOX_MIN_W = 160
+function fitMediaBoxWidth(naturalWidth, naturalHeight) {
+  if (!naturalWidth || !naturalHeight) return null
+  let w = Math.min(naturalWidth, MEDIA_BOX_MAX_W)
+  let h = (w / naturalWidth) * naturalHeight
+  if (h > MEDIA_BOX_MAX_H) {
+    h = MEDIA_BOX_MAX_H
+    w = (h / naturalHeight) * naturalWidth
+  }
+  w = Math.max(w, Math.min(MEDIA_BOX_MIN_W, naturalWidth))
+  return Math.round(w)
+}
+
 export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch, isJumpTarget, onJumpToMessage, onTogglePin, canPin, isPinned }) {
   const { user } = useAuth()
   const { socket } = useSocket()
@@ -89,6 +116,10 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const [showForward, setShowForward] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [lightbox, setLightbox] = useState(null) // { url, type: 'image' | 'video' }
+  // Set once the media's real pixel dimensions are known (see fitMediaBoxWidth above) —
+  // pins the caption's wrapping width to the image instead of letting the caption's own
+  // text set the container's width.
+  const [mediaBoxWidth, setMediaBoxWidth] = useState(null)
   const [pickerDir, setPickerDir] = useState('up')
   const [menuDir, setMenuDir] = useState('down')
   const reactionBtnRef = useRef(null)
@@ -265,7 +296,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               )
               if (msg.message_type === 'image' && src)
                 return (
-                  <div>
+                  // A fixed pixel width once known (see fitMediaBoxWidth) — an explicit width
+                  // stops the caption's own text from forcing this block wider than the image.
+                  <div style={mediaWithCaption && mediaBoxWidth ? { width: mediaBoxWidth } : undefined}>
                     <div className="relative">
                       <button
                         type="button"
@@ -275,7 +308,14 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                       >
                         {/* No rounding on the image itself — it's always inside a bubble that
                             already clips to rounded-2xl, whether bare or captioned. */}
-                        <img src={src} alt="media" className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
+                        <img
+                          src={src}
+                          alt="media"
+                          onLoad={(e) => {
+                            if (mediaWithCaption) setMediaBoxWidth(fitMediaBoxWidth(e.target.naturalWidth, e.target.naturalHeight))
+                          }}
+                          className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`}
+                        />
                       </button>
                       {msg.uploading && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
@@ -290,7 +330,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                 return <VoiceMessage src={src} isMe={isMe} darkMode={darkMode} />
               if (msg.message_type === 'video' && src)
                 return (
-                  <div>
+                  <div style={mediaWithCaption && mediaBoxWidth ? { width: mediaBoxWidth } : undefined}>
                     <div className="relative">
                       <button
                         type="button"
@@ -298,7 +338,14 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         disabled={msg.uploading}
                         className={`relative block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-pointer'}`}
                       >
-                        <video src={src} preload="metadata" className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
+                        <video
+                          src={src}
+                          preload="metadata"
+                          onLoadedMetadata={(e) => {
+                            if (mediaWithCaption) setMediaBoxWidth(fitMediaBoxWidth(e.target.videoWidth, e.target.videoHeight))
+                          }}
+                          className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`}
+                        />
                         {!msg.uploading && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center">
