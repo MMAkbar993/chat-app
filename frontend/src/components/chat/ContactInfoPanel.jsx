@@ -89,15 +89,6 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const name = conversation.other_user_display_name || conversation.other_user_name || profile?.display_name || profile?.full_name || 'Account Deleted'
   const avatar = conversation.other_user_avatar || profile?.avatar_url
 
-  const SOCIAL_DEFS = [
-    { name: 'Facebook',  key: 'facebook_url',  color: 'text-blue-600',  svg: <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /> },
-    { name: 'Twitter',   key: 'twitter_url',   color: 'text-sky-500',   svg: <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /> },
-    { name: 'Instagram', key: 'instagram_url', color: 'text-pink-500',  svg: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></> },
-    { name: 'LinkedIn',  key: 'linkedin_url',  color: 'text-blue-700',  svg: <><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></> },
-    { name: 'YouTube',   key: 'youtube_url',   color: 'text-red-600',   svg: <><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z" /><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" /></> },
-  ]
-  const filteredSocials = profile ? SOCIAL_DEFS.filter(({ key }) => profile[key]) : []
-
   const panelBg = darkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-100 text-gray-900'
   const cardBg  = darkMode ? 'bg-gray-800' : 'bg-gray-50'
 
@@ -144,16 +135,18 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
           }
         </div>
 
-        {/* Action buttons */}
-        <div className={`grid grid-cols-4 gap-2 mb-5 p-3 rounded-xl ${cardBg}`}>
+        {/* Action buttons — a plain row of circular buttons, not a padded card stretched to
+            the panel's full (now much wider) width. The card wrapper was most of what read as
+            "too much space" once this became a full pane instead of a narrow sidebar. */}
+        <div className="flex items-center justify-center gap-8 mb-6">
           {[
             { label: 'Audio', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />, action: () => onCallStart?.('audio') },
             { label: 'Video', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />, action: () => onCallStart?.('video') },
             { label: 'Chat', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />, action: onClose },
             { label: 'Search', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />, action: () => { onSearch?.(); onClose() } },
           ].map(({ label, icon, action }) => (
-            <button key={label} onClick={action} className="flex flex-col items-center gap-1">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-sm`}>
+            <button key={label} onClick={action} className="flex flex-col items-center gap-1.5">
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}>
                 <svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icon}</svg>
               </div>
               <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{label}</span>
@@ -183,26 +176,8 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
           )}
         </div>
 
-        {/* Social Profiles — only shown when the user has at least one connected account */}
-        {filteredSocials.length > 0 && (
-          <div className={`rounded-xl p-3 mb-4 ${cardBg}`}>
-            <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Social Profiles</p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              {filteredSocials.map(({ name: sname, key, color, svg }) => (
-                <a
-                  key={sname}
-                  href={profile[key]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={sname}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${darkMode ? 'bg-gray-700' : 'bg-white'} shadow-sm ${color} hover:opacity-80 transition-opacity`}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>{svg}</svg>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Social profiles were dropped from here — they're already visible on the user's
+            own profile, so showing them again in this panel was redundant. */}
 
         {/* Shared media — one tab strip (Media / Files / Links) grouped by month, Telegram-style,
             instead of stacking every type open in the same column at once. */}
