@@ -246,11 +246,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
             }}
             className={`group relative flex items-center gap-3 rounded-xl text-sm transition-colors ${
               collapsed
-                ? `w-11 h-11 mx-auto justify-center px-0 border ${
-                    darkMode
-                      ? 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/25'
-                      : 'bg-amber-50 hover:bg-amber-100 border-amber-200'
-                  }`
+                ? `w-11 h-11 mx-auto justify-center px-0 ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`
                 : `w-full py-3 justify-start px-3 border ${
                     darkMode
                       ? 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/25'
@@ -258,12 +254,14 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
                   }`
             }`}
           >
-            {/* The gold now sits in a soft badge and in the label, on a light ground — so it
-                reads as a premium prompt rather than a saturated call-to-action bar. */}
+            {/* Collapsed: one solid gold badge filling the button, no separate bordered/tinted
+                background behind it — that outer ring was reading as a stray outline around
+                the star rather than the badge itself. Expanded keeps the soft card treatment,
+                where the badge is deliberately a smaller accent inside it. */}
             <span className={`shrink-0 flex items-center justify-center rounded-lg bg-linear-to-br from-amber-400 to-orange-500 shadow-sm ${
-              collapsed ? 'w-6 h-6' : 'w-8 h-8'
+              collapsed ? 'w-9 h-9' : 'w-8 h-8'
             }`}>
-              <svg className={`text-white drop-shadow-sm ${collapsed ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'}`} fill="currentColor" viewBox="0 0 24 24">
+              <svg className={`text-white drop-shadow-sm ${collapsed ? 'w-4.5 h-4.5' : 'w-4.5 h-4.5'}`} fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
               </svg>
             </span>

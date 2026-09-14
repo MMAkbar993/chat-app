@@ -6,7 +6,7 @@ const ROLE_ENTRIES = Object.entries(ROLE_LABELS).sort((a, b) => a[1].localeCompa
 
 const EMPTY = {
   title: '', body: '', image_url: '', link_url: '', link_text: 'Learn More',
-  target_roles: [], active: true, starts_at: '', ends_at: '', weight: 1,
+  target_roles: [], active: true, starts_at: '', ends_at: '', weight: 1, logo_border: true,
 }
 
 function fmtDate(d) {
@@ -142,6 +142,11 @@ function AdForm({ initial, onSaved, onCancel }) {
           Stored on our own server and served from our domain — ads never load creative from an
           advertiser's host. Square logos work best. Max 2MB.
         </p>
+        <label className="flex items-center gap-2.5 cursor-pointer mt-3">
+          <input type="checkbox" checked={form.logo_border} onChange={(e) => set('logo_border', e.target.checked)}
+                 className="w-4 h-4 accent-violet-600" />
+          <span className="text-sm text-gray-700">Show a border around the logo</span>
+        </label>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -315,7 +320,7 @@ export default function AdminAdsPage() {
                         {fmtDate(ad.starts_at)} → {fmtDate(ad.ends_at)}
                       </td>
                       <td className="px-6 py-3 text-right whitespace-nowrap">
-                        <button onClick={() => setEditing({ ...ad, body: ad.body || '', image_url: ad.image_url || '', target_roles: ad.target_roles || [] })}
+                        <button onClick={() => setEditing({ ...ad, body: ad.body || '', image_url: ad.image_url || '', target_roles: ad.target_roles || [], logo_border: ad.logo_border !== false })}
                                 className="text-xs font-semibold text-violet-600 hover:text-violet-800">
                           Edit
                         </button>

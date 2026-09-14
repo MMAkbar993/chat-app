@@ -115,8 +115,10 @@ export function SponsoredSidebarCard({ darkMode, collapsed, onUpgrade }) {
         rel={LINK_REL}
         onClick={click}
         title={`${ad.title} (Sponsored)`}
-        className={`block mx-auto w-11 h-11 rounded-xl overflow-hidden border transition-colors ${
-          darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-gray-300'
+        className={`block mx-auto w-11 h-11 rounded-xl overflow-hidden transition-colors ${
+          ad.logo_border !== false
+            ? (darkMode ? 'border border-gray-700 hover:border-gray-600' : 'border border-gray-200 hover:border-gray-300')
+            : 'hover:opacity-85'
         }`}
       >
         {ad.image_url
@@ -156,8 +158,8 @@ export function SponsoredSidebarCard({ darkMode, collapsed, onUpgrade }) {
           <img
             src={ad.image_url}
             alt=""
-            className={`w-12 h-12 rounded-xl object-cover shrink-0 border ${
-              darkMode ? 'border-gray-700' : 'border-white'
+            className={`w-12 h-12 rounded-xl object-cover shrink-0 ${
+              ad.logo_border !== false ? (darkMode ? 'border border-gray-700' : 'border border-white') : ''
             }`}
           />
         )}

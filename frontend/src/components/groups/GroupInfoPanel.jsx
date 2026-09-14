@@ -426,7 +426,11 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                   onClick={handleToggleAdminsOnly}
                   className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm border-t transition-colors ${dm ? 'border-gray-700 text-gray-200 hover:bg-gray-700' : 'border-gray-100 text-gray-700 hover:bg-gray-100'}`}
                 >
-                  <span className="text-left">
+                  {/* Without flex-1 + min-w-0, this label's own text (long enough, unwrapped,
+                      to be wider than the row) was setting the row's flex-basis instead of
+                      wrapping — the shrink-0 toggle beside it got pushed out past the panel's
+                      right edge rather than staying put while the label wrapped around it. */}
+                  <span className="text-left flex-1 min-w-0">
                     Only Admins Can Send Messages
                     <span className={`block text-xs mt-0.5 ${sub}`}>
                       Turn this on for announcements — everyone can read, only admins can post.

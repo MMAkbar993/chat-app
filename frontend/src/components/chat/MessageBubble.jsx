@@ -127,15 +127,11 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
 
   const reactions = msg.reactions || []
 
-  if (msg.is_deleted) {
-    return (
-      <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-1`}>
-        <span className={`text-xs italic px-3 py-1 rounded-xl ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          Message deleted
-        </span>
-      </div>
-    )
-  }
+  // A deleted-for-everyone message renders nothing at all rather than a "Message deleted"
+  // placeholder — the row just isn't there any more, for both sides, the moment it's gone.
+  // (This is separate from "delete for me", which already worked this way — it filters the
+  // message out of the list server-side rather than marking it is_deleted.)
+  if (msg.is_deleted) return null
 
   function handleCopy() {
     navigator.clipboard.writeText(msg.content || '')

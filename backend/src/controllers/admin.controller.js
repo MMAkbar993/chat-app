@@ -480,6 +480,7 @@ function adPayload(body) {
     starts_at: body.starts_at || null,
     ends_at: body.ends_at || null,
     weight: Number.isFinite(weight) && weight > 0 ? weight : 1,
+    logo_border: body.logo_border !== false,
   }
 }
 

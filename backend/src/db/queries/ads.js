@@ -7,7 +7,7 @@ export const DISMISS_DAYS = 7
 // as often as a weight-1 one without needing a separate rotation cursor.
 export async function pickAdForUser(userId, role) {
   const result = await query(
-    `SELECT id, title, body, image_url, link_url, link_text
+    `SELECT id, title, body, image_url, link_url, link_text, logo_border
        FROM ads a
       WHERE a.active = true
         AND (a.starts_at IS NULL OR a.starts_at <= NOW())
@@ -68,11 +68,11 @@ export async function listAds() {
 
 export async function createAd(data) {
   const result = await query(
-    `INSERT INTO ads (title, body, image_url, link_url, link_text, target_roles, active, starts_at, ends_at, weight)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO ads (title, body, image_url, link_url, link_text, target_roles, active, starts_at, ends_at, weight, logo_border)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
     [data.title, data.body, data.image_url, data.link_url, data.link_text,
-     data.target_roles, data.active, data.starts_at, data.ends_at, data.weight]
+     data.target_roles, data.active, data.starts_at, data.ends_at, data.weight, data.logo_border]
   )
   return result.rows[0]
 }
@@ -81,11 +81,11 @@ export async function updateAd(id, data) {
   const result = await query(
     `UPDATE ads SET title = $2, body = $3, image_url = $4, link_url = $5, link_text = $6,
             target_roles = $7, active = $8, starts_at = $9, ends_at = $10, weight = $11,
-            updated_at = NOW()
+            logo_border = $12, updated_at = NOW()
       WHERE id = $1
       RETURNING *`,
     [id, data.title, data.body, data.image_url, data.link_url, data.link_text,
-     data.target_roles, data.active, data.starts_at, data.ends_at, data.weight]
+     data.target_roles, data.active, data.starts_at, data.ends_at, data.weight, data.logo_border]
   )
   return result.rows[0]
 }
