@@ -31,6 +31,10 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   const remainingSecondsRef = useRef(null) // null = unlimited (Pro) or not yet loaded
 
   const canScreenShare = isProUser(user)
+  // No mobile browser actually implements getDisplayMedia in a page context — the button was
+  // showing everywhere and just failing silently on phones. Feature-detect rather than sniff
+  // the UA, so a platform that does add support one day picks it up automatically.
+  const screenShareSupported = typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getDisplayMedia)
 
   const callId = call.id || call.callId
   const targetUserId = isCaller ? call.calleeId || call.callee_id : call.callerId || call.caller_id
@@ -235,17 +239,20 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
         </div>
       ) : (
       <div className="absolute bottom-0 left-0 right-0 pt-20 pb-12 bg-linear-to-t from-black/80 to-transparent">
-        <div className="flex items-end justify-center gap-8">
+        {/* Responsive gap/size: at 5 buttons (video + screen share) this row is the widest
+            thing on the screen, and the fixed gap-8/w-14 combination ran off the edge of a
+            phone viewport — the reported "Minimize" getting clipped. */}
+        <div className="flex items-end justify-center gap-4 sm:gap-8 px-2">
 
           {/* Mute */}
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={toggleMute}
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors ${
                 muted ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
               }`}
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {muted ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
@@ -262,9 +269,9 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={() => endCall(true)}
-              className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors shadow-xl"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors shadow-xl"
             >
-              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
               </svg>
@@ -277,11 +284,11 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={toggleVideo}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors ${
                   videoOff ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
                 }`}
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
@@ -290,17 +297,18 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
             </div>
           )}
 
-          {/* Screen share (video calls only) */}
-          {isVideo && (
+          {/* Screen share (video calls only, and only where the browser can actually do it —
+              phones get no button rather than one that fails silently when tapped) */}
+          {isVideo && screenShareSupported && (
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={handleScreenShare}
                 title={canScreenShare ? undefined : 'Upgrade to Pro to share your screen'}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors relative ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors relative ${
                   sharingScreen ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
                 }`}
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
@@ -319,11 +327,11 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
                 onClick={toggleSpeaker}
                 disabled={!speakerSupported}
                 title={speakerSupported ? undefined : "Not supported by this browser — audio output can't be switched from the page."}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   speakerOn ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
                 }`}
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                 </svg>
@@ -337,9 +345,9 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={onMinimize}
-              className="w-14 h-14 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
               </svg>
             </button>
