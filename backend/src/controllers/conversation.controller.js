@@ -79,7 +79,26 @@ export async function getConversation(req, res, next) {
     const ok = await isParticipant(conv.id, req.user.id)
     if (!ok) return res.status(403).json({ error: 'Not a participant' })
     const participants = await getParticipants(conv.id)
-    res.json({ conversation: { ...conv, participants } })
+    // The list endpoint (getConversationsForUser) flattens a direct chat's other participant
+    // onto the row as other_user_* plus is_contact, which the header, avatar and "Add Contact"
+    // banner all read directly. This single-conversation fetch had returned none of that —
+    // fine for a group (name comes from the row itself) but for a direct chat it left the
+    // header with nothing to show except its "Account Deleted" fallback, for someone very
+    // much not deleted.
+    let extra = {}
+    if (conv.type === 'direct') {
+      const other = participants.find((p) => p.id !== req.user.id)
+      if (other) {
+        extra = {
+          other_user_id: other.id,
+          other_user_name: other.full_name,
+          other_user_display_name: other.display_name,
+          other_user_avatar: other.avatar_url,
+          is_contact: await isContact(req.user.id, other.id),
+        }
+      }
+    }
+    res.json({ conversation: { ...conv, ...extra, participants } })
   } catch (err) {
     next(err)
   }

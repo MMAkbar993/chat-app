@@ -112,9 +112,10 @@ export default function ChatPage() {
     client.get(`/conversations/${id}`)
       .then(({ data }) => {
         const conv = data.conversation
-        // The list endpoint supplies my_role, but a direct fetch doesn't — derive it from the
-        // participants so admin-only affordances (pinning, posting in announcement groups)
-        // don't silently disappear for an admin arriving through a link.
+        // The list endpoint supplies my_role, but a single-conversation fetch doesn't — derive
+        // it from the participants so admin-only affordances (pinning, posting in
+        // announcement groups) don't silently disappear for an admin arriving through a link.
+        // (other_user_* / is_contact for direct chats now come from the API response itself.)
         const myRole = conv.participants?.find((p) => p.id === user?.id)?.role
         openConversation({ ...conv, my_role: myRole })
         setSection(conv.type === 'group' ? 'groups' : 'chats')

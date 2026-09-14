@@ -11,35 +11,8 @@ import { getContacts, searchUsers } from '../../api/contacts'
 import { getOrCreateDirect } from '../../api/conversations'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import UserProfileModal from '../ui/UserProfileModal'
+import MediaGallery from '../chat/MediaGallery'
 import client from '../../api/client'
-
-function Accordion({ title, count, darkMode, children }) {
-  const [open, setOpen] = useState(false)
-  const dm = darkMode
-  return (
-    <div className={`border-t ${dm ? 'border-gray-700' : 'border-gray-100'}`}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between px-3 py-2.5 text-sm transition-colors ${
-          dm ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
-        }`}
-      >
-        <span className="flex items-center gap-2">
-          {title}
-          {count !== undefined && (
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${dm ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'}`}>
-              {count}
-            </span>
-          )}
-        </span>
-        <svg className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-      {open && <div className="pb-2">{children}</div>}
-    </div>
-  )
-}
 
 export default function GroupInfoPanel({ conversation, darkMode, onClose, onCallStart, onSearch }) {
   const { user } = useAuth()
@@ -66,6 +39,8 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const [showEncryption, setShowEncryption] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState(null)
+  const [lightboxVideoUrl, setLightboxVideoUrl] = useState(null)
   const avatarInputRef = useRef(null)
 
   useEffect(() => {
@@ -96,9 +71,10 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const photos = messages.filter((m) => m.message_type === 'image' && m.media_url && !m.is_deleted)
   const videos = messages.filter((m) => m.message_type === 'video' && m.media_url && !m.is_deleted)
   const docs   = messages.filter((m) => m.message_type === 'file'  && m.media_url && !m.is_deleted)
-  const links  = messages.filter(
-    (m) => !m.is_deleted && m.content && /https?:\/\//i.test(m.content)
-  )
+  const links  = messages
+    .filter((m) => !m.is_deleted && m.message_type === 'text' && /https?:\/\//i.test(m.content || ''))
+    .map((m) => ({ id: m.id, created_at: m.created_at, url: m.content.match(/https?:\/\/\S+/i)?.[0] }))
+    .filter((l) => l.url)
 
   const filteredParticipants = participants.filter(
     (p) => !memberSearch || (p.display_name || p.full_name || '').toLowerCase().includes(memberSearch.toLowerCase())
@@ -376,51 +352,20 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
               )}
             </div>
 
-            {/* Media Details */}
+            {/* Shared media — one tab strip (Media / Files / Links) grouped by month,
+                Telegram-style, instead of stacking every type open in the same column at
+                once. Groups tend to accumulate far more shared media than a DM, so this is
+                where the old flat accordion list scrolled the longest. */}
             <div className={`mx-4 mb-4 rounded-xl overflow-hidden ${card}`}>
-              <p className={`text-xs font-semibold uppercase tracking-wide px-3 pt-3 mb-1 ${sub}`}>Media Details</p>
-              <Accordion title="Photos" count={photos.length} darkMode={dm}>
-                {photos.length > 0
-                  ? <div className="grid grid-cols-3 gap-1 px-2">{photos.map((m) => (
-                      <img key={m.id} src={m.media_url} alt="" className="w-full h-16 object-cover rounded" />
-                    ))}</div>
-                  : <p className={`px-3 text-xs ${sub}`}>No photos found.</p>}
-              </Accordion>
-              <Accordion title="Videos" count={videos.length} darkMode={dm}>
-                {videos.length > 0
-                  ? <div className="grid grid-cols-3 gap-1 px-2">{videos.map((m) => (
-                      <video key={m.id} src={m.media_url} className="w-full h-16 object-cover rounded" />
-                    ))}</div>
-                  : <p className={`px-3 text-xs ${sub}`}>No videos found.</p>}
-              </Accordion>
-              <Accordion title="Links" count={links.length} darkMode={dm}>
-                {links.length > 0
-                  ? <div className="px-3 space-y-1">
-                      {links.slice(0, 10).map((m) => {
-                        const url = m.content.match(/https?:\/\/[^\s]+/i)?.[0]
-                        return url ? (
-                          <a key={m.id} href={url} target="_blank" rel="noopener noreferrer"
-                            className="block text-xs text-violet-500 hover:underline truncate">{url}</a>
-                        ) : null
-                      })}
-                    </div>
-                  : <p className={`px-3 text-xs ${sub}`}>No links found.</p>}
-              </Accordion>
-              <Accordion title="Documents" count={docs.length} darkMode={dm}>
-                {docs.length > 0
-                  ? <div className="px-3 space-y-1">
-                      {docs.map((m) => (
-                        <a key={m.id} href={m.media_url} target="_blank" rel="noopener noreferrer"
-                          className={`flex items-center gap-2 text-xs underline ${dm ? 'text-violet-400' : 'text-violet-600'}`}>
-                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          {m.media_url.split('/').pop()}
-                        </a>
-                      ))}
-                    </div>
-                  : <p className={`px-3 text-xs ${sub}`}>No documents found.</p>}
-              </Accordion>
+              <MediaGallery
+                photos={photos}
+                videos={videos}
+                docs={docs}
+                links={links}
+                darkMode={dm}
+                onOpenImage={setLightboxUrl}
+                onOpenVideo={setLightboxVideoUrl}
+              />
             </div>
 
             {/* Encryption */}
@@ -780,6 +725,30 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
         onCancel={() => setConfirm(null)}
         darkMode={dm}
       />
+
+      {/* Photo lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxUrl(null)}>
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img src={lightboxUrl} alt="" className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
+      {/* Video lightbox */}
+      {lightboxVideoUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setLightboxVideoUrl(null)}>
+          <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxVideoUrl(null)}>
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <video src={lightboxVideoUrl} controls autoPlay className="max-w-[90vw] max-h-[90vh] rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
 
       {selectedParticipant && (
         <UserProfileModal

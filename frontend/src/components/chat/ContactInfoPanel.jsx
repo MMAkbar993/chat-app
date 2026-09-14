@@ -3,6 +3,7 @@ import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { getUserById, blockUser, unblockUser, reportUser } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import MediaGallery from './MediaGallery'
 
 function Section({ title, children, darkMode }) {
   return (
@@ -28,7 +29,6 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const { showToast } = useToast()
   const [profile, setProfile] = useState(null)
   const [localBlocked, setLocalBlocked] = useState(false)
-  const [mediaTab, setMediaTab] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [lightboxUrl, setLightboxUrl] = useState(null)
   const [lightboxVideoUrl, setLightboxVideoUrl] = useState(null)
@@ -54,6 +54,10 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const photos = messages.filter((m) => m.message_type === 'image' && m.media_url && !m.is_deleted)
   const videos = messages.filter((m) => m.message_type === 'video' && m.media_url && !m.is_deleted)
   const docs   = messages.filter((m) => m.message_type === 'file'  && m.media_url && !m.is_deleted)
+  const links  = messages
+    .filter((m) => !m.is_deleted && m.message_type === 'text' && /https?:\/\//i.test(m.content || ''))
+    .map((m) => ({ id: m.id, created_at: m.created_at, url: m.content.match(/https?:\/\/\S+/i)?.[0] }))
+    .filter((l) => l.url)
 
   async function handleBlock() {
     if (!otherUserId) return
@@ -187,63 +191,18 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
           </div>
         )}
 
-        {/* Media Details */}
+        {/* Shared media — one tab strip (Media / Files / Links) grouped by month, Telegram-style,
+            instead of stacking every type open in the same column at once. */}
         <div className={`rounded-xl mb-4 overflow-hidden ${cardBg}`}>
-          <p className={`text-xs font-semibold uppercase tracking-wide px-3 pt-3 mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Media Details</p>
-          {[
-            { key: 'photos',    label: 'Photos',    count: photos.length },
-            { key: 'videos',    label: 'Videos',    count: videos.length },
-            { key: 'links',     label: 'Links',     count: 0 },
-            { key: 'documents', label: 'Documents', count: docs.length },
-          ].map(({ key, label, count }) => (
-            <div key={key}>
-              <button
-                onClick={() => setMediaTab(mediaTab === key ? null : key)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 text-sm border-t transition-colors ${
-                  darkMode ? 'border-gray-700 text-gray-200 hover:bg-gray-700' : 'border-gray-100 text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span>{label}</span>
-                <div className="flex items-center gap-1">
-                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{count}</span>
-                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${mediaTab === key ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </button>
-              {mediaTab === key && key === 'photos' && photos.length > 0 && (
-                <div className="grid grid-cols-3 gap-1 p-2">
-                  {photos.map((m) => (
-                    <button key={m.id} onClick={() => setLightboxUrl(m.media_url)} className="w-full h-16 overflow-hidden rounded focus:outline-none">
-                      <img src={m.media_url} alt="" className="w-full h-full object-cover hover:opacity-80 transition-opacity" />
-                    </button>
-                  ))}
-                </div>
-              )}
-              {mediaTab === key && key === 'videos' && videos.length > 0 && (
-                <div className="grid grid-cols-3 gap-1 p-2">
-                  {videos.map((m) => (
-                    <button key={m.id} onClick={() => setLightboxVideoUrl(m.media_url)} className="w-full h-16 overflow-hidden rounded focus:outline-none">
-                      <video src={m.media_url} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-              {mediaTab === key && key === 'documents' && docs.length > 0 && (
-                <div className="px-3 pb-2 space-y-1">
-                  {docs.map((m) => (
-                    <a key={m.id} href={m.media_url} target="_blank" rel="noopener noreferrer"
-                      className={`flex items-center gap-2 text-xs underline ${darkMode ? 'text-violet-400' : 'text-violet-600'}`}>
-                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {m.file_name || m.media_url.split('/').pop()}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          <MediaGallery
+            photos={photos}
+            videos={videos}
+            docs={docs}
+            links={links}
+            darkMode={darkMode}
+            onOpenImage={setLightboxUrl}
+            onOpenVideo={setLightboxVideoUrl}
+          />
         </div>
 
         {/* Others */}
