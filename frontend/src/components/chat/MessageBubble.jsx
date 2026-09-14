@@ -149,11 +149,15 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const previewUrl = msg.message_type === 'text' && !emojiOnly ? firstUrl(msg.content) : null
   // A caption-less photo/video gets no padded, coloured bubble around it — the image already
   // fills the space, so wrapping it in the same card used for text just added a visible frame.
-  // Restricted to the simple case (no caption, no reply-quote) so the caption/quote layouts
-  // below keep the background they need to stay readable over an image.
   const mediaSrc = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
   const hasCaption = Boolean(msg.media_url && msg.message_type !== 'text' && msg.content)
-  const isBareMedia = ['image', 'video'].includes(msg.message_type) && mediaSrc && !hasCaption && !showReply
+  const isMediaType = ['image', 'video'].includes(msg.message_type) && Boolean(mediaSrc)
+  const isBareMedia = isMediaType && !hasCaption && !showReply
+  // A captioned (or replied-to) photo/video still shouldn't show the bubble's own padding
+  // around the image — Telegram runs the image edge-to-edge and only insets the caption/quote
+  // text below it. Previously this case fell through to the plain padded-card styling, which
+  // is what put a visible strip of bubble colour around every image that had a caption.
+  const mediaWithCaption = isMediaType && !isBareMedia
 
   return (
     <div
@@ -191,6 +195,13 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
           <div className={
             emojiOnly ? 'text-sm'
             : isBareMedia ? `overflow-hidden rounded-2xl ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`
+            : mediaWithCaption ? `overflow-hidden rounded-2xl text-sm ${
+                isMe
+                  ? 'bg-violet-600 text-white rounded-br-sm'
+                  : darkMode
+                  ? 'bg-gray-700 text-white rounded-bl-sm'
+                  : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
+              }`
             : `px-4 py-2 rounded-2xl text-sm ${
                 isMe
                   ? 'bg-violet-600 text-white rounded-br-sm'
@@ -202,46 +213,55 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
             {showReply && (
               // A quote is a pointer to another message, so the whole block — thumbnail
               // included — jumps to it. Rendered as a button so keyboard and screen-reader
-              // users get the same affordance the pointer does.
-              <button
-                type="button"
-                onClick={() => onJumpToMessage?.(msg.reply_to_message_id)}
-                aria-label="Go to the quoted message"
-                className={`w-full text-left mb-2 px-2 py-1.5 rounded-lg border-l-4 flex items-center gap-2 cursor-pointer transition-colors ${
-                  isMe
-                    ? 'border-violet-300 bg-white/15 hover:bg-white/25'
-                    : darkMode
-                    ? 'border-violet-400 bg-black/20 hover:bg-black/30'
-                    : 'border-violet-400 bg-violet-50 hover:bg-violet-100'
-                }`}>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-xs font-semibold truncate ${
-                    isMe ? 'text-violet-200' : 'text-violet-600'
+              // users get the same affordance the pointer does. Wrapped in its own padding
+              // when the bubble itself has none (a captioned/replied image needs to run
+              // edge-to-edge, so the inset has to live here instead of on the bubble).
+              <div className={mediaWithCaption ? 'px-1.5 pt-1.5' : ''}>
+                <button
+                  type="button"
+                  onClick={() => onJumpToMessage?.(msg.reply_to_message_id)}
+                  aria-label="Go to the quoted message"
+                  className={`w-full text-left mb-2 px-2 py-1.5 rounded-lg border-l-4 flex items-center gap-2 cursor-pointer transition-colors ${
+                    isMe
+                      ? 'border-violet-300 bg-white/15 hover:bg-white/25'
+                      : darkMode
+                      ? 'border-violet-400 bg-black/20 hover:bg-black/30'
+                      : 'border-violet-400 bg-violet-50 hover:bg-violet-100'
                   }`}>
-                    {msg.reply_sender_name || 'Unknown'}
-                  </p>
-                  <p className={`text-xs truncate ${isMe ? 'text-white/80' : darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {getReplyPreviewText({
-                      content: msg.reply_content,
-                      messageType: msg.reply_message_type,
-                      mediaUrl: msg.reply_media_url,
-                    })}
-                  </p>
-                </div>
-                {replyImageUrl && (
-                  <img
-                    src={replyImageUrl}
-                    alt=""
-                    className="w-10 h-10 rounded object-cover shrink-0"
-                  />
-                )}
-              </button>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-semibold truncate ${
+                      isMe ? 'text-violet-200' : 'text-violet-600'
+                    }`}>
+                      {msg.reply_sender_name || 'Unknown'}
+                    </p>
+                    <p className={`text-xs truncate ${isMe ? 'text-white/80' : darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {getReplyPreviewText({
+                        content: msg.reply_content,
+                        messageType: msg.reply_message_type,
+                        mediaUrl: msg.reply_media_url,
+                      })}
+                    </p>
+                  </div>
+                  {replyImageUrl && (
+                    <img
+                      src={replyImageUrl}
+                      alt=""
+                      className="w-10 h-10 rounded object-cover shrink-0"
+                    />
+                  )}
+                </button>
+              </div>
             )}
             {(() => {
               const src = msg.media_url || (msg.message_type !== 'text' ? msg.content : null)
               const caption = msg.media_url && msg.message_type !== 'text' ? msg.content : null
+              // The bubble carries no padding for a captioned image/video (it needs to be
+              // edge-to-edge, Telegram-style) — so the caption insets itself here instead of
+              // inheriting it from the bubble the way a file attachment's caption still does.
               const captionEl = caption && (
-                <p className="whitespace-pre-wrap wrap-break-word mt-1.5">{renderMessageText(caption, searchQuery)}</p>
+                <p className={`whitespace-pre-wrap wrap-break-word ${mediaWithCaption ? 'px-3 pb-2 pt-1.5' : 'mt-1.5'}`}>
+                  {renderMessageText(caption, searchQuery)}
+                </p>
               )
               if (msg.message_type === 'image' && src)
                 return (
@@ -253,7 +273,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         disabled={msg.uploading}
                         className={`block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-zoom-in'}`}
                       >
-                        <img src={src} alt="media" className={`block max-w-full max-h-80 ${isBareMedia ? '' : 'rounded-lg'} ${msg.uploading ? 'opacity-60' : ''}`} />
+                        {/* No rounding on the image itself — it's always inside a bubble that
+                            already clips to rounded-2xl, whether bare or captioned. */}
+                        <img src={src} alt="media" className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
                       </button>
                       {msg.uploading && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
@@ -276,7 +298,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         disabled={msg.uploading}
                         className={`relative block w-full text-left ${msg.uploading ? 'cursor-default' : 'cursor-pointer'}`}
                       >
-                        <video src={src} preload="metadata" className={`block max-w-full max-h-80 ${isBareMedia ? '' : 'rounded-lg'} ${msg.uploading ? 'opacity-60' : ''}`} />
+                        <video src={src} preload="metadata" className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`} />
                         {!msg.uploading && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center">
