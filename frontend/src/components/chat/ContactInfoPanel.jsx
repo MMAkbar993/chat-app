@@ -102,7 +102,16 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const cardBg  = darkMode ? 'bg-gray-800' : 'bg-gray-50'
 
   return (
-    <div className={`fixed inset-0 z-40 md:static md:z-auto md:w-72 border-l flex flex-col h-full overflow-y-auto ${panelBg}`}>
+    // A docked sidebar squeezed the whole chat narrower to make room for a fixed 288px column
+    // — cramped by construction, no matter how the content inside it was organized. This is a
+    // popup instead: it floats over the chat rather than resizing it, and gets real width on
+    // desktop. Below the md breakpoint it's still full-screen, matching how it already behaved
+    // on mobile (there was no room to float a card over a phone-width chat anyway).
+    <div className="fixed inset-0 z-40 flex items-center justify-center md:p-4 bg-black/40" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full h-full md:h-auto md:max-h-[85vh] md:w-100 md:rounded-2xl border flex flex-col overflow-y-auto shadow-2xl ${panelBg}`}
+      >
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} sticky top-0 z-10 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <span className="font-semibold text-sm">Contact Info</span>
@@ -358,6 +367,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
         onCancel={() => setConfirm(null)}
         darkMode={darkMode}
       />
+      </div>
     </div>
   )
 }
