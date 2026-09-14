@@ -263,6 +263,11 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* Now that this fills the whole chat pane rather than a narrow sidebar, the cards'
+            own 16px insets read as stuck to the edges on anything wider. Centers the whole
+            column with a real cap, matching how Settings gives its content room on wide
+            screens instead of stretching it edge to edge. */}
+        <div className="max-w-xl w-full mx-auto py-4">
         {loading ? (
           <div className="flex justify-center py-10">
             <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
@@ -628,6 +633,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
             </div>
           </>
         )}
+        </div>
       </div>
 
       {/* Add Members modal */}

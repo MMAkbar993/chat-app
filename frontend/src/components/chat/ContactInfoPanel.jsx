@@ -122,7 +122,11 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
         <span className="font-semibold text-sm">Contact Info</span>
       </div>
 
-      <div className="flex-1 px-4 py-4">
+      {/* Now that this fills the whole chat pane rather than a narrow sidebar, a flat 16px
+          inset read as content stuck to the edges. Matches Settings' own spacing: generous
+          side padding plus a centered max-width column, so wide screens get real gutters
+          instead of a profile card stretched edge to edge. */}
+      <div className="flex-1 px-6 py-6 max-w-xl w-full mx-auto">
         {/* Avatar + name */}
         <div className="flex flex-col items-center mb-5">
           <div className="relative w-20 h-20 mb-2">
