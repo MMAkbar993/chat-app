@@ -102,24 +102,24 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
   const cardBg  = darkMode ? 'bg-gray-800' : 'bg-gray-50'
 
   return (
-    // A docked sidebar squeezed the whole chat narrower to make room for a fixed 288px column
-    // — cramped by construction, no matter how the content inside it was organized. This is a
-    // popup instead: it floats over the chat rather than resizing it, and gets real width on
-    // desktop. Below the md breakpoint it's still full-screen, matching how it already behaved
-    // on mobile (there was no room to float a card over a phone-width chat anyway).
-    <div className="fixed inset-0 z-40 flex items-center justify-center md:p-4 bg-black/40" onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`w-full h-full md:h-auto md:max-h-[85vh] md:w-100 md:rounded-2xl border flex flex-col overflow-y-auto shadow-2xl ${panelBg}`}
-      >
+    // Neither a squeezed-in sidebar column nor a popup floating over the chat — both still
+    // read as "the thread plus a box bolted on." This replaces the thread entirely, the same
+    // way Settings swaps its list for a detail pane: the chat list on the left stays put, and
+    // this fills the exact space the message thread just occupied. A back arrow (not a close
+    // X) is what gets you back to it, since there's no thread visible behind this to imply
+    // "close" — matching how Telegram handles the same view.
+    <div className={`flex-1 min-w-0 flex flex-col h-full overflow-y-auto ${panelBg}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} sticky top-0 z-10 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
-        <span className="font-semibold text-sm">Contact Info</span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div className={`flex items-center gap-3 px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} sticky top-0 z-10 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <button
+          onClick={onClose}
+          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
+        <span className="font-semibold text-sm">Contact Info</span>
       </div>
 
       <div className="flex-1 px-4 py-4">
@@ -367,7 +367,6 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
         onCancel={() => setConfirm(null)}
         darkMode={darkMode}
       />
-      </div>
     </div>
   )
 }

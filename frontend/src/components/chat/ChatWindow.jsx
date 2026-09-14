@@ -474,7 +474,9 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
   return (
     <div className="flex-1 flex h-full overflow-hidden">
-      {/* Main chat area */}
+      {/* Main chat area — swapped out for the info panel below rather than shown alongside
+          it, the same way Settings replaces its detail pane rather than adding a column. */}
+      {!showContactInfo && (
       <div
         className={`relative flex-1 flex flex-col h-full min-w-0 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
         onDragEnter={handleDragEnter}
@@ -855,6 +857,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           />
         )}
       </div>
+      )}
 
       {/* Contact / Group Info Panel */}
       {showContactInfo && !isGroup && (

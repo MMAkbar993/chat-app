@@ -244,15 +244,22 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
   const creatorName = groupData?.created_by_display_name || groupData?.created_by_name
 
   return (
-    <div className={`fixed inset-0 z-40 md:static md:z-auto md:w-72 border-l flex flex-col h-full ${bg}`}>
+    // Fills the exact space the message thread occupied, the same way Settings swaps its list
+    // for a detail pane — not a squeezed-in sidebar column, not a popup floating over the
+    // chat. A back arrow gets you to the thread, since there's nothing visible behind this to
+    // imply "close".
+    <div className={`flex-1 min-w-0 flex flex-col h-full ${bg}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 border-b ${divider} sticky top-0 z-10 ${dm ? 'bg-gray-900' : 'bg-white'}`}>
-        <span className={`font-semibold text-sm ${txt}`}>Group Info</span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div className={`flex items-center gap-3 px-4 py-3 border-b ${divider} sticky top-0 z-10 ${dm ? 'bg-gray-900' : 'bg-white'}`}>
+        <button
+          onClick={onClose}
+          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${dm ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
+        <span className={`font-semibold text-sm ${txt}`}>Group Info</span>
       </div>
 
       <div className="flex-1 overflow-y-auto">
