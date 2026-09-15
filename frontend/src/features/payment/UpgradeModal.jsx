@@ -5,18 +5,26 @@ import { useAuth } from '../../context/AuthContext'
 import { isProUser } from '../../utils/plan'
 
 const TIERS = [
-  { key: 'free', label: 'Free', accent: 'slate' },
-  { key: 'pro', label: 'Pro', accent: 'violet' },
+  { key: 'free', label: 'Free' },
+  { key: 'pro', label: 'Pro' },
 ]
-
-const ACCENT = {
-  slate:  { bg: 'bg-slate-500',  tabActive: 'bg-slate-600 text-white',  hero: 'from-slate-500 to-slate-700' },
-  violet: { bg: 'bg-violet-600', tabActive: 'bg-violet-600 text-white', hero: 'from-violet-500 to-indigo-600' },
-}
 
 const PRICE = {
   pro: { monthly: '€6.99', yearly: '€70.00' },
 }
+
+// A colourful icon per row — Telegram's own Premium screen never repeats one flat colour down
+// the whole list, and that variety is most of what separates "premium" from "a plain settings
+// page." Cycled by index rather than hand-assigned, so adding a feature later doesn't require
+// picking a colour for it.
+const ICON_COLORS = [
+  'from-sky-500 to-blue-600',
+  'from-pink-500 to-rose-500',
+  'from-amber-500 to-orange-500',
+  'from-emerald-500 to-teal-500',
+  'from-violet-500 to-purple-600',
+  'from-fuchsia-500 to-pink-600',
+]
 
 const FEATURES = {
   free: [
@@ -47,12 +55,23 @@ const FEATURES = {
   ],
 }
 
+// How much cheaper the annual price is per month, as a whole-percentage badge next to it —
+// the kind of "you're saving X%" callout Telegram and most subscription screens lead with,
+// computed from the actual prices rather than a hand-typed number that can drift out of sync.
+function yearlySavingsPct(monthly, yearly) {
+  const m = Number.parseFloat(monthly.replace(/[^0-9.]/g, ''))
+  const y = Number.parseFloat(yearly.replace(/[^0-9.]/g, ''))
+  if (!m || !y) return null
+  const pct = Math.round((1 - y / (m * 12)) * 100)
+  return pct > 0 ? pct : null
+}
+
 export default function UpgradeModal({ isOpen, onClose }) {
   const { user } = useAuth()
   const [tab, setTab] = useState('pro')
   const [showPayment, setShowPayment] = useState(false)
-  const accent = ACCENT[TIERS.find((t) => t.key === tab).accent]
   const alreadyOnThisTab = tab === 'free' ? !isProUser(user) : isProUser(user)
+  const savingsPct = yearlySavingsPct(PRICE.pro.monthly, PRICE.pro.yearly)
 
   function handleClose() {
     setTab('pro')
@@ -71,37 +90,50 @@ export default function UpgradeModal({ isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md" scroll>
-      {/* Hero — swap this block for a video/animation later */}
-      <div className={`flex flex-col items-center pt-9 pb-6 px-6 rounded-t-2xl bg-gradient-to-br ${accent.hero}`}>
-        <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center mb-3 shadow-lg">
-          <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+      {/* Hero — a true multi-stop diagonal gradient plus a soft glow behind the badge, rather
+          than a flat two-colour gradient. This is most of what read as "cartoonish" before:
+          one saturated colour band with a plain icon on it, versus something with actual
+          depth to it. Swap for a video/animation later if wanted. */}
+      <div className="relative flex flex-col items-center pt-10 pb-7 px-6 rounded-t-2xl overflow-hidden bg-linear-to-br from-sky-500 via-violet-500 to-fuchsia-500">
+        <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/20 blur-3xl" />
+        <div className="absolute -bottom-16 -right-10 w-48 h-48 rounded-full bg-fuchsia-400/30 blur-3xl" />
+        <div className="relative w-18 h-18 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 shadow-lg ring-1 ring-white/40">
+          <svg className="w-10 h-10 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
           </svg>
         </div>
-        <h2 className="text-white text-xl font-bold">Upgrade Your Plan</h2>
-        <p className="text-white/80 text-sm mt-1 text-center">Unlock more of what Pulse can do for you.</p>
+        <h2 className="relative text-white text-xl font-bold tracking-tight">Upgrade Your Plan</h2>
+        <p className="relative text-white/85 text-sm mt-1 text-center">Unlock more of what Pulse can do for you.</p>
       </div>
 
-      {/* Tier tabs */}
-      <div className="flex gap-1 px-5 pt-4">
-        {TIERS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              tab === t.key ? ACCENT[t.accent].tabActive : 'text-gray-500 hover:bg-gray-100'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      {/* Tier switcher — one pill track with a solid indicator behind whichever tab is active,
+          instead of one button-styled tab next to one plain-text tab (the two read as
+          different weight before, like only one of them was a real control). */}
+      <div className="px-5 pt-4">
+        <div className="relative flex p-1 rounded-xl bg-gray-100">
+          <div
+            className="absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-white shadow-sm transition-transform duration-200"
+            style={{ transform: tab === 'pro' ? 'translateX(calc(100% + 8px))' : 'translateX(0)' }}
+          />
+          {TIERS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`relative flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                tab === t.key ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Feature list */}
       <div className="px-5 py-5 space-y-4">
-        {FEATURES[tab].map((f) => (
+        {FEATURES[tab].map((f, i) => (
           <div key={f.title} className="flex items-start gap-3">
-            <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${accent.bg}`}>
+            <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-linear-to-br shadow-sm ${ICON_COLORS[i % ICON_COLORS.length]}`}>
               <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={f.path} />
               </svg>
@@ -131,16 +163,21 @@ export default function UpgradeModal({ isOpen, onClose }) {
           <div className="text-center text-sm text-gray-400 py-2.5">This is your current plan.</div>
         ) : (
           <>
-            <div className="flex items-baseline justify-center gap-1.5 mb-3">
-              <span className="text-2xl font-bold text-gray-900">{PRICE[tab].monthly}</span>
+            <div className="flex items-baseline justify-center gap-1.5 mb-1">
+              <span className="text-3xl font-bold text-gray-900 tracking-tight">{PRICE.pro.monthly}</span>
               <span className="text-sm text-gray-500">/month</span>
-              <span className="text-xs text-gray-400">· or {PRICE[tab].yearly}/year</span>
             </div>
+            <p className="text-center text-xs text-gray-400 mb-3">
+              or {PRICE.pro.yearly}/year
+              {savingsPct && (
+                <span className="ml-1.5 text-emerald-600 font-semibold">— save {savingsPct}%</span>
+              )}
+            </p>
             <button
               onClick={() => setShowPayment(true)}
-              className={`w-full py-3 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 bg-gradient-to-br ${accent.hero}`}
+              className="w-full py-3 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 shadow-md bg-linear-to-br from-sky-500 via-violet-500 to-fuchsia-500"
             >
-              Upgrade to {TIERS.find((t) => t.key === tab).label}
+              Upgrade to Pro
             </button>
             <p className="text-center text-xs text-gray-400 mt-2">Auto-renewal. Cancel anytime.</p>
           </>
