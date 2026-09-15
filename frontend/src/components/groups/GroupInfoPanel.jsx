@@ -441,9 +441,15 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                       groupData?.admins_only_messaging ? 'bg-violet-600' : dm ? 'bg-gray-600' : 'bg-gray-300'
                     }`}
                   >
+                    {/* left-0.5 makes the knob's resting position explicit — it previously had
+                        no `left` at all and relied only on a translateX, which left its actual
+                        starting point up to how the browser resolves an unset position on an
+                        absolutely-positioned element. Explicit start + a translate of exactly
+                        one full track-minus-knob-minus-margins distance (16px) is unambiguous
+                        in both states. */}
                     <span
-                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                        groupData?.admins_only_messaging ? 'translate-x-4' : 'translate-x-0.5'
+                      className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                        groupData?.admins_only_messaging ? 'translate-x-4' : 'translate-x-0'
                       }`}
                     />
                   </span>
