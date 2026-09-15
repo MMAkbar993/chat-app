@@ -497,6 +497,17 @@ export async function socialCallback(req, res) {
     } else if (platform === 'facebook') {
       const response = await axios.get(`${cfg.profileUrl}&access_token=${accessToken}`)
       profileData = response.data
+    } else if (platform === 'instagram') {
+      // graph.instagram.com is the same Graph-API family as graph.facebook.com (Facebook,
+      // right above) and authenticates the same way — access_token as a query parameter, not
+      // a Bearer header. The long-lived-token exchange a few lines up already calls this same
+      // host with the token as a query param and works; this call was instead falling into the
+      // generic Bearer-header branch below, the one thing left inconsistent between the two
+      // graph.instagram.com calls in this flow. An unrecognised/unauthenticated request to a
+      // Graph endpoint is exactly the shape of error this has been throwing: a generic
+      // "Unsupported request - method type: get" rather than an auth-specific one.
+      const response = await axios.get(`${cfg.profileUrl}&access_token=${accessToken}`)
+      profileData = response.data
     } else if (platform === 'youtube') {
       const response = await axios.get(cfg.profileUrl, {
         headers: { Authorization: `Bearer ${accessToken}` },
