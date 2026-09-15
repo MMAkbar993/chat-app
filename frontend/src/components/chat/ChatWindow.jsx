@@ -475,10 +475,12 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   return (
     <div className="flex-1 flex h-full overflow-hidden">
       {/* Main chat area — swapped out for the info panel below rather than shown alongside
-          it, the same way Settings replaces its detail pane rather than adding a column. */}
-      {!showContactInfo && (
+          it, the same way Settings replaces its detail pane rather than adding a column.
+          CSS-hidden rather than unmounted while info is showing: unmounting this drops the
+          messages container's scroll position, so coming back from Contact/Group Info always
+          landed back at the top of the conversation instead of where you'd left it. */}
       <div
-        className={`relative flex-1 flex flex-col h-full min-w-0 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
+        className={`relative flex-1 flex-col h-full min-w-0 ${showContactInfo ? 'hidden' : 'flex'} ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -857,7 +859,6 @@ export default function ChatWindow({ darkMode, onCallStart }) {
           />
         )}
       </div>
-      )}
 
       {/* Contact / Group Info Panel */}
       {showContactInfo && !isGroup && (
