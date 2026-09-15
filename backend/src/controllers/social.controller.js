@@ -469,6 +469,20 @@ export async function socialCallback(req, res) {
     let tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000) : null
 
     if (platform === 'instagram') {
+      // Both graph.instagram.com calls (the long-lived exchange and the /me fetch) have now
+      // failed identically regardless of whether the token was sent as a header or a query
+      // param, which rules out *how* it's attached — it points at the token itself, or at
+      // what this app is actually registered as on Meta's side. Logging the shape of what the
+      // very first exchange handed back (never the token value itself) is the next thing that
+      // can actually distinguish "bad token" from "wrong product/permission configured".
+      console.error('Instagram token-exchange response shape:', {
+        hasAccessToken: Boolean(tokenData.access_token),
+        accessTokenLength: tokenData.access_token?.length,
+        accessTokenPrefix: tokenData.access_token?.slice(0, 12),
+        userId: tokenData.user_id,
+        permissions: tokenData.permissions,
+        rawKeys: Object.keys(tokenData),
+      })
       instagramStep = 'token-exchange (graph.instagram.com/access_token)'
       const exchanged = await exchangeInstagramLongLivedToken(accessToken, cfg.clientSecret())
       accessToken = exchanged.token
