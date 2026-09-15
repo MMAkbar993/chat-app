@@ -136,16 +136,22 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
           <div className={`flex-1 border-t ${rule}`} />
         </div>
 
-        {/* Search by Business Name */}
+        {/* Search by Business Name — a free user gets a normal-looking enabled input with only
+            a small star icon marking it as gated, easy to miss until they've already typed and
+            wondered why nothing happens. A visible "PRO" chip on the label and a dimmed,
+            lock-iconed input make the gate obvious before they try, not after. */}
         <div className="flex items-center gap-1.5 mb-1.5">
           <p className={`${label} mb-0`}>Search by Business Name</p>
           {!pro && (
-            <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
-            </svg>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
+              <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z" />
+              </svg>
+              Pro
+            </span>
           )}
         </div>
-        <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 mb-1 border ${inputBg} ${!pro ? 'cursor-pointer' : ''}`}>
+        <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 mb-1 border ${inputBg} ${!pro ? 'cursor-pointer opacity-60' : ''}`}>
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -153,12 +159,18 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
             value={businessQuery}
             onChange={(e) => setBusinessQuery(e.target.value)}
             onFocus={handleBusinessFocus}
+            readOnly={!pro}
             placeholder="Enter a business or company name"
-            className={`flex-1 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
+            className={`flex-1 bg-transparent outline-none text-sm ${!pro ? 'cursor-pointer' : ''} ${darkMode ? 'text-white placeholder-gray-500' : 'placeholder-gray-400'}`}
           />
+          {!pro && (
+            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          )}
         </div>
         <p className={`text-xs mb-4 px-1 ${sub}`}>
-          {pro ? 'Enter a business or company name to find people from that organization.' : 'Upgrade to Pro to search by business name.'}
+          {pro ? 'Enter a business or company name to find people from that organization.' : 'This is a Pro feature — tap to upgrade and search by business or company name.'}
         </p>
 
         {/* Results */}
