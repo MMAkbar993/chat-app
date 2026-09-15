@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js'
 import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -22,12 +22,16 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageOnlyFilter })
 
 export const groupRouter = Router()
+
+// Public preview of an invite link — reachable by someone who isn't signed in yet, so the
+// share page can show the group's name/logo/member count before asking them to sign in
+// (rather than a bare "sign in to see what this is"). Registered ahead of the router-wide
+// authMiddleware below, and before the /:id routes so a literal "invite" segment is never
+// captured as an id. Actually joining still requires a real session.
+groupRouter.get('/invite/:code', optionalAuthMiddleware, getInvitePreview)
+
 groupRouter.use(authMiddleware)
 
-// Invite links, keyed by code rather than group id — the caller is not a member yet, so
-// they have nothing else to identify the group with. Registered before the /:id routes so
-// a literal "invite" segment is never captured as an id.
-groupRouter.get('/invite/:code', getInvitePreview)
 groupRouter.post('/invite/:code/join', joinByInvite)
 
 groupRouter.get('/', listGroups)

@@ -43,6 +43,15 @@ const ROLE_LABELS = {
   technology_software_provider:  'Technology / Software Provider',
 }
 
+// The same soft violet wash + dot texture as the group invite share page, so the two "someone
+// outside Pulse opens a link" pages read as one product rather than a flat grey placeholder
+// next to a designed one. Kept subtle — this is a verification-adjacent business tool making
+// a first impression, not a marketing page.
+const SHARE_BG = {
+  backgroundImage: 'radial-gradient(rgba(109,40,217,0.08) 1px, transparent 1px), radial-gradient(circle at 15% 10%, rgba(139,92,246,0.10), transparent 45%), radial-gradient(circle at 85% 90%, rgba(139,92,246,0.08), transparent 45%)',
+  backgroundSize: '18px 18px, auto, auto',
+}
+
 export default function PublicProfilePage() {
   const { username } = useParams()
   const navigate = useNavigate()
@@ -69,7 +78,7 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" style={SHARE_BG}>
         <div className="w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -77,7 +86,7 @@ export default function PublicProfilePage() {
 
   if (notFound || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4" style={SHARE_BG}>
         <img src="/full-logo.png" alt="Pulse" className="h-8 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900">Profile not found</h1>
         <p className="text-gray-500">The user @{username} doesn't exist or their profile is private.</p>
@@ -90,7 +99,7 @@ export default function PublicProfilePage() {
   const joinYear = user.joined ? new Date(user.joined).getFullYear() : null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" style={SHARE_BG}>
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/">

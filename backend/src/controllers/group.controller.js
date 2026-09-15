@@ -208,6 +208,8 @@ export async function revokeInviteLink(req, res, next) {
 }
 
 // Preview for the join page — deliberately minimal, since the caller is not a member yet.
+// Reachable signed-out (see the route's optionalAuthMiddleware), so req.user may not exist —
+// "already a member" is meaningless for a visitor with no account yet, so it's just false.
 export async function getInvitePreview(req, res, next) {
   try {
     const group = await getGroupByInviteCode(req.params.code)
@@ -220,7 +222,7 @@ export async function getInvitePreview(req, res, next) {
         memberCount: group.member_count,
         adminsOnlyMessaging: group.admins_only_messaging,
       },
-      alreadyMember: await isParticipant(group.id, req.user.id),
+      alreadyMember: req.user ? await isParticipant(group.id, req.user.id) : false,
     })
   } catch (err) {
     next(err)

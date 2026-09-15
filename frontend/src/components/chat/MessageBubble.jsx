@@ -294,7 +294,12 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                 return (
                   // A fixed pixel width once known (see fitMediaBoxWidth) — an explicit width
                   // stops the caption's own text from forcing this block wider than the image.
-                  <div style={mediaWithCaption && mediaBoxWidth ? { width: mediaBoxWidth } : undefined}>
+                  // max-w-full caps that width back down on a narrow phone: MEDIA_BOX_MAX_W
+                  // (380px) can exceed the whole bubble column's own max-w-xs (320px) there,
+                  // and an inline width wins over everything except an explicit max-width —
+                  // without this the bubble overflowed its column on mobile, cutting off the
+                  // sender name/timestamp beside it.
+                  <div className="max-w-full" style={mediaWithCaption && mediaBoxWidth ? { width: mediaBoxWidth } : undefined}>
                     <div className="relative">
                       <button
                         type="button"
@@ -326,7 +331,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                 return <VoiceMessage src={src} isMe={isMe} darkMode={darkMode} />
               if (msg.message_type === 'video' && src)
                 return (
-                  <div style={mediaWithCaption && mediaBoxWidth ? { width: mediaBoxWidth } : undefined}>
+                  <div className="max-w-full" style={mediaWithCaption && mediaBoxWidth ? { width: mediaBoxWidth } : undefined}>
                     <div className="relative">
                       <button
                         type="button"
