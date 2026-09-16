@@ -1,9 +1,13 @@
-function FeatureBadge({ icon, label }) {
+// These three are the same kind of claim (trust/verification), not three different
+// capabilities — giving each its own icon shape (shield, ID card, checkmark) made the row
+// read as a busy, mismatched icon set. One repeated checkmark, no badge background, reads
+// as a single coherent trust statement instead.
+function TrustItem({ label }) {
   return (
-    <div className="flex items-center gap-2 text-sm font-medium text-gray-700 whitespace-nowrap">
-      <span className="w-6 h-6 rounded-full flex items-center justify-center bg-violet-100 text-violet-600 shrink-0">
-        {icon}
-      </span>
+    <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700 whitespace-nowrap">
+      <svg className="w-4 h-4 text-violet-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+      </svg>
       {label}
     </div>
   )
@@ -143,33 +147,12 @@ export default function AuthLayout({ children, footerLink, wide = false }) {
             Connecting verified professionals from across the iGaming industry in one secure messaging platform. Experience the future of B2B networking and communication.
           </p>
 
-          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 bg-white/70 rounded-full px-5 py-3 w-full">
-            <FeatureBadge
-              label="No Fake Accounts"
-              icon={
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z" />
-                </svg>
-              }
-            />
-            <FeatureBadge
-              label="No Anonymous Users"
-              icon={
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth={2} />
-                  <circle cx="9" cy="10.5" r="1.75" strokeWidth={2} />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 16c0-1.66 1.34-3 3-3s3 1.34 3 3M13.5 9.5h4M13.5 13h4" />
-                </svg>
-              }
-            />
-            <FeatureBadge
-              label="Only Verified Professionals"
-              icon={
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              }
-            />
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-white/70 rounded-full px-5 py-3 w-full">
+            <TrustItem label="No Fake Accounts" />
+            <span className="hidden sm:block w-px h-4 bg-gray-300/70" />
+            <TrustItem label="No Anonymous Users" />
+            <span className="hidden sm:block w-px h-4 bg-gray-300/70" />
+            <TrustItem label="Only Verified Professionals" />
           </div>
 
           <ChatMockup />
