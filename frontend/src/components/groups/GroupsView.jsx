@@ -293,7 +293,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
                   <div className="flex items-center justify-between">
                     <span className={`text-xs truncate ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(g.last_message, g.last_message_type)}</span>
                     {g.unread_count > 0 ? (
-                      <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
+                      <span className="ml-2 bg-gray-500 text-white text-[10px] font-medium rounded-full w-4.5 h-4.5 flex items-center justify-center shrink-0">
                         {g.unread_count}
                       </span>
                     ) : g.is_pinned ? (

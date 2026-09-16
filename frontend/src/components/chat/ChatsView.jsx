@@ -176,8 +176,6 @@ export default function ChatsView({ darkMode, mobileHidden }) {
     } catch {}
   }
 
-  const recent = conversations.filter((c) => !c.is_archived).slice(0, 4)
-
   // There's no hover state on touch devices to reveal the "..." button, so without a long-press
   // path, pin/favourite/archive would be unreachable on mobile.
   const longPressTimer = useRef(null)
@@ -328,37 +326,6 @@ export default function ChatsView({ darkMode, mobileHidden }) {
           </div>
         ) : (
         <>
-        {/* Recent */}
-        {!search && conversationFilter === 'all' && recent.length > 0 && (
-          <div className="mb-3">
-            <div className="px-4 flex items-center justify-between mb-3">
-              <span className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Recent Chats</span>
-            </div>
-            <div className="flex gap-4 px-4 overflow-x-auto pb-3">
-              {recent.map((c) => {
-                const fullName = c.type === 'group' ? c.name : (c.other_user_display_name || c.other_user_name || 'Account Deleted')
-                const firstName = fullName.split(' ')[0]
-                const avatar = c.other_user_avatar || c.avatar_url
-                return (
-                  <button key={c.id} onClick={() => openConversation(c)}
-                    className="flex flex-col items-center gap-1.5 min-w-14">
-                    <div className="relative shrink-0 w-14 h-14">
-                      <div className={`w-full h-full rounded-full overflow-hidden ring-2 shadow-md md:shadow-none ${darkMode ? 'ring-gray-800' : 'ring-white'}`}>
-                        {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                          : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-lg">{(fullName || '?')[0].toUpperCase()}</div>}
-                      </div>
-                      {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
-                        <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
-                      )}
-                    </div>
-                    <span className={`text-xs font-medium truncate max-w-14 text-center ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{firstName}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
         {/* All chats */}
         <div>
           <div className="px-4 flex items-center justify-between mb-2">
@@ -428,13 +395,16 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                       : darkMode ? 'md:hover:bg-gray-800' : 'md:hover:bg-gray-50'
                   }`}
                 >
-                  <div className="relative shrink-0 w-11 h-11">
+                  {/* Bigger than before (was w-11/44px) — with Recent Chats gone, this is now
+                      the only avatar in the list, and Telegram gives its list avatar the room
+                      that used to be split between two different sizes here. */}
+                  <div className="relative shrink-0 w-14 h-14">
                     <div className="w-full h-full rounded-full overflow-hidden shadow-sm md:shadow-none">
                       {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
-                        : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(name || '?')[0].toUpperCase()}</div>}
+                        : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-base">{(name || '?')[0].toUpperCase()}</div>}
                     </div>
                     {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
-                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
+                      <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0 md:pr-6">
@@ -464,7 +434,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         <span title={formatLastMessage(c.last_message, c.last_message_type)} className={`text-sm md:text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
                       )}
                       {c.unread_count > 0 ? (
-                        <span className="ml-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center shrink-0">
+                        <span className="ml-2 bg-gray-500 text-white text-[10px] font-medium rounded-full w-4.5 h-4.5 flex items-center justify-center shrink-0">
                           {c.unread_count}
                         </span>
                       ) : c.is_pinned ? (
