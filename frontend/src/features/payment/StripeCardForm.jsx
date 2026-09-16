@@ -27,10 +27,15 @@ export default function StripeCardForm({ onSuccess, planType, standalone = false
       return
     }
 
+    // Some cards require a 3D Secure/SCA redirect away from the page entirely — if that
+    // happens, this return_url is where the browser lands when it comes back (including if
+    // the user cancels the challenge partway through). A standalone Pro upgrade is already
+    // a verified, active user, so it belongs on /chat; sending it to /verify made that page
+    // flash its "Verifying Your Identity" spinner for an instant before correcting itself.
     const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/verify`,
+        return_url: `${window.location.origin}${standalone ? '/chat' : '/verify'}`,
       },
       redirect: 'if_required',
     })
