@@ -781,13 +781,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                   </div>
                 </div>
 
-                <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl p-4 mb-4 ${darkMode ? 'bg-gray-900' : 'bg-violet-50/60'}`}>
-                  <InfoTile darkMode={darkMode}
-                    color={darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-white text-violet-600'}
-                    icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
-                    title="Gain Access"
-                    desc="Manage the website profile and respond to reviews."
-                  />
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl p-4 mb-4 ${darkMode ? 'bg-gray-900' : 'bg-violet-50/60'}`}>
                   <InfoTile darkMode={darkMode}
                     color={darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-white text-violet-600'}
                     icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>}
