@@ -91,7 +91,7 @@ export default function BlockedContactsModal({ darkMode, onClose }) {
               const name = u.display_name || u.full_name || u.username || 'Unknown'
               return (
                 <div key={u.id} className={`flex items-center gap-3 px-2 py-2.5 rounded-xl transition-colors ${rowBg}`}>
-                  <div className="w-10 h-10 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0 ${u.avatar_url ? '' : 'bg-violet-500'}`}>
                     {u.avatar_url
                       ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
                       : name[0].toUpperCase()}

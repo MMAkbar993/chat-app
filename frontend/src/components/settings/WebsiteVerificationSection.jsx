@@ -1004,7 +1004,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                     const name = r.display_name || r.full_name || r.username || 'Unknown'
                     return (
                       <div key={r.id} className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                        <div className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold shrink-0 ${r.avatar_url ? '' : 'bg-violet-500'}`}>
                           {r.avatar_url
                             ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
                             : name[0].toUpperCase()}
@@ -1042,7 +1042,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                         const name = r.display_name || r.full_name || r.username || 'Unknown'
                         return (
                           <div key={r.user_id} className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-sm font-bold">
+                            <div className={`w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-white text-sm font-bold ${r.avatar_url ? '' : 'bg-violet-500'}`}>
                               {r.avatar_url
                                 ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
                                 : name[0].toUpperCase()}
@@ -1144,7 +1144,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
                         onChange={() => setTransferTo(r.user_id)}
                         className="accent-violet-600"
                       />
-                      <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 bg-violet-500 flex items-center justify-center text-white text-xs font-bold">
+                      <div className={`w-7 h-7 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-white text-xs font-bold ${r.avatar_url ? '' : 'bg-violet-500'}`}>
                         {r.avatar_url
                           ? <img src={r.avatar_url} alt="" className="w-full h-full object-cover" />
                           : name[0].toUpperCase()}

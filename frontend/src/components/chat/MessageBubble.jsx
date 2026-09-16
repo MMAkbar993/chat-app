@@ -194,7 +194,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
       onMouseLeave={() => { setHovered(false); setShowMenu(false) }}
     >
       {!isMe && (
-        <div className="w-7 h-7 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0 mb-5 overflow-hidden">
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mb-5 overflow-hidden ${msg.sender_avatar ? '' : 'bg-violet-500'}`}>
           {msg.sender_avatar
             ? <img src={msg.sender_avatar} alt="" className="w-full h-full object-cover" />
             : (msg.sender_display_name || msg.sender_name || '?')[0].toUpperCase()

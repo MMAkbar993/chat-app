@@ -43,7 +43,7 @@ export default function ForwardModal({ darkMode, onClose, onForward }) {
                   darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-50 text-gray-900'
                 }`}
               >
-                <div className="w-9 h-9 rounded-full bg-violet-500 overflow-hidden flex items-center justify-center text-white text-sm font-bold shrink-0">
+                <div className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold shrink-0 ${avatar ? '' : 'bg-violet-500'}`}>
                   {avatar
                     ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                     : (name || '?')[0].toUpperCase()}

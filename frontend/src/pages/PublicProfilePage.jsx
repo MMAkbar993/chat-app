@@ -118,7 +118,7 @@ export default function PublicProfilePage() {
           {/* Banner — avatar, name, username and Send Message all live inside it now, white text on purple */}
           <div className="bg-gradient-to-r from-violet-600 to-violet-800 px-6 py-6 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl border-4 border-white overflow-hidden shadow-md flex-shrink-0 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
+              <div className={`w-20 h-20 rounded-2xl border-4 border-white overflow-hidden shadow-md flex-shrink-0 flex items-center justify-center text-white text-2xl font-bold ${user.avatar_url ? '' : 'bg-violet-500'}`}>
                 {user.avatar_url
                   ? <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
                   : initials}

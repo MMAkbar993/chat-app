@@ -65,7 +65,7 @@ function CallEventPill({ msg, userId, darkMode, meAvatar, meName }) {
   return (
     <div className={`flex ${isCaller ? 'justify-end' : 'justify-start'} mb-1 items-end gap-2`}>
       {!isCaller && (
-        <div className="w-7 h-7 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden ${msg.sender_avatar ? '' : 'bg-violet-500'}`}>
           {msg.sender_avatar
             ? <img src={msg.sender_avatar} alt="" className="w-full h-full object-cover" />
             : (msg.sender_display_name || msg.sender_name || '?')[0].toUpperCase()}
@@ -509,7 +509,9 @@ export default function ChatWindow({ darkMode, onCallStart }) {
             </button>
             <button
               onClick={() => setShowProfileModal(true)}
-              className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0 hover:ring-2 hover:ring-violet-400 transition-all"
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0 hover:ring-2 hover:ring-violet-400 transition-all ${
+                activeConversation.other_user_avatar || activeConversation.avatar_url ? '' : 'bg-violet-500'
+              }`}
             >
               {activeConversation.other_user_avatar || activeConversation.avatar_url ? (
                 <img src={activeConversation.other_user_avatar || activeConversation.avatar_url} alt="" className="w-full h-full object-cover" />

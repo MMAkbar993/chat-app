@@ -67,7 +67,7 @@ export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
           {filteredContacts.map((c) => (
             <label key={c.id} className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
               <input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} className="accent-violet-600" />
-              <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden ${c.avatar_url ? '' : 'bg-violet-500'}`}>
                 {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-full h-full object-cover" /> : (c.display_name || c.full_name || '?')[0].toUpperCase()}
               </div>
               <span className="text-sm font-medium">{c.display_name || c.full_name}</span>

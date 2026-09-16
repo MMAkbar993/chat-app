@@ -56,7 +56,7 @@ export default function NewCallModal({ darkMode, onClose, onCall }) {
                   key={contact.contact_id || contact.id}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden ${contact.avatar_url ? '' : 'bg-violet-500'}`}>
                     {contact.avatar_url
                       ? <img src={contact.avatar_url} alt="" className="w-full h-full object-cover" />
                       : name[0].toUpperCase()

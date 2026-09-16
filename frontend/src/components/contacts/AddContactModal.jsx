@@ -183,7 +183,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
         <div className="space-y-1 max-h-60 overflow-y-auto -mx-1">
           {results.map((u) => (
             <div key={u.id} className={`flex items-center gap-3 px-1 py-2 rounded-xl transition-colors ${rowHover}`}>
-              <div className="w-10 h-10 rounded-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0 ${u.avatar_url ? '' : 'bg-violet-500'}`}>
                 {u.avatar_url
                   ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
                   : (u.full_name || u.username || '?')[0].toUpperCase()}

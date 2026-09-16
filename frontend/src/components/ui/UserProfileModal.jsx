@@ -234,7 +234,7 @@ export default function UserProfileModal({
         <div className="px-6 pb-6 md:px-5 md:pb-5">
           <div className="-mt-10 mb-3 flex items-start justify-between">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 bg-violet-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+              <div className={`w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 flex items-center justify-center text-white text-2xl font-bold shadow-lg ${avatar ? '' : 'bg-violet-500'}`}>
                 {avatar
                   ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                   : (name || '?')[0].toUpperCase()}

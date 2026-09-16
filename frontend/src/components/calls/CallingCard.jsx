@@ -28,7 +28,7 @@ export default function CallingCard({ call, onEnd, darkMode }) {
         </div>
 
         {/* Callee avatar */}
-        <div className="w-20 h-20 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+        <div className={`w-20 h-20 rounded-full overflow-hidden flex items-center justify-center text-white text-2xl font-bold shadow-lg ${avatar ? '' : 'bg-violet-500'}`}>
           {avatar ? (
             <img src={avatar} alt="" className="w-full h-full object-cover" />
           ) : (

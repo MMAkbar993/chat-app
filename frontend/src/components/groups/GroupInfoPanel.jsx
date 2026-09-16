@@ -277,7 +277,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
             {/* Identity */}
             <div className="flex flex-col items-center py-5 px-4">
               <div className="relative w-20 h-20 mb-2">
-                <div className="w-20 h-20 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
+                <div className={`w-20 h-20 rounded-full overflow-hidden flex items-center justify-center text-white text-2xl font-bold ${avatar ? '' : 'bg-violet-500'}`}>
                   {avatar
                     ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                     : (name || '?')[0].toUpperCase()}
@@ -562,7 +562,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                     onClick={() => setSelectedParticipant(p)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 border-t text-left transition-colors ${divider} ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shrink-0 ${p.avatar_url ? '' : 'bg-violet-500'}`}>
                       {p.avatar_url
                         ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
                         : pName[0].toUpperCase()}
@@ -696,7 +696,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
                       onClick={() => { handleAddMember(u.id); setShowAddMembers(false) }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${dm ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
                     >
-                      <div className="w-9 h-9 rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      <div className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shrink-0 ${u.avatar_url ? '' : 'bg-violet-500'}`}>
                         {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : uName[0].toUpperCase()}
                       </div>
                       <p className={`text-sm font-medium ${txt}`}>{uName}</p>

@@ -121,7 +121,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
         {/* Avatar + name */}
         <div className="flex flex-col items-center mb-5">
           <div className="relative w-20 h-20 mb-2">
-            <div className="w-full h-full rounded-full overflow-hidden bg-violet-500 flex items-center justify-center text-white text-2xl font-bold">
+            <div className={`w-full h-full rounded-full overflow-hidden flex items-center justify-center text-white text-2xl font-bold ${avatar ? '' : 'bg-violet-500'}`}>
               {avatar
                 ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                 : (name || '?')[0].toUpperCase()}
