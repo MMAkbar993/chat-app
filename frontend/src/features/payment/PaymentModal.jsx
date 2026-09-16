@@ -1,110 +1,70 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Elements } from '@stripe/react-stripe-js'
 import Modal from '../../components/ui/Modal'
-import StepIndicator from '../../components/ui/StepIndicator'
 import Button from '../../components/ui/Button'
-import PlanCard from './PlanCard'
 import StripeCardForm from './StripeCardForm'
 import { stripePromise } from '../../stripe/stripeLoader'
 import client from '../../api/client'
 
-export default function PaymentModal({ isOpen, onClose, standalone = false }) {
+const PRICE_LABEL = {
+  yearly: '€70.00/year',
+  monthly: '€6.99/month',
+}
+
+export default function PaymentModal({ isOpen, onClose, planType = 'monthly', standalone = false }) {
   const navigate = useNavigate()
-  const [step, setStep] = useState('plan')  // 'plan' | 'card' | 'success'
-  const [selectedPlan, setSelectedPlan] = useState('monthly')
+  const [step, setStep] = useState('loading')  // 'loading' | 'card' | 'success' | 'error'
   const [clientSecret, setClientSecret] = useState(null)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [promoCode, setPromoCode] = useState('')
+  // The plan is already chosen by the time this opens, so the subscription is created on open
+  // rather than behind a button. StrictMode invokes effects twice in dev, and this one is not
+  // idempotent — without the guard it would create two subscriptions.
+  const started = useRef(false)
 
-  async function handleEnterPayment() {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await client.post('/payment/create-subscription', { planType: selectedPlan, promoCode: promoCode.trim() || undefined })
-      if (!res.data.clientSecret) {
-        // No payment step needed — either Stripe isn't configured (dev bypass) or a promo code
-        // fully covered the invoice, so the subscription is already active on the backend.
-        // Still show a real confirmation rather than just vanishing — the account IS upgraded,
-        // the user just has no way to tell unless we say so.
-        if (standalone) {
-          setStep('success')
-        } else {
-          navigate('/verify')
+  useEffect(() => {
+    if (!isOpen || started.current) return
+    started.current = true
+
+    async function start() {
+      try {
+        const res = await client.post('/payment/create-subscription', { planType })
+        if (!res.data.clientSecret) {
+          // Nothing left to pay — either Stripe isn't configured (dev bypass) or the invoice
+          // came to zero, and the backend has already activated the subscription. Still show
+          // a real confirmation rather than just vanishing: the account IS upgraded, and the
+          // user has no way to tell unless we say so.
+          if (standalone) setStep('success')
+          else navigate('/verify')
+          return
         }
-        return
+        setClientSecret(res.data.clientSecret)
+        setStep('card')
+      } catch (err) {
+        setError(err.response?.data?.error || 'Could not start payment. Please try again.')
+        setStep('error')
       }
-      setClientSecret(res.data.clientSecret)
-      setStep('card')
-    } catch (err) {
-      setError(err.response?.data?.error || 'Could not start payment. Please try again.')
-    } finally {
-      setLoading(false)
     }
-  }
 
-  function handleClose() {
-    setStep('plan')
-    setClientSecret(null)
-    setError('')
-    onClose()
-  }
+    start()
+  }, [isOpen, planType, standalone, navigate])
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md" scroll>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-md" scroll>
       <div className="p-7">
-        {!standalone && <StepIndicator currentStep={step === 'card' ? 2 : 1} />}
+        {step === 'loading' && (
+          <div className="flex flex-col items-center gap-3 py-10">
+            <span className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-500">Setting up your payment…</p>
+          </div>
+        )}
 
-        {step === 'plan' && (
-          <div className="flex flex-col gap-4">
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900">Choose Your Plan</h2>
+        {step === 'error' && (
+          <div className="flex flex-col gap-4 py-2">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+              {error}
             </div>
-
-            {!standalone && (
-              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-700 flex items-start gap-2">
-                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Don't worry — you won't be charged until your identity is verified.
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <PlanCard plan="monthly" selected={selectedPlan === 'monthly'} onSelect={setSelectedPlan} />
-              <PlanCard plan="yearly" selected={selectedPlan === 'yearly'} onSelect={setSelectedPlan} />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Promo code (optional)</label>
-              <input
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value)}
-                placeholder="Enter code"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition-colors"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-                {error}
-              </div>
-            )}
-
-            <Button className="w-full" loading={loading} onClick={handleEnterPayment}>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Enter Payment Details
-            </Button>
-
-            <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Your data is securely processed
-            </p>
+            <Button className="w-full" onClick={onClose}>Close</Button>
           </div>
         )}
 
@@ -113,7 +73,7 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
             <div className="text-center mb-2">
               <h2 className="text-xl font-bold text-gray-900">Payment Details</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {selectedPlan === 'yearly' ? '€70.00/year' : '€6.99/month'} · Cancel anytime
+                {PRICE_LABEL[planType]} · Cancel anytime
               </p>
             </div>
             <Elements
@@ -164,7 +124,7 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
               }}
             >
               <StripeCardForm
-                planType={selectedPlan}
+                planType={planType}
                 standalone={standalone}
                 onSuccess={() => setStep('success')}
               />
@@ -182,10 +142,10 @@ export default function PaymentModal({ isOpen, onClose, standalone = false }) {
             <div>
               <h2 className="text-xl font-bold text-gray-900">You're upgraded!</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Your {selectedPlan} plan is now active. Enjoy the new features.
+                Your {planType === 'yearly' ? 'annual' : 'monthly'} plan is now active. Enjoy the new features.
               </p>
             </div>
-            <Button className="w-full" onClick={handleClose}>Done</Button>
+            <Button className="w-full" onClick={onClose}>Done</Button>
           </div>
         )}
       </div>
