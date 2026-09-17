@@ -17,6 +17,7 @@ import TermsPage from './pages/TermsPage'
 import CookiePolicyPage from './pages/CookiePolicyPage'
 import KycPolicyPage from './pages/KycPolicyPage'
 import PublicProfilePage from './pages/PublicProfilePage'
+import HowItWorksPage from './pages/HowItWorksPage'
 import JoinGroupPage from './pages/JoinGroupPage'
 import SocialConnectErrorPage from './pages/SocialConnectErrorPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
@@ -111,6 +112,9 @@ export default function App() {
           <Route path="/chat" element={<ProtectedRoute requireVerified><ChatApp /></ProtectedRoute>} />
 
           {/* Public pages (no auth) */}
+          {/* Deliberately outside GuestRoute: this is the page to send prospects to, and a
+              signed-in user following that link should see it, not get bounced to /chat. */}
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiePolicyPage />} />
