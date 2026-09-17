@@ -147,7 +147,9 @@ export default function AuthLayout({ children, footerLink, wide = false }) {
             Connecting verified professionals from across the iGaming industry in one secure messaging platform. Experience the future of B2B networking and communication.
           </p>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-white/70 rounded-full px-5 py-3 w-full">
+          {/* justify-center, not the default packing — otherwise the three items sit against
+              the left edge and leave all the slack on the right, which reads as misaligned. */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 bg-white/70 rounded-full px-5 py-3 w-full">
             <TrustItem label="No Fake Accounts" />
             <span className="hidden sm:block w-px h-4 bg-gray-300/70" />
             <TrustItem label="No Anonymous Users" />

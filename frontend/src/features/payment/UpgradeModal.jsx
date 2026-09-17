@@ -4,6 +4,19 @@ import PaymentModal from './PaymentModal'
 import { useAuth } from '../../context/AuthContext'
 import { isProUser } from '../../utils/plan'
 
+// A colour per row. The surrounding chrome — header, plan rows, button — is all one violet;
+// the variety belongs on the perk icons, where it's what stops a long list reading as a plain
+// settings page. Cycled by a running index across every section so adding a feature later
+// doesn't mean choosing a colour for it.
+const ICON_COLORS = [
+  'from-sky-500 to-blue-600',
+  'from-pink-500 to-rose-500',
+  'from-amber-500 to-orange-500',
+  'from-emerald-500 to-teal-500',
+  'from-violet-500 to-purple-600',
+  'from-fuchsia-500 to-pink-600',
+]
+
 const PLANS = [
   { key: 'yearly', label: 'Annual', price: '€70.00', per: 'year', amount: 70 },
   { key: 'monthly', label: 'Monthly', price: '€6.99', per: 'month', amount: 6.99 },
@@ -76,6 +89,10 @@ export default function UpgradeModal({ isOpen, onClose }) {
     )
   }
 
+  // Runs across every section's items rather than resetting per section, so two sections never
+  // start on the same colour at their boundary.
+  let colorIndex = -1
+
   return (
     <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md">
       {/* Only the Subscribe button is pinned; the hero, plans and perks all scroll together
@@ -83,8 +100,10 @@ export default function UpgradeModal({ isOpen, onClose }) {
           several tall regions at once and leaving the scrolling one no room at all. */}
       <div className="flex flex-col h-[640px] max-h-[88vh] rounded-2xl overflow-hidden bg-lavender">
         <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-violet-200">
-          {/* Hero */}
-          <div className="relative h-44">
+          {/* Hero — the Pulse wordmark with a Pro chip. A big illustrated star was doing the
+              job of a logo without being one; if an animated mark turns up later it drops
+              straight in here. */}
+          <div className="relative h-36 flex items-center justify-center">
             {SPARKLES.map((s) => (
               <svg
                 key={`${s.top}-${s.left}`}
@@ -96,21 +115,12 @@ export default function UpgradeModal({ isOpen, onClose }) {
                 <path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z" />
               </svg>
             ))}
-            <svg
-              className="absolute left-1/2 top-1/2 w-24 h-24 -translate-x-1/2 -translate-y-1/2 -rotate-6 drop-shadow-lg"
-              viewBox="0 0 24 24"
-            >
-              <defs>
-                <linearGradient id="pulse-pro-star" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#A78BFA" />
-                  <stop offset="100%" stopColor="#7C3AED" />
-                </linearGradient>
-              </defs>
-              <path
-                fill="url(#pulse-pro-star)"
-                d="M12 2.2l2.7 5.9 6.4.75a1 1 0 01.55 1.74l-4.72 4.4 1.26 6.3a1 1 0 01-1.47 1.07L12 19.2l-4.7 2.6a1 1 0 01-1.48-1.07l1.26-6.3-4.72-4.4a1 1 0 01.55-1.74l6.4-.75z"
-              />
-            </svg>
+            <div className="relative">
+              <img src="/full-logo.png" alt="Pulse" className="h-9" />
+              <span className="absolute -top-2 -right-7 text-[10px] font-bold tracking-wide text-white bg-violet-600 rounded-md px-1.5 py-0.5">
+                PRO
+              </span>
+            </div>
           </div>
 
           <p className="px-7 text-center text-[15px] leading-snug text-gray-600">
@@ -160,13 +170,13 @@ export default function UpgradeModal({ isOpen, onClose }) {
                   {group.section}
                 </p>
                 <div className="bg-white rounded-2xl overflow-hidden">
-                  {group.items.map((f, i) => (
+                  {group.items.map((f, i) => {
+                    colorIndex++
+                    return (
                     <Fragment key={f.title}>
                       {i > 0 && <div className="h-px bg-gray-100 ml-15" />}
                       <div className="flex items-start gap-3 px-4 py-3">
-                        {/* One violet for every tile. A different colour per row looked busy
-                            next to the violet UI it sits in. */}
-                        <span className="w-8 h-8 rounded-[10px] shrink-0 flex items-center justify-center bg-linear-to-br from-violet-500 to-purple-600">
+                        <span className={`w-8 h-8 rounded-[10px] shrink-0 flex items-center justify-center bg-linear-to-br ${ICON_COLORS[colorIndex % ICON_COLORS.length]}`}>
                           <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={f.path} />
                           </svg>
@@ -184,7 +194,8 @@ export default function UpgradeModal({ isOpen, onClose }) {
                         </div>
                       </div>
                     </Fragment>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}

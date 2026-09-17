@@ -43,7 +43,42 @@ function InfoCell({ darkMode, label, value, full }) {
   return (
     <div className={`min-w-0 ${full ? 'col-span-2' : ''}`}>
       <p className={labelCls}>{label}</p>
-      <p className={`${valueCls} ${full ? 'break-words' : 'truncate'}`}>{value}</p>
+      {/* Wrap rather than truncate. Half-width cells are narrow, and a real job title
+          ("iGaming Platforms Specialist") was being cut to an ellipsis — which hides the one
+          piece of information the cell exists to show. */}
+      <p className={`${valueCls} break-words`}>{value}</p>
+    </div>
+  )
+}
+
+// The sections below the badges are what make a full profile run long, and most of the time a
+// viewer wants one of them, not all three. Collapsed they still say what's inside, so nothing
+// is hidden — it's just not all open at once.
+function ProfileSection({ darkMode, label, summary, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const cardBg = darkMode ? 'bg-gray-800' : 'bg-gray-50'
+  const lbl = `text-[10px] uppercase tracking-wide font-semibold ${darkMode ? 'text-gray-500' : 'text-gray-400'}`
+
+  return (
+    <div className={`rounded-xl mb-3 ${cardBg}`}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left"
+      >
+        <span className="min-w-0">
+          <span className={`block ${lbl}`}>{label}</span>
+          {!open && summary && (
+            <span className={`block text-sm mt-0.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{summary}</span>
+          )}
+        </span>
+        <svg
+          className={`w-4 h-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
     </div>
   )
 }
@@ -136,8 +171,6 @@ export default function UserProfileModal({
     || (isSelf ? authUser?.username : null) || (accountDeleted ? 'Account Deleted' : '?')
   const avatar = contact?.avatar_url || profile?.avatar_url
   const bio = contact?.bio || profile?.bio
-  const cardBg = dm ? 'bg-gray-800' : 'bg-gray-50'
-  const lbl = `text-[10px] uppercase tracking-wide font-semibold ${dm ? 'text-gray-500' : 'text-gray-400'}`
 
   const location = profile?.location || profile?.country
   const joinDate = profile?.created_at
@@ -328,22 +361,26 @@ export default function UserProfileModal({
           )}
 
           {/* Personal Information — no email or username, ever */}
-          <div className={`rounded-xl p-4 mt-3 mb-3 ${cardBg}`}>
-            <p className={`${lbl} mb-3`}>Personal Information</p>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-              <InfoCell darkMode={dm} label="Local Time" value={localTime} />
-              <InfoCell darkMode={dm} label="Company" value={profile?.company_name} />
-              <InfoCell darkMode={dm} label="Job Title" value={profile?.job_title} />
-              <InfoCell darkMode={dm} label="Location" value={location} />
-              <InfoCell darkMode={dm} label="Date of Birth" value={dob} />
-              <InfoCell darkMode={dm} label="Join Date" value={joinDate} />
-            </div>
+          <div className="mt-3">
+            <ProfileSection darkMode={dm} label="Personal Information" defaultOpen>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+                <InfoCell darkMode={dm} label="Local Time" value={localTime} />
+                <InfoCell darkMode={dm} label="Company" value={profile?.company_name} />
+                <InfoCell darkMode={dm} label="Job Title" value={profile?.job_title} />
+                <InfoCell darkMode={dm} label="Location" value={location} />
+                <InfoCell darkMode={dm} label="Date of Birth" value={dob} />
+                <InfoCell darkMode={dm} label="Join Date" value={joinDate} />
+              </div>
+            </ProfileSection>
           </div>
 
           {/* Websites */}
           {allWebsites.length > 0 && (
-            <div className={`rounded-xl p-4 mb-3 ${cardBg}`}>
-              <p className={`${lbl} mb-2`}>Websites</p>
+            <ProfileSection
+              darkMode={dm}
+              label="Websites"
+              summary={`${allWebsites.length} verified`}
+            >
               <div className="space-y-1">
                 {allWebsites.map((w, i) => (
                   <a
@@ -362,13 +399,16 @@ export default function UserProfileModal({
                   </a>
                 ))}
               </div>
-            </div>
+            </ProfileSection>
           )}
 
           {/* Social profiles — icon-only row, only render if at least one link exists */}
           {socials.some((s) => s.url) && (
-            <div className={`rounded-xl p-4 ${cardBg}`}>
-              <p className={`${lbl} mb-2`}>Social</p>
+            <ProfileSection
+              darkMode={dm}
+              label="Social Profiles"
+              summary={`${socials.filter((s) => s.url).length} connected`}
+            >
               <div className="flex flex-wrap gap-2">
                 {socials.filter((s) => s.url).map((s) => (
                   <a
@@ -383,7 +423,7 @@ export default function UserProfileModal({
                   </a>
                 ))}
               </div>
-            </div>
+            </ProfileSection>
           )}
 
           {!profile && !accountDeleted && (

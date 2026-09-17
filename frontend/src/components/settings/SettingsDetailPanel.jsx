@@ -19,17 +19,25 @@ function firstNameOf(fullName) {
   return (fullName || '').trim().split(/\s+/)[0] || fullName || ''
 }
 
+// A generational suffix is part of a legal name but is never a name by itself, and it is not
+// the surname either — so for "Edward Paul Tabus Jr", pairing the first word with the last one
+// produces "Edward Jr" and never offers "Edward Tabus".
+const NAME_SUFFIXES = new Set(['jr', 'jr.', 'snr', 'sr', 'sr.', 'ii', 'iii', 'iv'])
+
 // Every sensible way to render someone's own verified name: the whole thing, each individual
-// part, and first+last for longer names. Options are built from full_name rather than free
-// text so a display name always stays truthful to the KYC'd identity — but which part you go
-// by is your choice, since "the first word" isn't the first name for everyone.
+// part, and the first name paired with each later part. Options are built from full_name rather
+// than free text so a display name always stays truthful to the KYC'd identity — but which part
+// you go by is your choice, since "the first word" isn't the first name for everyone.
 function displayNameOptions(fullName, current) {
   const full = (fullName || '').trim()
   const parts = full.split(/\s+/).filter(Boolean)
   const opts = []
   if (full) opts.push(full)
-  parts.forEach((p) => opts.push(p))
-  if (parts.length > 2) opts.push(`${parts[0]} ${parts[parts.length - 1]}`)
+  parts.filter((p) => !NAME_SUFFIXES.has(p.toLowerCase())).forEach((p) => opts.push(p))
+  // Pair the first name with every later part, not just the final word: that last word is a
+  // suffix in "Edward Paul Tabus Jr" and a second surname in "Ana García López", so "first
+  // word + last word" happens to be the wrong answer for both.
+  if (parts.length > 2) parts.slice(1).forEach((p) => opts.push(`${parts[0]} ${p}`))
   // Keep whatever is already saved selectable, even if it predates this list.
   if (current && !opts.includes(current)) opts.unshift(current)
   return [...new Set(opts)]
