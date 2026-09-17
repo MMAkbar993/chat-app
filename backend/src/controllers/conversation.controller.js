@@ -107,6 +107,10 @@ export async function getConversation(req, res, next) {
 export async function markConversationRead(req, res, next) {
   try {
     await markRead(req.params.id, req.user.id)
+    // Tell this user's *other* sessions too. Reading on a phone moves last_read_at, but a
+    // desktop tab that already has the conversation list in memory has no way to learn that,
+    // so it sat there showing an unread badge for a message that had been read elsewhere.
+    getIo()?.to(`user:${req.user.id}`).emit('conversation-read', { conversationId: req.params.id })
     res.json({ ok: true })
   } catch (err) {
     next(err)

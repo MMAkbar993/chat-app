@@ -16,6 +16,21 @@ import {
 } from '../db/queries/conversations.js'
 import { getIo } from '../socket/index.js'
 import { isProUser } from '../utils/plan.js'
+import { isContact } from '../db/queries/contacts.js'
+import { query } from '../config/database.js'
+
+// Someone with restrict_group_add on can only be pulled into a group by a person they have
+// already added as a contact — otherwise any stranger who finds them can drop them into any
+// group unannounced, which is the whole thing the setting exists to stop. Checked server-side
+// because the client hiding a name from a picker is a courtesy, not a boundary.
+async function canAddToGroup(targetUserId, inviterId) {
+  const result = await query(
+    `SELECT restrict_group_add FROM users WHERE id = $1`,
+    [targetUserId]
+  )
+  if (!result.rows[0]?.restrict_group_add) return true
+  return isContact(targetUserId, inviterId)
+}
 
 export async function listGroups(req, res, next) {
   try {
@@ -38,12 +53,17 @@ export async function createGroup(req, res, next) {
     await addParticipant(group.id, req.user.id, 'admin')
 
     const ids = Array.isArray(memberIds) ? memberIds : []
+    let skipped = 0
     for (const id of ids) {
-      if (id !== req.user.id) await addParticipant(group.id, id)
+      if (id === req.user.id) continue
+      if (!(await canAddToGroup(id, req.user.id))) { skipped++; continue }
+      await addParticipant(group.id, id)
     }
 
     const participants = await getParticipants(group.id)
-    res.status(201).json({ group: { ...group, participants } })
+    // The group is still created — one restricted invitee shouldn't fail the whole thing —
+    // but the count is reported so the creator isn't left wondering who went missing.
+    res.status(201).json({ group: { ...group, participants }, skipped })
   } catch (err) {
     next(err)
   }
@@ -103,6 +123,12 @@ export async function uploadGroupAvatar(req, res, next) {
 export async function addMember(req, res, next) {
   try {
     const { userId } = req.body
+    if (!(await canAddToGroup(userId, req.user.id))) {
+      return res.status(403).json({
+        error: 'This person only accepts group invites from their own contacts.',
+        code: 'GROUP_ADD_RESTRICTED',
+      })
+    }
     await addParticipant(req.params.id, userId)
     const participants = await getParticipants(req.params.id)
     const io = getIo()

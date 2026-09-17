@@ -244,6 +244,15 @@ export default function SettingsView({ darkMode, onDarkMode, activeSection, onSe
           icon={icon('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', 'bg-indigo-500')}
           label="Two-Factor Authentication"
         />
+
+        <ListRow
+          darkMode={dm}
+          active={activeSection === 'privacy'}
+          onClick={() => onSelect('privacy')}
+          icon={icon('M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-4.242-4.242m4.242 4.242L3 3m6.878 6.878L21 21', 'bg-teal-600')}
+          label="Privacy"
+          description="Search visibility, group invites"
+        />
         </SettingsGroup>
 
         {/* ── CHAT ── */}

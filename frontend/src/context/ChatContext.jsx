@@ -377,6 +377,14 @@ export function ChatProvider({ children }) {
 
     const onReloadConversations = () => loadConversations()
 
+    // Sent to every one of this user's sessions when any of them reads a conversation, so a
+    // desktop tab left open clears its badge for something already read on a phone.
+    const onConversationRead = ({ conversationId }) => {
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conversationId ? { ...c, unread_count: 0 } : c))
+      )
+    }
+
     const onConversationRemoved = ({ conversationId }) => {
       setConversations((prev) => prev.filter((c) => c.id !== conversationId))
       if (activeConvRef.current?.id === conversationId) {
@@ -395,6 +403,7 @@ export function ChatProvider({ children }) {
     socket.on('user-presence', onPresence)
     socket.on('online-users', onOnlineList)
     socket.on('reload-conversations', onReloadConversations)
+    socket.on('conversation-read', onConversationRead)
     socket.on('conversation-removed', onConversationRemoved)
     socket.emit('get-online-users')
 
@@ -409,6 +418,7 @@ export function ChatProvider({ children }) {
       socket.off('user-presence', onPresence)
       socket.off('online-users', onOnlineList)
       socket.off('reload-conversations', onReloadConversations)
+      socket.off('conversation-read', onConversationRead)
       socket.off('conversation-removed', onConversationRemoved)
     }
   }, [socket, loadConversations])

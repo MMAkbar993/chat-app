@@ -199,6 +199,43 @@ export async function updateProfile(req, res, next) {
   }
 }
 
+// Kept off PATCH /me: that query COALESCEs every field so an omitted one keeps its old value,
+// which makes setting a boolean back to false impossible to express. These take the value as
+// given, and only a real boolean counts — anything else leaves the setting alone.
+export async function getPrivacy(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT hide_from_search, restrict_group_add FROM users WHERE id = $1`,
+      [req.user.id]
+    )
+    res.json({ privacy: result.rows[0] })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function updatePrivacy(req, res, next) {
+  try {
+    const { hide_from_search, restrict_group_add } = req.body
+    const result = await query(
+      `UPDATE users SET
+         hide_from_search   = COALESCE($1::boolean, hide_from_search),
+         restrict_group_add = COALESCE($2::boolean, restrict_group_add),
+         updated_at = NOW()
+       WHERE id = $3
+       RETURNING hide_from_search, restrict_group_add`,
+      [
+        typeof hide_from_search === 'boolean' ? hide_from_search : null,
+        typeof restrict_group_add === 'boolean' ? restrict_group_add : null,
+        req.user.id,
+      ]
+    )
+    res.json({ privacy: result.rows[0] })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function uploadAvatar(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' })

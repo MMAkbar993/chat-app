@@ -85,14 +85,17 @@ function collapse(sql) {
   return `regexp_replace(lower(COALESCE(${sql}, '')), '[^a-z0-9]', '', 'g')`
 }
 
+// hide_from_search is honoured by both searches, including the exact-username one: someone who
+// has opted out of being found should not be discoverable by guessing their handle either.
 export async function searchUsers(username, excludeUserId, limit = 20) {
   const result = await query(
-    `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name,
+    `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, job_title,
             (${MATCHED_COMPANY_SQL}) AS matched_company
      FROM users
      WHERE id != $2
        AND username ILIKE $1
        AND is_active = true
+       AND hide_from_search = false
      LIMIT $3`,
     [username, excludeUserId, limit, FREE_EMAIL_DOMAINS]
   )
@@ -102,11 +105,12 @@ export async function searchUsers(username, excludeUserId, limit = 20) {
 export async function searchUsersByCompanyName(companyName, excludeUserId, limit = 20) {
   const needle = companyName.toLowerCase().replace(/[^a-z0-9]/g, '')
   const result = await query(
-    `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name,
+    `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, job_title,
             (${MATCHED_COMPANY_SQL}) AS matched_company
      FROM users
      WHERE id != $2
        AND is_active = true
+       AND hide_from_search = false
        AND (
          ${collapse('company_name')} LIKE '%' || $1 || '%'
          OR (website_verified AND ${collapse('website')} LIKE '%' || $1 || '%')

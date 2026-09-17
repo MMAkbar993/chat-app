@@ -188,9 +188,15 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
                   ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
                   : (u.full_name || u.username || '?')[0].toUpperCase()}
               </div>
+              {/* What they do comes before where they work. Searching a company returns a list
+                  of people from it, and the job title is the thing that tells you which of
+                  them is worth messaging. */}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">{u.display_name || u.full_name}</p>
-                <p className={`text-xs truncate ${sub}`}>{u.matched_company || getRoleLabel(u)}</p>
+                <p className={`text-xs truncate ${sub}`}>{u.job_title || getRoleLabel(u)}</p>
+                {u.matched_company && (
+                  <p className={`text-xs truncate ${sub}`}>{u.matched_company}</p>
+                )}
               </div>
               {contactIds.has(u.id) || added[u.id] ? (
                 <button
