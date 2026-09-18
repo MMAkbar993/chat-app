@@ -1,5 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import {
+  AppMockup, ProfileMockup, IdCheckVisual, MetaTagVisual, SocialConnectVisual,
+  GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup,
+} from '../components/marketing/HowItWorksMockups'
+
+// Copy on this page is supplied by the product team — keep the wording as given.
 
 // Same dotted/glow treatment as the public profile and group-invite pages, so the pages a
 // stranger sees before they have an account all look like one product.
@@ -13,166 +19,138 @@ const NAV = [
   { href: '#verification', label: 'Verification' },
   { href: '#features', label: 'Features' },
   { href: '#security', label: 'Security' },
-  { href: '#pricing', label: 'Pricing' },
 ]
 
 const STEPS = [
   {
     title: 'Create your account',
-    desc: 'Sign up with your work email and confirm it. Then add your role in the industry, your job title and the company you work with.',
+    desc: 'Sign up with your email address and add your role, job title and company information to your profile.',
     path: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
   },
   {
     title: 'Verify your identity',
-    desc: 'Every account passes identity verification with a government-issued ID before it can be used. This is what keeps anonymous and impersonated accounts out.',
+    desc: 'Complete identity verification using a government-issued ID. Every user must be verified before accessing Pulse.',
     path: 'M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z',
   },
   {
-    title: 'Prove what you represent',
-    desc: 'Optionally verify the websites you own and connect your social profiles, so the people you speak to can see who you actually work for.',
+    title: 'Verify your professional presence',
+    desc: 'Optionally verify the websites and social profiles connected to your work, so others can see who you represent.',
     path: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   },
   {
-    title: 'Connect and do business',
-    desc: 'Find the right people, message them, jump on a call, share files and build the partnerships your business actually runs on.',
-    path: 'M13 10V3L4 14h7v7l9-11h-7z',
+    title: 'Communicate and do business',
+    desc: 'Message individuals or groups, make calls, share files, schedule meetings and build professional relationships—all from one place.',
+    path: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
   },
 ]
 
 const VERIFICATION = [
   {
-    badge: 'KYC Verified',
     title: 'Identity verification',
-    lead: 'Required for everyone, before any access.',
+    lead: 'Every user is verified before accessing Pulse.',
+    visual: <IdCheckVisual />,
     points: [
-      'Identity is checked through Didit, our third-party verification provider, using a government-issued identity document.',
-      'A liveness and biometric check confirms the document belongs to the person presenting it.',
-      'Where an automated check cannot complete, the request goes to our team for manual review.',
-      'Nobody reaches the platform without passing. This is the difference between Pulse and an ordinary messenger.',
+      'Identity is checked through Didit using a government-issued identity document.',
+      'A liveness and biometric check confirms that the document belongs to the person presenting it.',
+      'If the automated check cannot be completed, the request is sent for manual review.',
+      'No anonymous users or unverified accounts can access the platform.',
     ],
-    path: 'M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z',
   },
   {
-    badge: 'Website Verified',
     title: 'Website verification',
-    lead: 'Proves you control the domain you claim.',
+    lead: 'Show that you control the company or website you represent.',
+    visual: <MetaTagVisual />,
     points: [
-      'Pulse generates a unique verification meta tag for your website. You add it to the <head> section of the site and press Verify.',
-      "Can't edit the page? Add the TXT record Pulse gives you at your DNS provider instead — that route is unaffected by firewalls or caching.",
-      'Verified websites appear on your public profile, and the first person to verify a company domain becomes its Website Admin.',
-      'Colleagues can then request to be approved as representatives of that same company, which the admin approves or rejects.',
+      'Verify your website using a unique meta tag or DNS record.',
+      'Verified websites appear on your public Pulse profile.',
+      'The first person to verify a company domain becomes its Website Administrator.',
+      'Colleagues can request to be added as representatives of the same company.',
     ],
-    path: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
   },
   {
-    badge: 'Socials Verified',
     title: 'Social profile verification',
-    lead: 'Connected by login, not by pasting a link.',
+    lead: 'Connect your professional social accounts securely.',
+    visual: <SocialConnectVisual />,
     points: [
-      'Where a platform supports it, Pulse connects social accounts through OAuth — you log in to the platform itself and it confirms the account back to us.',
-      'That means a connected profile is one you actually control, rather than any URL someone chose to type in.',
-      'Supported through OAuth today: Facebook, X, Instagram, YouTube, Kick and Twitch.',
-      'Connected profiles can be shown on your public Pulse profile as another signal that you are who you say you are.',
+      'Connect supported social accounts by logging in through the platform itself.',
+      'This confirms that you control the account, rather than simply adding a social media link.',
+      'Supported platforms include Facebook, X, Instagram, YouTube, Kick and Twitch.',
+      'Connected profiles can appear on your public Pulse profile.',
     ],
-    path: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
   },
 ]
 
-const FEATURES = [
-  {
+const F = {
+  messaging: {
     title: 'Direct and group messaging',
-    desc: 'One-to-one conversations, replies, reactions, editing, pinned messages and search across your history. Groups are available on Pro.',
+    desc: 'Have one-to-one conversations or create group chats with replies, reactions, message editing, pinned messages and searchable conversation history.',
     path: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
   },
-  {
+  calls: {
     title: 'Voice and video calls',
-    desc: 'Call anyone on Pulse without swapping numbers or moving to another app. Free accounts get 30 minutes a month; Pro is unlimited.',
+    desc: 'Call your contacts directly from Pulse without exchanging phone numbers or moving to another app. Free accounts receive 30 minutes of voice and video calls per month. Pro accounts receive unlimited access.',
     path: 'M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z',
   },
-  {
+  screen: {
     title: 'Screen sharing',
-    desc: 'Share your screen mid-call to walk a partner through a deck, a dashboard or a live demo instead of describing it. Pro feature.',
+    desc: 'Share your screen during a call to present a deck, explain a dashboard or walk someone through a live demonstration. Available with Pro.',
     path: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   },
-  {
+  search: {
     title: 'Search by business name',
-    desc: 'Look up people by the company or brand they work for rather than a username you would have to know already. Pro feature.',
+    desc: 'Find professionals by the company or brand they work for, even if you do not know their username. Available with Pro.',
     path: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
   },
-  {
+  files: {
     title: 'File sharing',
-    desc: 'Send documents, images, voice notes and media straight into the conversation, with larger upload limits on Pro.',
+    desc: 'Send documents, images, voice notes and other media directly in your conversations, with higher upload limits available on Pro.',
     path: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
   },
-  {
+  calendar: {
     title: 'Calendar scheduling',
-    desc: 'Book meetings with the person you are talking to and keep them synced with Google Calendar. Pro feature.',
+    desc: 'Schedule meetings with your contacts and keep them synchronized with Google Calendar. Available with Pro.',
     path: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
   },
+}
+
+// Each row pairs two related features with a picture of them in use, alternating sides so
+// the section reads as a walk through the product rather than a wall of cards.
+const FEATURE_ROWS = [
+  { items: [F.messaging, F.files], visual: <GroupChatMockup /> },
+  { items: [F.calls, F.screen], visual: <CallMockup />, flip: true },
+  { items: [F.search, F.calendar], visual: <SearchMockup /> },
 ]
 
 const SECURITY = [
   {
     title: 'Two-factor authentication',
-    desc: 'Protect your account with an authenticator app, so a stolen password alone is not enough to get in.',
+    desc: 'Protect your account with an authenticator app, so a stolen password alone is not enough to access it.',
   },
   {
     title: 'Hide from search',
-    desc: 'Take yourself out of both username and business search entirely. Be on Pulse without being discoverable.',
+    desc: 'Remove yourself from username and business-name searches. Stay on Pulse without appearing in search results.',
   },
   {
-    title: 'Control group invites',
-    desc: 'Restrict group invitations to your own contacts, so strangers cannot pull you into a group unannounced.',
+    title: 'Control group invitations',
+    desc: 'Choose who can invite you to groups, so you are not added to unfamiliar conversations without your permission.',
   },
   {
     title: 'Block and report',
-    desc: 'Block anyone from messaging or calling you, and report accounts and groups to our team for review.',
+    desc: 'Block users from messaging or calling you, and report accounts or groups to our team for review.',
   },
   {
     title: 'Private and encrypted in transit',
-    desc: 'Conversations are private to their participants and encrypted in transit between you and Pulse.',
+    desc: 'Your conversations are protected with encryption while data is transferred between your device and Pulse.',
   },
   {
-    title: 'Your data, your call',
-    desc: 'Verification data is handled under our KYC and Privacy policies, and you can deactivate or delete your account at any time.',
-  },
-]
-
-const PLANS = [
-  {
-    name: 'Free',
-    price: '€0',
-    per: 'forever',
-    lead: 'The core platform, fully verified.',
-    items: [
-      'Verified profile and badges',
-      'Direct messaging and contacts',
-      '30 minutes of calls a month',
-      'File sharing',
-      'Website and social verification',
-    ],
-  },
-  {
-    name: 'Pro',
-    price: '€6.99',
-    per: 'per month, or €70.00 a year',
-    lead: 'For people doing business here every day.',
-    featured: true,
-    items: [
-      'Everything in Free',
-      'Unlimited voice and video calls',
-      'Screen sharing',
-      'Search by business name',
-      'Groups',
-      'Google Calendar scheduling',
-      'Unlimited file sharing',
-    ],
+    title: 'Control your data',
+    desc: 'Your verification data is handled according to our KYC and Privacy Policies. You can deactivate or delete your account at any time.',
   },
 ]
 
 function Eyebrow({ children }) {
   return (
-    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-xs font-bold uppercase tracking-wider text-violet-600 shadow-sm">
+    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm bg-white text-violet-600">
       <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
       {children}
     </span>
@@ -191,10 +169,10 @@ export default function HowItWorksPage() {
   const { user } = useAuth()
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Self-link, not "/" — that has no route and falls through to the login redirect,
               so clicking the logo on a marketing page would bounce you off it. */}
           <Link to="/how-it-works"><img src="/full-logo.png" alt="Pulse" className="h-7" /></Link>
@@ -225,24 +203,24 @@ export default function HowItWorksPage() {
       </header>
 
       {/* Hero */}
-      <section className="px-6 py-16 sm:py-24 text-center" style={HERO_BG}>
-        <div className="max-w-3xl mx-auto">
-          <Eyebrow>For iGaming professionals</Eyebrow>
+      <section className="px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24" style={HERO_BG}>
+        <div className="max-w-3xl mx-auto text-center">
+          <Eyebrow>Professional communication for iGaming</Eyebrow>
           <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            Know exactly who you're{' '}
-            <span className="bg-linear-to-r from-sky-400 to-violet-600 bg-clip-text text-transparent">talking to</span>.
+            The verified communication platform for{' '}
+            <span className="bg-linear-to-r from-sky-400 to-violet-600 bg-clip-text text-transparent">iGaming</span>.
           </h1>
           <p className="mt-5 text-lg text-gray-600 leading-relaxed">
-            Impersonation and fake accounts are a daily problem in iGaming. Pulse is a messaging
-            platform where every single person has passed identity verification before they can
-            send you a word — and where they can prove the company and websites they represent.
+            Pulse brings messaging, group chats, voice and video calls, file sharing, screen sharing
+            and meeting scheduling together in one secure web app. Communicate and do business with
+            confidence, knowing who you are speaking with and who they represent.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/signup" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors shadow-md shadow-violet-600/20">
               Create your account
             </Link>
             <a href="#steps" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white border border-gray-200 hover:border-violet-300 font-semibold transition-colors">
-              See how it works
+              See how Pulse works
             </a>
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-gray-700">
@@ -254,21 +232,29 @@ export default function HowItWorksPage() {
             ))}
           </div>
         </div>
+
+        {/* The product itself, front and centre — without this, nothing above says "messenger" */}
+        <div className="max-w-5xl mx-auto mt-14 sm:mt-16">
+          <AppMockup />
+        </div>
       </section>
 
-      {/* Steps */}
-      <section id="steps" className="px-6 py-16 sm:py-20 border-t border-gray-100">
+      {/* Getting started */}
+      <section id="steps" className="px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl">
-            <h2 className="text-3xl font-extrabold tracking-tight">Getting started</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight">Get connected and start communicating</h2>
             <p className="mt-3 text-gray-600">
-              Four steps from signing up to doing business. The verification work happens once,
-              up front, and everyone you meet here has done the same.
+              Create your account, verify your identity and start communicating with iGaming
+              professionals in one trusted workspace.
             </p>
           </div>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {STEPS.map((s, i) => (
-              <div key={s.title} className="rounded-2xl border border-gray-100 bg-gray-50/70 p-6">
+              <div key={s.title} className="relative rounded-2xl border border-gray-100 bg-gray-50/70 p-6">
+                {i < STEPS.length - 1 && (
+                  <span className="hidden lg:block absolute top-11 -right-5 w-5 border-t-2 border-dashed border-violet-200" />
+                )}
                 <div className="flex items-center gap-3 mb-4">
                   <span className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center text-violet-600">
                     <Icon path={s.path} className="w-5 h-5" />
@@ -285,32 +271,27 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Verification — the differentiator, so it gets the most room on the page */}
-      <section id="verification" className="px-6 py-16 sm:py-20 bg-lavender">
+      {/* Verification */}
+      <section id="verification" className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender scroll-mt-16">
         <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl">
-            <Eyebrow>Verification</Eyebrow>
-            <h2 className="mt-5 text-3xl font-extrabold tracking-tight">Three separate things you can prove</h2>
-            <p className="mt-3 text-gray-600">
-              Anyone can claim a name, a company and a website. On Pulse those are three
-              different checks, and each one shows on your profile as its own badge, so the
-              person on the other side can see precisely what has been confirmed.
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <Eyebrow>Trusted communication</Eyebrow>
+              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Know who you're communicating with</h2>
+              <p className="mt-4 text-gray-600 leading-relaxed">
+                Pulse combines professional communication with identity and business verification.
+                Users can see what has been confirmed before they start a conversation, helping
+                reduce impersonation, fake accounts and uncertainty.
+              </p>
+            </div>
+            <ProfileMockup />
           </div>
 
-          <div className="mt-10 grid lg:grid-cols-3 gap-5">
+          <div className="mt-14 grid lg:grid-cols-3 gap-5">
             {VERIFICATION.map((v) => (
-              <div key={v.title} className="rounded-2xl bg-white p-6 shadow-sm">
-                <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center mb-4">
-                  <Icon path={v.path} className="w-5 h-5" />
-                </span>
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <p className="font-bold">{v.title}</p>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-green-700 bg-green-50 rounded-full px-2 py-0.5">
-                    <Icon path="M5 13l4 4L19 7" className="w-2.5 h-2.5" />
-                    {v.badge}
-                  </span>
-                </div>
+              <div key={v.title} className="rounded-2xl bg-white p-5 shadow-sm flex flex-col">
+                {v.visual}
+                <p className="mt-5 font-bold">{v.title}</p>
                 <p className="text-sm font-medium text-violet-600">{v.lead}</p>
                 <ul className="mt-4 space-y-2.5">
                   {v.points.map((p) => (
@@ -325,48 +306,62 @@ export default function HowItWorksPage() {
           </div>
 
           <p className="mt-8 text-sm text-gray-500 max-w-3xl">
-            Identity verification is mandatory. Website and social verification are optional —
-            but they are what turn "trust me, I work there" into something a stranger can check
-            for themselves before replying.
+            Identity verification is mandatory. Website and social profile verification are
+            optional, but they provide additional context and help others understand who you are
+            and who you represent.
           </p>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="px-6 py-16 sm:py-20">
+      <section id="features" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl">
-            <h2 className="text-3xl font-extrabold tracking-tight">Everything you'd expect, built for the work</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight">Everything your business communication needs</h2>
             <p className="mt-3 text-gray-600">
-              Pulse is a full messenger first. The verification is what makes the conversations
-              on it worth having.
+              Pulse brings the tools you use every day into one professional workspace—so you can
+              communicate, collaborate and build partnerships without switching between multiple apps.
             </p>
           </div>
-          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-gray-100 p-6 hover:border-violet-200 transition-colors">
-                <span className="w-11 h-11 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center mb-4">
-                  <Icon path={f.path} className="w-5 h-5" />
-                </span>
-                <p className="font-bold">{f.title}</p>
-                <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">{f.desc}</p>
+
+          <div className="mt-14 space-y-20">
+            {FEATURE_ROWS.map((row) => (
+              <div key={row.items[0].title} className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                <div className={row.flip ? 'lg:order-2' : ''}>{row.visual}</div>
+                <div className="space-y-8">
+                  {row.items.map((f) => (
+                    <div key={f.title} className="flex gap-4">
+                      <span className="w-11 h-11 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
+                        <Icon path={f.path} className="w-5 h-5" />
+                      </span>
+                      <div>
+                        <p className="text-lg font-bold">{f.title}</p>
+                        <p className="mt-1.5 text-gray-600 leading-relaxed">{f.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Security & privacy */}
-      <section id="security" className="px-6 py-16 sm:py-20 bg-gray-900 text-white">
+      {/* Security and privacy */}
+      <section id="security" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-900 text-white scroll-mt-16">
         <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-extrabold tracking-tight">Security and privacy</h2>
-            <p className="mt-3 text-gray-400">
-              Being verified shouldn't mean being exposed. You decide how findable you are and
-              who gets to reach you.
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Security and privacy</h2>
+              <p className="mt-4 text-gray-400 leading-relaxed">
+                Being verified should not mean being exposed. You control how discoverable you are
+                and who can contact you.
+              </p>
+            </div>
+            <PrivacyMockup />
           </div>
-          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
+
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
             {SECURITY.map((s) => (
               <div key={s.title}>
                 <p className="flex items-center gap-2 font-semibold">
@@ -380,59 +375,10 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="px-6 py-16 sm:py-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-extrabold tracking-tight">Pricing</h2>
-            <p className="mt-3 text-gray-600">
-              Verification and messaging are free. Pro adds the tools for people who are on here
-              closing business every day.
-            </p>
-          </div>
-          <div className="mt-10 grid md:grid-cols-2 gap-5">
-            {PLANS.map((p) => (
-              <div
-                key={p.name}
-                className={`rounded-2xl p-7 ${p.featured ? 'bg-lavender ring-2 ring-violet-600' : 'border border-gray-100'}`}
-              >
-                <div className="flex items-center gap-2">
-                  <p className="font-bold text-lg">{p.name}</p>
-                  {p.featured && (
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-white bg-violet-600 rounded-md px-1.5 py-0.5">
-                      Most popular
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mt-0.5">{p.lead}</p>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-4xl font-extrabold tracking-tight">{p.price}</span>
-                  <span className="text-sm text-gray-500">{p.per}</span>
-                </div>
-                <ul className="mt-6 space-y-2.5">
-                  {p.items.map((i) => (
-                    <li key={i} className="flex gap-2.5 text-sm text-gray-700">
-                      <Icon path="M5 13l4 4L19 7" className="w-4 h-4 mt-0.5 shrink-0 text-violet-600" />
-                      {i}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-center text-xs text-gray-400">
-            Pro renews automatically and can be cancelled at any time from Settings → Billing.
-          </p>
-        </div>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="px-6 pb-20">
-        <div className="max-w-4xl mx-auto rounded-3xl px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
-          <h2 className="text-3xl font-extrabold tracking-tight">Ready to join Pulse?</h2>
-          <p className="mt-3 text-white/85 max-w-xl mx-auto">
-            Verify once, and connect with iGaming professionals who have done the same.
-          </p>
+      {/* Closing CTA — reuses the hero's own title and button rather than adding new copy */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto rounded-3xl px-6 sm:px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
+          <h2 className="text-3xl font-extrabold tracking-tight">The verified communication platform for iGaming.</h2>
           <Link
             to="/signup"
             className="inline-block mt-7 px-7 py-3 rounded-xl bg-white text-violet-700 font-bold hover:bg-violet-50 transition-colors shadow-lg"
@@ -443,7 +389,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-10 border-t border-gray-100">
+      <footer className="px-4 sm:px-6 py-10 border-t border-gray-100">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <img src="/full-logo.png" alt="Pulse" className="h-6 opacity-70" />
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
