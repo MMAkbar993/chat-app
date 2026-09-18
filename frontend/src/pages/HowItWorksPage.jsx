@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  AppMockup, ProfileMockup, IdCheckVisual, MetaTagVisual, SocialConnectVisual,
+  AppMockup, ProfileMockup, KycSlider, MetaTagVisual, SocialConnectVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup,
 } from '../components/marketing/HowItWorksMockups'
 
@@ -44,18 +44,20 @@ const STEPS = [
   },
 ]
 
+// Identity gets its own row with the screenshot slider — it's the mandatory check and the
+// one people are most unsure about, so it earns the most room.
+const IDENTITY = {
+  title: 'Identity verification',
+  lead: 'Every user is verified before accessing Pulse.',
+  points: [
+    'Identity is checked through Didit using a government-issued identity document.',
+    'A liveness and biometric check confirms that the document belongs to the person presenting it.',
+    'If the automated check cannot be completed, the request is sent for manual review.',
+    'No anonymous users or unverified accounts can access the platform.',
+  ],
+}
+
 const VERIFICATION = [
-  {
-    title: 'Identity verification',
-    lead: 'Every user is verified before accessing Pulse.',
-    visual: <IdCheckVisual />,
-    points: [
-      'Identity is checked through Didit using a government-issued identity document.',
-      'A liveness and biometric check confirms that the document belongs to the person presenting it.',
-      'If the automated check cannot be completed, the request is sent for manual review.',
-      'No anonymous users or unverified accounts can access the platform.',
-    ],
-  },
   {
     title: 'Website verification',
     lead: 'Show that you control the company or website you represent.',
@@ -249,20 +251,19 @@ export default function HowItWorksPage() {
               professionals in one trusted workspace.
             </p>
           </div>
-          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-10">
             {STEPS.map((s, i) => (
-              <div key={s.title} className="relative rounded-2xl border border-gray-100 bg-gray-50/70 p-6">
+              <div key={s.title} className="relative rounded-2xl border border-gray-100 bg-gray-50/70 px-6 pt-9 pb-6">
+                {/* Step number sits on the card's top edge, so the order reads before anything else */}
+                <span className="absolute -top-4 left-6 w-8 h-8 rounded-full bg-violet-600 text-white text-sm font-bold flex items-center justify-center shadow-md ring-4 ring-white">
+                  {i + 1}
+                </span>
                 {i < STEPS.length - 1 && (
-                  <span className="hidden lg:block absolute top-11 -right-5 w-5 border-t-2 border-dashed border-violet-200" />
+                  <span className="hidden lg:block absolute top-0 -right-5 w-5 border-t-2 border-dashed border-violet-200" />
                 )}
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center text-violet-600">
-                    <Icon path={s.path} className="w-5 h-5" />
-                  </span>
-                  <span className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-bold flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                </div>
+                <span className="w-11 h-11 mb-4 rounded-xl bg-white shadow-sm flex items-center justify-center text-violet-600">
+                  <Icon path={s.path} className="w-5 h-5" />
+                </span>
                 <p className="font-bold">{s.title}</p>
                 <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">{s.desc}</p>
               </div>
@@ -287,7 +288,27 @@ export default function HowItWorksPage() {
             <ProfileMockup />
           </div>
 
-          <div className="mt-14 grid lg:grid-cols-3 gap-5">
+          {/* Identity: the copy beside a walkthrough of the real verification screens */}
+          <div className="mt-14 rounded-3xl bg-white/60 p-5 sm:p-8 grid lg:grid-cols-2 gap-10 items-center">
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
+                <Icon path="M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z" className="w-5 h-5" />
+              </span>
+              <p className="mt-5 text-xl font-bold">{IDENTITY.title}</p>
+              <p className="text-sm font-medium text-violet-600">{IDENTITY.lead}</p>
+              <ul className="mt-4 space-y-2.5">
+                {IDENTITY.points.map((p) => (
+                  <li key={p} className="flex gap-2.5 text-sm text-gray-600 leading-relaxed">
+                    <Icon path="M5 13l4 4L19 7" className="w-3.5 h-3.5 mt-1 shrink-0 text-violet-500" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <KycSlider />
+          </div>
+
+          <div className="mt-5 grid md:grid-cols-2 gap-5">
             {VERIFICATION.map((v) => (
               <div key={v.title} className="rounded-2xl bg-white p-5 shadow-sm flex flex-col">
                 {v.visual}
@@ -375,10 +396,14 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Closing CTA — reuses the hero's own title and button rather than adding new copy */}
+      {/* Closing CTA */}
       <section className="px-4 sm:px-6 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto rounded-3xl px-6 sm:px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
-          <h2 className="text-3xl font-extrabold tracking-tight">The verified communication platform for iGaming.</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">Ready to join Pulse?</h2>
+          <p className="mt-3 text-white/85 max-w-xl mx-auto">
+            Create your account, verify your identity and connect with iGaming professionals in
+            one trusted workspace.
+          </p>
           <Link
             to="/signup"
             className="inline-block mt-7 px-7 py-3 rounded-xl bg-white text-violet-700 font-bold hover:bg-violet-50 transition-colors shadow-lg"

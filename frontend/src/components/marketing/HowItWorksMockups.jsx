@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import SocialIcon from '../ui/SocialIcon'
 
 // Illustrations for the public How It Works page, drawn as miniature Pulse UI rather than
@@ -239,34 +240,119 @@ export function ProfileMockup() {
   )
 }
 
-// Small header graphics for each of the three verification cards.
+// Real screenshots of the identity check, in order. Labels are the screens' own headings.
+const KYC_SLIDES = [
+  { src: '/how-it-works/kyc-1-start.png', label: 'Start verification', alt: 'Verification for Pulse start screen listing ID verification and face verification, approximately one minute' },
+  { src: '/how-it-works/kyc-2-document.png', label: 'Prepare your document', alt: 'Prepare your document screen asking for the country and type of ID, and a photo of the front' },
+  { src: '/how-it-works/kyc-3-camera.png', label: 'Prepare for the camera', alt: 'Prepare for the camera screen with tips: good lighting, nothing covering your face, no glasses' },
+  { src: '/how-it-works/kyc-4-selfie.png', label: 'Selfie capture', alt: 'Selfie capture screen with a face positioned inside an oval frame' },
+  { src: '/how-it-works/kyc-5-verified.png', label: "You've been verified", alt: "Confirmation screen reading You've been verified, no further action needed" },
+]
 
-export function IdCheckVisual() {
+const SLIDE_MS = 3500
+
+export function KycSlider() {
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  // Auto-advancing is decoration, so it's off for anyone who has asked their OS for less
+  // motion — they still get the arrows and the step list.
+  const [reduceMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  )
+
+  useEffect(() => {
+    if (paused || reduceMotion) return undefined
+    const t = setTimeout(() => setIndex((i) => (i + 1) % KYC_SLIDES.length), SLIDE_MS)
+    return () => clearTimeout(t)
+  }, [index, paused, reduceMotion])
+
+  const go = (i) => setIndex((i + KYC_SLIDES.length) % KYC_SLIDES.length)
+
   return (
-    <div aria-hidden="true" className="h-28 rounded-xl bg-lavender flex items-center justify-center gap-4">
-      <div className="relative w-28 h-18 rounded-lg bg-white shadow-sm ring-1 ring-violet-100 p-2.5 flex gap-2">
-        <span className="w-8 h-10 rounded bg-violet-200 flex items-end justify-center overflow-hidden">
-          <span className="w-5 h-6 rounded-t-full bg-violet-400" />
-        </span>
-        <span className="flex-1 flex flex-col gap-1.5 pt-1">
-          <span className="h-1.5 rounded bg-gray-200 w-full" />
-          <span className="h-1.5 rounded bg-gray-200 w-3/4" />
-          <span className="h-1.5 rounded bg-gray-200 w-1/2" />
-        </span>
-        <span className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center ring-2 ring-white">
-          <I d={P.check} className="w-3.5 h-3.5" stroke={3} />
-        </span>
+    <div
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Identity verification steps"
+      className="flex flex-col sm:flex-row items-center justify-center gap-8"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      {/* Phone */}
+      <div className="flex flex-col items-center gap-4 shrink-0">
+        <div className="w-60 sm:w-64 rounded-[2.5rem] bg-gray-900 p-2.5 shadow-2xl shadow-violet-900/20">
+          <div className="relative rounded-4xl overflow-hidden bg-white aspect-680/1150">
+            {KYC_SLIDES.map((s, i) => (
+              <img
+                key={s.src}
+                src={s.src}
+                alt={s.alt}
+                aria-hidden={i !== index}
+                loading="lazy"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => go(index - 1)}
+            aria-label="Previous step"
+            className="w-9 h-9 rounded-full bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:text-violet-600 flex items-center justify-center transition-colors"
+          >
+            <I d="M15 19l-7-7 7-7" />
+          </button>
+          <div className="flex gap-1.5">
+            {KYC_SLIDES.map((s, i) => (
+              <button
+                key={s.src}
+                type="button"
+                onClick={() => go(i)}
+                aria-label={`Step ${i + 1}: ${s.label}`}
+                className={`h-2 rounded-full transition-all ${i === index ? 'w-6 bg-violet-600' : 'w-2 bg-violet-200 hover:bg-violet-300'}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => go(index + 1)}
+            aria-label="Next step"
+            className="w-9 h-9 rounded-full bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:text-violet-600 flex items-center justify-center transition-colors"
+          >
+            <I d="M9 5l7 7-7 7" />
+          </button>
+        </div>
       </div>
-      <div className="flex flex-col gap-1.5 text-[10px] font-medium text-gray-600">
-        {['Document', 'Liveness', 'Verified'].map((s) => (
-          <span key={s} className="flex items-center gap-1.5">
-            <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> {s}
-          </span>
+
+      {/* Step list — doubles as the caption, and lets people jump to any screen */}
+      <ol className="w-full sm:w-56 space-y-1.5">
+        {KYC_SLIDES.map((s, i) => (
+          <li key={s.src}>
+            <button
+              type="button"
+              onClick={() => go(i)}
+              aria-current={i === index ? 'step' : undefined}
+              className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                i === index ? 'bg-white shadow-sm' : 'hover:bg-white/60'
+              }`}
+            >
+              <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 transition-colors ${
+                i < index ? 'bg-green-500 text-white' : i === index ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-600'
+              }`}>
+                {i < index ? <I d={P.check} className="w-3.5 h-3.5" stroke={3} /> : i + 1}
+              </span>
+              <span className={`text-sm ${i === index ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{s.label}</span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   )
 }
+
+// Small header graphics for the website and social verification cards.
 
 export function MetaTagVisual() {
   return (
