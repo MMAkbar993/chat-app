@@ -133,6 +133,10 @@ const SECURITY = [
     desc: 'Remove yourself from username and business-name searches. Stay on Pulse without appearing in search results.',
   },
   {
+    title: 'Choose your display name',
+    desc: 'Decide how your name appears to others. Choose from options based on your verified name, such as your first name only or your first and last name.',
+  },
+  {
     title: 'Control group invitations',
     desc: 'Choose who can invite you to groups, so you are not added to unfamiliar conversations without your permission.',
   },
