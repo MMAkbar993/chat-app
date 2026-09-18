@@ -502,8 +502,23 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={() => setLightbox(null)}
         >
+          {/* ?download=1 makes the server send it as an attachment under the file's original
+              name, rather than the browser saving it as the storage name in the URL. */}
+          <a
+            href={`${lightbox.url}${lightbox.url.includes('?') ? '&' : '?'}download=1`}
+            download={msg.file_name || true}
+            onClick={(e) => e.stopPropagation()}
+            title="Download"
+            aria-label="Download"
+            className="absolute top-4 right-16 text-white/80 hover:text-white"
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </a>
           <button
             type="button"
+            aria-label="Close"
             className="absolute top-4 right-4 text-white/80 hover:text-white"
             onClick={() => setLightbox(null)}
           >

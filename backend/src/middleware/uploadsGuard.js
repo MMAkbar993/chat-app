@@ -29,6 +29,26 @@ const INLINE_EXTENSIONS = new Set([
   '.mp3', '.wav', '.ogg', '.m4a', '.aac',
 ])
 
+// A browser names a saved file from Content-Disposition when one is sent, and otherwise from
+// the URL — which is the randomised on-disk name ("msg-<uuid>-<epoch>.png"). The original name
+// is already stored on the message, so hand it over. The stored name can be truncated with an
+// ellipsis, which drops the extension, so the real one is put back when it's missing.
+function downloadName(stored, diskName) {
+  const name = String(stored || '').replace(/[\u0000-\u001f\u007f]/g, '').trim()
+  if (!name) return null
+  const ext = path.extname(diskName)
+  return ext && !name.toLowerCase().endsWith(ext.toLowerCase()) ? `${name}${ext}` : name
+}
+
+// RFC 6266: a plain-ASCII filename for old clients plus a UTF-8 filename* so accented and
+// non-Latin names survive intact. encodeURIComponent leaves ' ( ) * alone, which RFC 5987
+// does not allow unescaped.
+function contentDisposition(type, name) {
+  const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_')
+  const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)
+  return `${type}; filename="${ascii}"; filename*=UTF-8''${encoded}`
+}
+
 function identify(req) {
   const header = req.headers.authorization
   if (header?.startsWith('Bearer ')) {
@@ -67,7 +87,7 @@ export async function uploadsGuard(req, res, next) {
     if (!userId) return res.status(401).json({ error: 'Sign in to view this file' })
 
     const result = await query(
-      `SELECT conversation_id, is_deleted, deleted_for
+      `SELECT conversation_id, is_deleted, deleted_for, file_name
          FROM messages
         WHERE media_url = $1`,
       [`/uploads/${filename}`]
@@ -83,7 +103,13 @@ export async function uploadsGuard(req, res, next) {
 
     // Private: a shared cache or proxy must never hand one user's file to another.
     res.setHeader('Cache-Control', 'private, max-age=3600')
-    if (!INLINE_EXTENSIONS.has(path.extname(filename).toLowerCase())) {
+    // ?download=1 can only turn an inline type into an attachment (for a Download button); it
+    // can never make a non-inline type render inline, so the safety rule above still holds.
+    const inline = INLINE_EXTENSIONS.has(path.extname(filename).toLowerCase()) && req.query.download !== '1'
+    const name = downloadName(msg.file_name, filename)
+    if (name) {
+      res.setHeader('Content-Disposition', contentDisposition(inline ? 'inline' : 'attachment', name))
+    } else if (!inline) {
       res.setHeader('Content-Disposition', 'attachment')
     }
     next()
