@@ -115,12 +115,7 @@ export default function UpgradeModal({ isOpen, onClose }) {
                 <path d="M12 0l2.2 9.8L24 12l-9.8 2.2L12 24l-2.2-9.8L0 12l9.8-2.2z" />
               </svg>
             ))}
-            <div className="relative">
-              <img src="/full-logo.png" alt="Pulse" className="h-9" />
-              <span className="absolute -top-2 -right-7 text-[10px] font-bold tracking-wide text-white bg-violet-600 rounded-md px-1.5 py-0.5">
-                PRO
-              </span>
-            </div>
+            <img src="/pro.png" alt="Pulse Pro" className="relative h-12" />
           </div>
 
           <p className="px-7 text-center text-[15px] leading-snug text-gray-600">
