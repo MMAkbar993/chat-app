@@ -241,12 +241,14 @@ export function ProfileMockup() {
 }
 
 // Real screenshots of the identity check, in order. Labels are the screens' own headings.
+// They live in /marketing/, not /how-it-works/: a real folder at a page's path makes Nginx's
+// try_files match the directory instead of falling through to the SPA, and it 403s.
 const KYC_SLIDES = [
-  { src: '/how-it-works/kyc-1-start.png', label: 'Start verification', alt: 'Verification for Pulse start screen listing ID verification and face verification, approximately one minute' },
-  { src: '/how-it-works/kyc-2-document.png', label: 'Prepare your document', alt: 'Prepare your document screen asking for the country and type of ID, and a photo of the front' },
-  { src: '/how-it-works/kyc-3-camera.png', label: 'Prepare for the camera', alt: 'Prepare for the camera screen with tips: good lighting, nothing covering your face, no glasses' },
-  { src: '/how-it-works/kyc-4-selfie.png', label: 'Selfie capture', alt: 'Selfie capture screen with a face positioned inside an oval frame' },
-  { src: '/how-it-works/kyc-5-verified.png', label: "You've been verified", alt: "Confirmation screen reading You've been verified, no further action needed" },
+  { src: '/marketing/kyc-1-start.png', label: 'Start verification', alt: 'Verification for Pulse start screen listing ID verification and face verification, approximately one minute' },
+  { src: '/marketing/kyc-2-document.png', label: 'Prepare your document', alt: 'Prepare your document screen asking for the country and type of ID, and a photo of the front' },
+  { src: '/marketing/kyc-3-camera.png', label: 'Prepare for the camera', alt: 'Prepare for the camera screen with tips: good lighting, nothing covering your face, no glasses' },
+  { src: '/marketing/kyc-4-selfie.png', label: 'Selfie capture', alt: 'Selfie capture screen with a face positioned inside an oval frame' },
+  { src: '/marketing/kyc-5-verified.png', label: "You've been verified", alt: "Confirmation screen reading You've been verified, no further action needed" },
 ]
 
 const SLIDE_MS = 3500
