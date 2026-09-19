@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import {
   AppMockup, ProfileMockup, KycSlider, MetaTagVisual, SocialConnectVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
@@ -203,6 +205,27 @@ function Icon({ path, className = 'w-5 h-5' }) {
 
 export default function HowItWorksPage() {
   const { user } = useAuth()
+
+  // A direct visit already gets these from the pre-built HTML; this covers arriving here by
+  // navigating inside the app, and puts the defaults back when leaving.
+  useEffect(() => {
+    const prevTitle = document.title
+    document.title = HOW_IT_WORKS_META.title
+    let tag = document.querySelector('meta[name="description"]')
+    const created = !tag
+    if (created) {
+      tag = document.createElement('meta')
+      tag.name = 'description'
+      document.head.appendChild(tag)
+    }
+    const prevDescription = tag.content
+    tag.content = HOW_IT_WORKS_META.description
+    return () => {
+      document.title = prevTitle
+      if (created) tag.remove()
+      else tag.content = prevDescription
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
