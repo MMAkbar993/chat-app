@@ -356,41 +356,51 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
         Hidden once a deeper view (an open chat, a settings detail) takes over the screen, same
         as the desktop rail was via mobileHidden — the compose bar takes its place there instead. */}
     {!mobileHidden && (
-      <nav
-        className={`md:hidden fixed inset-x-4 z-30 flex items-center justify-around gap-1 rounded-full px-2 py-1.5 shadow-xl border ${
-          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
-        }`}
-        style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-      >
-        {NAV.map(({ key, label, icon }) => {
-          const badge = NAV_BADGES[key]
-          const isActive = active === key
-          return (
-            <button
-              key={key}
-              data-tour={`sidebar-${key}`}
-              onClick={() => onNav(key)}
-              className="relative flex flex-col items-center gap-0 px-3 py-1 min-w-14 transition-transform duration-150 active:scale-90"
-            >
-              <div className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                isActive
-                  ? darkMode ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-100 text-violet-600'
-                  : darkMode ? 'text-gray-400' : 'text-gray-400'
-              }`}>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icon}</svg>
-                {badge > 0 && (
-                  <span className={`absolute top-0.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ${darkMode ? 'ring-2 ring-gray-800' : 'ring-2 ring-white'}`} />
-                )}
-              </div>
-              <span className={`text-[11px] font-medium transition-colors ${
-                isActive ? 'text-violet-600' : darkMode ? 'text-gray-400' : 'text-gray-400'
-              }`}>
-                {label}
-              </span>
-            </button>
-          )
-        })}
-      </nav>
+      <>
+        {/* Soft fade behind the bar, like Telegram's: the list dissolves into the background
+            as it scrolls under the menu instead of ending in a hard edge behind the glass. */}
+        <div
+          aria-hidden="true"
+          className={`md:hidden fixed inset-x-0 bottom-0 z-20 h-28 pointer-events-none bg-linear-to-t ${
+            darkMode ? 'from-gray-900 via-gray-900/70' : 'from-white via-white/70'
+          } to-transparent`}
+        />
+        {/* Frosted glass: translucent with a backdrop blur, so the chats scrolling underneath
+            show through softly rather than disappearing behind a solid white bar. */}
+        <nav
+          className={`md:hidden fixed inset-x-4 z-30 flex items-center gap-1 rounded-full p-1.5 border shadow-lg backdrop-blur-xl backdrop-saturate-150 ${
+            darkMode ? 'bg-gray-800/60 border-white/10 shadow-black/30' : 'bg-white/60 border-white/80 shadow-gray-900/10'
+          }`}
+          style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
+          {NAV.map(({ key, label, icon }) => {
+            const badge = NAV_BADGES[key]
+            const isActive = active === key
+            // The active pill wraps the whole tab, icon and label, not just a circle behind the icon.
+            return (
+              <button
+                key={key}
+                data-tour={`sidebar-${key}`}
+                onClick={() => onNav(key)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative flex-1 min-w-0 flex flex-col items-center gap-0.5 rounded-full px-1 py-1.5 transition-all duration-150 active:scale-95 ${
+                  isActive
+                    ? darkMode ? 'bg-violet-500/20 text-violet-300' : 'bg-violet-500/10 text-violet-600 ring-1 ring-violet-200/70'
+                    : darkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}
+              >
+                <span className="relative">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">{icon}</svg>
+                  {badge > 0 && (
+                    <span className={`absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ${darkMode ? 'ring-gray-800' : 'ring-white'}`} />
+                  )}
+                </span>
+                <span className="text-[11px] font-medium truncate max-w-full">{label}</span>
+              </button>
+            )
+          })}
+        </nav>
+      </>
     )}
 
     <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />

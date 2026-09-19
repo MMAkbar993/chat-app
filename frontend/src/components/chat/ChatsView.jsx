@@ -307,7 +307,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
+      <div className="flex-1 overflow-y-auto pb-28 md:pb-0">
         {/* In "Messages" the hits replace the list; in "Everything" they sit under the
             matching chats, so one query covers both without switching modes. */}
         {searchMode === 'messages' && search.trim().length >= 2 ? (
@@ -373,13 +373,20 @@ export default function ChatsView({ darkMode, mobileHidden }) {
             const isActive = activeConversation?.id === c.id
             return (
               <Fragment key={c.id}>
+              {/* Plain rows separated by a hairline, like every other messenger's list — not
+                  a stack of separate cards. The line is inset to the row's own padding on
+                  phones and runs full width on desktop, as it did before. */}
               <div
-                className={`relative overflow-hidden mx-4 mb-2 rounded-2xl shadow-sm md:shadow-none md:mx-0 md:mb-0 md:rounded-none md:border-b ${
-                  darkMode ? 'bg-gray-800 md:bg-transparent md:border-gray-800' : 'bg-white md:bg-transparent md:border-gray-50'
-                }`}
+                className="relative overflow-hidden"
                 onMouseEnter={() => setHoveredConvId(c.id)}
                 onMouseLeave={() => setHoveredConvId(null)}
               >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute bottom-0 left-4 right-4 md:left-0 md:right-0 h-px ${
+                    darkMode ? 'bg-gray-800' : 'bg-gray-100 md:bg-gray-50'
+                  }`}
+                />
                 <button
                   onClick={() => {
                     if (longPressTriggered.current) { longPressTriggered.current = false; return }

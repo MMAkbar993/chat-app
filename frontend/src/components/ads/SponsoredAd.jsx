@@ -211,10 +211,12 @@ export function SponsoredChatRow({ darkMode }) {
   const [showUpgrade, setShowUpgrade] = useState(false)
   if (!ad) return null
 
+  // A row like the chats around it rather than a card, with a light tint so it still reads
+  // as something other than a conversation.
   return (
     <div
-      className={`relative md:hidden mx-4 mb-2 rounded-2xl border border-dashed ${
-        darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-violet-200 bg-violet-50/60'
+      className={`relative md:hidden border-b ${
+        darkMode ? 'border-gray-800 bg-gray-800/50' : 'border-gray-100 bg-violet-50/60'
       }`}
     >
       <a
