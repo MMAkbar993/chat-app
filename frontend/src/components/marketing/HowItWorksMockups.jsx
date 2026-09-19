@@ -196,9 +196,25 @@ export function AppMockup() {
 
 // ─── Verification ───────────────────────────────────────────────────────────
 
+// A collapsible section header, drawn the way the real profile modal draws them.
+function MockSection({ label, open, children }) {
+  return (
+    <div className="rounded-xl bg-gray-50 px-3.5 py-3 mb-2.5 last:mb-0">
+      <div className="flex items-center justify-between">
+        <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+        <I d="M19 9l-7 7-7-7" className={`w-3.5 h-3.5 text-gray-400 ${open ? 'rotate-180' : ''}`} />
+      </div>
+      {open && <div className="mt-2">{children}</div>}
+    </div>
+  )
+}
+
+// Right-aligned on wide screens so it lines up with the right edge of the sections below, and
+// centred on narrow ones where it stacks under the text. Personal information is shown
+// collapsed, as the real profile lets you do, which keeps the card from running tall.
 export function ProfileMockup() {
   return (
-    <div aria-hidden="true" className="relative max-w-sm mx-auto w-full">
+    <div aria-hidden="true" className="relative max-w-sm mx-auto lg:mr-0 w-full">
       <div className="rounded-2xl bg-white shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 overflow-hidden text-left">
         <div className="h-16 bg-linear-to-r from-violet-500 to-violet-400" />
         <div className="px-5 pb-5">
@@ -214,26 +230,17 @@ export function ProfileMockup() {
             <Badge>Website Verified</Badge>
             <Badge>Socials Verified</Badge>
           </div>
-          <div className="rounded-xl bg-gray-50 p-3.5 grid grid-cols-2 gap-3 mb-2.5">
-            {[['Company', 'northstarbet.com'], ['Job title', 'Affiliate Manager'], ['Location', 'Malta'], ['Joined', 'March 2026']].map(([k, v]) => (
-              <div key={k} className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">{k}</p>
-                <p className="text-xs text-gray-800 truncate">{v}</p>
-              </div>
-            ))}
-          </div>
-          <div className="rounded-xl bg-gray-50 p-3.5 mb-2.5">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 mb-1">Websites</p>
+          <MockSection label="Personal information" open={false} />
+          <MockSection label="Websites" open>
             <p className="flex items-center gap-1.5 text-xs font-medium text-violet-600">
               <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
             </p>
-          </div>
-          <div className="rounded-xl bg-gray-50 p-3.5">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Social profiles</p>
+          </MockSection>
+          <MockSection label="Social profiles" open>
             <div className="flex gap-2">
               {['twitter', 'instagram', 'youtube'].map((k) => <SocialIcon key={k} platform={k} size={30} />)}
             </div>
-          </div>
+          </MockSection>
         </div>
       </div>
     </div>
@@ -570,7 +577,7 @@ export function ShareLinksMockup() {
             <div className="text-right">
               <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Affiliate team</p>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-violet-700 ring-2 ring-violet-400/60">
-                <I d={P.shield} className="w-3.5 h-3.5" /> Verified on Pulse
+                <I d={P.chat} className="w-3.5 h-3.5" /> Contact Us on Pulse
               </span>
             </div>
           </div>

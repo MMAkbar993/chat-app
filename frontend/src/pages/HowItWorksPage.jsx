@@ -108,7 +108,7 @@ const VERIFICATION = [
     points: [
       'Connect supported social accounts by logging in through the platform itself.',
       'This confirms that you control the account, rather than simply adding a social media link.',
-      'Supported platforms include Facebook, X, Instagram, YouTube, Kick and Twitch.',
+      'Supported platforms include X, Instagram, YouTube, Kick and Twitch.',
       'Connected profiles can appear on your public Pulse profile.',
     ],
   },
@@ -394,7 +394,7 @@ export default function HowItWorksPage() {
             ))}
           </div>
 
-          <p className="mt-8 text-sm text-gray-500 max-w-3xl">
+          <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
             Identity verification is mandatory. Website and social profile verification are
             optional, but they provide additional context and help others understand who you are
             and who you represent.
@@ -494,13 +494,13 @@ export default function HowItWorksPage() {
       {/* FAQ */}
       <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mb-10">
+          <div className="max-w-2xl mx-auto mb-10 text-center">
             <h2 className="text-3xl font-extrabold tracking-tight">Frequently asked questions</h2>
             <p className="mt-3 text-gray-600">
               Everything you might want to know before joining Pulse.
             </p>
           </div>
-          <div className="max-w-4xl">
+          <div className="max-w-4xl mx-auto">
             <FaqSection darkMode={false} categories={FAQ_CATEGORIES} />
           </div>
         </div>
