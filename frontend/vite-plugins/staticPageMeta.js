@@ -18,9 +18,22 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;')
 }
 
-export function headTags({ siteUrl, path: pagePath, title, description, image }) {
+export function headTags({
+  siteUrl, path: pagePath, title, description, image,
+  imageWidth, imageHeight, imageAlt, twitterCard = 'summary',
+}) {
   const url = `${siteUrl}${pagePath}`
   const imageUrl = image ? `${siteUrl}${image}` : null
+  // Declaring the image's size lets scrapers lay out the card on the first fetch instead of
+  // downloading the image to measure it first (some skip the image entirely when they can't).
+  const imageMeta = imageUrl
+    ? [
+        `<meta property="og:image" content="${escapeHtml(imageUrl)}" />`,
+        ...(imageWidth ? [`<meta property="og:image:width" content="${imageWidth}" />`] : []),
+        ...(imageHeight ? [`<meta property="og:image:height" content="${imageHeight}" />`] : []),
+        ...(imageAlt ? [`<meta property="og:image:alt" content="${escapeHtml(imageAlt)}" />`] : []),
+      ]
+    : []
   return [
     `<title>${escapeHtml(title)}</title>`,
     `<meta name="description" content="${escapeHtml(description)}" />`,
@@ -30,8 +43,8 @@ export function headTags({ siteUrl, path: pagePath, title, description, image })
     `<meta property="og:url" content="${escapeHtml(url)}" />`,
     `<meta property="og:title" content="${escapeHtml(title)}" />`,
     `<meta property="og:description" content="${escapeHtml(description)}" />`,
-    ...(imageUrl ? [`<meta property="og:image" content="${escapeHtml(imageUrl)}" />`] : []),
-    `<meta name="twitter:card" content="summary" />`,
+    ...imageMeta,
+    `<meta name="twitter:card" content="${escapeHtml(twitterCard)}" />`,
     `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
     `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
     ...(imageUrl ? [`<meta name="twitter:image" content="${escapeHtml(imageUrl)}" />`] : []),

@@ -9,5 +9,11 @@ export const HOW_IT_WORKS_META = {
   path: '/how-it-works',
   title: 'How Pulse Works | Verified Messaging for iGaming',
   description: 'The verified communication platform for iGaming. Chat, call, share files and schedule meetings with professionals whose identity has been verified.',
-  image: '/Icon.png',
+  // Wide wordmark on dark, sized for link previews (roughly 16:9), so it shows as a large card
+  // rather than a square icon cropped into the preview's banner.
+  image: '/og-image.png',
+  imageWidth: 2600,
+  imageHeight: 1463,
+  imageAlt: 'Pulse',
+  twitterCard: 'summary_large_image',
 }
