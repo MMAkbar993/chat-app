@@ -2,8 +2,36 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   AppMockup, ProfileMockup, KycSlider, MetaTagVisual, SocialConnectVisual,
-  GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup,
+  GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
 } from '../components/marketing/HowItWorksMockups'
+import FaqSection from '../components/settings/FaqSection'
+
+// The Help Center sections a prospect actually asks about before signing up. Same content as
+// the in-app FAQ, so the two can't drift apart.
+const FAQ_CATEGORIES = [
+  'About Pulse',
+  'Getting Started & Identity Verification',
+  'Understanding Pulse Verification',
+  'Voice & Video Calls',
+  'Pulse Pro',
+  'Privacy & Data Protection',
+]
+
+// Share-link copy follows the Help Center's own answers on sharing a profile.
+const SHARE_ITEMS = [
+  {
+    title: 'Your profile share link',
+    desc: 'Every Pulse user has a unique link to their verified profile. Find yours under Settings → Profile Info and share it wherever you want people to find you.',
+  },
+  {
+    title: 'Add it to your website and email signature',
+    desc: 'Link to your Pulse profile from your website footer, contact page, email signature, LinkedIn or digital business card, so people can confirm they are contacting the right person.',
+  },
+  {
+    title: 'Group invite links',
+    desc: 'Group admins can create an invite link from Group Info and share it anywhere. Anyone who opens it can see the group before joining, and admins can reset or revoke the link at any time.',
+  },
+]
 
 // Copy on this page is supplied by the product team — keep the wording as given.
 
@@ -18,7 +46,9 @@ const NAV = [
   { href: '#steps', label: 'How it works' },
   { href: '#verification', label: 'Verification' },
   { href: '#features', label: 'Features' },
+  { href: '#share', label: 'Share links' },
   { href: '#security', label: 'Security' },
+  { href: '#faq', label: 'FAQ' },
 ]
 
 const STEPS = [
@@ -182,7 +212,7 @@ export default function HowItWorksPage() {
           {/* Self-link, not "/" — that has no route and falls through to the login redirect,
               so clicking the logo on a marketing page would bounce you off it. */}
           <Link to="/how-it-works"><img src="/full-logo.png" alt="Pulse" className="h-7" /></Link>
-          <nav className="hidden md:flex items-center gap-7">
+          <nav className="hidden lg:flex items-center gap-6">
             {NAV.map((n) => (
               <a key={n.href} href={n.href} className="text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors">
                 {n.label}
@@ -308,6 +338,17 @@ export default function HowItWorksPage() {
                   </li>
                 ))}
               </ul>
+              {/* Backed by the Help Center's retention answer: the ID provider deletes
+                  verification data after a maximum of one month, and Pulse keeps only
+                  verification-status metadata. Keep the two in step if either changes. */}
+              <div className="mt-5 flex gap-3 rounded-xl bg-green-50 px-4 py-3">
+                <Icon path="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" className="w-4 h-4 mt-0.5 shrink-0 text-green-600" />
+                <p className="text-sm text-green-800 leading-relaxed">
+                  <span className="font-semibold">Your ID data is not kept.</span> Your documents
+                  and selfie are automatically deleted after 30 days. Pulse only keeps a record
+                  that your identity was verified.
+                </p>
+              </div>
             </div>
             <KycSlider />
           </div>
@@ -344,7 +385,7 @@ export default function HowItWorksPage() {
           <div className="max-w-2xl">
             <h2 className="text-3xl font-extrabold tracking-tight">Everything your business communication needs</h2>
             <p className="mt-3 text-gray-600">
-              Pulse brings the tools you use every day into one professional workspace—so you can
+              Pulse brings the tools you use every day into one professional workspace, so you can
               communicate, collaborate and build partnerships without switching between multiple apps.
             </p>
           </div>
@@ -373,6 +414,33 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Security and privacy */}
+      {/* Share links */}
+      <section id="share" className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender scroll-mt-16">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div>
+            <Eyebrow>Share links</Eyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Share your verified profile anywhere</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              Give people an easy way to find you on Pulse and confirm your identity before they
+              get in touch. This is especially useful for affiliate managers and other
+              professionals who are often impersonated.
+            </p>
+            <div className="mt-8 space-y-6">
+              {SHARE_ITEMS.map((s) => (
+                <div key={s.title} className="flex gap-3">
+                  <span className="w-2 h-2 mt-2 rounded-full bg-violet-500 shrink-0" />
+                  <div>
+                    <p className="font-bold">{s.title}</p>
+                    <p className="mt-1 text-sm text-gray-600 leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <ShareLinksMockup />
+        </div>
+      </section>
+
       <section id="security" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-900 text-white scroll-mt-16">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -389,8 +457,8 @@ export default function HowItWorksPage() {
           <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
             {SECURITY.map((s) => (
               <div key={s.title}>
-                <p className="flex items-center gap-2 font-semibold">
-                  <Icon path="M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z" className="w-4 h-4 text-violet-400 shrink-0" />
+                <p className="flex items-center gap-2.5 font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
                   {s.title}
                 </p>
                 <p className="mt-1.5 text-sm text-gray-400 leading-relaxed">{s.desc}</p>
@@ -400,9 +468,24 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Closing CTA */}
+      {/* FAQ */}
+      <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 scroll-mt-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10">
+            <h2 className="text-3xl font-extrabold tracking-tight">Frequently asked questions</h2>
+            <p className="mt-3 text-gray-600">
+              Everything you might want to know before joining Pulse.
+            </p>
+          </div>
+          <div className="max-w-4xl">
+            <FaqSection darkMode={false} categories={FAQ_CATEGORIES} />
+          </div>
+        </div>
+      </section>
+
+      {/* Closing CTA — same width as the page's text column */}
       <section className="px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-4xl mx-auto rounded-3xl px-6 sm:px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
+        <div className="max-w-6xl mx-auto rounded-3xl px-6 sm:px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
           <h2 className="text-3xl font-extrabold tracking-tight">Ready to join Pulse?</h2>
           <p className="mt-3 text-white/85 max-w-xl mx-auto">
             Create your account, verify your identity and connect with iGaming professionals in

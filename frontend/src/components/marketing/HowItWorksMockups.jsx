@@ -376,7 +376,7 @@ export function SocialConnectVisual() {
   return (
     <div aria-hidden="true" className="h-28 rounded-xl bg-lavender flex flex-col items-center justify-center gap-3">
       <div className="flex gap-2">
-        {['facebook', 'twitter', 'instagram', 'youtube', 'kick', 'twitch'].map((k) => (
+        {['affiliate_roulette', 'twitter', 'instagram', 'youtube', 'kick', 'twitch'].map((k) => (
           <SocialIcon key={k} platform={k} size={26} />
         ))}
       </div>
@@ -546,6 +546,57 @@ export function SearchMockup() {
             <p className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-green-700">
               <I d={P.calendar} className="w-2.5 h-2.5" /> Synced to Google Calendar
             </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Share links ────────────────────────────────────────────────────────────
+
+// A company site's footer carrying a "Verified on Pulse" link, with the profile and group
+// links it points at stacked alongside — the three places a share link actually ends up.
+export function ShareLinksMockup() {
+  return (
+    <div aria-hidden="true" className="space-y-4 text-left">
+      <WindowFrame>
+        <div className="bg-[#0F1B2D] px-5 py-5">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <p className="text-sm font-bold text-white">northstarbet.com</p>
+              <p className="mt-1 text-[10px] text-slate-400">© 2026 Northstar Bet. All rights reserved.</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Affiliate team</p>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-violet-700 ring-2 ring-violet-400/60">
+                <I d={P.shield} className="w-3.5 h-3.5" /> Verified on Pulse
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-4 text-[10px] text-slate-500">
+            <span>Terms</span><span>Privacy</span><span>Responsible gaming</span><span>Contact</span>
+          </div>
+        </div>
+      </WindowFrame>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-100">
+          <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Your share link</p>
+          <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
+            <span className="flex-1 min-w-0 truncate text-[11px] text-gray-700">pulse.affiliateroulette.com/u/danielreyes</span>
+            <span className="shrink-0 rounded-md bg-violet-600 px-2 py-1 text-[10px] font-semibold text-white">Copy</span>
+          </div>
+        </div>
+        <div className="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-100">
+          <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Group invite link</p>
+          <div className="flex items-center gap-2.5">
+            <Avatar name="EU Partners" color="from-violet-500 to-purple-600" className="w-8 h-8 text-[10px]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-gray-900">EU Partners</p>
+              <p className="text-[10px] text-gray-500 truncate">12 members · /join/k7Qm2x</p>
+            </div>
+            <span className="shrink-0 rounded-md bg-violet-600 px-2 py-1 text-[10px] font-semibold text-white">Join</span>
           </div>
         </div>
       </div>

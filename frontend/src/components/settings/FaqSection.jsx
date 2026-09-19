@@ -861,7 +861,9 @@ function QaRow({ item, darkMode, open, onToggle }) {
   )
 }
 
-export default function FaqSection({ darkMode }) {
+// `categories` limits which sections show (e.g. the public How It Works page only needs the
+// ones a prospect asks about); omit it for the full Help Center.
+export default function FaqSection({ darkMode, categories }) {
   const [search, setSearch] = useState('')
   // Keyed by "category::question" so two categories can't collide on a similar wording.
   const [openKey, setOpenKey] = useState(null)
@@ -869,13 +871,14 @@ export default function FaqSection({ darkMode }) {
   const term = search.trim().toLowerCase()
 
   const groups = useMemo(() => {
-    if (!term) return FAQ
+    const scoped = categories ? FAQ.filter((g) => categories.includes(g.category)) : FAQ
+    if (!term) return scoped
     // Search answers as well as questions — people describe the symptom they have, not the
     // question we happened to write ("cloudflare", "refund", "can't find the tag").
-    return FAQ
+    return scoped
       .map((g) => ({ ...g, items: g.items.filter((i) => SEARCH_INDEX.get(i).includes(term)) }))
       .filter((g) => g.items.length > 0)
-  }, [term])
+  }, [term, categories])
 
   const total = groups.reduce((n, g) => n + g.items.length, 0)
   const card = `rounded-2xl border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
