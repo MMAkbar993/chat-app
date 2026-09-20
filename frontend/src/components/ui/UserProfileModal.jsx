@@ -179,7 +179,18 @@ export default function UserProfileModal({
   const dob = profile?.date_of_birth
     ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
-  const localTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  // Their clock, not ours. This used to format the viewer's own time and label it as the other
+  // person's, so it always agreed with your wall clock no matter where they were. Accounts with
+  // no timezone stored yet show nothing rather than something wrong.
+  const localTime = (() => {
+    const zone = profile?.timezone
+    if (!zone) return null
+    try {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: zone })
+    } catch {
+      return null
+    }
+  })()
 
   const verifiedWebsites = profile?.verified_websites || []
   const repWebsites = profile?.rep_websites || []

@@ -25,7 +25,7 @@ export async function findUserById(id) {
             subscription_status, kyc_status, kyc_session_id, is_active, created_at,
             avatar_url, display_name, bio, gender, website, date_of_birth,
             website_verified, website_verify_token,
-            job_title, company_name, website_representation_approved, has_seen_tour
+            job_title, company_name, website_representation_approved, has_seen_tour, timezone
      FROM users WHERE id = $1`,
     [id]
   )

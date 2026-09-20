@@ -13,7 +13,7 @@ import {
   getWebsiteRepresentatives, transferWebsiteOwnership,
   getNotifications, markNotificationsRead, clearNotifications, getMyVerifiedWebsites, revokeRepresentation,
   getMyRepresentationStatus, cancelRepresentationRequest,
-  markTourSeenHandler, getPrivacy, updatePrivacy,
+  markTourSeenHandler, getPrivacy, updatePrivacy, updateTimezone,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler, submitFeedback } from '../controllers/user_actions.controller.js'
 import { imageOnlyFilter } from '../middleware/fileFilters.js'
@@ -41,6 +41,7 @@ userRouter.get('/me', getProfile)
 userRouter.get('/me/social', getMySocialConnections)
 userRouter.get('/me/blocked', getBlockedUsers)
 userRouter.patch('/me', updateProfile)
+userRouter.patch('/me/timezone', updateTimezone)
 userRouter.get('/me/privacy', getPrivacy)
 userRouter.patch('/me/privacy', updatePrivacy)
 userRouter.patch('/me/deactivate', deactivateAccount)

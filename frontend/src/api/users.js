@@ -2,6 +2,7 @@ import client from './client'
 
 export const getMyProfile = () => client.get('/users/me').then((r) => r.data)
 export const updateProfile = (data) => client.patch('/users/me', data).then((r) => r.data)
+export const updateTimezone = (timezone) => client.patch('/users/me/timezone', { timezone }).then((r) => r.data)
 export const getPrivacySettings = () => client.get('/users/me/privacy').then((r) => r.data)
 export const updatePrivacySettings = (data) => client.patch('/users/me/privacy', data).then((r) => r.data)
 export const uploadAvatar = (file) => {

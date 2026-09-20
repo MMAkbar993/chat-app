@@ -202,6 +202,27 @@ export async function updateProfile(req, res, next) {
 // Kept off PATCH /me: that query COALESCEs every field so an omitted one keeps its old value,
 // which makes setting a boolean back to false impossible to express. These take the value as
 // given, and only a real boolean counts — anything else leaves the setting alone.
+// The browser reports its own IANA zone; we store it so other people can be shown this user's
+// actual local time. Validated against the runtime's own zone list so a junk value can't be
+// written and then blow up Intl.DateTimeFormat for whoever views the profile.
+export async function updateTimezone(req, res, next) {
+  try {
+    const { timezone } = req.body
+    if (typeof timezone !== 'string' || !timezone) {
+      return res.status(400).json({ error: 'timezone required' })
+    }
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: timezone })
+    } catch {
+      return res.status(400).json({ error: 'Unknown timezone' })
+    }
+    await query(`UPDATE users SET timezone = $1, updated_at = NOW() WHERE id = $2`, [timezone, req.user.id])
+    res.json({ timezone })
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function getPrivacy(req, res, next) {
   try {
     const result = await query(
@@ -252,7 +273,7 @@ export async function getUserById(req, res, next) {
     const result = await query(
       `SELECT u.id, u.full_name, u.username, u.primary_role, u.primary_role_other, u.avatar_url, u.display_name, u.bio,
               u.country, u.location, u.website, u.created_at, u.date_of_birth,
-              u.job_title, u.company_name, u.website_verified, u.website_representation_approved,
+              u.job_title, u.company_name, u.website_verified, u.website_representation_approved, u.timezone,
               u.kyc_status,
               EXISTS(SELECT 1 FROM blocked_users WHERE blocker_id = $2 AND blocked_id = u.id) AS is_blocked_by_me
        FROM users u WHERE u.id = $1`,
