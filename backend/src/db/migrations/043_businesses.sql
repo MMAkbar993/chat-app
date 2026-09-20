@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   id            SERIAL PRIMARY KEY,
   domain        TEXT NOT NULL UNIQUE,
   slug          TEXT NOT NULL UNIQUE,
-  owner_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name          TEXT NOT NULL,
   about         TEXT,
   logo_url      TEXT,
