@@ -17,7 +17,7 @@ import { isParticipant } from '../db/queries/conversations.js'
 // Avatars appear on public profile pages and ad creative is meant to be seen, so those stay
 // open. Anything not on this list or the message prefix is refused: an unrecognised file in
 // the uploads directory is not something a browser should be able to pull.
-const PUBLIC_PREFIXES = ['avatar-', 'group-', 'ad-']
+const PUBLIC_PREFIXES = ['avatar-', 'group-', 'ad-', 'business-']
 const MESSAGE_PREFIX = 'msg-'
 
 // Extensions a browser may render inline. Everything else is forced to download so a crafted

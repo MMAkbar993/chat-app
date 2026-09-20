@@ -19,6 +19,7 @@ import { socialRouter } from './routes/social.routes.js'
 import { calendarRouter } from './routes/calendar.routes.js'
 import { uploadRouter } from './routes/upload.routes.js'
 import { adsRouter } from './routes/ads.routes.js'
+import { businessRouter } from './routes/business.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
 import { ogRouter } from './routes/og.routes.js'
 import { linkPreviewRouter } from './routes/linkPreview.routes.js'
@@ -103,6 +104,7 @@ export function createApp() {
   app.use('/connect', socialRouter)
   app.use('/api/upload', uploadRouter)
   app.use('/api/ads', adsRouter)
+  app.use('/api/businesses', businessRouter)
   app.use('/api/admin', adminRouter)
   app.use('/api/link-preview', linkPreviewRouter)
 

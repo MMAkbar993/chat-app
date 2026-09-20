@@ -10,6 +10,7 @@ import {
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail } from '../config/email.js'
+import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain } from '../db/queries/businesses.js'
 
 // Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
 // can't route around website-in-bio blocking just by dropping the protocol/www prefix.
@@ -589,6 +590,10 @@ export async function transferWebsiteOwnership(req, res, next) {
        WHERE owner_id = $1 AND requester_id = $1 AND LOWER(website_url) = LOWER($2)`,
       [newOwnerId, url]
     )
+    // The business profile follows the domain to its new owner rather than being deleted with
+    // the old owner's verified_websites row below.
+    await transferBusinessByDomain(normaliseDomain(url), newOwnerId)
+
     // Remove current owner's verified_websites entry
     await query(`DELETE FROM verified_websites WHERE id = $1`, [id])
     // Clear current owner's flags if no more verified sites
@@ -617,6 +622,9 @@ export async function removeWebsiteVerification(req, res, next) {
     )
     if (!site.rows[0]) return res.status(404).json({ error: 'Website not found' })
     const { url } = site.rows[0]
+
+    // The business profile exists on the strength of this verification, so it goes with it.
+    await deleteBusinessByDomain(normaliseDomain(url), req.user.id)
 
     // Revoke all approved reps for this site
     const reps = await query(
