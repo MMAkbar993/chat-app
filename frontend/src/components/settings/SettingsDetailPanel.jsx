@@ -276,7 +276,6 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     country:       profile.country || '',
     primary_role:  profile.primary_role || '',
     primary_role_other: profile.primary_role_other || '',
-    date_of_birth: profile.date_of_birth ? profile.date_of_birth.split('T')[0] : '',
     job_title:     profile.job_title || '',
     company_name:  profile.company_name || '',
   })
@@ -357,7 +356,6 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
         country:       form.country,
         primary_role:  form.primary_role,
         primary_role_other: form.primary_role === 'other' ? form.primary_role_other : undefined,
-        date_of_birth: form.date_of_birth || undefined,
         job_title:     form.job_title || undefined,
         company_name:  form.company_name || undefined,
       }
@@ -480,12 +478,6 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
           <span className={`flex-1 text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>{currentEmail}</span>
           <button type="button" onClick={() => setShowEmailModal(true)} className="text-xs text-violet-500 hover:text-violet-700 font-medium shrink-0">Change</button>
         </div>
-      </div>
-
-      {/* Date of birth */}
-      <div>
-        <label className={lbl}>Date of Birth</label>
-        <input type="date" value={form.date_of_birth} onChange={(e) => setForm((f) => ({ ...f, date_of_birth: e.target.value }))} className={inp} />
       </div>
 
       {/* Country */}

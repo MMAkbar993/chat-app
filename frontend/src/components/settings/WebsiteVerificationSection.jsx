@@ -374,6 +374,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       const res = err.response?.data
       if (res?.error === 'already_claimed') {
         setClaimedInfo({ ownerName: res.ownerName, ownerId: res.ownerId, websiteUrl: res.websiteUrl })
+      } else if (res?.error === 'already_verified') {
+        setError(`You have already verified ${res.websiteUrl}. It is listed above.`)
       } else {
         setError(res?.error || 'Failed to start verification.')
       }

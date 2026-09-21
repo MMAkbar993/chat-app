@@ -32,6 +32,12 @@ function containsUrl(text) {
 
 const VERIFY_TXT_HOST = '_pulse-verification'
 
+// SQL that reduces a stored website URL to its bare host: drops the scheme, any path, and a
+// leading "www.". Used so all the spellings of one site compare equal, including rows stored
+// before URLs were canonicalised on the way in.
+const BARE_DOMAIN_SQL = (column) =>
+  `regexp_replace(split_part(regexp_replace(lower(${column}), '^https?://', ''), '/', 1), '^www\\.', '')`
+
 function hostOf(url) {
   try {
     return new URL(url.startsWith('http') ? url : `https://${url}`).hostname
@@ -465,14 +471,19 @@ export async function initWebsiteVerification(req, res, next) {
     const { url } = req.body
     if (!url) return res.status(400).json({ error: 'Website URL is required' })
 
-    const normalised = url.trim().replace(/\/+$/, '')
+    // Compare (and store) the bare domain. "example.com", "www.example.com" and
+    // "https://example.com/" are the same site, but as raw strings they never matched, so a
+    // site already verified could be verified again under another spelling — and claimed by
+    // someone else that way too.
+    const normalised = normaliseDomain(url)
+    if (!normalised) return res.status(400).json({ error: 'Enter a valid website address' })
 
     // Check if another user already verified this website
     const claimed = await query(
       `SELECT u.id, u.display_name, u.full_name
        FROM verified_websites vw
        JOIN users u ON u.id = vw.user_id
-       WHERE vw.verified = true AND LOWER(vw.url) = LOWER($1) AND vw.user_id != $2`,
+       WHERE vw.verified = true AND ${BARE_DOMAIN_SQL('vw.url')} = $1 AND vw.user_id != $2`,
       [normalised, req.user.id]
     )
     if (claimed.rows[0]) {
@@ -485,21 +496,41 @@ export async function initWebsiteVerification(req, res, next) {
       })
     }
 
+    // A row this user already has for the same domain under any spelling — update that one
+    // rather than inserting a near-duplicate that ON CONFLICT(user_id, url) wouldn't catch.
+    const ownRow = await query(
+      `SELECT id, verified, verify_token FROM verified_websites
+        WHERE user_id = $1 AND ${BARE_DOMAIN_SQL('url')} = $2
+        ORDER BY verified DESC LIMIT 1`,
+      [req.user.id, normalised]
+    )
+    if (ownRow.rows[0]?.verified) {
+      return res.status(409).json({ error: 'already_verified', websiteUrl: normalised })
+    }
+
     const token = crypto.randomBytes(20).toString('hex')
     // Keep any token this site already has rather than minting a new one. Adding the meta tag
     // is a job for someone else's dev team and can take days — regenerating on every visit
     // silently invalidated the snippet they'd already deployed, so verification could never
     // succeed. `verified` is deliberately left untouched too, so re-opening this page can't
     // un-verify an already-verified site.
-    const inserted = await query(
-      `INSERT INTO verified_websites (user_id, url, verify_token, verified, updated_at)
-       VALUES ($1, $2, $3, false, NOW())
-       ON CONFLICT (user_id, url) DO UPDATE
-         SET verify_token = COALESCE(verified_websites.verify_token, EXCLUDED.verify_token),
-             updated_at = NOW()
-       RETURNING id, verify_token, verified`,
-      [req.user.id, normalised, token]
-    )
+    const inserted = ownRow.rows[0]
+      ? await query(
+          `UPDATE verified_websites
+              SET url = $1, verify_token = COALESCE(verify_token, $2), updated_at = NOW()
+            WHERE id = $3
+            RETURNING id, verify_token, verified`,
+          [normalised, token, ownRow.rows[0].id]
+        )
+      : await query(
+          `INSERT INTO verified_websites (user_id, url, verify_token, verified, updated_at)
+           VALUES ($1, $2, $3, false, NOW())
+           ON CONFLICT (user_id, url) DO UPDATE
+             SET verify_token = COALESCE(verified_websites.verify_token, EXCLUDED.verify_token),
+                 updated_at = NOW()
+           RETURNING id, verify_token, verified`,
+          [req.user.id, normalised, token]
+        )
     const row = inserted.rows[0]
     const bareHost = (hostOf(normalised) || '').replace(/^www\./, '')
     res.json({

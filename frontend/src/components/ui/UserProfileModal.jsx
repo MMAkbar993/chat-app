@@ -176,9 +176,6 @@ export default function UserProfileModal({
   const joinDate = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null
-  const dob = profile?.date_of_birth
-    ? new Date(profile.date_of_birth).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null
   // Their clock, not ours. This used to format the viewer's own time and label it as the other
   // person's, so it always agreed with your wall clock no matter where they were. Accounts with
   // no timezone stored yet show nothing rather than something wrong.
@@ -379,7 +376,6 @@ export default function UserProfileModal({
                 <InfoCell darkMode={dm} label="Company" value={profile?.company_name} />
                 <InfoCell darkMode={dm} label="Job Title" value={profile?.job_title} />
                 <InfoCell darkMode={dm} label="Location" value={location} />
-                <InfoCell darkMode={dm} label="Date of Birth" value={dob} />
                 <InfoCell darkMode={dm} label="Join Date" value={joinDate} />
               </div>
             </ProfileSection>
