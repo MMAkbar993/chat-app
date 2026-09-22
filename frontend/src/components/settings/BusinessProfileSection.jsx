@@ -116,6 +116,8 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
       replaceBusiness(updated)
       setForm(toForm(updated))
       await load(updated.id)
+      // Saved work collapses back to the summary bar rather than leaving the form open.
+      setEditing(false)
       onToast?.('Business profile saved.')
     } catch (err) {
       onToast?.(err.response?.data?.error || 'Could not save the business profile.', 'error')
@@ -285,11 +287,22 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
           </div>
           <div>
             <label className={lbl}>Website</label>
-            <select value={form.website_url} onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))} className={inp}>
-              {websiteChoices.map((w) => (
-                <option key={w.url} value={w.url}>{w.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</option>
-              ))}
-            </select>
+            {/* appearance-none + our own chevron: a native select renders in the OS style and
+                looked nothing like the inputs beside it. */}
+            <div className="relative">
+              <select
+                value={form.website_url}
+                onChange={(e) => setForm((f) => ({ ...f, website_url: e.target.value }))}
+                className={`${inp} pr-10 appearance-none`}
+              >
+                {websiteChoices.map((w) => (
+                  <option key={w.url} value={w.url}>{w.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</option>
+                ))}
+              </select>
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
           <div>
             <label className={lbl}>Industry</label>
@@ -351,22 +364,28 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
           Add this link to your website footer or contact page. Visitors see your business profile
           and choose who on your team to message.
         </p>
-        <div>
-          <label className={lbl}>Link</label>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm shrink-0 ${sub}`}>{window.location.host}/b/</span>
-            <input value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))} className={inp} />
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+        {/* Address and both buttons on one line — the slug is short, so a full-width input and
+            a separate button row just made this section tall for no reason. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`text-sm shrink-0 ${sub}`}>{window.location.host}/b/</span>
+          <input
+            value={form.slug}
+            onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))}
+            className={`${inp} w-auto flex-1 min-w-40 max-w-56`}
+          />
           <button
             type="button"
             onClick={() => navigator.clipboard.writeText(shareUrl).then(() => onToast?.('Link copied.')).catch(() => {})}
-            className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors"
+            className="shrink-0 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors"
           >
             Copy link
           </button>
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-xl text-sm font-semibold ${dm ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold ${dm ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}
+          >
             View business profile
           </a>
         </div>
