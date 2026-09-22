@@ -41,6 +41,9 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
   const [team, setTeam] = useState([])
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(null)
+  // Once a profile exists it sits collapsed as a summary bar; the form opens on demand, so
+  // Settings isn't a wall of inputs every time you come here.
+  const [editing, setEditing] = useState(false)
   const [serviceDraft, setServiceDraft] = useState('')
   const [newSite, setNewSite] = useState('')
   const [newName, setNewName] = useState('')
@@ -81,6 +84,7 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
   function select(b) {
     setSelectedId(b.id)
     setForm(toForm(b))
+    setEditing(false)
   }
 
   function replaceBusiness(updated) {
@@ -210,6 +214,37 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
         </div>
       )}
 
+      {/* Collapsed summary — the profile at a glance, with its link and a way in to edit. */}
+      <div className={`${card} flex items-center gap-3`}>
+        <span className={`w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center font-extrabold ${
+          business.logo_url ? '' : dm ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
+        }`}>
+          {business.logo_url
+            ? <img src={business.logo_url} alt="" className="w-full h-full object-cover" />
+            : (business.name || '?')[0].toUpperCase()}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className={`text-sm font-bold truncate ${dm ? 'text-white' : 'text-gray-900'}`}>{business.name}</p>
+          <p className={`text-xs truncate ${sub}`}>{window.location.host}/b/{business.slug}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigator.clipboard.writeText(shareUrl).then(() => onToast?.('Link copied.')).catch(() => {})}
+          className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold ${dm ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}
+        >
+          Copy link
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing((v) => !v)}
+          aria-expanded={editing}
+          className="shrink-0 px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold transition-colors"
+        >
+          {editing ? 'Close' : 'Edit'}
+        </button>
+      </div>
+
+      {editing && (<>
       {/* Cover + logo */}
       <div className={`${card} p-0 overflow-hidden`}>
         <div
@@ -382,6 +417,7 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
           {saving ? 'Saving…' : 'Save business profile'}
         </button>
       </div>
+      </>)}
 
       {createCard}
     </div>

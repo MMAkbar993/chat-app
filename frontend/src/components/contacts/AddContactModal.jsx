@@ -190,7 +190,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
             </p>
             <div className="space-y-2">
               {businesses.map((b) => (
-                <BusinessCard key={b.id} business={b} darkMode={darkMode} onNavigate={onClose} />
+                <BusinessCard key={b.id} business={b} darkMode={darkMode} />
               ))}
             </div>
           </div>
