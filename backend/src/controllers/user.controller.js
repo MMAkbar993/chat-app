@@ -38,6 +38,9 @@ const VERIFY_TXT_HOST = '_pulse-verification'
 const BARE_DOMAIN_SQL = (column) =>
   `regexp_replace(split_part(regexp_replace(lower(${column}), '^https?://', ''), '/', 1), '^www\\.', '')`
 
+// JS side of BARE_DOMAIN_SQL: what to compare a stored URL against.
+const bareDomain = (u) => normaliseDomain(u) || u
+
 function hostOf(url) {
   try {
     return new URL(url.startsWith('http') ? url : `https://${url}`).hostname
@@ -562,8 +565,8 @@ export async function getWebsiteRepresentatives(req, res, next) {
       `SELECT u.id AS user_id, u.display_name, u.full_name, u.avatar_url, u.username
        FROM website_representation_requests r
        JOIN users u ON u.id = r.requester_id
-       WHERE r.owner_id = $1 AND LOWER(r.website_url) = LOWER($2) AND r.status = 'approved'`,
-      [req.user.id, url]
+       WHERE r.owner_id = $1 AND ${BARE_DOMAIN_SQL('r.website_url')} = $2 AND r.status = 'approved'`,
+      [req.user.id, bareDomain(url)]
     )
     res.json({ representatives: result.rows, url })
   } catch (err) {
@@ -587,8 +590,8 @@ export async function transferWebsiteOwnership(req, res, next) {
     // Verify the new owner is an approved rep for this site
     const repCheck = await query(
       `SELECT id FROM website_representation_requests
-       WHERE owner_id = $1 AND requester_id = $2 AND LOWER(website_url) = LOWER($3) AND status = 'approved'`,
-      [req.user.id, newOwnerId, url]
+       WHERE owner_id = $1 AND requester_id = $2 AND ${BARE_DOMAIN_SQL('website_url')} = $3 AND status = 'approved'`,
+      [req.user.id, newOwnerId, bareDomain(url)]
     )
     if (!repCheck.rows[0]) return res.status(400).json({ error: 'Selected user is not an approved representative of this site' })
 
@@ -603,7 +606,7 @@ export async function transferWebsiteOwnership(req, res, next) {
       `INSERT INTO verified_websites (user_id, url, verified, updated_at)
        VALUES ($1, $2, true, NOW())
        ON CONFLICT (user_id, url) DO UPDATE SET verified = true, updated_at = NOW()`,
-      [newOwnerId, url]
+      [newOwnerId, bareDomain(url)]
     )
     // Mark new owner as website verified; clear their rep status since they're now the owner
     await query(
@@ -614,14 +617,14 @@ export async function transferWebsiteOwnership(req, res, next) {
     // Transfer all representation requests for this site to new owner
     await query(
       `UPDATE website_representation_requests SET owner_id = $1
-       WHERE owner_id = $2 AND LOWER(website_url) = LOWER($3)`,
-      [newOwnerId, req.user.id, url]
+       WHERE owner_id = $2 AND ${BARE_DOMAIN_SQL('website_url')} = $3`,
+      [newOwnerId, req.user.id, bareDomain(url)]
     )
     // Remove the self-referential row where new owner is both owner and requester
     await query(
       `DELETE FROM website_representation_requests
-       WHERE owner_id = $1 AND requester_id = $1 AND LOWER(website_url) = LOWER($2)`,
-      [newOwnerId, url]
+       WHERE owner_id = $1 AND requester_id = $1 AND ${BARE_DOMAIN_SQL('website_url')} = $2`,
+      [newOwnerId, bareDomain(url)]
     )
     // The business profile follows the domain to its new owner rather than being deleted with
     // the old owner's verified_websites row below.
@@ -662,14 +665,14 @@ export async function removeWebsiteVerification(req, res, next) {
     // Revoke all approved reps for this site
     const reps = await query(
       `SELECT requester_id FROM website_representation_requests
-       WHERE owner_id = $1 AND LOWER(website_url) = LOWER($2) AND status = 'approved'`,
-      [req.user.id, url]
+       WHERE owner_id = $1 AND ${BARE_DOMAIN_SQL('website_url')} = $2 AND status = 'approved'`,
+      [req.user.id, bareDomain(url)]
     )
     if (reps.rows.length > 0) {
       await query(
         `UPDATE website_representation_requests SET status = 'revoked'
-         WHERE owner_id = $1 AND LOWER(website_url) = LOWER($2) AND status = 'approved'`,
-        [req.user.id, url]
+         WHERE owner_id = $1 AND ${BARE_DOMAIN_SQL('website_url')} = $2 AND status = 'approved'`,
+        [req.user.id, bareDomain(url)]
       )
       for (const { requester_id } of reps.rows) {
         const otherApprovals = await query(
@@ -760,8 +763,8 @@ export async function requestRepresentation(req, res, next) {
     // Verify the owner still has this website verified
     const owner = await query(
       `SELECT u.id FROM verified_websites vw JOIN users u ON u.id = vw.user_id
-       WHERE vw.user_id = $1 AND LOWER(vw.url) = LOWER($2) AND vw.verified = true`,
-      [ownerId, url.trim().replace(/\/+$/, '')]
+       WHERE vw.user_id = $1 AND ${BARE_DOMAIN_SQL('vw.url')} = $2 AND vw.verified = true`,
+      [ownerId, bareDomain(url)]
     )
     if (!owner.rows[0]) return res.status(404).json({ error: 'Owner not found or website no longer verified' })
 
@@ -769,7 +772,7 @@ export async function requestRepresentation(req, res, next) {
       `INSERT INTO website_representation_requests (website_url, requester_id, owner_id)
        VALUES ($1, $2, $3)
        ON CONFLICT (website_url, requester_id) DO UPDATE SET status = 'pending', created_at = NOW()`,
-      [url, req.user.id, ownerId]
+      [bareDomain(url), req.user.id, ownerId]
     )
 
     const requester = await findUserById(req.user.id)
