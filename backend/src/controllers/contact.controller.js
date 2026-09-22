@@ -1,4 +1,5 @@
 import { getContacts, addContact, removeContact, isContact, searchUsers, searchUsersByCompanyName, updateContactNames } from '../db/queries/contacts.js'
+import { searchBusinesses } from '../db/queries/businesses.js'
 import { query } from '../config/database.js'
 import { sendInviteEmail } from '../config/email.js'
 import { isProUser } from '../utils/plan.js'
@@ -54,9 +55,14 @@ export async function searchUsersHandler(req, res, next) {
     if (mode === 'business') {
       if (!isProUser(req.user)) return res.status(403).json({ error: 'Searching by business name is a Pro feature' })
       const companyName = (q || '').trim()
-      if (companyName.length < 3) return res.json({ users: [] })
-      const users = await searchUsersByCompanyName(companyName, req.user.id)
-      return res.json({ users })
+      if (companyName.length < 3) return res.json({ users: [], businesses: [] })
+      // A company with a business profile is shown as that profile, where the visitor can pick
+      // who to talk to; the individual people are only listed when no profile exists.
+      const [users, businesses] = await Promise.all([
+        searchUsersByCompanyName(companyName, req.user.id),
+        searchBusinesses(companyName),
+      ])
+      return res.json({ users, businesses })
     }
     const username = (q || '').trim().replace(/^@/, '')
     if (username.length < 3) return res.json({ users: [] })

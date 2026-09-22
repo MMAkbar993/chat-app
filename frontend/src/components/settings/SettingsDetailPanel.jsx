@@ -6,6 +6,7 @@ import { useSocket } from '../../context/SocketContext'
 import { useToast } from '../../context/ToastContext'
 import TwoFactorSection from './TwoFactorSection'
 import PrivacySection from './PrivacySection'
+import BusinessProfileSection from './BusinessProfileSection'
 import SocialLinksSection from './SocialLinksSection'
 import PasswordSection from './PasswordSection'
 import WebsiteVerificationSection from './WebsiteVerificationSection'
@@ -80,6 +81,11 @@ const META = {
     title: 'Website Verification',
     color: 'bg-blue-500',
     path: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  },
+  business: {
+    title: 'Business Profile',
+    color: 'bg-violet-600',
+    path: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
   },
   social: {
     title: 'Social Profiles',
@@ -657,6 +663,11 @@ export default function SettingsDetailPanel({ darkMode, section, onBack }) {
               <WebsiteVerificationSection darkMode={dm} profile={profile} />
             </div>
           </>
+        ) : section === 'business' ? (
+          // Business Profile builds its own cards too — no outer box.
+          <div className="max-w-4xl mx-auto">
+            <BusinessProfileSection darkMode={dm} onToast={showToast} />
+          </div>
         ) : section === 'billing' ? (
           // Billing builds its own full-width card layout — no outer box.
           <div className="max-w-4xl mx-auto">

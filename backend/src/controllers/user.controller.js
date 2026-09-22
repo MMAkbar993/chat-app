@@ -10,7 +10,7 @@ import {
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail } from '../config/email.js'
-import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain } from '../db/queries/businesses.js'
+import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness } from '../db/queries/businesses.js'
 
 // Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
 // can't route around website-in-bio blocking just by dropping the protocol/www prefix.
@@ -143,6 +143,7 @@ export async function getProfile(req, res, next) {
         ...extra,
         verified_websites: websitesResult.rows,
         rep_websites: repWebsitesResult.rows,
+        business: await getProfileBusiness(req.user.id),
       },
     })
   } catch (err) {
@@ -300,7 +301,8 @@ export async function getUserById(req, res, next) {
         || (s.social_username && s.platform !== 'youtube' ? `https://${s.platform}.com/${s.social_username}` : null)
     })
 
-    res.json({ user: { ...user, ...socialMap, verified_websites: websitesResult.rows, rep_websites: repWebsitesResult.rows } })
+    const business = await getProfileBusiness(user.id)
+    res.json({ user: { ...user, ...socialMap, verified_websites: websitesResult.rows, rep_websites: repWebsitesResult.rows, business } })
   } catch (err) {
     next(err)
   }

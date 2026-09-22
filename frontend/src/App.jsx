@@ -18,6 +18,7 @@ import CookiePolicyPage from './pages/CookiePolicyPage'
 import KycPolicyPage from './pages/KycPolicyPage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import HowItWorksPage from './pages/HowItWorksPage'
+import BusinessProfilePage from './pages/BusinessProfilePage'
 import JoinGroupPage from './pages/JoinGroupPage'
 import SocialConnectErrorPage from './pages/SocialConnectErrorPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
@@ -115,6 +116,8 @@ export default function App() {
           {/* Deliberately outside GuestRoute: this is the page to send prospects to, and a
               signed-in user following that link should see it, not get bounced to /chat. */}
           <Route path="/how-it-works" element={<HowItWorksPage />} />
+          {/* Business share link — opened by visitors to a company's website, usually signed out. */}
+          <Route path="/b/:slug" element={<BusinessProfilePage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiePolicyPage />} />

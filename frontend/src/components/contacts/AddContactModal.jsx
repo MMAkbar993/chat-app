@@ -5,28 +5,32 @@ import { isProUser } from '../../utils/plan'
 import { getRoleLabel } from '../../utils/roleLabels'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 import InviteOthersModal from './InviteOthersModal'
+import BusinessCard from '../business/BusinessCard'
 
 function useDebouncedSearch(query, mode, enabled) {
   const [results, setResults] = useState([])
+  const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const trimmed = query.trim().replace(/^@/, '')
-    if (!enabled || trimmed.length < 3) { setResults([]); setLoading(false); return }
+    if (!enabled || trimmed.length < 3) { setResults([]); setBusinesses([]); setLoading(false); return }
     setLoading(true)
     const t = setTimeout(async () => {
       try {
         const data = await searchUsers(query, mode)
         setResults(data.users || [])
+        setBusinesses(data.businesses || [])
       } catch {
         setResults([])
+        setBusinesses([])
       }
       setLoading(false)
     }, 300)
     return () => clearTimeout(t)
   }, [query, mode, enabled])
 
-  return { results, loading, active: enabled && query.trim().replace(/^@/, '').length >= 3 }
+  return { results, businesses, loading, active: enabled && query.trim().replace(/^@/, '').length >= 3 }
 }
 
 export default function AddContactModal({ darkMode, onClose, onAdded, onMessage, contacts = [] }) {
@@ -44,11 +48,15 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
   const byUsername = useDebouncedSearch(usernameQuery, 'username', true)
   const byBusiness = useDebouncedSearch(businessQuery, 'business', pro)
 
+  // A company that has a business profile is shown as that profile, where the searcher picks who
+  // to talk to. Only when no profile matches do the individual people from it get listed.
+  const businesses = byBusiness.active ? byBusiness.businesses : []
   const results = useMemo(() => {
     const map = new Map()
-    for (const u of [...byUsername.results, ...byBusiness.results]) map.set(u.id, u)
+    const fromBusiness = businesses.length > 0 ? [] : byBusiness.results
+    for (const u of [...byUsername.results, ...fromBusiness]) map.set(u.id, u)
     return [...map.values()]
-  }, [byUsername.results, byBusiness.results])
+  }, [byUsername.results, byBusiness.results, businesses.length])
 
   const loading = byUsername.loading || byBusiness.loading
   const searched = byUsername.active || byBusiness.active
@@ -175,6 +183,18 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
 
         {/* Results */}
         {loading && <p className="text-center text-gray-400 text-sm py-4">Searching…</p>}
+        {!loading && businesses.length > 0 && (
+          <div className="mb-3">
+            <p className={`text-xs font-bold uppercase tracking-wide mb-2 px-1 ${sub}`}>
+              {businesses.length} {businesses.length === 1 ? 'business' : 'businesses'} found for "{businessQuery.trim()}"
+            </p>
+            <div className="space-y-2">
+              {businesses.map((b) => (
+                <BusinessCard key={b.id} business={b} darkMode={darkMode} onNavigate={onClose} />
+              ))}
+            </div>
+          </div>
+        )}
         {!loading && results.length > 0 && (
           <p className={`text-xs font-bold uppercase tracking-wide mb-2 px-1 ${sub}`}>
             {results.length} {results.length === 1 ? 'result' : 'results'} found{activeQueryLabel ? ` for "${activeQueryLabel}"` : ''}
@@ -216,7 +236,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
               )}
             </div>
           ))}
-          {!loading && searched && results.length === 0 && (
+          {!loading && searched && results.length === 0 && businesses.length === 0 && (
             <p className={`text-center text-sm py-4 ${sub}`}>No users found</p>
           )}
         </div>

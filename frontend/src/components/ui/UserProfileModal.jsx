@@ -5,6 +5,7 @@ import client from '../../api/client'
 import SocialIcon from './SocialIcon'
 import VerifiedBadge from './VerifiedBadge'
 import ConfirmDialog from './ConfirmDialog'
+import BusinessCard from '../business/BusinessCard'
 
 const SOCIAL_PLATFORMS = [
   { name: 'Facebook',  key: 'facebook' },
@@ -368,9 +369,22 @@ export default function UserProfileModal({
             </div>
           )}
 
-          {/* Personal Information — no email or username, ever */}
+          {/* The business they own, if they've chosen to show it here. */}
+          {profile?.business && (
+            <div className="mt-3">
+              <BusinessCard business={profile.business} darkMode={dm} onNavigate={onClose} />
+            </div>
+          )}
+
+          {/* Personal Information — no email or username, ever. Starts collapsed when a business
+              card is showing, so the popup doesn't run tall. */}
           <div className="mt-3">
-            <ProfileSection darkMode={dm} label="Personal Information" defaultOpen>
+            <ProfileSection
+              key={profile?.business ? 'with-business' : 'no-business'}
+              darkMode={dm}
+              label="Personal Information"
+              defaultOpen={!profile?.business}
+            >
               <div className="grid grid-cols-2 gap-x-3 gap-y-3">
                 <InfoCell darkMode={dm} label="Local Time" value={localTime} />
                 <InfoCell darkMode={dm} label="Company" value={profile?.company_name} />

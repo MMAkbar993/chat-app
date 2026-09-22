@@ -145,13 +145,26 @@ export async function getTeamMembers(domain, ownerId) {
             SELECT 1 FROM website_representation_requests r
              WHERE r.requester_id = u.id
                AND r.status = 'approved'
-               AND regexp_replace(lower(r.website_url), '^https?://(www\\.)?', '') LIKE $1 || '%'
+               -- Exact host match. A prefix match would let an approved rep of
+               -- "brand.com.attacker.net" appear on brand.com's team page.
+               AND regexp_replace(split_part(regexp_replace(lower(r.website_url), '^https?://', ''), '/', 1), '^www\\.', '') = $1
           )
         )
       ORDER BY is_owner DESC, u.full_name`,
     [domain, ownerId]
   )
   return result.rows
+}
+
+// The card on someone's personal profile: their first business they've chosen to show there.
+export async function getProfileBusiness(ownerId) {
+  const result = await query(
+    `SELECT name, slug, logo_url, domain FROM businesses
+      WHERE owner_id = $1 AND show_on_profile = true
+      ORDER BY created_at LIMIT 1`,
+    [ownerId]
+  )
+  return result.rows[0] || null
 }
 
 export async function searchBusinesses(term, limit = 5) {
