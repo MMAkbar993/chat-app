@@ -987,6 +987,27 @@ export async function confirmWebsiteVerification(req, res, next) {
       })
     }
 
+    // Re-check ownership at the finish line, not only when verification started: a pending row
+    // may predate domain canonicalisation, or someone else may have verified the same domain
+    // while this one sat waiting for a meta tag. Without this, two accounts could both end up
+    // verified for one site.
+    const takenMeanwhile = await query(
+      `SELECT u.id, u.display_name, u.full_name
+         FROM verified_websites vw
+         JOIN users u ON u.id = vw.user_id
+        WHERE vw.verified = true AND ${BARE_DOMAIN_SQL('vw.url')} = $1 AND vw.user_id != $2`,
+      [normaliseDomain(url) || url, req.user.id]
+    )
+    if (takenMeanwhile.rows[0]) {
+      const owner = takenMeanwhile.rows[0]
+      return res.status(409).json({
+        error: 'already_claimed',
+        ownerName: owner.display_name || owner.full_name || 'another user',
+        ownerId: owner.id,
+        websiteUrl: normaliseDomain(url) || url,
+      })
+    }
+
     await query(
       `UPDATE verified_websites SET verified = true, verify_token = NULL, updated_at = NOW() WHERE id = $1`,
       [websiteId]
