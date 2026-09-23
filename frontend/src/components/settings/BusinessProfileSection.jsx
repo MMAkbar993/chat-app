@@ -169,9 +169,18 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className={lbl}>Website</label>
-          <select value={newSite} onChange={(e) => setNewSite(e.target.value)} className={inp}>
-            {data.availableWebsites.map((w) => <option key={w.id} value={w.url}>{w.domain}</option>)}
-          </select>
+          <div className="relative">
+            <select
+              value={newSite}
+              onChange={(e) => setNewSite(e.target.value)}
+              className={`${inp} pr-10 appearance-none`}
+            >
+              {data.availableWebsites.map((w) => <option key={w.id} value={w.url}>{w.domain}</option>)}
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
         <div>
           <label className={lbl}>Business name</label>

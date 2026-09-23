@@ -21,17 +21,22 @@ const I = {
   share: 'M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z',
 }
 
-function Chip({ icon, children }) {
+function Chip({ icon, children, dm }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-700">
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${dm ? 'border-gray-700 bg-gray-800 text-gray-200' : 'border-gray-200 bg-white text-gray-700'}`}>
       {icon}
       {children}
     </span>
   )
 }
 
-export default function BusinessProfileView({ business: b, team = [], viewerId, onMessage, shareUrl }) {
+export default function BusinessProfileView({ business: b, team = [], viewerId, onMessage, shareUrl, darkMode, onBack }) {
   const [copied, setCopied] = useState(false)
+  const dm = darkMode
+  const cardCls = dm ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100'
+  const headingCls = dm ? 'text-white' : 'text-gray-900'
+  const bodyCls = dm ? 'text-gray-300' : 'text-gray-700'
+  const boxCls = dm ? 'border-gray-700 text-gray-200 hover:border-violet-500' : 'border-gray-200 text-gray-800 hover:border-violet-300'
   const websiteHref = b.website_url
     ? (/^https?:\/\//i.test(b.website_url) ? b.website_url : `https://${b.website_url}`)
     : null
@@ -53,13 +58,25 @@ export default function BusinessProfileView({ business: b, team = [], viewerId, 
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className={`rounded-2xl shadow-sm border overflow-hidden ${cardCls}`}>
       {/* Cover with the identity overlaid on it */}
       <div
         className={`relative bg-cover bg-center ${b.cover_url ? '' : 'bg-linear-to-br from-violet-700 via-purple-700 to-fuchsia-700'}`}
         style={b.cover_url ? { backgroundImage: `url(${b.cover_url})` } : undefined}
       >
         <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/35 to-black/10" />
+        {/* Sits on the cover rather than floating outside the card. It's a back arrow because
+            this opens on top of the profile popup or search it was opened from, and closing it
+            returns you there rather than dismissing everything. */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            aria-label="Back"
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur ring-1 ring-white/40 text-white flex items-center justify-center transition-colors"
+          >
+            <Icon d="M15 19l-7-7 7-7" className="w-5 h-5" />
+          </button>
+        )}
         {/* On a phone the logo sits beside the name rather than stacked above it, which pushed
             everything down the card. */}
         <div className="relative px-5 sm:px-7 pt-12 sm:pt-16 pb-4 flex flex-row flex-wrap items-end gap-3 sm:gap-4">
@@ -99,25 +116,25 @@ export default function BusinessProfileView({ business: b, team = [], viewerId, 
 
       <div className="px-5 sm:px-7 py-6 space-y-6">
         <div className="flex flex-wrap gap-2">
-          <Chip icon={<Icon d={I.check} className="w-3.5 h-3.5 text-green-500" />}>Verified Business</Chip>
-          {b.industry && <Chip icon={<Icon d={I.briefcase} className="w-3.5 h-3.5 text-violet-500" />}>{b.industry}</Chip>}
-          {b.headquarters && <Chip icon={<Icon d={I.pin} className="w-3.5 h-3.5 text-red-500" />}>{b.headquarters}</Chip>}
-          {foundedYear && <Chip icon={<Icon d={I.calendar} className="w-3.5 h-3.5 text-blue-500" />}>Founded {foundedYear}</Chip>}
+          <Chip dm={dm} icon={<Icon d={I.check} className="w-3.5 h-3.5 text-green-500" />}>Verified Business</Chip>
+          {b.industry && <Chip dm={dm} icon={<Icon d={I.briefcase} className="w-3.5 h-3.5 text-violet-500" />}>{b.industry}</Chip>}
+          {b.headquarters && <Chip dm={dm} icon={<Icon d={I.pin} className="w-3.5 h-3.5 text-red-500" />}>{b.headquarters}</Chip>}
+          {foundedYear && <Chip dm={dm} icon={<Icon d={I.calendar} className="w-3.5 h-3.5 text-blue-500" />}>Founded {foundedYear}</Chip>}
         </div>
 
-        {b.about && <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{b.about}</p>}
+        {b.about && <p className={`text-sm leading-relaxed whitespace-pre-line ${bodyCls}`}>{b.about}</p>}
 
         {(b.website_url || b.email) && (
           <section>
-            <h2 className="text-sm font-bold text-gray-900 mb-2.5">Company Information</h2>
+            <h2 className={`text-sm font-bold mb-2.5 ${headingCls}`}>Company Information</h2>
             <div className="flex flex-wrap gap-2.5">
               {websiteHref && (
-                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-800 hover:border-violet-300 transition-colors">
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors ${boxCls}`}>
                   <Icon d={I.check} className="w-4 h-4 text-green-500" /> {b.domain}
                 </a>
               )}
               {b.email && (
-                <a href={`mailto:${b.email}`} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-800 hover:border-violet-300 transition-colors">
+                <a href={`mailto:${b.email}`} className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors ${boxCls}`}>
                   <Icon d={I.mail} className="w-4 h-4 text-violet-500" /> {b.email}
                 </a>
               )}
@@ -127,33 +144,33 @@ export default function BusinessProfileView({ business: b, team = [], viewerId, 
 
         {b.services?.length > 0 && (
           <section>
-            <h2 className="text-sm font-bold text-gray-900 mb-2.5">Services</h2>
+            <h2 className={`text-sm font-bold mb-2.5 ${headingCls}`}>Services</h2>
             <div className="flex flex-wrap gap-2">
-              {b.services.map((s) => <Chip key={s}>{s}</Chip>)}
+              {b.services.map((s) => <Chip key={s} dm={dm}>{s}</Chip>)}
             </div>
           </section>
         )}
 
         {team.length > 0 && (
           <section>
-            <h2 className="text-sm font-bold text-gray-900 mb-2.5">Team Members</h2>
+            <h2 className={`text-sm font-bold mb-2.5 ${headingCls}`}>Team Members</h2>
             <div className="grid sm:grid-cols-2 gap-3">
               {team.map((m) => {
                 const name = m.display_name || m.full_name || m.username
                 const isMe = viewerId === m.id
                 return (
-                  <div key={m.id} className="flex items-center gap-3 rounded-2xl border border-gray-100 p-3">
+                  <div key={m.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${dm ? 'border-gray-700' : 'border-gray-100'}`}>
                     <span className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center text-white font-bold ${m.avatar_url ? '' : 'bg-violet-500'}`}>
                       {m.avatar_url ? <img src={m.avatar_url} alt="" className="w-full h-full object-cover" /> : (name || '?')[0].toUpperCase()}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
-                      <p className="text-xs text-gray-500 truncate">{m.job_title || (m.is_owner ? 'Owner' : 'Team member')}</p>
+                      <p className={`text-sm font-semibold truncate ${headingCls}`}>{name}</p>
+                      <p className={`text-xs truncate ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{m.job_title || (m.is_owner ? 'Owner' : 'Team member')}</p>
                     </div>
                     {!isMe && (
                       <button
                         onClick={() => onMessage?.(m)}
-                        className="shrink-0 rounded-xl border border-violet-300 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 transition-colors"
+                        className={`shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${dm ? 'border-violet-500/60 text-violet-300 hover:bg-violet-500/15' : 'border-violet-300 text-violet-700 hover:bg-violet-50'}`}
                       >
                         Message
                       </button>

@@ -38,7 +38,7 @@ export default function BusinessCard({ business, darkMode }) {
         </button>
       </div>
 
-      {open && <BusinessProfileModal slug={business.slug} onClose={() => setOpen(false)} />}
+      {open && <BusinessProfileModal slug={business.slug} darkMode={darkMode} onClose={() => setOpen(false)} />}
     </>
   )
 }
