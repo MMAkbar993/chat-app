@@ -372,7 +372,7 @@ export default function UserProfileModal({
           {/* The business they own, if they've chosen to show it here. */}
           {profile?.business && (
             <div className="mt-3">
-              <BusinessCard business={profile.business} darkMode={dm} />
+              <BusinessCard business={profile.business} darkMode={dm} onMessaged={onClose} />
             </div>
           )}
 

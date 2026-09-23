@@ -4,7 +4,7 @@ import BusinessProfileModal from './BusinessProfileModal'
 // The small card that points to a business profile: shown in business-name search results and
 // on the owner's personal profile. Inside the app it opens the profile over the current screen
 // rather than navigating away; the same card is what a share link shows as a full page.
-export default function BusinessCard({ business, darkMode }) {
+export default function BusinessCard({ business, darkMode, onMessaged }) {
   const [open, setOpen] = useState(false)
   const dm = darkMode
 
@@ -38,7 +38,7 @@ export default function BusinessCard({ business, darkMode }) {
         </button>
       </div>
 
-      {open && <BusinessProfileModal slug={business.slug} darkMode={darkMode} onClose={() => setOpen(false)} />}
+      {open && <BusinessProfileModal slug={business.slug} darkMode={darkMode} onMessaged={onMessaged} onClose={() => setOpen(false)} />}
     </>
   )
 }

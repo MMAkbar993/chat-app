@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getPublicBusiness } from '../../api/businesses'
-import { PENDING_DM_KEY } from '../../utils/pendingDm'
+import { requestPendingDm } from '../../utils/pendingDm'
 import BusinessProfileView from './BusinessProfileView'
 
 // Inside the app, "View Business" opens the profile over the current screen rather than
 // navigating away from a conversation. It's the same card the share link shows.
-export default function BusinessProfileModal({ slug, onClose, darkMode }) {
+export default function BusinessProfileModal({ slug, onClose, darkMode, onMessaged }) {
   const navigate = useNavigate()
   const { user: authUser } = useAuth()
   const [data, setData] = useState(null)
@@ -27,8 +27,13 @@ export default function BusinessProfileModal({ slug, onClose, darkMode }) {
   }, [onClose])
 
   function messageMember(member) {
-    localStorage.setItem(PENDING_DM_KEY, member.username)
     onClose()
+    // Also dismiss whatever opened this (a profile popup, the Add Contact sheet), so the
+    // conversation isn't left sitting behind a stack of modals.
+    onMessaged?.()
+    // Inside the app the chat screen is already mounted, so this also fires the event it
+    // listens for; navigate covers the case where the popup was opened from another route.
+    requestPendingDm(member.username)
     navigate('/chat')
   }
 

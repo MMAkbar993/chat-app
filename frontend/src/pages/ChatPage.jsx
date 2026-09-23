@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext'
 import { getOrCreateDirect } from '../api/conversations'
 import { markTourSeen } from '../api/users'
 import client from '../api/client'
-import { PENDING_DM_KEY } from '../utils/pendingDm'
+import { PENDING_DM_KEY, PENDING_DM_EVENT } from '../utils/pendingDm'
 import { PENDING_JOIN_KEY } from '../utils/pendingJoin'
 import { joinGroupByInvite } from '../api/groups'
 import { playRingtone, stopRingtone } from '../utils/sounds'
@@ -70,17 +70,26 @@ export default function ChatPage() {
 
   // "Send Message" from a public profile page (/u/:username) sets this before redirecting through
   // login/signup/KYC — pick it up once here, however many hops it took to actually land on /chat.
+  //
+  // The same hand-off is used from inside the app (the business profile popup's Message
+  // buttons), where this page is already mounted and navigating to /chat changes nothing. So
+  // it also listens for an event, which those callers fire after setting the key.
   useEffect(() => {
-    const username = localStorage.getItem(PENDING_DM_KEY)
-    if (!username) return
-    localStorage.removeItem(PENDING_DM_KEY)
-    client.get(`/users/profile/${username}`)
-      .then(({ data }) => getOrCreateDirect(data.user.id))
-      .then((data) => {
-        openConversation(data.conversation)
-        setSection('chats')
-      })
-      .catch(() => {})
+    function consumePendingDm() {
+      const username = localStorage.getItem(PENDING_DM_KEY)
+      if (!username) return
+      localStorage.removeItem(PENDING_DM_KEY)
+      client.get(`/users/profile/${username}`)
+        .then(({ data }) => getOrCreateDirect(data.user.id))
+        .then((data) => {
+          openConversation(data.conversation)
+          setSection('chats')
+        })
+        .catch(() => {})
+    }
+    consumePendingDm()
+    window.addEventListener(PENDING_DM_EVENT, consumePendingDm)
+    return () => window.removeEventListener(PENDING_DM_EVENT, consumePendingDm)
   }, [openConversation])
 
   // Same idea for a group invite link opened while signed out: JoinGroupPage stashes the code
