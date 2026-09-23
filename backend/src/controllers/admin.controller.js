@@ -6,6 +6,8 @@ import { config } from '../config/env.js'
 import { findUserByEmail } from '../db/queries/users.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
+import { query } from '../config/database.js'
+import { normaliseDomain, transferBusinessByDomain } from '../db/queries/businesses.js'
 import { listAds, createAd, updateAd, deleteAd } from '../db/queries/ads.js'
 import {
   findAdminById,
@@ -328,6 +330,107 @@ export async function representationAction(req, res, next) {
     const updated = await adminSetRepresentative(req.params.id, action)
     if (!updated) return res.status(404).json({ error: 'Request not found' })
     res.json({ request: updated })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Business profiles ─────────────────────────────────────────────────────────
+//
+// Support needs a way in: a company may lose the person who verified the domain, or ask for a
+// profile to be taken down. Admin rights otherwise only come from proving control of the
+// website, which a company can't always do on demand.
+
+export async function listBusinesses(req, res, next) {
+  try {
+    const search = String(req.query.search || '').trim().toLowerCase()
+    const params = []
+    let where = ''
+    if (search) {
+      params.push(`%${search}%`)
+      where = `WHERE lower(b.name) LIKE $1 OR lower(b.domain) LIKE $1`
+    }
+    const result = await query(
+      `SELECT b.id, b.name, b.domain, b.slug, b.logo_url, b.show_on_profile, b.created_at,
+              u.id AS owner_id, u.username AS owner_username,
+              u.full_name AS owner_full_name, u.display_name AS owner_display_name,
+              (SELECT COUNT(*) FROM website_representation_requests r
+                WHERE r.status = 'approved'
+                  AND regexp_replace(split_part(regexp_replace(lower(r.website_url), '^https?://', ''), '/', 1), '^www\\.', '') = b.domain
+              ) AS representative_count
+         FROM businesses b
+         JOIN users u ON u.id = b.owner_id
+         ${where}
+        ORDER BY b.created_at DESC
+        LIMIT 100`,
+      params
+    )
+    res.json({ businesses: result.rows })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function deleteBusinessAsAdmin(req, res, next) {
+  try {
+    const result = await query(`DELETE FROM businesses WHERE id = $1 RETURNING name, domain`, [req.params.id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'Business not found' })
+    res.json({ success: true, deleted: result.rows[0] })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// Hand a verified website — and its business profile — to a different account. The old admin
+// keeps nothing for that domain; the new one gets what verifying it would have given them.
+export async function reassignWebsiteAdmin(req, res, next) {
+  try {
+    const { websiteId } = req.params
+    const { newOwnerId } = req.body
+    if (!newOwnerId) return res.status(400).json({ error: 'newOwnerId is required' })
+
+    const site = await query(`SELECT id, user_id, url FROM verified_websites WHERE id = $1`, [websiteId])
+    if (!site.rows[0]) return res.status(404).json({ error: 'Website not found' })
+    const { user_id: previousOwnerId, url } = site.rows[0]
+    if (previousOwnerId === newOwnerId) return res.status(400).json({ error: 'That account already holds this website' })
+
+    const newOwner = await query(`SELECT id FROM users WHERE id = $1`, [newOwnerId])
+    if (!newOwner.rows[0]) return res.status(404).json({ error: 'That user does not exist' })
+
+    const domain = normaliseDomain(url) || url
+
+    await query(
+      `INSERT INTO verified_websites (user_id, url, verified, updated_at)
+       VALUES ($1, $2, true, NOW())
+       ON CONFLICT (user_id, url) DO UPDATE SET verified = true, updated_at = NOW()`,
+      [newOwnerId, domain]
+    )
+    await query(`DELETE FROM verified_websites WHERE id = $1`, [websiteId])
+    await query(
+      `UPDATE users SET website_verified = true, website_representation_approved = false,
+         company_name = COALESCE(company_name, $1), updated_at = NOW()
+       WHERE id = $2`,
+      [domain, newOwnerId]
+    )
+    // The business profile follows the domain, as it does for a user-initiated transfer.
+    await transferBusinessByDomain(domain, newOwnerId)
+    // Representatives of this domain now answer to the new admin.
+    await query(
+      `UPDATE website_representation_requests SET owner_id = $1
+        WHERE regexp_replace(split_part(regexp_replace(lower(website_url), '^https?://', ''), '/', 1), '^www\\.', '') = $2
+          AND requester_id != $1`,
+      [newOwnerId, domain]
+    )
+    // Clear the previous holder's flag if this was their only verified site.
+    const remaining = await query(
+      `SELECT 1 FROM verified_websites WHERE user_id = $1 AND verified = true LIMIT 1`,
+      [previousOwnerId]
+    )
+    if (remaining.rows.length === 0) {
+      await query(`UPDATE users SET website_verified = false, updated_at = NOW() WHERE id = $1`, [previousOwnerId])
+    }
+
+    res.json({ success: true, domain, newOwnerId })
   } catch (err) {
     next(err)
   }

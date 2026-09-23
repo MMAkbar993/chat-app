@@ -24,6 +24,7 @@ import {
   listVerifiedWebsites,
   listRepresentationRequests,
   representationAction,
+  listBusinesses, deleteBusinessAsAdmin, reassignWebsiteAdmin,
   createBroadcast,
   listBroadcasts,
   listSystemEmails,
@@ -69,6 +70,9 @@ adminRouter.get('/billing/overview', billingOverview)
 adminRouter.get('/websites', listVerifiedWebsites)
 adminRouter.get('/websites/representation-requests', listRepresentationRequests)
 adminRouter.post('/websites/representation-requests/:id/action', representationAction)
+adminRouter.post('/websites/:websiteId/reassign', reassignWebsiteAdmin)
+adminRouter.get('/businesses', listBusinesses)
+adminRouter.delete('/businesses/:id', deleteBusinessAsAdmin)
 
 adminRouter.post('/broadcasts', createBroadcast)
 adminRouter.get('/broadcasts', listBroadcasts)

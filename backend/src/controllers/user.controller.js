@@ -1115,6 +1115,20 @@ export async function confirmRepEmailCode(req, res, next) {
       return res.status(400).json({ error: 'That code is not correct.' })
     }
 
+    // An admin who removed this person gets to make it stick. Their old company mailbox may
+    // well still work, so without this, "remove" would last only until they clicked verify
+    // again — useless for the case it exists for, someone who has left the company.
+    const revoked = await query(
+      `SELECT 1 FROM website_representation_requests
+        WHERE requester_id = $1 AND status = 'revoked' AND ${BARE_DOMAIN_SQL('website_url')} = $2`,
+      [req.user.id, domain]
+    )
+    if (revoked.rows[0]) {
+      return res.status(403).json({
+        error: `An admin of ${domain} removed you as a representative. Contact them if that was a mistake.`,
+      })
+    }
+
     // Whoever holds the domain today, if anyone. Nobody may have claimed it yet, in which
     // case owner_id stays null and is filled in when an admin eventually verifies.
     const ownerRow = await query(
