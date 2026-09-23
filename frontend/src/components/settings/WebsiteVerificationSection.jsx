@@ -4,6 +4,7 @@ import {
   requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
   getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus, cancelRepresentationRequest,
   getApprovedRepresentatives, revokeRepresentative,
+  sendWebsiteEmailCode, confirmWebsiteEmailCode,
 } from '../../api/users'
 import { useSocket } from '../../context/SocketContext'
 
@@ -226,6 +227,12 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   // so we always offer a DNS TXT record as an equivalent second route.
   const [dnsInfo, setDnsInfo] = useState(null)
   const [showDns, setShowDns] = useState(false)
+  // Third route: a code emailed to an address on the domain itself.
+  const [showEmailVerify, setShowEmailVerify] = useState(false)
+  const [verifyEmail, setVerifyEmail] = useState('')
+  const [emailCode, setEmailCode] = useState('')
+  const [codeSentTo, setCodeSentTo] = useState(null)
+  const [emailBusy, setEmailBusy] = useState(false)
   const [websiteId, setWebsiteId] = useState(null)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -357,6 +364,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setError('')
     setClaimedInfo(null)
     setReprRequested(false)
+    setShowEmailVerify(false)
+    setVerifyEmail('')
+    setEmailCode('')
+    setCodeSentTo(null)
   }
 
   async function handleInit() {
@@ -401,6 +412,43 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       if (res?.reason === 'blocked') setShowDns(true)
     }
     setLoading(false)
+  }
+
+  // The domain the email address has to be on, shown in the form and enforced server-side.
+  const emailDomain = (url || '').trim().toLowerCase()
+    .replace(/^https?:\/\//, '').split('/')[0].replace(/^www\./, '') || 'your domain'
+
+  async function handleSendEmailCode() {
+    setError('')
+    setEmailBusy(true)
+    try {
+      const { sentTo } = await sendWebsiteEmailCode(websiteId, verifyEmail.trim())
+      setCodeSentTo(sentTo)
+      setEmailCode('')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not send the code.')
+    }
+    setEmailBusy(false)
+  }
+
+  async function handleConfirmEmailCode() {
+    setError('')
+    setEmailBusy(true)
+    try {
+      await confirmWebsiteEmailCode(websiteId, emailCode.trim())
+      const d = await getMyVerifiedWebsites()
+      setWebsites(d.websites || [])
+      resetAddForm()
+      setAddOpen(false)
+    } catch (err) {
+      const res = err.response?.data
+      if (res?.error === 'already_claimed') {
+        setClaimedInfo({ ownerName: res.ownerName, ownerId: res.ownerId, websiteUrl: res.websiteUrl })
+      } else {
+        setError(res?.error || 'Could not verify that code.')
+      }
+    }
+    setEmailBusy(false)
   }
 
   // Pending sites skip the representative and transfer machinery entirely: nothing is
@@ -641,6 +689,70 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               )}
             </div>
           )}
+
+          {/* Third route for owners who can edit neither the page nor DNS: receiving mail at
+              the domain is a comparable proof of control, so a code sent to an address on that
+              exact domain verifies it. */}
+          <div className={`mt-3 rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <button
+              type="button"
+              onClick={() => setShowEmailVerify((v) => !v)}
+              className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium ${sub}`}
+            >
+              <span>Can't edit either? Verify with a business email instead</span>
+              <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${showEmailVerify ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showEmailVerify && (
+              <div className={`px-3 pb-3 space-y-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <p className={`text-xs pt-2 ${sub}`}>
+                  We'll email a code to an address on <span className="font-medium">{emailDomain}</span>. It has to be
+                  on that exact domain — an address anywhere else doesn't prove you control this website.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    value={verifyEmail}
+                    onChange={(e) => setVerifyEmail(e.target.value)}
+                    placeholder={`you@${emailDomain}`}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-400 ${
+                      darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+                    }`}
+                  />
+                  <button
+                    onClick={handleSendEmailCode}
+                    disabled={emailBusy || !verifyEmail.trim()}
+                    className="shrink-0 rounded-lg bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 text-xs font-semibold disabled:opacity-50 transition-colors"
+                  >
+                    {emailBusy ? 'Sending…' : codeSentTo ? 'Resend' : 'Send code'}
+                  </button>
+                </div>
+                {codeSentTo && (
+                  <>
+                    <p className={`text-xs ${sub}`}>Code sent to {codeSentTo}. It expires in 15 minutes.</p>
+                    <div className="flex gap-2">
+                      <input
+                        value={emailCode}
+                        onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        inputMode="numeric"
+                        placeholder="6-digit code"
+                        className={`flex-1 rounded-lg border px-3 py-2 text-sm tracking-widest outline-none focus:ring-2 focus:ring-violet-400 ${
+                          darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+                        }`}
+                      />
+                      <button
+                        onClick={handleConfirmEmailCode}
+                        disabled={emailBusy || emailCode.length < 6}
+                        className="shrink-0 rounded-lg bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 text-xs font-semibold disabled:opacity-50 transition-colors"
+                      >
+                        {emailBusy ? 'Checking…' : 'Verify email'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="mt-4">
             <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 2 — Click Verify</p>

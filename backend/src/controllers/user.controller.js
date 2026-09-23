@@ -9,7 +9,7 @@ import {
   getPublicSocialConnections,
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
-import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail } from '../config/email.js'
+import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail, sendWebsiteVerifyCode } from '../config/email.js'
 import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness } from '../db/queries/businesses.js'
 
 // Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
@@ -1027,6 +1027,122 @@ export async function confirmWebsiteVerification(req, res, next) {
        company_name = COALESCE(company_name, $1),
        updated_at = NOW() WHERE id = $2`,
       [domainName, req.user.id]
+    )
+    sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ─── Verifying a website by email ───────────────────────────────────────────
+//
+// Plenty of operators can't get a meta tag onto their homepage or a TXT record into DNS —
+// that's someone else's team and a ticket. Receiving mail at the domain is a comparable
+// signal of control, so a code sent to an address on that exact domain verifies it too.
+
+const EMAIL_CODE_TTL_MS = 15 * 60 * 1000
+const EMAIL_CODE_MAX_ATTEMPTS = 5
+
+function hashCode(code) {
+  return crypto.createHash('sha256').update(String(code)).digest('hex')
+}
+
+export async function sendWebsiteEmailCode(req, res, next) {
+  try {
+    const { websiteId, email } = req.body
+    if (!websiteId || !email) return res.status(400).json({ error: 'websiteId and email are required' })
+
+    const pending = await query(
+      `SELECT id, url FROM verified_websites WHERE id = $1 AND user_id = $2 AND verified = false`,
+      [websiteId, req.user.id]
+    )
+    if (!pending.rows[0]) return res.status(400).json({ error: 'No pending verification found' })
+    const { url } = pending.rows[0]
+
+    const address = String(email).trim().toLowerCase()
+    const emailDomain = address.includes('@') ? address.split('@').pop() : null
+    const siteDomain = bareDomain(url)
+    // The whole basis of this method: the address must be *on* the domain being claimed.
+    // A subdomain won't do either — mail at support.brand.com doesn't prove brand.com.
+    if (!emailDomain || emailDomain !== siteDomain) {
+      return res.status(400).json({
+        error: `That email has to be on ${siteDomain}. An address at another domain doesn't prove you control this website.`,
+      })
+    }
+
+    const code = String(crypto.randomInt(100000, 1000000))
+    await query(
+      `UPDATE verified_websites
+          SET email_code_hash = $1, email_code_expires = NOW() + INTERVAL '15 minutes',
+              email_code_sent_to = $2, email_code_attempts = 0, updated_at = NOW()
+        WHERE id = $3`,
+      [hashCode(code), address, websiteId]
+    )
+    await sendWebsiteVerifyCode(address, code, siteDomain)
+    res.json({ sentTo: address, expiresInMinutes: EMAIL_CODE_TTL_MS / 60000 })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function confirmWebsiteEmailCode(req, res, next) {
+  try {
+    const { websiteId, code } = req.body
+    if (!websiteId || !code) return res.status(400).json({ error: 'websiteId and code are required' })
+
+    const pending = await query(
+      `SELECT id, url, email_code_hash, email_code_expires, email_code_attempts
+         FROM verified_websites WHERE id = $1 AND user_id = $2 AND verified = false`,
+      [websiteId, req.user.id]
+    )
+    const row = pending.rows[0]
+    if (!row?.email_code_hash) return res.status(400).json({ error: 'Request a code first' })
+    if (new Date(row.email_code_expires) < new Date()) {
+      return res.status(400).json({ error: 'That code has expired. Request a new one.' })
+    }
+    if (row.email_code_attempts >= EMAIL_CODE_MAX_ATTEMPTS) {
+      return res.status(429).json({ error: 'Too many incorrect attempts. Request a new code.' })
+    }
+    if (hashCode(String(code).trim()) !== row.email_code_hash) {
+      await query(
+        `UPDATE verified_websites SET email_code_attempts = email_code_attempts + 1 WHERE id = $1`,
+        [websiteId]
+      )
+      return res.status(400).json({ error: 'That code is not correct.' })
+    }
+
+    const { url } = row
+    // Same ownership check the meta-tag path runs before marking anything verified.
+    const takenMeanwhile = await query(
+      `SELECT u.id, u.display_name, u.full_name
+         FROM verified_websites vw
+         JOIN users u ON u.id = vw.user_id
+        WHERE vw.verified = true AND ${BARE_DOMAIN_SQL('vw.url')} = $1 AND vw.user_id != $2`,
+      [bareDomain(url), req.user.id]
+    )
+    if (takenMeanwhile.rows[0]) {
+      const owner = takenMeanwhile.rows[0]
+      return res.status(409).json({
+        error: 'already_claimed',
+        ownerName: owner.display_name || owner.full_name || 'another user',
+        ownerId: owner.id,
+        websiteUrl: bareDomain(url),
+      })
+    }
+
+    await query(
+      `UPDATE verified_websites
+          SET verified = true, verify_token = NULL, verified_method = 'email',
+              email_code_hash = NULL, email_code_expires = NULL, updated_at = NOW()
+        WHERE id = $1`,
+      [websiteId]
+    )
+    await query(
+      `UPDATE users SET website_verified = true,
+       company_name = COALESCE(company_name, $1),
+       updated_at = NOW() WHERE id = $2`,
+      [bareDomain(url), req.user.id]
     )
     sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
     res.json({ success: true })

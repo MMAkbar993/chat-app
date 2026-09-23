@@ -71,6 +71,24 @@ export async function sendPasswordResetOtp(email, otp, name) {
   await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
+export async function sendWebsiteVerifyCode(email, code, domain) {
+  const subject = `Your ${APP_NAME} verification code for ${domain}`
+  const html = `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">Verify ${escapeHtml(domain)}</h2>
+        <p>Enter this code in ${APP_NAME} to confirm you control <strong>${escapeHtml(domain)}</strong>. It expires in 15 minutes.</p>
+        <div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;color:#7c3aed;padding:16px 0">${code}</div>
+        <p style="color:#6b7280;font-size:0.85rem">If you didn't request this, you can ignore this email — nothing has been verified.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Website verification code for ${email} (${domain}): ${code}`)
+    return
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
+}
+
 export async function sendWelcomeEmail(email, name) {
   const setting = await getEmailSetting('welcome')
   if (setting && !setting.enabled) return
