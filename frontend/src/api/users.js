@@ -45,9 +45,11 @@ export const uploadFile  = (file) => {
   return client.post('/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
 }
 
-// Verifying a website by emailing a code to an address on that same domain, for owners who
-// can't add a meta tag or a DNS record.
-export const sendWebsiteEmailCode = (websiteId, email) =>
-  client.post('/users/me/website/email-code', { websiteId, email }).then((r) => r.data)
-export const confirmWebsiteEmailCode = (websiteId, code) =>
-  client.post('/users/me/website/email-confirm', { websiteId, code }).then((r) => r.data)
+// Becoming a representative of a company by proving you receive mail at its domain. Admin
+// rights still come only from a meta tag or a DNS record.
+export const sendRepEmailCode = (url, email) =>
+  client.post('/users/me/website/rep-email-code', { url, email }).then((r) => r.data)
+export const confirmRepEmailCode = (url, code) =>
+  client.post('/users/me/website/rep-email-confirm', { url, code }).then((r) => r.data)
+export const removeMyRepresentationFor = (url) =>
+  client.delete('/users/me/website/representation-for', { params: { url } }).then((r) => r.data)

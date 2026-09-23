@@ -14,7 +14,7 @@ import {
   getNotifications, markNotificationsRead, clearNotifications, getMyVerifiedWebsites, revokeRepresentation,
   getMyRepresentationStatus, cancelRepresentationRequest,
   markTourSeenHandler, getPrivacy, updatePrivacy, updateTimezone,
-  sendWebsiteEmailCode, confirmWebsiteEmailCode,
+  sendRepEmailCode, confirmRepEmailCode, removeMyRepresentation,
 } from '../controllers/user.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler, submitFeedback } from '../controllers/user_actions.controller.js'
 import { imageOnlyFilter } from '../middleware/fileFilters.js'
@@ -54,8 +54,9 @@ userRouter.delete('/me/chats', deleteAllChats)
 userRouter.get('/me/websites', getMyVerifiedWebsites)
 userRouter.post('/me/website/verify-init', initWebsiteVerification)
 userRouter.post('/me/website/verify-confirm', confirmWebsiteVerification)
-userRouter.post('/me/website/email-code', sendWebsiteEmailCode)
-userRouter.post('/me/website/email-confirm', confirmWebsiteEmailCode)
+userRouter.post('/me/website/rep-email-code', sendRepEmailCode)
+userRouter.post('/me/website/rep-email-confirm', confirmRepEmailCode)
+userRouter.delete('/me/website/representation-for', removeMyRepresentation)
 userRouter.post('/me/website/request-representation', requestRepresentation)
 userRouter.delete('/me/website/representation', revokeRepresentation)
 userRouter.get('/me/website/:id/representatives', getWebsiteRepresentatives)

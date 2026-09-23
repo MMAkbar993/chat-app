@@ -140,6 +140,17 @@ async function saveImage(req, res, next, column) {
 export const uploadBusinessLogo = (req, res, next) => saveImage(req, res, next, 'logo_url')
 export const uploadBusinessCover = (req, res, next) => saveImage(req, res, next, 'cover_url')
 
+export async function deleteMyBusiness(req, res, next) {
+  try {
+    const business = await requireOwnedBusiness(req, res)
+    if (!business) return undefined
+    await query(`DELETE FROM businesses WHERE id = $1`, [business.id])
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // Public: what a share link resolves to. No auth — the whole point is that someone outside
 // Pulse can open it and see who to contact.
 export async function getPublicBusiness(req, res, next) {

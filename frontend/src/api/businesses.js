@@ -3,6 +3,7 @@ import client from './client'
 export const getMyBusinesses = () => client.get('/businesses/me').then((r) => r.data)
 export const createBusiness = (data) => client.post('/businesses', data).then((r) => r.data)
 export const updateBusiness = (id, data) => client.patch(`/businesses/${id}`, data).then((r) => r.data)
+export const deleteBusiness = (id) => client.delete(`/businesses/${id}`).then((r) => r.data)
 export const getPublicBusiness = (slug) => client.get(`/businesses/slug/${encodeURIComponent(slug)}`).then((r) => r.data)
 
 function uploadImage(id, kind, file) {

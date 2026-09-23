@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import { authMiddleware } from '../middleware/auth.js'
 import { imageOnlyFilter } from '../middleware/fileFilters.js'
 import {
-  listMyBusinesses, createMyBusiness, updateMyBusiness,
+  listMyBusinesses, createMyBusiness, updateMyBusiness, deleteMyBusiness,
   uploadBusinessLogo, uploadBusinessCover, getPublicBusiness,
 } from '../controllers/business.controller.js'
 
@@ -32,5 +32,6 @@ businessRouter.use(authMiddleware)
 businessRouter.get('/me', listMyBusinesses)
 businessRouter.post('/', createMyBusiness)
 businessRouter.patch('/:id', updateMyBusiness)
+businessRouter.delete('/:id', deleteMyBusiness)
 businessRouter.post('/:id/logo', upload.single('file'), uploadBusinessLogo)
 businessRouter.post('/:id/cover', upload.single('file'), uploadBusinessCover)

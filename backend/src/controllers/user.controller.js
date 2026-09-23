@@ -1028,6 +1028,13 @@ export async function confirmWebsiteVerification(req, res, next) {
        updated_at = NOW() WHERE id = $2`,
       [domainName, req.user.id]
     )
+    // Representatives who verified by email before anyone claimed this domain now belong to
+    // this admin, so they show up in their representatives list.
+    await query(
+      `UPDATE website_representation_requests SET owner_id = $1
+        WHERE owner_id IS NULL AND ${BARE_DOMAIN_SQL('website_url')} = $2 AND requester_id != $1`,
+      [req.user.id, bareDomain(url)]
+    )
     sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
     res.json({ success: true })
   } catch (err) {
@@ -1035,116 +1042,138 @@ export async function confirmWebsiteVerification(req, res, next) {
   }
 }
 
-// ─── Verifying a website by email ───────────────────────────────────────────
+// ─── Becoming a representative by business email ────────────────────────────
 //
-// Plenty of operators can't get a meta tag onto their homepage or a TXT record into DNS —
-// that's someone else's team and a ticket. Receiving mail at the domain is a comparable
-// signal of control, so a code sent to an address on that exact domain verifies it too.
+// A company email shows that someone works there, not that they control the domain — at a
+// large operator that would hand the listing to whoever signed up first, and leaving the
+// company wouldn't take it back. So email verification makes someone a *representative*;
+// admin rights still require a meta tag or a DNS record. No approval step: the code proves
+// they receive mail at the domain, which is the whole point of it.
 
-const EMAIL_CODE_TTL_MS = 15 * 60 * 1000
 const EMAIL_CODE_MAX_ATTEMPTS = 5
 
 function hashCode(code) {
   return crypto.createHash('sha256').update(String(code)).digest('hex')
 }
 
-export async function sendWebsiteEmailCode(req, res, next) {
+export async function sendRepEmailCode(req, res, next) {
   try {
-    const { websiteId, email } = req.body
-    if (!websiteId || !email) return res.status(400).json({ error: 'websiteId and email are required' })
+    const { url, email } = req.body
+    if (!url || !email) return res.status(400).json({ error: 'url and email are required' })
 
-    const pending = await query(
-      `SELECT id, url FROM verified_websites WHERE id = $1 AND user_id = $2 AND verified = false`,
-      [websiteId, req.user.id]
-    )
-    if (!pending.rows[0]) return res.status(400).json({ error: 'No pending verification found' })
-    const { url } = pending.rows[0]
+    const domain = normaliseDomain(url)
+    if (!domain) return res.status(400).json({ error: 'Enter a valid website address' })
 
     const address = String(email).trim().toLowerCase()
     const emailDomain = address.includes('@') ? address.split('@').pop() : null
-    const siteDomain = bareDomain(url)
-    // The whole basis of this method: the address must be *on* the domain being claimed.
-    // A subdomain won't do either — mail at support.brand.com doesn't prove brand.com.
-    if (!emailDomain || emailDomain !== siteDomain) {
+    // The basis of this method: the address must be on the domain itself. A subdomain won't
+    // do — mail at support.brand.com doesn't establish anything about brand.com.
+    if (!emailDomain || emailDomain !== domain) {
       return res.status(400).json({
-        error: `That email has to be on ${siteDomain}. An address at another domain doesn't prove you control this website.`,
+        error: `That email has to be on ${domain}. An address at another domain doesn't show you work there.`,
       })
     }
 
     const code = String(crypto.randomInt(100000, 1000000))
     await query(
-      `UPDATE verified_websites
-          SET email_code_hash = $1, email_code_expires = NOW() + INTERVAL '15 minutes',
-              email_code_sent_to = $2, email_code_attempts = 0, updated_at = NOW()
-        WHERE id = $3`,
-      [hashCode(code), address, websiteId]
+      `INSERT INTO website_rep_email_codes (user_id, domain, email, code_hash, expires_at)
+       VALUES ($1, $2, $3, $4, NOW() + INTERVAL '15 minutes')
+       ON CONFLICT (user_id, domain) DO UPDATE
+         SET email = EXCLUDED.email, code_hash = EXCLUDED.code_hash,
+             expires_at = EXCLUDED.expires_at, attempts = 0, created_at = NOW()`,
+      [req.user.id, domain, address, hashCode(code)]
     )
-    await sendWebsiteVerifyCode(address, code, siteDomain)
-    res.json({ sentTo: address, expiresInMinutes: EMAIL_CODE_TTL_MS / 60000 })
+    await sendWebsiteVerifyCode(address, code, domain)
+    res.json({ sentTo: address, domain })
   } catch (err) {
     next(err)
   }
 }
 
-export async function confirmWebsiteEmailCode(req, res, next) {
+export async function confirmRepEmailCode(req, res, next) {
   try {
-    const { websiteId, code } = req.body
-    if (!websiteId || !code) return res.status(400).json({ error: 'websiteId and code are required' })
+    const { url, code } = req.body
+    if (!url || !code) return res.status(400).json({ error: 'url and code are required' })
+    const domain = normaliseDomain(url)
+    if (!domain) return res.status(400).json({ error: 'Enter a valid website address' })
 
     const pending = await query(
-      `SELECT id, url, email_code_hash, email_code_expires, email_code_attempts
-         FROM verified_websites WHERE id = $1 AND user_id = $2 AND verified = false`,
-      [websiteId, req.user.id]
+      `SELECT id, code_hash, expires_at, attempts FROM website_rep_email_codes
+        WHERE user_id = $1 AND domain = $2`,
+      [req.user.id, domain]
     )
     const row = pending.rows[0]
-    if (!row?.email_code_hash) return res.status(400).json({ error: 'Request a code first' })
-    if (new Date(row.email_code_expires) < new Date()) {
+    if (!row) return res.status(400).json({ error: 'Request a code first' })
+    if (new Date(row.expires_at) < new Date()) {
       return res.status(400).json({ error: 'That code has expired. Request a new one.' })
     }
-    if (row.email_code_attempts >= EMAIL_CODE_MAX_ATTEMPTS) {
+    if (row.attempts >= EMAIL_CODE_MAX_ATTEMPTS) {
       return res.status(429).json({ error: 'Too many incorrect attempts. Request a new code.' })
     }
-    if (hashCode(String(code).trim()) !== row.email_code_hash) {
-      await query(
-        `UPDATE verified_websites SET email_code_attempts = email_code_attempts + 1 WHERE id = $1`,
-        [websiteId]
-      )
+    if (hashCode(String(code).trim()) !== row.code_hash) {
+      await query(`UPDATE website_rep_email_codes SET attempts = attempts + 1 WHERE id = $1`, [row.id])
       return res.status(400).json({ error: 'That code is not correct.' })
     }
 
-    const { url } = row
-    // Same ownership check the meta-tag path runs before marking anything verified.
-    const takenMeanwhile = await query(
-      `SELECT u.id, u.display_name, u.full_name
-         FROM verified_websites vw
-         JOIN users u ON u.id = vw.user_id
-        WHERE vw.verified = true AND ${BARE_DOMAIN_SQL('vw.url')} = $1 AND vw.user_id != $2`,
-      [bareDomain(url), req.user.id]
+    // Whoever holds the domain today, if anyone. Nobody may have claimed it yet, in which
+    // case owner_id stays null and is filled in when an admin eventually verifies.
+    const ownerRow = await query(
+      `SELECT user_id FROM verified_websites
+        WHERE verified = true AND ${BARE_DOMAIN_SQL('url')} = $1 AND user_id != $2
+        LIMIT 1`,
+      [domain, req.user.id]
     )
-    if (takenMeanwhile.rows[0]) {
-      const owner = takenMeanwhile.rows[0]
-      return res.status(409).json({
-        error: 'already_claimed',
-        ownerName: owner.display_name || owner.full_name || 'another user',
-        ownerId: owner.id,
-        websiteUrl: bareDomain(url),
+    const ownerId = ownerRow.rows[0]?.user_id || null
+
+    await query(
+      `INSERT INTO website_representation_requests (website_url, requester_id, owner_id, status, verified_via)
+       VALUES ($1, $2, $3, 'approved', 'email')
+       ON CONFLICT (website_url, requester_id) DO UPDATE
+         SET status = 'approved', owner_id = EXCLUDED.owner_id, verified_via = 'email', created_at = NOW()`,
+      [domain, req.user.id, ownerId]
+    )
+    await query(
+      `UPDATE users SET website_representation_approved = true,
+         company_name = COALESCE(company_name, $1), updated_at = NOW()
+       WHERE id = $2`,
+      [domain, req.user.id]
+    )
+    await query(`DELETE FROM website_rep_email_codes WHERE id = $1`, [row.id])
+
+    // Let the admin know someone now represents their company.
+    if (ownerId) {
+      const me = await findUserById(req.user.id)
+      createNotification(ownerId, 'representation_verified', {
+        websiteUrl: domain,
+        requesterName: me?.display_name || me?.full_name || me?.username,
+        requesterId: req.user.id,
       })
     }
 
+    res.json({ success: true, domain, ownerClaimed: Boolean(ownerId) })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// A representative stepping back from a company, without needing the admin to do it.
+export async function removeMyRepresentation(req, res, next) {
+  try {
+    const domain = normaliseDomain(req.query.url || req.body?.url)
+    if (!domain) return res.status(400).json({ error: 'url is required' })
     await query(
-      `UPDATE verified_websites
-          SET verified = true, verify_token = NULL, verified_method = 'email',
-              email_code_hash = NULL, email_code_expires = NULL, updated_at = NOW()
-        WHERE id = $1`,
-      [websiteId]
+      `DELETE FROM website_representation_requests
+        WHERE requester_id = $1 AND ${BARE_DOMAIN_SQL('website_url')} = $2`,
+      [req.user.id, domain]
     )
-    await query(
-      `UPDATE users SET website_verified = true,
-       company_name = COALESCE(company_name, $1),
-       updated_at = NOW() WHERE id = $2`,
-      [bareDomain(url), req.user.id]
+    const remaining = await query(
+      `SELECT 1 FROM website_representation_requests
+        WHERE requester_id = $1 AND status = 'approved' LIMIT 1`,
+      [req.user.id]
     )
-    sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
+    if (remaining.rows.length === 0) {
+      await query(`UPDATE users SET website_representation_approved = false WHERE id = $1`, [req.user.id])
+    }
     res.json({ success: true })
   } catch (err) {
     next(err)
