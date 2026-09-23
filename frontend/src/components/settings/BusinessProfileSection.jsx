@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  getMyBusinesses, createBusiness, updateBusiness, getPublicBusiness,
+  getMyBusinesses, createBusiness, updateBusiness, deleteBusiness, getPublicBusiness,
   uploadBusinessLogo, uploadBusinessCover,
 } from '../../api/businesses'
 
@@ -48,6 +48,7 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
   const [newSite, setNewSite] = useState('')
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const logoInput = useRef(null)
   const coverInput = useRef(null)
 
@@ -121,6 +122,24 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
       onToast?.('Business profile saved.')
     } catch (err) {
       onToast?.(err.response?.data?.error || 'Could not save the business profile.', 'error')
+    }
+    setSaving(false)
+  }
+
+  function handleDelete() {
+    setConfirmDelete(true)
+  }
+
+  async function confirmDeleteNow() {
+    setConfirmDelete(false)
+    setSaving(true)
+    try {
+      await deleteBusiness(business.id)
+      setEditing(false)
+      await load()
+      onToast?.('Business profile deleted.')
+    } catch (err) {
+      onToast?.(err.response?.data?.error || 'Could not delete the business profile.', 'error')
     }
     setSaving(false)
   }
@@ -436,7 +455,16 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
         )}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <button
+          onClick={handleDelete}
+          disabled={saving}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
+            dm ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'
+          }`}
+        >
+          Delete business profile
+        </button>
         <button
           onClick={handleSave}
           disabled={saving || !form.name.trim()}
@@ -446,6 +474,32 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
         </button>
       </div>
       </>)}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(false)}>
+          <div className={`w-full max-w-sm rounded-2xl p-6 ${dm ? 'bg-gray-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
+            <p className={`font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Delete this business profile?</p>
+            <p className={`text-sm mt-1.5 ${sub}`}>
+              Its share link will stop working and anyone who saved it will see a "not found" page.
+              Your website stays verified, and you can create a new profile for it later.
+            </p>
+            <div className="mt-5 flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold ${dm ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteNow}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {createCard}
     </div>

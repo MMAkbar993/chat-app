@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
-  requestRepresentation, revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
+  revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
   getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus, cancelRepresentationRequest,
   getApprovedRepresentatives, revokeRepresentative,
-  sendWebsiteEmailCode, confirmWebsiteEmailCode,
+  sendRepEmailCode, confirmRepEmailCode,
 } from '../../api/users'
 import { useSocket } from '../../context/SocketContext'
+import { useAuth } from '../../context/AuthContext'
 
 // ─── shared visual bits ─────────────────────────────────────────────────────
 
@@ -212,6 +213,7 @@ function dnsInfoFor(url, token) {
 
 export default function WebsiteVerificationSection({ darkMode, profile }) {
   const { socket } = useSocket()
+  const { refreshUser } = useAuth()
   const [websites, setWebsites] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   const [pendingRequests, setPendingRequests] = useState([])
@@ -238,7 +240,6 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [claimedInfo, setClaimedInfo] = useState(null)
-  const [reprRequested, setReprRequested] = useState(false)
   const [removingId, setRemovingId] = useState(null)
   const [revokingRepr, setRevokingRepr] = useState(false)
   const [reprRevoked, setReprRevoked] = useState(false)
@@ -319,8 +320,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       // been sent" sitting underneath the new "You're an Authorized Representative" card —
       // three panels disagreeing about the same request.
       setClaimedInfo(null)
-      setReprRequested(false)
-      if (action === 'approve') setReprRevoked(false)
+        if (action === 'approve') setReprRevoked(false)
       getMyRepresentationStatus()
         .then((d) => setMyPendingRequests(d.requests || []))
         .catch(() => {})
@@ -363,7 +363,6 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setStep(1)
     setError('')
     setClaimedInfo(null)
-    setReprRequested(false)
     setShowEmailVerify(false)
     setVerifyEmail('')
     setEmailCode('')
@@ -401,6 +400,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       await confirmWebsiteVerify(websiteId)
       const d = await getMyVerifiedWebsites()
       setWebsites(d.websites || [])
+      await refreshUser?.()
       resetAddForm()
       setAddOpen(false)
     } catch (err) {
@@ -418,11 +418,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const emailDomain = (url || '').trim().toLowerCase()
     .replace(/^https?:\/\//, '').split('/')[0].replace(/^www\./, '') || 'your domain'
 
-  async function handleSendEmailCode() {
+  async function handleSendEmailCode(targetUrl) {
     setError('')
     setEmailBusy(true)
     try {
-      const { sentTo } = await sendWebsiteEmailCode(websiteId, verifyEmail.trim())
+      const { sentTo } = await sendRepEmailCode(targetUrl || url, verifyEmail.trim())
       setCodeSentTo(sentTo)
       setEmailCode('')
     } catch (err) {
@@ -431,22 +431,21 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setEmailBusy(false)
   }
 
-  async function handleConfirmEmailCode() {
+  // Verifying by email makes you a representative of the company, not its admin — admin
+  // rights come only from the meta tag or the DNS record.
+  async function handleConfirmEmailCode(targetUrl) {
     setError('')
     setEmailBusy(true)
     try {
-      await confirmWebsiteEmailCode(websiteId, emailCode.trim())
+      await confirmRepEmailCode(targetUrl || url, emailCode.trim())
       const d = await getMyVerifiedWebsites()
       setWebsites(d.websites || [])
+      await refreshUser?.()
       resetAddForm()
       setAddOpen(false)
+      setClaimedInfo(null)
     } catch (err) {
-      const res = err.response?.data
-      if (res?.error === 'already_claimed') {
-        setClaimedInfo({ ownerName: res.ownerName, ownerId: res.ownerId, websiteUrl: res.websiteUrl })
-      } else {
-        setError(res?.error || 'Could not verify that code.')
-      }
+      setError(err.response?.data?.error || 'Could not verify that code.')
     }
     setEmailBusy(false)
   }
@@ -513,20 +512,6 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       setError(err.response?.data?.error || 'Failed to transfer ownership.')
     }
     setDialogLoading(false)
-  }
-
-  async function handleRequestRepresentation() {
-    setLoading(true)
-    try {
-      await requestRepresentation(claimedInfo.websiteUrl, claimedInfo.ownerId)
-      setReprRequested(true)
-      // Immediately reflect the new pending request so it survives a page refresh
-      const d = await getMyRepresentationStatus()
-      setMyPendingRequests(d.requests || [])
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send request.')
-    }
-    setLoading(false)
   }
 
   async function handleReprAction(id, action) {
@@ -699,7 +684,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               onClick={() => setShowEmailVerify((v) => !v)}
               className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium ${sub}`}
             >
-              <span>Can't edit either? Verify with a business email instead</span>
+              <span>Can't edit either? Verify with a business email to represent this company</span>
               <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${showEmailVerify ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -707,8 +692,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             {showEmailVerify && (
               <div className={`px-3 pb-3 space-y-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <p className={`text-xs pt-2 ${sub}`}>
-                  We'll email a code to an address on <span className="font-medium">{emailDomain}</span>. It has to be
-                  on that exact domain — an address anywhere else doesn't prove you control this website.
+                  We'll email a code to an address on <span className="font-medium">{emailDomain}</span>. This adds you
+                  as a <span className="font-medium">representative</span> of the company — it doesn't give you admin
+                  rights over the listing, which need the meta tag or the DNS record above.
                 </p>
                 <div className="flex gap-2">
                   <input
@@ -878,68 +864,72 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           </div>
 
           <div className={`${card} p-6`}>
-            {!reprRequested ? (
-              <>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-violet-100 text-violet-600'}`}>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}>
-                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                      <path d="M16 3.13a4 4 0 010 7.75" />
-                    </svg>
-                  </span>
-                  <div>
-                    <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Work for this company?</p>
-                    <p className={`text-xs mt-0.5 ${sub}`}>If you are an employee or representative of this company, you can request to be added as an approved representative.</p>
-                  </div>
-                </div>
-
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl p-4 mb-4 ${darkMode ? 'bg-gray-900' : 'bg-violet-50/60'}`}>
-                  <InfoTile darkMode={darkMode}
-                    color={darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-white text-violet-600'}
-                    icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>}
-                    title="Build Trust"
-                    desc="Show your verified role within the company."
-                  />
-                  <InfoTile darkMode={darkMode}
-                    color={darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-white text-violet-600'}
-                    icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
-                    title="Increase Visibility"
-                    desc="Help grow and maintain the company's presence on our platform."
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={handleRequestRepresentation}
-                    disabled={loading}
-                    className="flex-1 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
-                  >
-                    {loading ? 'Sending…' : 'Request Representation'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`flex-1 rounded-xl py-2.5 text-sm font-semibold border transition-colors ${darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-                  >
-                    Learn More
-                  </button>
-                </div>
-                <p className={`flex items-center gap-1.5 text-xs mt-3 ${sub}`}>
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Your request will be sent to the current website owner for approval.
-                </p>
-              </>
-            ) : (
-              <div className={`flex items-start gap-2 rounded-xl px-4 py-3 text-sm ${darkMode ? 'bg-green-900/20 text-green-300' : 'bg-green-50 text-green-700'}`}>
-                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-violet-100 text-violet-600'}`}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}>
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                  <path d="M16 3.13a4 4 0 010 7.75" />
                 </svg>
-                Your representation request has been sent. The website owner will review it shortly.
+              </span>
+              <div>
+                <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Work for this company?</p>
+                <p className={`text-xs mt-0.5 ${sub}`}>
+                  Verify a company email address and you'll be listed as a representative straight away.
+                  No approval needed.
+                </p>
               </div>
-            )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  value={verifyEmail}
+                  onChange={(e) => setVerifyEmail(e.target.value)}
+                  placeholder={`you@${claimedInfo.websiteUrl}`}
+                  className={`flex-1 rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-400 ${
+                    darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+                  }`}
+                />
+                <button
+                  onClick={() => handleSendEmailCode(claimedInfo.websiteUrl)}
+                  disabled={emailBusy || !verifyEmail.trim()}
+                  className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {emailBusy ? 'Sending…' : codeSentTo ? 'Resend' : 'Send code'}
+                </button>
+              </div>
+              {codeSentTo && (
+                <>
+                  <p className={`text-xs ${sub}`}>Code sent to {codeSentTo}. It expires in 15 minutes.</p>
+                  <div className="flex gap-2">
+                    <input
+                      value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      inputMode="numeric"
+                      placeholder="6-digit code"
+                      className={`flex-1 rounded-xl border px-3 py-2.5 text-sm tracking-widest outline-none focus:ring-2 focus:ring-violet-400 ${
+                        darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
+                      }`}
+                    />
+                    <button
+                      onClick={() => handleConfirmEmailCode(claimedInfo.websiteUrl)}
+                      disabled={emailBusy || emailCode.length < 6}
+                      className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+                    >
+                      {emailBusy ? 'Checking…' : 'Verify email'}
+                    </button>
+                  </div>
+                </>
+              )}
+              <p className={`flex items-center gap-1.5 text-xs pt-1 ${sub}`}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Representatives don't manage the company's business profile — that stays with its admin.
+              </p>
+            </div>
           </div>
 
           <HelpCard darkMode={darkMode} />
