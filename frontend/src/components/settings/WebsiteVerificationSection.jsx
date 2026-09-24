@@ -43,45 +43,6 @@ function Illustration({ darkMode, badge, badgeColor, lockColor }) {
   )
 }
 
-function InfoTile({ darkMode, icon, color, title, desc }) {
-  const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
-  return (
-    <div className="flex-1 min-w-0">
-      <span className={`w-9 h-9 rounded-full flex items-center justify-center mb-2 ${color}`}>
-        {icon}
-      </span>
-      <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</p>
-      <p className={`text-xs mt-0.5 leading-relaxed ${sub}`}>{desc}</p>
-    </div>
-  )
-}
-
-function StepTile({ darkMode, number, title, desc, icon }) {
-  const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
-  return (
-    <div className={`relative flex-1 min-w-0 text-center rounded-2xl border pt-7 pb-5 px-3 ${
-      darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-gray-50/70 shadow-sm'
-    }`}>
-      <span className={`absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-violet-600 shadow-md ring-4 ${darkMode ? 'ring-gray-800' : 'ring-white'}`}>
-        {number}
-      </span>
-      <div className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-3 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
-        {icon}
-      </div>
-      <p className={`text-xs font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{title}</p>
-      <p className={`text-[11px] mt-0.5 leading-snug ${sub}`}>{desc}</p>
-    </div>
-  )
-}
-
-function StepConnector({ darkMode }) {
-  return (
-    <div className="hidden sm:flex items-center px-1 shrink-0">
-      <div className={`w-6 border-t-2 border-dashed ${darkMode ? 'border-gray-700' : 'border-violet-200'}`} />
-    </div>
-  )
-}
-
 // Section headings are what turn a stack of sibling cards into a page with an argument:
 // what you own, who represents it, how it works. Same treatment as the Social Profiles
 // group labels so the two settings pages feel like one product.
@@ -1324,52 +1285,6 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
               )}
             </>
           )}
-
-          {/* ── SECTION 3 — the explanation, stated once ────────────────────── */}
-          <SectionLabel darkMode={darkMode}>How It Works</SectionLabel>
-
-          <div className={`${card} p-5`}>
-            <div className="flex flex-col sm:flex-row items-stretch gap-y-6">
-              <StepTile darkMode={darkMode}
-                number={1} title="Add the tag"
-                desc="Paste the meta tag we generate into your site's head section, or add a DNS record instead."
-                icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16M6 8l-4 4 4 4m12-8l4 4-4 4" /></svg>}
-              />
-              <StepConnector darkMode={darkMode} />
-              <StepTile darkMode={darkMode}
-                number={2} title="Click verify"
-                desc="We check your site for it. Your tag stays the same until it verifies, so your developers can take their time."
-                icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>}
-              />
-              <StepConnector darkMode={darkMode} />
-              <StepTile darkMode={darkMode}
-                number={3} title="You're verified"
-                desc="The website shows on your profile, and you become its admin on Pulse."
-                icon={<svg className={`w-5 h-5 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
-              />
-            </div>
-          </div>
-
-          {/* One set of benefit tiles covering both states. There used to be two
-              near-identical blocks — "Benefits" before verifying and "Why Verification
-              Matters" after — which is much of why the page read as repeated fragments. */}
-          <div className={`${card} grid grid-cols-1 sm:grid-cols-3 gap-4 p-5`}>
-            <InfoTile darkMode={darkMode}
-              color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
-              icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
-              title="Prove ownership" desc="Shows you control the website you claim to represent."
-            />
-            <InfoTile darkMode={darkMode}
-              color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
-              icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-              title="Prevent impersonation" desc="Stops others adding your company to their profile."
-            />
-            <InfoTile darkMode={darkMode}
-              color={darkMode ? 'bg-gray-700 text-violet-300' : 'bg-violet-50 text-violet-600'}
-              icon={<svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
-              title="Build credibility" desc="Verified websites carry more weight with other members."
-            />
-          </div>
 
           <HelpCard darkMode={darkMode} />
         </>
