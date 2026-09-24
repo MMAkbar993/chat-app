@@ -82,6 +82,34 @@ export async function createBusiness({ domain, slug, ownerId, name, websiteUrl }
   return result.rows[0]
 }
 
+// "gamblehow.co.uk" -> "Gamblehow". Only a starting point for the auto-created profile; the
+// owner renames it from Settings, and the name is not what identifies the business (domain is).
+export function businessNameFromDomain(domain) {
+  const label = String(domain || '').split('.')[0].replace(/[-_]+/g, ' ').trim()
+  if (!label) return 'Business'
+  return label.replace(/(^| )[a-z]/g, (c) => c.toUpperCase())
+}
+
+// Verifying a domain as its admin is itself the proof a business profile needs, so the profile
+// exists from that moment rather than after the owner fills in a create form. Returns the
+// existing profile untouched when the domain already has one — including one that changed hands,
+// which must keep its current owner's content.
+export async function ensureBusinessForDomain({ domain, ownerId, websiteUrl }) {
+  if (!domain || !ownerId) return null
+  const existing = await getBusinessByDomain(domain)
+  if (existing) return existing
+  const name = businessNameFromDomain(domain)
+  const result = await query(
+    `INSERT INTO businesses (domain, slug, owner_id, name, website_url)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (domain) DO NOTHING
+     RETURNING ${COLUMNS}`,
+    [domain, await uniqueSlug(name, domain), ownerId, name, websiteUrl || `https://${domain}`]
+  )
+  // A concurrent verification of the same domain won the insert; hand back whatever landed.
+  return result.rows[0] || (await getBusinessByDomain(domain))
+}
+
 const EDITABLE = {
   name: 'name',
   about: 'about',

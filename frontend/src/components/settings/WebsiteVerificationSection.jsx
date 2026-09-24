@@ -294,7 +294,7 @@ function dnsInfoFor(url, token) {
 
 export default function WebsiteVerificationSection({ darkMode, profile }) {
   const { socket } = useSocket()
-  const { refreshUser } = useAuth()
+  const { refreshUser, setUser } = useAuth()
   const [websites, setWebsites] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   const [pendingRequests, setPendingRequests] = useState([])
@@ -495,6 +495,10 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       const d = await getMyVerifiedWebsites()
       setWebsites(d.websites || [])
       await refreshUser?.()
+      // The Business Profile entry in the settings menu keys off website_verified, and
+      // refreshUser swallows a failed /auth/me — so set the flag locally as well. Otherwise
+      // verifying works but the new section only turns up after a page reload.
+      setUser?.((u) => (u && !u.website_verified ? { ...u, website_verified: true } : u))
       resetAddForm()
       setAddOpen(false)
     } catch (err) {

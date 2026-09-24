@@ -10,7 +10,10 @@ import {
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail, sendWebsiteVerifyCode } from '../config/email.js'
-import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness } from '../db/queries/businesses.js'
+import {
+  normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness,
+  ensureBusinessForDomain,
+} from '../db/queries/businesses.js'
 
 // Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
 // can't route around website-in-bio blocking just by dropping the protocol/www prefix.
@@ -1035,8 +1038,21 @@ export async function confirmWebsiteVerification(req, res, next) {
         WHERE owner_id IS NULL AND ${BARE_DOMAIN_SQL('website_url')} = $2 AND requester_id != $1`,
       [req.user.id, bareDomain(url)]
     )
+    // Admin verification creates the business profile straight away. Without this, Settings
+    // opened on an empty create form and the profile only "appeared" once the owner filled it in.
+    let business = null
+    try {
+      business = await ensureBusinessForDomain({
+        domain: normaliseDomain(url),
+        ownerId: req.user.id,
+        websiteUrl: url,
+      })
+    } catch (e) {
+      // A profile is a convenience here; never fail a completed verification over it.
+      console.error('Could not auto-create business profile:', e.message)
+    }
     sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
-    res.json({ success: true })
+    res.json({ success: true, business })
   } catch (err) {
     next(err)
   }
