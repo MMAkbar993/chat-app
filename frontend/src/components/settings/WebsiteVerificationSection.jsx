@@ -92,7 +92,7 @@ function MethodCard({ darkMode, method, selected, onSelect }) {
     <button
       type="button"
       onClick={() => onSelect(method.key)}
-      className={`flex-1 min-w-60 text-left rounded-2xl border p-4 transition-colors ${
+      className={`flex-1 min-w-60 flex flex-col text-left rounded-2xl border p-4 transition-colors ${
         selected
           ? 'border-violet-500 ring-2 ring-violet-200'
           : darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-violet-300'
@@ -109,14 +109,14 @@ function MethodCard({ darkMode, method, selected, onSelect }) {
           </svg>
         </span>
         <span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-1 ${
-          admin ? 'bg-violet-600 text-white' : 'bg-green-100 text-green-700'
+          admin ? 'bg-violet-600 text-white' : 'bg-green-600 text-white'
         }`}>
           {admin ? 'Admin Access' : 'Representative'}
         </span>
       </div>
       <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{method.title}</p>
       <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{method.blurb}</p>
-      <ul className="mt-3 space-y-1.5">
+      <ul className="mt-3 mb-4 space-y-1.5">
         {method.points.map((p) => (
           <li key={p} className={`flex gap-2 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             <svg className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${admin ? 'text-violet-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,7 +126,7 @@ function MethodCard({ darkMode, method, selected, onSelect }) {
           </li>
         ))}
       </ul>
-      <span className={`mt-4 block w-full rounded-xl py-2.5 text-center text-sm font-semibold ${
+      <span className={`mt-auto block w-full rounded-xl py-2.5 text-center text-sm font-semibold ${
         selected ? 'bg-violet-600 text-white' : darkMode ? 'bg-gray-700 text-gray-200' : 'bg-white text-gray-700 border border-gray-200'
       }`}>
         {method.action}
