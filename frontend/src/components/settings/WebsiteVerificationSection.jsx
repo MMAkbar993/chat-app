@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
-  revokeRepresentation, getRepresentationRequests, handleRepresentationRequest,
+  getRepresentationRequests, handleRepresentationRequest, removeMyRepresentationFor,
   getWebsiteRepresentatives, transferWebsiteOwnership, getMyRepresentationStatus, cancelRepresentationRequest,
   getApprovedRepresentatives, revokeRepresentative,
   sendRepEmailCode, confirmRepEmailCode,
@@ -90,6 +90,87 @@ function SectionLabel({ darkMode, children }) {
     <p className={`text-xs font-semibold uppercase tracking-wide pt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
       {children}
     </p>
+  )
+}
+
+// The three ways to prove a website, and what each one grants. Admin comes only from changing
+// the site or its DNS; a company email shows you work there, which is representation.
+const METHODS = [
+  {
+    key: 'meta',
+    title: 'HTML Head Tag',
+    grant: 'admin',
+    blurb: "Add a meta tag to your website's <head> section.",
+    points: ['Verifies domain ownership', 'Grants you Admin access to the business', 'Allows you to manage the Business Profile and representatives'],
+    icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+    action: 'Verify with Head Tag',
+  },
+  {
+    key: 'dns',
+    title: 'DNS Record',
+    grant: 'admin',
+    blurb: "Add a TXT record to your domain's DNS settings.",
+    points: ['Verifies domain ownership', 'Grants you Admin access to the business', 'Allows you to manage the Business Profile and representatives'],
+    icon: 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4',
+    action: 'Verify with DNS Record',
+  },
+  {
+    key: 'email',
+    title: 'Business Email',
+    grant: 'rep',
+    blurb: 'Verify using a company email address (e.g. name@yourcompany.com).',
+    points: ['Confirms you work at this company', 'Adds you as a Verified Representative', 'You can message and represent the business'],
+    icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+    action: 'Verify with Business Email',
+  },
+]
+
+function MethodCard({ darkMode, method, selected, onSelect }) {
+  const admin = method.grant === 'admin'
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(method.key)}
+      className={`flex-1 min-w-60 text-left rounded-2xl border p-4 transition-colors ${
+        selected
+          ? 'border-violet-500 ring-2 ring-violet-200'
+          : darkMode ? 'border-gray-700 hover:border-gray-600' : 'border-gray-200 hover:border-violet-300'
+      } ${darkMode ? 'bg-gray-800' : admin ? 'bg-violet-50/40' : 'bg-green-50/40'}`}
+    >
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+          admin
+            ? darkMode ? 'bg-violet-900/40 text-violet-300' : 'bg-violet-100 text-violet-600'
+            : darkMode ? 'bg-green-900/40 text-green-300' : 'bg-green-100 text-green-600'
+        }`}>
+          <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={method.icon} />
+          </svg>
+        </span>
+        <span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-1 ${
+          admin ? 'bg-violet-600 text-white' : 'bg-green-100 text-green-700'
+        }`}>
+          {admin ? 'Becomes Admin' : 'Becomes Representative'}
+        </span>
+      </div>
+      <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{method.title}</p>
+      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{method.blurb}</p>
+      <ul className="mt-3 space-y-1.5">
+        {method.points.map((p) => (
+          <li key={p} className={`flex gap-2 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <svg className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${admin ? 'text-violet-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            {p}
+          </li>
+        ))}
+      </ul>
+      <span className={`mt-4 block w-full rounded-xl py-2.5 text-center text-sm font-semibold ${
+        selected ? 'bg-violet-600 text-white' : darkMode ? 'bg-gray-700 text-gray-200' : 'bg-white text-gray-700 border border-gray-200'
+      }`}>
+        {method.action}
+      </span>
+    </button>
   )
 }
 
@@ -228,9 +309,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   // Filled in alongside the meta tag: sites behind a WAF can't be checked over HTTP at all,
   // so we always offer a DNS TXT record as an equivalent second route.
   const [dnsInfo, setDnsInfo] = useState(null)
-  const [showDns, setShowDns] = useState(false)
+  // Which of the three routes they chose on the picker; decides what step 2 shows.
+  const [method, setMethod] = useState('meta')
   // Third route: a code emailed to an address on the domain itself.
-  const [showEmailVerify, setShowEmailVerify] = useState(false)
   const [verifyEmail, setVerifyEmail] = useState('')
   const [emailCode, setEmailCode] = useState('')
   const [codeSentTo, setCodeSentTo] = useState(null)
@@ -241,7 +322,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   const [error, setError] = useState('')
   const [claimedInfo, setClaimedInfo] = useState(null)
   const [removingId, setRemovingId] = useState(null)
-  const [revokingRepr, setRevokingRepr] = useState(false)
+  // Holds the url currently being removed, so only that row shows its spinner.
+  const [revokingRepr, setRevokingRepr] = useState(null)
   const [reprRevoked, setReprRevoked] = useState(false)
   const [cancellingId, setCancellingId] = useState(null)
   // Transfer/delete dialog
@@ -358,12 +440,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setUrl('')
     setMetaTag(null)
     setDnsInfo(null)
-    setShowDns(false)
+    setMethod('meta')
     setWebsiteId(null)
     setStep(1)
     setError('')
     setClaimedInfo(null)
-    setShowEmailVerify(false)
     setVerifyEmail('')
     setEmailCode('')
     setCodeSentTo(null)
@@ -377,7 +458,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     try {
       const data = await initWebsiteVerify(url.trim())
       setMetaTag(data.metaTag)
-      setDnsInfo(data.dnsHost ? { host: data.dnsHost, value: data.dnsValue } : null)
+      setDnsInfo(
+        data.dnsHost
+          ? { host: data.dnsHost, value: data.dnsValue }
+          : dnsInfoFor(url.trim(), data.dnsValue || data.metaTag?.match(/content="([^"]+)"/)?.[1])
+      )
       setWebsiteId(data.websiteId)
       setStep(2)
     } catch (err) {
@@ -391,6 +476,15 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       }
     }
     setLoading(false)
+  }
+
+  async function handleChooseMethod() {
+    setError('')
+    if (method === 'email') {
+      setStep(2)
+      return
+    }
+    await handleInit()
   }
 
   async function handleVerify() {
@@ -409,7 +503,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       // The server tells us when a firewall — not a missing tag — is what stopped it. Open the
       // DNS panel for them rather than leaving them to re-check a meta tag that is already correct.
       if (res?.dnsHost) setDnsInfo({ host: res.dnsHost, value: res.dnsValue })
-      if (res?.reason === 'blocked') setShowDns(true)
+      if (res?.reason === 'blocked') setMethod('dns')
     }
     setLoading(false)
   }
@@ -537,16 +631,15 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     setCancellingId(null)
   }
 
-  async function handleRevokeRepr() {
-    if (!window.confirm('Remove your authorized representative status? This will unlink your profile from the company.')) return
-    setRevokingRepr(true)
+  async function handleRemoveRep(websiteUrl) {
+    setRevokingRepr(websiteUrl)
     try {
-      await revokeRepresentation()
-      setReprRevoked(true)
+      await removeMyRepresentationFor(websiteUrl)
+      await refreshUser?.()
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to remove representative status.')
+      setError(err.response?.data?.error || 'Could not remove that representation.')
     }
-    setRevokingRepr(false)
+    setRevokingRepr(null)
   }
 
   // A user already approved as a representative of one website is not limited to that single
@@ -593,31 +686,55 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
 
       {step === 1 && (
         <>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://yoursite.com"
-              className={`${inp} flex-1`}
-            />
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://yoursite.com"
+            className={`${inp} w-full`}
+          />
+
+          <p className={`text-xs mt-4 mb-2 ${sub}`}>
+            Choose how to verify. Each route gives different access on Pulse.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {METHODS.map((m) => (
+              <MethodCard key={m.key} darkMode={darkMode} method={m} selected={method === m.key} onSelect={setMethod} />
+            ))}
+          </div>
+
+          <div className={`flex gap-2 mt-4 rounded-xl px-4 py-3 text-xs ${darkMode ? 'bg-red-900/20 text-red-300' : 'bg-red-50 text-red-700'}`}>
+            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <span>
+              <span className="font-bold">Admin access is for authorised people only.</span>{' '}
+              The head tag and DNS record make you the admin of this business on Pulse: you manage its
+              business profile and its representatives. Only use those if you own the website or
+              administer it.
+            </span>
+          </div>
+
+          <div className="flex gap-2 mt-4">
             <button
-              onClick={handleInit}
-              disabled={loading}
-              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors shrink-0"
+              onClick={() => { resetAddForm(); setAddOpen(false) }}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold border transition-colors ${
+                darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              {loading ? 'Generating…' : 'Get Meta Tag'}
+              Cancel
+            </button>
+            <button
+              onClick={handleChooseMethod}
+              disabled={loading || !url.trim()}
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Checking…' : 'Continue'}
             </button>
           </div>
-          <p className={`flex items-center gap-1.5 text-xs mt-2 ${sub}`}>
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            You need to have access to your website's HTML &lt;head&gt; section to add the meta tag.
-          </p>
         </>
       )}
 
-      {step === 2 && (
+      {step === 2 && method === 'meta' && (
         <>
           <div>
             <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 1 — Add this tag to your website's &lt;head&gt;</p>
@@ -633,117 +750,11 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             </button>
           </div>
 
-          {dnsInfo && (
-            <div className={`mt-4 rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <button
-                type="button"
-                onClick={() => setShowDns((v) => !v)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium ${sub}`}
-              >
-                <span>Can't edit your &lt;head&gt;? Verify with a DNS record instead</span>
-                <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${showDns ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {showDns && (
-                <div className={`px-3 pb-3 space-y-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <p className={`text-xs pt-2 ${sub}`}>
-                    Some sites sit behind a firewall (Cloudflare and similar) that blocks our check even when the
-                    meta tag is correct. Adding this TXT record in your DNS works either way.
-                  </p>
-                  <div>
-                    <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Type</p>
-                    <div className={`rounded-lg border p-2 font-mono text-xs ${codeBg}`}>TXT</div>
-                  </div>
-                  <div>
-                    <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name / Host</p>
-                    <div className={`rounded-lg border p-2 font-mono text-xs break-all ${codeBg}`}>{dnsInfo.host}</div>
-                  </div>
-                  <div>
-                    <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Value</p>
-                    <div className={`rounded-lg border p-2 font-mono text-xs break-all ${codeBg}`}>{dnsInfo.value}</div>
-                  </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(dnsInfo.value)}
-                    className="text-xs text-violet-500 hover:text-violet-700"
-                  >
-                    Copy value
-                  </button>
-                  <p className={`text-xs ${sub}`}>DNS changes can take a few minutes to propagate before Verify will find them.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Third route for owners who can edit neither the page nor DNS: receiving mail at
-              the domain is a comparable proof of control, so a code sent to an address on that
-              exact domain verifies it. */}
-          <div className={`mt-3 rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <button
-              type="button"
-              onClick={() => setShowEmailVerify((v) => !v)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium ${sub}`}
-            >
-              <span>Can't edit either? Verify with a business email to represent this company</span>
-              <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${showEmailVerify ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {showEmailVerify && (
-              <div className={`px-3 pb-3 space-y-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <p className={`text-xs pt-2 ${sub}`}>
-                  We'll email a code to an address on <span className="font-medium">{emailDomain}</span>. This adds you
-                  as a <span className="font-medium">representative</span> of the company — it doesn't give you admin
-                  rights over the listing, which need the meta tag or the DNS record above.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    value={verifyEmail}
-                    onChange={(e) => setVerifyEmail(e.target.value)}
-                    placeholder={`you@${emailDomain}`}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-400 ${
-                      darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
-                    }`}
-                  />
-                  <button
-                    onClick={handleSendEmailCode}
-                    disabled={emailBusy || !verifyEmail.trim()}
-                    className="shrink-0 rounded-lg bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 text-xs font-semibold disabled:opacity-50 transition-colors"
-                  >
-                    {emailBusy ? 'Sending…' : codeSentTo ? 'Resend' : 'Send code'}
-                  </button>
-                </div>
-                {codeSentTo && (
-                  <>
-                    <p className={`text-xs ${sub}`}>Code sent to {codeSentTo}. It expires in 15 minutes.</p>
-                    <div className="flex gap-2">
-                      <input
-                        value={emailCode}
-                        onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        inputMode="numeric"
-                        placeholder="6-digit code"
-                        className={`flex-1 rounded-lg border px-3 py-2 text-sm tracking-widest outline-none focus:ring-2 focus:ring-violet-400 ${
-                          darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'
-                        }`}
-                      />
-                      <button
-                        onClick={handleConfirmEmailCode}
-                        disabled={emailBusy || emailCode.length < 6}
-                        className="shrink-0 rounded-lg bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 text-xs font-semibold disabled:opacity-50 transition-colors"
-                      >
-                        {emailBusy ? 'Checking…' : 'Verify email'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
           <div className="mt-4">
             <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 2 — Click Verify</p>
             <p className={`text-xs mb-3 ${sub}`}>
-              Once the tag {dnsInfo ? 'or DNS record is' : 'is'} live on <span className="font-medium">{url}</span>, click Verify below.
+              Once the tag is live on <span className="font-medium">{url}</span>, click Verify below. You'll become
+              the admin of this business on Pulse.
             </p>
           </div>
 
@@ -764,6 +775,127 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
               {loading ? 'Verifying…' : 'Verify'}
             </button>
           </div>
+        </>
+      )}
+
+      {step === 2 && method === 'dns' && (
+        <>
+          <div>
+            <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 1 — Add this TXT record to your DNS</p>
+            <p className={`text-xs mb-3 ${sub}`}>
+              Add the record below at your DNS provider. This route works even when a firewall
+              (Cloudflare and similar) blocks our check of the page itself.
+            </p>
+            {dnsInfo ? (
+              <div className="space-y-2">
+                <div>
+                  <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Type</p>
+                  <div className={`rounded-lg border p-2 font-mono text-xs ${codeBg}`}>TXT</div>
+                </div>
+                <div>
+                  <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name / Host</p>
+                  <div className={`rounded-lg border p-2 font-mono text-xs break-all ${codeBg}`}>{dnsInfo.host}</div>
+                </div>
+                <div>
+                  <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Value</p>
+                  <div className={`rounded-lg border p-2 font-mono text-xs break-all ${codeBg}`}>{dnsInfo.value}</div>
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(dnsInfo.value)}
+                  className="text-xs text-violet-500 hover:text-violet-700"
+                >
+                  Copy value
+                </button>
+                <p className={`text-xs ${sub}`}>DNS changes can take a few minutes to propagate before Verify will find them.</p>
+              </div>
+            ) : (
+              <p className={`text-xs ${sub}`}>Preparing your record…</p>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Step 2 — Click Verify</p>
+            <p className={`text-xs mb-3 ${sub}`}>
+              Once the record is live on <span className="font-medium">{url}</span>, click Verify below. You'll become
+              the admin of this business on Pulse.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setStep(1); setMetaTag(null); setError('') }}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold border transition-colors ${
+                darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Back
+            </button>
+            <button
+              onClick={handleVerify}
+              disabled={loading}
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Verifying…' : 'Verify'}
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 2 && method === 'email' && (
+        <>
+          <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Verify a company email address</p>
+          <p className={`text-xs mb-3 ${sub}`}>
+            We'll email a code to an address on <span className="font-medium">{emailDomain}</span>. This lists you as a{' '}
+            <span className="font-medium">representative</span> of the company — it doesn't give you admin rights over
+            the listing, which need the head tag or the DNS record.
+          </p>
+
+          <div className="flex gap-2">
+            <input
+              value={verifyEmail}
+              onChange={(e) => setVerifyEmail(e.target.value)}
+              placeholder={`you@${emailDomain}`}
+              className={`${inp} flex-1`}
+            />
+            <button
+              onClick={() => handleSendEmailCode()}
+              disabled={emailBusy || !verifyEmail.trim()}
+              className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+            >
+              {emailBusy ? 'Sending…' : codeSentTo ? 'Resend' : 'Send code'}
+            </button>
+          </div>
+
+          {codeSentTo && (
+            <div className="mt-3 space-y-2">
+              <p className={`text-xs ${sub}`}>Code sent to {codeSentTo}. It expires in 15 minutes.</p>
+              <div className="flex gap-2">
+                <input
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  placeholder="6-digit code"
+                  className={`${inp} flex-1 tracking-widest`}
+                />
+                <button
+                  onClick={() => handleConfirmEmailCode()}
+                  disabled={emailBusy || emailCode.length < 6}
+                  className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {emailBusy ? 'Checking…' : 'Verify email'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => { setStep(1); setError('') }}
+            className={`w-full mt-4 rounded-xl py-2.5 text-sm font-semibold border transition-colors ${
+              darkMode ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Back
+          </button>
         </>
       )}
     </div>
@@ -800,18 +932,29 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             </div>
           </div>
 
-          <div className={`${card} p-5 flex items-center justify-between gap-4 flex-wrap`}>
-            <div>
-              <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Remove representative status</p>
-              <p className={`text-xs mt-0.5 ${sub}`}>This will unlink your profile from the company.</p>
+          <div className={`${card} p-5`}>
+            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Companies you represent</p>
+            <p className={`text-xs mt-0.5 mb-3 ${sub}`}>Step back from any of these whenever you like.</p>
+            <div className="space-y-2">
+              {(profile?.rep_websites || []).map((w) => {
+                const host = w.url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+                return (
+                  <div key={w.url} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <span className="min-w-0">
+                      <span className={`block text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{host}</span>
+                      <span className={`block text-xs ${sub}`}>Representative</span>
+                    </span>
+                    <button
+                      onClick={() => handleRemoveRep(w.url)}
+                      disabled={revokingRepr === w.url}
+                      className="shrink-0 text-xs font-semibold text-red-500 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                      {revokingRepr === w.url ? 'Removing…' : 'Remove'}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
-            <button
-              onClick={handleRevokeRepr}
-              disabled={revokingRepr}
-              className="text-xs font-semibold text-red-500 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50 transition-colors shrink-0 disabled:opacity-50"
-            >
-              {revokingRepr ? 'Removing…' : 'Remove'}
-            </button>
           </div>
         </>
       )}
@@ -822,7 +965,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
           {error && <p className="text-xs text-red-500">{error}</p>}
 
           <button
-            onClick={() => { setClaimedInfo(null); setReprRequested(false); setError('') }}
+            onClick={() => { setClaimedInfo(null); setError('') }}
             className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
