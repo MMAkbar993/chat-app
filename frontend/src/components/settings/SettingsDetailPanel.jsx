@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { getMyProfile, updateProfile, uploadAvatar } from '../../api/users'
 import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
@@ -584,22 +584,26 @@ export default function SettingsDetailPanel({ darkMode, section, onBack }) {
   const [profile, setProfile] = useState(null)
   const [toast, setToast] = useState(null)
 
+  // Sections call this after an action that changes the profile itself, so the panel shows the
+  // result straight away instead of at the next reload.
+  const refreshProfile = useCallback(
+    () => getMyProfile().then((d) => setProfile(d.user)).catch(() => {}),
+    []
+  )
+
   useEffect(() => {
     if (!section) return
     setProfile(null)
-    getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
-  }, [section])
+    refreshProfile()
+  }, [section, refreshProfile])
 
   // Real-time: a representation request of ours was approved/rejected, or our
   // rep status was revoked — refetch so website_representation_approved / rep_websites stay live.
   useEffect(() => {
     if (!socket) return
-    function refreshProfile() {
-      getMyProfile().then((d) => setProfile(d.user)).catch(() => {})
-    }
     socket.on('rep-request-update', refreshProfile)
     return () => socket.off('rep-request-update', refreshProfile)
-  }, [socket])
+  }, [socket, refreshProfile])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -660,7 +664,7 @@ export default function SettingsDetailPanel({ darkMode, section, onBack }) {
             <DesktopOnlyNotice darkMode={dm} />
             {/* Website Verification builds its own full-width card layout — no outer box. */}
             <div className="hidden md:block max-w-4xl mx-auto">
-              <WebsiteVerificationSection darkMode={dm} profile={profile} />
+              <WebsiteVerificationSection darkMode={dm} profile={profile} onProfileChange={refreshProfile} />
             </div>
           </>
         ) : section === 'business' ? (

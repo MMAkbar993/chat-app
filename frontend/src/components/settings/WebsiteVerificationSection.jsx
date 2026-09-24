@@ -292,7 +292,7 @@ function dnsInfoFor(url, token) {
   }
 }
 
-export default function WebsiteVerificationSection({ darkMode, profile }) {
+export default function WebsiteVerificationSection({ darkMode, profile, onProfileChange }) {
   const { socket } = useSocket()
   const { refreshUser, setUser } = useAuth()
   const [websites, setWebsites] = useState([])
@@ -495,6 +495,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       const d = await getMyVerifiedWebsites()
       setWebsites(d.websites || [])
       await refreshUser?.()
+      await onProfileChange?.()
       // The Business Profile entry in the settings menu keys off website_verified, and
       // refreshUser swallows a failed /auth/me — so set the flag locally as well. Otherwise
       // verifying works but the new section only turns up after a page reload.
@@ -539,6 +540,8 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
       const d = await getMyVerifiedWebsites()
       setWebsites(d.websites || [])
       await refreshUser?.()
+      // rep_websites lives on the panel's profile, not on the auth user.
+      await onProfileChange?.()
       resetAddForm()
       setAddOpen(false)
       setClaimedInfo(null)
@@ -640,6 +643,7 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
     try {
       await removeMyRepresentationFor(websiteUrl)
       await refreshUser?.()
+      await onProfileChange?.()
     } catch (err) {
       setError(err.response?.data?.error || 'Could not remove that representation.')
     }
@@ -653,6 +657,9 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
   // way to reach the add-website form or the "request representation" flow below at all once
   // approved. Now it's just a header shown above the normal flow instead of replacing it.
   const isPureRepresentative = (approved && verifiedWebsites.length === 0) && !reprRevoked
+  // Representing a company and owning one are independent: someone can verify their own site
+  // and still speak for a client's.
+  const repWebsites = reprRevoked ? [] : (profile?.rep_websites || [])
 
   // The "already claimed by someone else" lookup and the "you represent this company" panel
   // describe the same site in two contradictory ways, so once the request is approved the
@@ -936,11 +943,16 @@ export default function WebsiteVerificationSection({ darkMode, profile }) {
             </div>
           </div>
 
+        </>
+      )}
+
+      {repWebsites.length > 0 && (
+        <>
           <div className={`${card} p-5`}>
             <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Companies you represent</p>
             <p className={`text-xs mt-0.5 mb-3 ${sub}`}>Step back from any of these whenever you like.</p>
             <div className="space-y-2">
-              {(profile?.rep_websites || []).map((w) => {
+              {repWebsites.map((w) => {
                 const host = w.url.replace(/^https?:\/\//, '').replace(/\/$/, '')
                 return (
                   <div key={w.url} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
