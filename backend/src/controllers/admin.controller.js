@@ -7,7 +7,7 @@ import { findUserByEmail } from '../db/queries/users.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { query } from '../config/database.js'
-import { ensureBusinessForDomain, normaliseDomain, transferBusinessByDomain } from '../db/queries/businesses.js'
+import { normaliseDomain, transferBusinessByDomain } from '../db/queries/businesses.js'
 import { listAds, createAd, updateAd, deleteAd } from '../db/queries/ads.js'
 import {
   findAdminById,
@@ -412,11 +412,8 @@ export async function reassignWebsiteAdmin(req, res, next) {
        WHERE id = $2`,
       [domain, newOwnerId]
     )
-    // The business profile follows the domain, as it does for a user-initiated transfer. If the
-    // domain never had one — an older verification, or one the previous holder deleted — the new
-    // admin gets the same starter profile a fresh verification would create.
+    // The business profile follows the domain, as it does for a user-initiated transfer.
     await transferBusinessByDomain(domain, newOwnerId)
-    await ensureBusinessForDomain({ domain, ownerId: newOwnerId, websiteUrl: url }).catch(() => {})
     // Representatives of this domain now answer to the new admin.
     await query(
       `UPDATE website_representation_requests SET owner_id = $1

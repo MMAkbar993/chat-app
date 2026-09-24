@@ -10,10 +10,7 @@ import {
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail, sendWebsiteVerifyCode } from '../config/email.js'
-import {
-  normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness,
-  ensureBusinessForDomain,
-} from '../db/queries/businesses.js'
+import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness } from '../db/queries/businesses.js'
 
 // Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
 // can't route around website-in-bio blocking just by dropping the protocol/www prefix.
@@ -1038,21 +1035,8 @@ export async function confirmWebsiteVerification(req, res, next) {
         WHERE owner_id IS NULL AND ${BARE_DOMAIN_SQL('website_url')} = $2 AND requester_id != $1`,
       [req.user.id, bareDomain(url)]
     )
-    // Admin verification creates the business profile straight away. Without this, Settings
-    // opened on an empty create form and the profile only "appeared" once the owner filled it in.
-    let business = null
-    try {
-      business = await ensureBusinessForDomain({
-        domain: normaliseDomain(url),
-        ownerId: req.user.id,
-        websiteUrl: url,
-      })
-    } catch (e) {
-      // A profile is a convenience here; never fail a completed verification over it.
-      console.error('Could not auto-create business profile:', e.message)
-    }
     sendWebsiteVerifiedEmail(req.user.email, url).catch(() => {})
-    res.json({ success: true, business })
+    res.json({ success: true })
   } catch (err) {
     next(err)
   }
@@ -1169,6 +1153,14 @@ export async function confirmRepEmailCode(req, res, next) {
       [domain, req.user.id]
     )
     await query(`DELETE FROM website_rep_email_codes WHERE id = $1`, [row.id])
+    // They may have started a head tag or DNS attempt on this domain before switching to
+    // email. That row is finished business now, and leaving it behind showed a "pending
+    // verification" card to someone the app had just confirmed as a representative.
+    await query(
+      `DELETE FROM verified_websites
+        WHERE user_id = $1 AND verified = false AND ${BARE_DOMAIN_SQL('url')} = $2`,
+      [req.user.id, domain]
+    )
 
     // Let the admin know someone now represents their company.
     if (ownerId) {
