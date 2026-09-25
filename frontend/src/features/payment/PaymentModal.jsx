@@ -13,54 +13,114 @@ const PRICE_LABEL = {
 }
 
 // Stripe renders the card fields in its own iframe, so Tailwind cannot reach them — the theme
-// has to be handed over as an appearance object. 'night' is Stripe's own dark base; the
-// variables and rules then match it to the app's greys and violet rather than Stripe's defaults.
+// has to be handed over as an appearance object.
+//
+// fontFamily used to be 'inherit'. Inside the iframe there is nothing to inherit from, so every
+// field fell back to the browser's default serif while the rest of the modal used the app's
+// sans — which is most of why the form looked like it came from another decade. The stack is
+// now spelled out explicitly; the app itself uses Tailwind's default sans, so this matches it.
+const FONT_STACK =
+  'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ' +
+  '"Helvetica Neue", Arial, "Noto Sans", sans-serif'
+
 function stripeAppearance(darkMode) {
-  return darkMode
+  const c = darkMode
     ? {
-        theme: 'night',
-        variables: {
-          colorPrimary: '#8B5CF6',
-          colorBackground: '#1F2937',
-          colorText: '#F9FAFB',
-          colorTextSecondary: '#9CA3AF',
-          colorDanger: '#F87171',
-          borderRadius: '12px',
-          fontFamily: 'inherit',
-          fontSizeBase: '14px',
-          spacingGridRow: '12px',
-        },
-        rules: {
-          '.Input': { border: '1px solid #374151', boxShadow: 'none', padding: '10px 14px' },
-          '.Input:focus': { border: '1px solid #8B5CF6', boxShadow: '0 0 0 3px rgba(139,92,246,0.25)' },
-          '.Label': { fontWeight: '500', color: '#9CA3AF', marginBottom: '4px' },
-          '.Tab': { border: '1px solid #374151', boxShadow: 'none' },
-          '.Tab:hover': { border: '1px solid #6D28D9' },
-          '.Tab--selected': { border: '1px solid #8B5CF6', boxShadow: '0 0 0 1px #8B5CF6' },
-        },
+        primary: '#8B5CF6',
+        bg: '#1F2937',
+        field: '#111827',
+        text: '#F9FAFB',
+        muted: '#9CA3AF',
+        placeholder: '#6B7280',
+        border: '#374151',
+        borderHover: '#4B5563',
+        danger: '#F87171',
+        tabHoverBg: '#1F2937',
+        selectedBg: 'rgba(139,92,246,0.12)',
+        focusRing: 'rgba(139,92,246,0.25)',
+        shadow: 'none',
       }
     : {
-        theme: 'stripe',
-        variables: {
-          colorPrimary: '#7C3AED',
-          colorBackground: '#ffffff',
-          colorText: '#111827',
-          colorTextSecondary: '#6b7280',
-          colorDanger: '#dc2626',
-          borderRadius: '12px',
-          fontFamily: 'inherit',
-          fontSizeBase: '14px',
-          spacingGridRow: '12px',
-        },
-        rules: {
-          '.Input': { border: '1px solid #e5e7eb', boxShadow: 'none', padding: '10px 14px' },
-          '.Input:focus': { border: '1px solid #7C3AED', boxShadow: '0 0 0 3px rgba(124,58,237,0.15)' },
-          '.Label': { fontWeight: '500', color: '#6b7280', marginBottom: '4px' },
-          '.Tab': { border: '1px solid #e5e7eb', boxShadow: 'none' },
-          '.Tab:hover': { border: '1px solid #c4b5fd' },
-          '.Tab--selected': { border: '1px solid #7C3AED', boxShadow: '0 0 0 1px #7C3AED' },
-        },
+        primary: '#7C3AED',
+        bg: '#FFFFFF',
+        field: '#FFFFFF',
+        text: '#111827',
+        muted: '#4B5563',
+        placeholder: '#9CA3AF',
+        border: '#E5E7EB',
+        borderHover: '#C4B5FD',
+        danger: '#DC2626',
+        tabHoverBg: '#FAFAFA',
+        selectedBg: '#F5F3FF',
+        focusRing: 'rgba(124,58,237,0.12)',
+        shadow: '0 1px 2px rgba(16,24,40,0.04)',
       }
+
+  return {
+    theme: darkMode ? 'night' : 'stripe',
+    variables: {
+      colorPrimary: c.primary,
+      colorBackground: c.bg,
+      colorText: c.text,
+      colorTextSecondary: c.muted,
+      colorTextPlaceholder: c.placeholder,
+      colorDanger: c.danger,
+      colorIcon: c.muted,
+      fontFamily: FONT_STACK,
+      fontSizeBase: '15px',
+      borderRadius: '12px',
+      spacingUnit: '4px',
+      spacingGridRow: '16px',
+    },
+    rules: {
+      // Fields: one hairline border and a whisper of shadow, rather than the heavy boxes
+      // Stripe ships by default.
+      '.Input': {
+        backgroundColor: c.field,
+        border: `1px solid ${c.border}`,
+        boxShadow: c.shadow,
+        padding: '12px 14px',
+        transition: 'border-color 120ms ease, box-shadow 120ms ease',
+      },
+      '.Input:hover': { border: `1px solid ${c.borderHover}` },
+      '.Input:focus': {
+        border: `1px solid ${c.primary}`,
+        boxShadow: `0 0 0 4px ${c.focusRing}`,
+      },
+      '.Input--invalid': { border: `1px solid ${c.danger}`, boxShadow: 'none' },
+      '.Input::placeholder': { color: c.placeholder },
+
+      '.Label': {
+        fontSize: '13px',
+        fontWeight: '500',
+        color: c.muted,
+        marginBottom: '6px',
+      },
+
+      // Payment-method tabs read as one row of equal cards; the selected one is filled rather
+      // than double-ringed, which is what made the old version look boxy.
+      '.Tab': {
+        backgroundColor: c.field,
+        border: `1px solid ${c.border}`,
+        boxShadow: c.shadow,
+        padding: '12px 10px',
+        transition: 'border-color 120ms ease, background-color 120ms ease',
+      },
+      '.Tab:hover': { backgroundColor: c.tabHoverBg, border: `1px solid ${c.borderHover}` },
+      '.Tab--selected': {
+        backgroundColor: c.selectedBg,
+        border: `1px solid ${c.primary}`,
+        boxShadow: 'none',
+        color: c.primary,
+      },
+      '.Tab:focus': { boxShadow: `0 0 0 4px ${c.focusRing}` },
+      '.TabLabel': { fontWeight: '500' },
+      '.TabLabel--selected': { color: c.primary },
+      '.TabIcon--selected': { fill: c.primary },
+
+      '.Error': { fontSize: '13px', marginTop: '6px' },
+    },
+  }
 }
 
 export default function PaymentModal({ isOpen, onClose, planType = 'monthly', standalone = false, darkMode = false }) {
