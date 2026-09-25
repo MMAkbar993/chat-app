@@ -1,4 +1,5 @@
 import LegalPage, { Section, SubSection, LegalList } from '../components/legal/LegalPage'
+import CookiePreferences from '../components/legal/CookiePreferences'
 
 export default function CookiePolicyPage() {
   return (
@@ -79,6 +80,7 @@ export default function CookiePolicyPage() {
         <p>Where required by applicable law, Pulse will request your consent before placing non-essential cookies on your device.</p>
         <p>You may withdraw or modify your cookie preferences at any time through our cookie preferences tool or your browser settings.</p>
         <p>Withdrawing consent does not affect the lawfulness of any processing carried out before consent was withdrawn.</p>
+        <CookiePreferences />
       </Section>
 
       <Section title="7. Changes to This Cookie Policy">

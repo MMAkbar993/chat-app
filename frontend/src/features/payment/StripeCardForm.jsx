@@ -5,7 +5,7 @@ import Button from '../../components/ui/Button'
 import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 
-export default function StripeCardForm({ onSuccess, planType, standalone = false }) {
+export default function StripeCardForm({ onSuccess, planType, standalone = false, darkMode = false }) {
   const stripe = useStripe()
   const elements = useElements()
   const navigate = useNavigate()
@@ -82,7 +82,9 @@ export default function StripeCardForm({ onSuccess, planType, standalone = false
       />
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+        <div className={`border rounded-xl px-4 py-3 text-sm ${
+          darkMode ? 'bg-red-500/10 border-red-500/30 text-red-300' : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
           {error}
         </div>
       )}
@@ -94,7 +96,7 @@ export default function StripeCardForm({ onSuccess, planType, standalone = false
         Pay
       </Button>
 
-      <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+      <p className={`text-center text-xs flex items-center justify-center gap-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>

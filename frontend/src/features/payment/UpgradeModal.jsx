@@ -84,6 +84,7 @@ export default function UpgradeModal({ isOpen, onClose, darkMode = false }) {
         isOpen={isOpen}
         standalone
         planType={plan}
+        darkMode={darkMode}
         onClose={() => { setShowPayment(false); handleClose() }}
       />
     )
