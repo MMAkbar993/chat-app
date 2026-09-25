@@ -621,6 +621,9 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
   // Representing a company and owning one are independent: someone can verify their own site
   // and still speak for a client's.
   const repWebsites = reprRevoked ? [] : (profile?.rep_websites || [])
+  const repDomains = repWebsites
+    .map((w) => w.url.replace(/^https?:\/\//, '').replace(/\/$/, ''))
+    .join(', ')
 
   // The "already claimed by someone else" lookup and the "you represent this company" panel
   // describe the same site in two contradictory ways, so once the request is approved the
@@ -876,66 +879,6 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
   return (
     <div className="space-y-4">
 
-      {isPureRepresentative && (
-        <>
-          {error && <p className="text-xs text-red-500">{error}</p>}
-
-          <div className={`${card} p-6 flex items-center gap-6 flex-wrap`}>
-            <Illustration
-              darkMode={darkMode}
-              badgeColor={darkMode ? 'bg-indigo-900/50 text-indigo-300' : 'bg-indigo-100 text-indigo-600'}
-              badge={
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}>
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                  <path d="M16 3.13a4 4 0 010 7.75" />
-                </svg>
-              }
-            />
-            <div className="flex-1 min-w-[220px]">
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>You're an Authorized Representative</h3>
-              <p className={`text-sm mt-1 ${sub}`}>
-                You have been approved as an authorized representative
-                {profile?.rep_websites?.length > 0
-                  ? ` of ${profile.rep_websites.map((w) => w.url.replace(/^https?:\/\//, '')).join(', ')}`
-                  : ''}. Your profile now shows your company affiliation.
-              </p>
-            </div>
-          </div>
-
-        </>
-      )}
-
-      {repWebsites.length > 0 && (
-        <>
-          <div className={`${card} p-5`}>
-            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Companies you represent</p>
-            <p className={`text-xs mt-0.5 mb-3 ${sub}`}>Step back from any of these whenever you like.</p>
-            <div className="space-y-2">
-              {repWebsites.map((w) => {
-                const host = w.url.replace(/^https?:\/\//, '').replace(/\/$/, '')
-                return (
-                  <div key={w.url} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                    <span className="min-w-0">
-                      <span className={`block text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{host}</span>
-                      <span className={`block text-xs ${sub}`}>Representative</span>
-                    </span>
-                    <button
-                      onClick={() => handleRemoveRep(w.url)}
-                      disabled={revokingRepr === w.url}
-                      className="shrink-0 text-xs font-semibold text-red-500 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50 transition-colors disabled:opacity-50"
-                    >
-                      {revokingRepr === w.url ? 'Removing…' : 'Remove'}
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
       {/* STATE A — this website is already claimed by someone else */}
       {showClaimedPanel && (
         <>
@@ -1071,12 +1014,16 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
                 Website Verification
               </p>
               <h3 className={`text-2xl sm:text-3xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {verifiedWebsites.length > 0 ? 'Your Verified Websites' : 'Verify Your Website'}
+                {isPureRepresentative
+                  ? "You're an Authorized Representative"
+                  : verifiedWebsites.length > 0 ? 'Your Verified Websites' : 'Verify Your Website'}
               </h3>
               <p className={`text-sm mt-2 leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                {verifiedWebsites.length > 0
-                  ? 'Verified websites appear on your public profile and show others which companies you represent.'
-                  : 'KYC proves who you are. Verifying a website proves where you work — it shows others which company you represent.'}
+                {isPureRepresentative
+                  ? `You have been approved as an authorized representative${repDomains ? ` of ${repDomains}` : ''}. Your profile now shows your company affiliation.`
+                  : verifiedWebsites.length > 0
+                    ? 'Verified websites appear on your public profile and show others which companies you represent.'
+                    : 'KYC proves who you are. Verifying a website proves where you work — it shows others which company you represent.'}
               </p>
               <p className={`inline-flex items-center gap-2 text-xs font-medium mt-4 rounded-full px-3 py-1.5 ${
                 darkMode ? 'bg-gray-900/60 text-gray-300' : 'bg-white/70 text-gray-600'
@@ -1084,20 +1031,65 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                We only look for your verification tag — never the rest of your site.
+                {isPureRepresentative
+                  ? 'If you want to add a new website you can do so below.'
+                  : 'We only look for your verification tag — never the rest of your site.'}
               </p>
             </div>
             <div aria-hidden="true" className="hidden lg:block absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none select-none">
-              <Illustration darkMode={darkMode}
-                badgeColor="bg-green-500 text-white"
-                badge={
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                }
-              />
+              {isPureRepresentative ? (
+                <Illustration darkMode={darkMode}
+                  badgeColor="bg-violet-500 text-white"
+                  badge={
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}>
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                      <path d="M16 3.13a4 4 0 010 7.75" />
+                    </svg>
+                  }
+                />
+              ) : (
+                <Illustration darkMode={darkMode}
+                  badgeColor="bg-green-500 text-white"
+                  badge={
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  }
+                />
+              )}
             </div>
           </div>
+
+          {repWebsites.length > 0 && (
+            <>
+              <div className={`${card} p-5`}>
+                <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Companies you represent</p>
+                <p className={`text-xs mt-0.5 mb-3 ${sub}`}>Step back from any of these whenever you like.</p>
+                <div className="space-y-2">
+                  {repWebsites.map((w) => {
+                    const host = w.url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+                    return (
+                      <div key={w.url} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+                        <span className="min-w-0">
+                          <span className={`block text-sm font-medium truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{host}</span>
+                          <span className={`block text-xs ${sub}`}>Representative</span>
+                        </span>
+                        <button
+                          onClick={() => handleRemoveRep(w.url)}
+                          disabled={revokingRepr === w.url}
+                          className="shrink-0 text-xs font-semibold text-red-500 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          {revokingRepr === w.url ? 'Removing…' : 'Remove'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* ── SECTION 1 — the websites themselves ─────────────────────────── */}
           <SectionLabel darkMode={darkMode}>Your Websites</SectionLabel>
