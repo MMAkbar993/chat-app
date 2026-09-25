@@ -21,6 +21,7 @@ const EMAIL_LABELS = {
   password_changed: 'Password Changed',
   email_changed: 'Email Changed',
   website_verified: 'Website Verified',
+  website_verify_code: 'Website Verification Code (Representative)',
   admin_new_signup: 'Admin: New Signup',
 }
 
@@ -36,6 +37,7 @@ const EMAIL_PLACEHOLDERS = {
   password_changed: ['appName', 'currentYear'],
   email_changed: ['appName', 'newEmail', 'currentYear'],
   website_verified: ['appName', 'url', 'currentYear'],
+  website_verify_code: ['appName', 'domain', 'code', 'currentYear'],
   admin_new_signup: ['appName', 'username', 'email', 'fullName', 'currentYear'],
 }
 

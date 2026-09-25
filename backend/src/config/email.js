@@ -72,8 +72,13 @@ export async function sendPasswordResetOtp(email, otp, name) {
 }
 
 export async function sendWebsiteVerifyCode(email, code, domain) {
-  const subject = `Your ${APP_NAME} verification code for ${domain}`
-  const html = `
+  const setting = await getEmailSetting('website_verify_code')
+  // No "disabled" escape hatch for this one, unlike the others: switching it off would leave
+  // anyone verifying by email waiting for a code that never arrives, with nothing in the UI to
+  // explain why. The template is editable; whether it sends is not.
+  const vars = { appName: APP_NAME, domain: escapeHtml(domain), code: escapeHtml(code) }
+  const subject = setting ? render(setting.subject, vars) : `Your ${APP_NAME} verification code for ${domain}`
+  let html = setting ? render(setting.body_html, vars) : `
       <div style="font-family:sans-serif;max-width:480px;margin:auto">
         <h2 style="color:#7c3aed">Verify ${escapeHtml(domain)}</h2>
         <p>Enter this code in ${APP_NAME} to confirm you control <strong>${escapeHtml(domain)}</strong>. It expires in 15 minutes.</p>
@@ -81,6 +86,12 @@ export async function sendWebsiteVerifyCode(email, code, domain) {
         <p style="color:#6b7280;font-size:0.85rem">If you didn't request this, you can ignore this email — nothing has been verified.</p>
       </div>
     `
+
+  // An edit that drops {{code}} would send a verification email with no code in it, and the
+  // person would have no way to finish. Cheap to guard against, so the code goes back in.
+  if (!html.includes(String(code))) {
+    html += `<div style="font-family:sans-serif;max-width:480px;margin:auto;font-size:2rem;font-weight:bold;letter-spacing:0.3em;color:#7c3aed;padding:16px 0">${escapeHtml(code)}</div>`
+  }
 
   if (!transporter) {
     console.log(`[DEV] Website verification code for ${email} (${domain}): ${code}`)
