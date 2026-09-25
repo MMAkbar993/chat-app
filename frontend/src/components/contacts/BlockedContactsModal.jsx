@@ -45,7 +45,7 @@ export default function BlockedContactsModal({ darkMode, onClose }) {
   const sub     = darkMode ? 'text-gray-400' : 'text-gray-500'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className={`w-[420px] max-h-[80vh] flex flex-col rounded-2xl shadow-2xl ${cardBg}`}>
 
         {/* Header */}

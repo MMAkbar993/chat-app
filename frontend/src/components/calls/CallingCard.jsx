@@ -4,7 +4,7 @@ export default function CallingCard({ call, onEnd, darkMode }) {
   const avatar = call.calleeAvatar || call.callerAvatar
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-72 flex flex-col items-center gap-4">
         {/* Call type icon */}
         <div className="w-16 h-16 rounded-full bg-violet-100 border-2 border-violet-300 flex items-center justify-center">

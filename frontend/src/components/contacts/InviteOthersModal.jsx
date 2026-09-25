@@ -32,7 +32,7 @@ export default function InviteOthersModal({ darkMode, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className={`w-[420px] rounded-2xl shadow-2xl p-6 ${cardBg}`}>
 
         {/* Header */}

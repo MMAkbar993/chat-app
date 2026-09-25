@@ -7,7 +7,7 @@ export default function IncomingCallModal({ call, darkMode, onAccept, onReject }
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className={`rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-4 w-72 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="w-20 h-20 rounded-full bg-violet-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden animate-pulse">
           {call.callerAvatar

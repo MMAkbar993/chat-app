@@ -99,7 +99,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
   const rowHover = darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className={`w-full max-w-md rounded-2xl shadow-xl p-6 ${cardBg}`}>
 
         {/* Header */}

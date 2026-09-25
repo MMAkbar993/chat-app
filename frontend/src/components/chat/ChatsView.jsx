@@ -566,7 +566,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
       />
 
       {reportTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className={`w-72 rounded-2xl shadow-2xl p-5 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h3 className={`font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Report User</h3>
             <textarea
@@ -607,7 +607,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
 
       {/* New Chat modal */}
       {showNewChat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowNewChat(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowNewChat(false)}>
           <div
             className={`w-80 rounded-2xl shadow-2xl flex flex-col max-h-[70vh] ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
             onClick={(e) => e.stopPropagation()}

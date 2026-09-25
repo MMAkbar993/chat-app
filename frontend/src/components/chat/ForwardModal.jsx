@@ -11,7 +11,7 @@ export default function ForwardModal({ darkMode, onClose, onForward }) {
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className={`w-80 rounded-2xl shadow-2xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className={`flex items-center justify-between px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
           <h3 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Forward to</h3>

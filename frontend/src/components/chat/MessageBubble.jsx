@@ -501,7 +501,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
 
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setLightbox(null)}
         >
           {/* ?download=1 makes the server send it as an attachment under the file's original

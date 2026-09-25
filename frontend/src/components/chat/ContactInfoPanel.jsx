@@ -264,7 +264,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
       {/* Photo lightbox */}
       {lightboxUrl && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setLightboxUrl(null)}
         >
           <button
@@ -287,7 +287,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
       {/* Video lightbox */}
       {lightboxVideoUrl && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setLightboxVideoUrl(null)}
         >
           <button
@@ -310,7 +310,7 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
 
       {/* Report prompt */}
       {showReportPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className={`w-72 rounded-2xl shadow-2xl p-5 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h3 className={`font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Report User</h3>
             <textarea

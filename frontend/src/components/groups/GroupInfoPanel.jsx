@@ -650,7 +650,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
 
       {/* Add Members modal */}
       {showAddMembers && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div
             className={`w-80 rounded-2xl shadow-2xl flex flex-col max-h-[70vh] ${dm ? 'bg-gray-800' : 'bg-white'}`}
             onClick={(e) => e.stopPropagation()}
@@ -711,7 +711,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
 
       {/* Report modal */}
       {showReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className={`w-72 rounded-2xl shadow-2xl p-5 ${dm ? 'bg-gray-800' : 'bg-white'}`}>
             <h3 className={`font-semibold mb-1 ${txt}`}>Report Group</h3>
             <p className={`text-xs mb-3 ${sub}`}>
@@ -753,7 +753,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
 
       {/* Photo lightbox */}
       {lightboxUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setLightboxUrl(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setLightboxUrl(null)}>
           <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxUrl(null)}>
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -765,7 +765,7 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
 
       {/* Video lightbox */}
       {lightboxVideoUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setLightboxVideoUrl(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setLightboxVideoUrl(null)}>
           <button className="absolute top-4 right-4 text-white/80 hover:text-white" onClick={() => setLightboxVideoUrl(null)}>
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

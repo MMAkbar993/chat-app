@@ -224,7 +224,7 @@ function ChangeEmailModal({ currentEmail, darkMode, onClose, onChanged }) {
   const inp = `w-full rounded-xl px-4 py-2.5 text-sm outline-none border focus:ring-2 focus:ring-violet-400 transition-colors ${darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500' : 'bg-white border-gray-200 placeholder-gray-400'}`
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className={`w-96 rounded-2xl shadow-2xl p-6 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-base">Change Email</h3>

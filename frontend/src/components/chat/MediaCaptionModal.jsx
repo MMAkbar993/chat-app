@@ -34,7 +34,7 @@ export default function MediaCaptionModal({ file, localUrl, mediaType, darkMode,
   const inputBg = darkMode ? 'bg-gray-800' : 'bg-gray-100'
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className={`w-full max-w-xs rounded-2xl shadow-xl overflow-hidden ${cardBg}`}>
         <div className="flex items-center justify-between px-4 pt-4">
           <p className="font-semibold text-sm">Send {mediaType === 'image' ? 'Photo' : mediaType === 'video' ? 'Video' : 'File'}</p>

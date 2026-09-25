@@ -1284,7 +1284,7 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
 
       {/* Transfer / delete dialog */}
       {removeDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div className={`w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
             <h3 className="font-semibold text-base">Remove Website</h3>
             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>

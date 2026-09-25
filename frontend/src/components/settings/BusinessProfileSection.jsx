@@ -476,7 +476,7 @@ export default function BusinessProfileSection({ darkMode, onToast }) {
       </>)}
 
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setConfirmDelete(false)}>
           <div className={`w-full max-w-sm rounded-2xl p-6 ${dm ? 'bg-gray-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
             <p className={`font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>Delete this business profile?</p>
             <p className={`text-sm mt-1.5 ${sub}`}>

@@ -33,7 +33,7 @@ export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className={`w-full max-w-sm rounded-2xl shadow-xl p-6 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg">Create Group</h3>

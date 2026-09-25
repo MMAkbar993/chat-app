@@ -97,7 +97,7 @@ function UserModal({ user, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -236,7 +236,7 @@ function UserDetailModal({ userId, onClose, onSaved }) {
   const isPro = detail && isProPlan(detail.subscription_plan, detail.subscription_status)
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-semibold text-gray-800">Member Details</h2>
@@ -378,7 +378,7 @@ function UserDetailModal({ userId, onClose, onSaved }) {
 
 function ConfirmDialog({ message, onConfirm, onCancel, danger = true }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
         <p className="text-gray-700 text-sm mb-6">{message}</p>
         <div className="flex gap-3">

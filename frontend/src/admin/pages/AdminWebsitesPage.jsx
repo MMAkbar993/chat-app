@@ -97,7 +97,7 @@ function WebsitesSection() {
       )}
 
       {reassigning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setReassigning(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setReassigning(null)}>
           <div className="w-full max-w-md bg-white rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
             <p className="font-bold text-gray-900">Change website admin</p>
             <p className="text-sm text-gray-500 mt-1">
@@ -215,7 +215,7 @@ function BusinessesSection() {
       )}
 
       {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirming(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setConfirming(null)}>
           <div className="w-full max-w-sm bg-white rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
             <p className="font-bold text-gray-900">Delete this business profile?</p>
             <p className="text-sm text-gray-500 mt-1.5">
