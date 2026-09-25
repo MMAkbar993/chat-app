@@ -111,7 +111,7 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onScheduled, con
   }`
 
   if (!isProUser(user)) {
-    return <UpgradeModal isOpen={isOpen} onClose={handleClose} />
+    return <UpgradeModal isOpen={isOpen} onClose={handleClose} darkMode={darkMode} />
   }
 
   return (

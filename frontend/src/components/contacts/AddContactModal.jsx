@@ -250,7 +250,7 @@ export default function AddContactModal({ darkMode, onClose, onAdded, onMessage,
         </div>
       </div>
 
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} darkMode={darkMode} />
       {showInvite && <InviteOthersModal darkMode={darkMode} onClose={() => setShowInvite(false)} />}
     </div>
   )

@@ -255,7 +255,7 @@ export function SponsoredChatRow({ darkMode }) {
       <div className="absolute right-3 top-3">
         <DismissButton darkMode={darkMode} onUpgrade={() => setShowUpgrade(true)} />
       </div>
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} darkMode={darkMode} />
     </div>
   )
 }

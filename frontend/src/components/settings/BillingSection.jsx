@@ -236,7 +236,7 @@ export default function BillingSection({ darkMode }) {
         )}
       </div>
 
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} darkMode={darkMode} />
     </div>
   )
 }

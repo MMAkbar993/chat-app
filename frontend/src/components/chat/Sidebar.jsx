@@ -403,7 +403,7 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
       </>
     )}
 
-    <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+    <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} darkMode={darkMode} />
 
     {showOwnProfile && (
       <UserProfileModal

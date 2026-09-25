@@ -358,7 +358,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
       </div>
       )}
 
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} darkMode={darkMode} />
     </div>
   )
 }

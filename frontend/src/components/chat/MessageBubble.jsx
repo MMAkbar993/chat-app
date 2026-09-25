@@ -440,7 +440,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                   onClick={() => handleReaction(emoji)}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
                     reactedByMe
-                      ? 'bg-violet-100 border-violet-400 text-violet-700'
+                      ? darkMode
+                        ? 'bg-violet-500/20 border-violet-400 text-violet-100'
+                        : 'bg-violet-100 border-violet-400 text-violet-700'
                       : darkMode
                       ? 'bg-gray-700 border-gray-600 text-gray-200 hover:border-violet-400'
                       : 'bg-white border-gray-200 text-gray-700 hover:border-violet-400'

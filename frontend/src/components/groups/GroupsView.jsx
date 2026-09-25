@@ -378,7 +378,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
         />
       )}
 
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} darkMode={darkMode} />
 
       <ConfirmDialog
         open={!!confirm}

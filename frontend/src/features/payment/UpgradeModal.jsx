@@ -66,7 +66,7 @@ const yearly = PLANS.find((p) => p.key === 'yearly')
 const monthly = PLANS.find((p) => p.key === 'monthly')
 const SAVINGS_PCT = Math.round((1 - yearly.amount / (monthly.amount * 12)) * 100)
 
-export default function UpgradeModal({ isOpen, onClose }) {
+export default function UpgradeModal({ isOpen, onClose, darkMode = false }) {
   const { user } = useAuth()
   const pro = isProUser(user)
   const [plan, setPlan] = useState('monthly')
@@ -94,12 +94,14 @@ export default function UpgradeModal({ isOpen, onClose }) {
   let colorIndex = -1
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={handleClose} maxWidth="max-w-md" darkMode={darkMode}>
       {/* Only the Subscribe button is pinned; the hero, plans and perks all scroll together
           under it. That's how Telegram's own sheet behaves, and it avoids the trap of fixing
           several tall regions at once and leaving the scrolling one no room at all. */}
-      <div className="flex flex-col h-[640px] max-h-[88vh] rounded-2xl overflow-hidden bg-lavender">
-        <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-violet-200">
+      <div className={`flex flex-col h-[640px] max-h-[88vh] rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-900' : 'bg-lavender'}`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full ${
+          darkMode ? '[&::-webkit-scrollbar-thumb]:bg-gray-700' : '[&::-webkit-scrollbar-thumb]:bg-violet-200'
+        }`}>
           {/* Hero — the Pulse wordmark with a Pro chip. A big illustrated star was doing the
               job of a logo without being one; if an animated mark turns up later it drops
               straight in here. */}
@@ -118,25 +120,25 @@ export default function UpgradeModal({ isOpen, onClose }) {
             <img src="/pro.png" alt="Pulse Pro" className="relative h-12" />
           </div>
 
-          <p className="px-7 text-center text-[15px] leading-snug text-gray-600">
-            Go <span className="font-semibold text-gray-900">beyond the limits</span> and unlock{' '}
-            <span className="font-semibold text-gray-900">exclusive features</span> with Pulse Pro.
+          <p className={`px-7 text-center text-[15px] leading-snug ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            Go <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>beyond the limits</span> and unlock{' '}
+            <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>exclusive features</span> with Pulse Pro.
           </p>
 
           {/* Plan picker — right here rather than on a second screen, so choosing a plan and
               subscribing is one step. */}
           {!pro && (
-            <div className="mx-4 mt-5 bg-white rounded-2xl overflow-hidden">
+            <div className={`mx-4 mt-5 rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               {PLANS.map((p, i) => (
                 <Fragment key={p.key}>
-                  {i > 0 && <div className="h-px bg-gray-100 ml-12" />}
+                  {i > 0 && <div className={`h-px ml-12 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`} />}
                   <button
                     type="button"
                     onClick={() => setPlan(p.key)}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${darkMode ? 'hover:bg-gray-700/60' : 'hover:bg-gray-50'}`}
                   >
                     <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                      plan === p.key ? 'bg-violet-600' : 'border-2 border-gray-300'
+                      plan === p.key ? 'bg-violet-600' : darkMode ? 'border-2 border-gray-600' : 'border-2 border-gray-300'
                     }`}>
                       {plan === p.key && (
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -144,13 +146,13 @@ export default function UpgradeModal({ isOpen, onClose }) {
                         </svg>
                       )}
                     </span>
-                    <span className="text-[15px] font-semibold text-gray-900">{p.label}</span>
+                    <span className={`text-[15px] font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{p.label}</span>
                     {p.key === 'yearly' && SAVINGS_PCT > 0 && (
                       <span className="text-[11px] font-bold text-white bg-violet-600 rounded-md px-1.5 py-0.5">
                         -{SAVINGS_PCT}%
                       </span>
                     )}
-                    <span className="ml-auto text-[15px] text-gray-500">{p.price}/{p.per}</span>
+                    <span className={`ml-auto text-[15px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{p.price}/{p.per}</span>
                   </button>
                 </Fragment>
               ))}
@@ -161,15 +163,15 @@ export default function UpgradeModal({ isOpen, onClose }) {
           <div className="px-4 pt-5 pb-4 space-y-4">
             {FEATURES.map((group) => (
               <div key={group.section}>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 mb-1.5">
+                <p className={`text-[11px] font-bold uppercase tracking-wider px-3 mb-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                   {group.section}
                 </p>
-                <div className="bg-white rounded-2xl overflow-hidden">
+                <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   {group.items.map((f, i) => {
                     colorIndex++
                     return (
                     <Fragment key={f.title}>
-                      {i > 0 && <div className="h-px bg-gray-100 ml-15" />}
+                      {i > 0 && <div className={`h-px ml-15 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`} />}
                       <div className="flex items-start gap-3 px-4 py-3">
                         <span className={`w-8 h-8 rounded-[10px] shrink-0 flex items-center justify-center bg-linear-to-br ${ICON_COLORS[colorIndex % ICON_COLORS.length]}`}>
                           <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,14 +180,14 @@ export default function UpgradeModal({ isOpen, onClose }) {
                         </span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <p className="text-sm font-semibold text-gray-900">{f.title}</p>
+                            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{f.title}</p>
                             {f.badge && (
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600 bg-violet-50 rounded-full px-1.5 py-px">
+                              <span className={`text-[9px] font-bold uppercase tracking-wide rounded-full px-1.5 py-px ${darkMode ? 'text-violet-300 bg-violet-500/20' : 'text-violet-600 bg-violet-50'}`}>
                                 {f.badge}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 leading-[1.45] mt-0.5">{f.desc}</p>
+                          <p className={`text-xs leading-[1.45] mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{f.desc}</p>
                         </div>
                       </div>
                     </Fragment>
@@ -198,9 +200,9 @@ export default function UpgradeModal({ isOpen, onClose }) {
         </div>
 
         {/* Pinned CTA */}
-        <div className="shrink-0 bg-white px-4 pt-3 pb-4 border-t border-gray-100">
+        <div className={`shrink-0 px-4 pt-3 pb-4 border-t ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
           {pro ? (
-            <p className="text-center text-sm text-gray-400 py-2.5">You're already on Pro.</p>
+            <p className={`text-center text-sm py-2.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>You're already on Pro.</p>
           ) : (
             <>
               <button
@@ -209,7 +211,7 @@ export default function UpgradeModal({ isOpen, onClose }) {
               >
                 Subscribe for {selected.price} / {selected.per}
               </button>
-              <p className="text-center text-[11px] text-gray-400 mt-2">Auto-renewal. Cancel anytime.</p>
+              <p className={`text-center text-[11px] mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Auto-renewal. Cancel anytime.</p>
             </>
           )}
         </div>

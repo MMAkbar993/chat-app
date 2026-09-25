@@ -372,7 +372,7 @@ export default function ChatPage() {
             />
       )}
 
-      <UpgradeModal isOpen={showCallLimitUpgrade} onClose={() => setShowCallLimitUpgrade(false)} />
+      <UpgradeModal isOpen={showCallLimitUpgrade} onClose={() => setShowCallLimitUpgrade(false)} darkMode={darkMode} />
 
       <ProductTour
         hasSeenTour={user?.has_seen_tour}
