@@ -276,6 +276,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
   const [form, setForm] = useState({
     bio:           profile.bio || '',
+    status:        profile.status || '',
     gender:        profile.gender || '',
     phone:         profile.phone || '',
     location:      profile.location || '',
@@ -356,6 +357,7 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       const payload = {
         display_name:  displayName || profile.full_name,
         bio:           form.bio,
+        status:        form.status,
         gender:        form.gender,
         phone:         form.phone,
         location:      form.location,
@@ -490,6 +492,21 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
       <div>
         <label className={lbl}>Country</label>
         <input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Country" className={inp} />
+      </div>
+
+      {/* Status */}
+      <div>
+        <label className={lbl}>Status</label>
+        <input
+          value={form.status}
+          onChange={(e) => setForm((f) => ({ ...f, status: e.target.value.slice(0, 100) }))}
+          placeholder="At SiGMA next month · Open to partnerships"
+          maxLength={100}
+          className={inp}
+        />
+        <p className={`text-xs mt-1 text-right ${form.status.length >= 100 ? 'text-amber-500' : darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          {form.status.length}/100
+        </p>
       </div>
 
       {/* About */}

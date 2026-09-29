@@ -429,16 +429,16 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         <span className={`text-sm md:text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between min-h-10 md:min-h-8">
                       {c.last_message?.startsWith('📅 Scheduled:') ? (
-                        <span title={c.last_message} className={`flex items-center gap-1 min-w-0 text-sm md:text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <span title={c.last_message} className={`flex items-center gap-1 min-w-0 text-sm md:text-xs leading-5 md:leading-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           <span className="truncate">{c.last_message.replace('📅 ', '')}</span>
                         </span>
                       ) : (
-                        <span title={formatLastMessage(c.last_message, c.last_message_type)} className={`text-sm md:text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
+                        <span title={formatLastMessage(c.last_message, c.last_message_type)} className={`min-w-0 flex-1 text-sm md:text-xs leading-5 md:leading-4 line-clamp-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(c.last_message, c.last_message_type)}</span>
                       )}
                       {c.unread_count > 0 ? (
                         <span className="ml-2 bg-gray-500 text-white text-[10px] font-medium rounded-full w-4.5 h-4.5 flex items-center justify-center shrink-0">

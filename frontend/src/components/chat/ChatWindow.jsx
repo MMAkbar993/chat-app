@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useSocket } from '../../context/SocketContext'
@@ -266,34 +266,53 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     loadOlderMessages()
   }
 
+  // scrollIntoView on a sentinel was leaving the view short of the true bottom: it stops as
+  // soon as the sentinel is merely visible, so the container's own bottom padding stayed below
+  // the fold, and it walks every scrollable ancestor rather than just this list. Setting
+  // scrollTop on the container is exact and affects nothing else.
+  const pinToBottom = useCallback((smooth = false) => {
+    const el = messagesContainerRef.current
+    if (!el) return
+    if (smooth) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    else el.scrollTop = el.scrollHeight
+  }, [])
+
   useEffect(() => {
-    if (!bottomRef.current || !messages.length) return
+    if (!messagesContainerRef.current || !messages.length) return
     // A prepend of older history must never yank the view to the bottom.
     if (prependingRef.current) { prependingRef.current = false; return }
     const convId = activeConversation?.id
     const isNewConv = scrolledForConvRef.current !== convId
     if (isNewConv) scrolledForConvRef.current = convId
-    bottomRef.current.scrollIntoView({ behavior: isNewConv ? 'instant' : 'smooth' })
+    pinToBottom(!isNewConv)
 
     if (!isNewConv) return
-    // Images/videos in the conversation may still be loading when we jump to the bottom above —
-    // once they resolve, their real height pushes the true bottom further down than where we
-    // landed. Keep re-pinning to bottom as each one finishes loading.
-    const media = messagesContainerRef.current?.querySelectorAll('img, video') || []
-    const rescroll = () => bottomRef.current?.scrollIntoView({ behavior: 'instant' })
-    media.forEach((el) => {
-      if (el.tagName === 'IMG' && !el.complete) el.addEventListener('load', rescroll, { once: true })
-      else if (el.tagName === 'VIDEO' && el.readyState < 1) el.addEventListener('loadedmetadata', rescroll, { once: true })
-    })
-    return () => media.forEach((el) => {
-      el.removeEventListener('load', rescroll)
-      el.removeEventListener('loadedmetadata', rescroll)
-    })
+    // Opening a conversation, the list keeps growing for a moment after this runs: avatars and
+    // images decode, link previews resolve, fonts swap, a long message reflows. Each one makes
+    // the real bottom lower than wherever we just landed — which is why opening a chat could
+    // still leave it part-way up. Watching the container catches all of it, including content
+    // that was not in the DOM when this effect ran, where the old per-image listeners could not.
+    let settled = false
+    const observer = new ResizeObserver(() => { if (!settled) pinToBottom() })
+    observer.observe(messagesContainerRef.current)
+    for (const child of messagesContainerRef.current.children) observer.observe(child)
+
+    // The moment the reader scrolls, stop pinning — nothing is more annoying than being
+    // dragged back down while reading.
+    const release = () => { settled = true; observer.disconnect() }
+    const el = messagesContainerRef.current
+    el.addEventListener('wheel', release, { once: true, passive: true })
+    el.addEventListener('touchstart', release, { once: true, passive: true })
+    // And give up on our own after things have had time to settle, so the observer is never
+    // left running for the life of the conversation.
+    const timer = setTimeout(release, 2000)
+
+    return () => { clearTimeout(timer); release() }
   // messages.length (not messages itself) on purpose — a reaction, edit, or read-receipt update
   // replaces the array in place (same length, one message's fields changed) and must NOT yank
   // the view back to the bottom while someone's scrolled up reading history. Only an actual
   // append/removal — a real new message — should trigger the scroll.
-  }, [messages.length, activeConversation?.id])
+  }, [messages.length, activeConversation?.id, pinToBottom])
 
   // Reset panels and load blocked status / group participants when conversation changes
   useEffect(() => {

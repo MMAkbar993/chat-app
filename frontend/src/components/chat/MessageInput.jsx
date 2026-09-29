@@ -450,7 +450,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
               <button
                 type="button"
                 onClick={() => setShowEmoji((v) => !v)}
-                className={`transition-colors ${
+                className={`h-6 flex items-center transition-colors ${
                   showEmoji
                     ? 'text-violet-500'
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'

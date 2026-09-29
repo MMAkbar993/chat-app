@@ -132,7 +132,7 @@ export async function getProfile(req, res, next) {
     const user = await findUserById(req.user.id)
     if (!user) return res.status(404).json({ error: 'User not found' })
     const ext = await query(
-      `SELECT avatar_url, display_name, bio, gender, website, location FROM users WHERE id = $1`,
+      `SELECT avatar_url, display_name, bio, gender, website, location, status FROM users WHERE id = $1`,
       [req.user.id]
     )
     const extra = ext.rows[0] || {}
@@ -156,9 +156,11 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const { display_name, bio, gender, phone, website, location, country, primary_role, primary_role_other, date_of_birth, job_title, company_name } = req.body
+    const { display_name, bio, gender, phone, website, location, country, primary_role, primary_role_other, date_of_birth, job_title, company_name, status } = req.body
 
-    if (containsUrl(bio) || containsUrl(job_title)) {
+    // Same rule as bio and job title: a free-text field on a profile is not a way around
+    // website verification.
+    if (containsUrl(bio) || containsUrl(job_title) || containsUrl(status)) {
       return res.status(400).json({
         error: 'You cannot include website URLs in your description. All websites must be verified under Settings → Website Verification before they can be added to your profile.',
       })
@@ -177,6 +179,7 @@ export async function updateProfile(req, res, next) {
          primary_role_other = CASE WHEN $8::text IS NOT NULL THEN $13 ELSE primary_role_other END,
          date_of_birth = COALESCE($9::date, date_of_birth),
          job_title = COALESCE($10, job_title),
+         status = CASE WHEN $14::text IS NULL THEN status ELSE NULLIF(left($14, 100), '') END,
          company_name = CASE
            WHEN NOT website_verified AND NOT website_representation_approved
            THEN COALESCE($11, company_name)
@@ -186,7 +189,7 @@ export async function updateProfile(req, res, next) {
        WHERE id = $12
        RETURNING id, full_name, username, country, location, email, primary_role, primary_role_other, phone,
                  avatar_url, display_name, bio, gender, website, date_of_birth,
-                 job_title, company_name, website_verified, website_representation_approved,
+                 job_title, company_name, status, website_verified, website_representation_approved,
                  subscription_status, kyc_status, is_active`,
       [
         display_name !== undefined ? (display_name || null) : null,
@@ -202,6 +205,7 @@ export async function updateProfile(req, res, next) {
         company_name !== undefined ? (company_name || null) : null,
         req.user.id,
         primary_role === 'other' ? (primary_role_other || null) : null,
+        status !== undefined ? String(status).trim() : null,
       ]
     )
     res.json({ user: result.rows[0] })
@@ -282,7 +286,7 @@ export async function uploadAvatar(req, res, next) {
 export async function getUserById(req, res, next) {
   try {
     const result = await query(
-      `SELECT u.id, u.full_name, u.username, u.primary_role, u.primary_role_other, u.avatar_url, u.display_name, u.bio,
+      `SELECT u.id, u.full_name, u.username, u.primary_role, u.primary_role_other, u.avatar_url, u.display_name, u.bio, u.status,
               u.country, u.location, u.website, u.created_at, u.date_of_birth,
               u.job_title, u.company_name, u.website_verified, u.website_representation_approved, u.timezone,
               u.kyc_status,
@@ -314,7 +318,7 @@ export async function getUserById(req, res, next) {
 export async function getPublicProfile(req, res, next) {
   try {
     const result = await query(
-      `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, bio,
+      `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, bio, status,
               country, kyc_status, created_at, website_verified, website_representation_approved
        FROM users WHERE username = $1`,
       [req.params.username]
@@ -338,6 +342,7 @@ export async function getPublicProfile(req, res, next) {
         primary_role_other: user.primary_role_other,
         avatar_url: user.avatar_url,
         bio: user.bio,
+        status: user.status,
         country: user.country,
         is_verified: user.kyc_status === 'verified',
         website_verified: user.website_verified,

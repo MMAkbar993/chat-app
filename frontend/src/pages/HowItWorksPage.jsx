@@ -92,13 +92,15 @@ const IDENTITY = {
 const VERIFICATION = [
   {
     title: 'Website verification',
-    lead: 'Show that you control the company or website you represent.',
+    lead: 'Show which company you work for — as its administrator, or as one of its people.',
     visual: <MetaTagVisual />,
     points: [
-      'Verify your website using a unique meta tag or DNS record.',
-      'Verified websites appear on your public Pulse profile.',
-      'The first person to verify a company domain becomes its Website Administrator.',
-      'Colleagues can request to be added as representatives of the same company.',
+      'Three ways to verify: a meta tag in your site\'s <head>, a DNS TXT record, or a company email address.',
+      'The meta tag and the DNS record prove you control the domain, and make you the Website Administrator for it on Pulse.',
+      'A company email address instead confirms you work there, and lists you as a Verified Representative straight away — no approval step, no waiting on anyone.',
+      'Representatives do not manage the company\'s business profile or its other representatives; that stays with the administrator.',
+      'Once a domain has an administrator, later arrivals verify by company email — a business can only be claimed once.',
+      'Verified websites appear on your public Pulse profile, and you can step back from a company at any time.',
     ],
   },
   {

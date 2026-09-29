@@ -97,6 +97,7 @@ export default function UserProfileModal({
   const [notFound, setNotFound] = useState(false)
   const [selfSocials, setSelfSocials] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
+  const [avatarOpen, setAvatarOpen] = useState(false)
   const [blocked, setBlocked] = useState(false)
   const [confirm, setConfirm] = useState(null) // { type: 'block'|'unblock'|'delete' }
   const [toast, setToast] = useState(null)
@@ -172,6 +173,7 @@ export default function UserProfileModal({
     || (isSelf ? authUser?.username : null) || (accountDeleted ? 'Account Deleted' : '?')
   const avatar = contact?.avatar_url || profile?.avatar_url
   const bio = contact?.bio || profile?.bio
+  const status = profile?.status
 
   const location = profile?.location || profile?.country
   const joinDate = profile?.created_at
@@ -276,7 +278,14 @@ export default function UserProfileModal({
         <div className="px-6 pb-6 md:px-5 md:pb-5">
           <div className="-mt-10 mb-3 flex items-start justify-between">
             <div className="relative">
-              <div className={`w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 flex items-center justify-center text-white text-2xl font-bold shadow-lg ${avatar ? '' : 'bg-violet-500'}`}>
+              <div
+                role={avatar ? 'button' : undefined}
+                tabIndex={avatar ? 0 : undefined}
+                onClick={() => avatar && setAvatarOpen(true)}
+                onKeyDown={(e) => { if (avatar && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setAvatarOpen(true) } }}
+                title={avatar ? 'View photo' : undefined}
+                className={`w-20 h-20 rounded-full overflow-hidden border-4 border-white dark:border-gray-900 flex items-center justify-center text-white text-2xl font-bold shadow-lg ${avatar ? 'cursor-pointer hover:brightness-95 transition-[filter]' : 'bg-violet-500'}`}
+              >
                 {avatar
                   ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                   : (name || '?')[0].toUpperCase()}
@@ -346,6 +355,14 @@ export default function UserProfileModal({
             <div className={`mt-2 px-3 py-2 rounded-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
               {toast.msg}
             </div>
+          )}
+          {status && (
+            <p className={`text-sm mt-1.5 flex items-start gap-1.5 ${dm ? 'text-violet-300' : 'text-violet-600'}`}>
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.9 9.9 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span>{status}</span>
+            </p>
           )}
           {bio && (
             <p className={`text-sm mt-2 ${dm ? 'text-gray-300' : 'text-gray-600'}`}>{bio}</p>
@@ -482,6 +499,29 @@ export default function UserProfileModal({
           onConfirm={handleConfirm}
           onCancel={() => setConfirm(null)}
         />
+      )}
+
+      {avatarOpen && avatar && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setAvatarOpen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            onClick={() => setAvatarOpen(false)}
+            aria-label="Close photo"
+          >
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={avatar}
+            alt={name}
+            className="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   )

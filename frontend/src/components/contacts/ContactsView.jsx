@@ -205,7 +205,7 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
                       <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{name}</p>
                       <p className={`text-xs truncate ${sub}`}>{getRoleLabel(c)}</p>
                       {c.matched_company && (
-                        <p className="text-xs truncate font-medium text-violet-600">{c.matched_company}</p>
+                        <p className={`text-xs truncate font-medium ${darkMode ? 'text-violet-400' : 'text-violet-600'}`}>{c.matched_company}</p>
                       )}
                     </div>
                   </button>

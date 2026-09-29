@@ -233,7 +233,11 @@ function HelpCard({ darkMode }) {
       </div>
       <a
         href="mailto:pulse@affiliateroulette.com"
-        className="text-xs font-semibold text-violet-600 border border-violet-200 rounded-xl px-4 py-2 hover:bg-violet-50 transition-colors shrink-0"
+        className={`text-xs font-semibold border rounded-xl px-4 py-2 transition-colors shrink-0 ${
+          darkMode
+            ? 'bg-violet-600 border-violet-600 text-white hover:bg-violet-500'
+            : 'text-violet-600 border-violet-200 hover:bg-violet-50'
+        }`}
       >
         Contact Support
       </a>
