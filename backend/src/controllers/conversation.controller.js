@@ -64,6 +64,7 @@ export async function getOrCreateDirect(req, res, next) {
         other_user_name: other?.full_name || null,
         other_user_display_name: other?.display_name || null,
         other_user_avatar: other?.avatar_url || null,
+        other_user_status: other?.status || null,
         is_contact: alreadyContact,
       },
     })
@@ -94,6 +95,7 @@ export async function getConversation(req, res, next) {
           other_user_name: other.full_name,
           other_user_display_name: other.display_name,
           other_user_avatar: other.avatar_url,
+          other_user_status: other.status || null,
           is_contact: await isContact(req.user.id, other.id),
         }
       }

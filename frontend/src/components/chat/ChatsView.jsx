@@ -429,7 +429,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         <span className={`text-sm md:text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
                       </span>
                     </div>
-                    <div className="flex items-center justify-between min-h-10 md:min-h-8">
+                    <div className="flex items-center justify-between">
                       {c.last_message?.startsWith('📅 Scheduled:') ? (
                         <span title={c.last_message} className={`flex items-center gap-1 min-w-0 text-sm md:text-xs leading-5 md:leading-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

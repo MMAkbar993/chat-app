@@ -18,6 +18,7 @@ export async function getConversationsForUser(userId) {
        other_user.full_name AS other_user_name,
        other_user.avatar_url AS other_user_avatar,
        other_user.display_name AS other_user_display_name,
+       other_user.status AS other_user_status,
        other_user.last_seen_at AS other_user_last_seen_at,
        EXISTS (
          SELECT 1 FROM contacts ct WHERE ct.user_id = $1 AND ct.contact_id = other_user.id
@@ -156,7 +157,7 @@ export async function addParticipant(conversationId, userId, role = 'member') {
 
 export async function getParticipants(conversationId) {
   const result = await query(
-    `SELECT u.id, u.full_name, u.username, u.avatar_url, u.display_name, cp.role, cp.last_read_at
+    `SELECT u.id, u.full_name, u.username, u.avatar_url, u.display_name, u.status, cp.role, cp.last_read_at
      FROM conversation_participants cp
      JOIN users u ON u.id = cp.user_id
      WHERE cp.conversation_id = $1`,

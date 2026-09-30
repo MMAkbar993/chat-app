@@ -563,11 +563,24 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                   )}
                 </div>
               ) : (
-                isTyping
-                  ? <p className="text-xs text-green-500">typing...</p>
-                  : onlineUsers?.has(activeConversation.other_user_id)
-                    ? <p className="text-xs text-green-500">Online</p>
-                    : <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatLastSeen(lastSeenMap[activeConversation.other_user_id])}</p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {isTyping
+                    ? <p className="text-xs text-green-500 shrink-0">typing...</p>
+                    : onlineUsers?.has(activeConversation.other_user_id)
+                      ? <p className="text-xs text-green-500 shrink-0">Online</p>
+                      : <p className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatLastSeen(lastSeenMap[activeConversation.other_user_id])}</p>}
+                  {activeConversation.other_user_status && (
+                    <>
+                      <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>·</span>
+                      <p
+                        title={activeConversation.other_user_status}
+                        className={`text-xs truncate ${darkMode ? 'text-violet-300' : 'text-violet-600'}`}
+                      >
+                        {activeConversation.other_user_status}
+                      </p>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
