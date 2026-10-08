@@ -361,34 +361,22 @@ export function KycSlider() {
   )
 }
 
-// Small header graphics for the website and social verification cards.
-
-export function MetaTagVisual() {
+// Header graphic for social verification.
+// large: the strip was built for a small card. Given a whole row it needs bigger icons and
+// height to match, or it reads as a thin band floating in white space.
+export function SocialConnectVisual({ large = false }) {
   return (
-    <div aria-hidden="true" className="h-28 rounded-xl bg-[#1B1533] px-4 flex flex-col justify-center font-mono text-[10px] sm:text-[11px] leading-relaxed overflow-hidden">
-      <span className="text-gray-500">&lt;<span className="text-pink-400">head</span>&gt;</span>
-      <span className="pl-3 truncate">
-        <span className="text-gray-500">&lt;</span><span className="text-pink-400">meta</span>{' '}
-        <span className="text-sky-300">name</span><span className="text-gray-500">=</span><span className="text-amber-300">"site-verification"</span>
-      </span>
-      <span className="pl-7 truncate">
-        <span className="text-sky-300">content</span><span className="text-gray-500">=</span><span className="text-amber-300">"8f3k2…"</span><span className="text-gray-500">&gt;</span>
-      </span>
-      <span className="text-gray-500">&lt;/<span className="text-pink-400">head</span>&gt;</span>
-    </div>
-  )
-}
-
-export function SocialConnectVisual() {
-  return (
-    <div aria-hidden="true" className="h-28 rounded-xl bg-lavender flex flex-col items-center justify-center gap-3">
-      <div className="flex gap-2">
+    <div
+      aria-hidden="true"
+      className={`rounded-xl bg-lavender flex flex-col items-center justify-center ${large ? 'min-h-64 gap-5 p-8' : 'h-28 gap-3'}`}
+    >
+      <div className={`flex flex-wrap justify-center ${large ? 'gap-3' : 'gap-2'}`}>
         {['affiliate_roulette', 'twitter', 'instagram', 'youtube', 'kick', 'twitch'].map((k) => (
-          <SocialIcon key={k} platform={k} size={26} />
+          <SocialIcon key={k} platform={k} size={large ? 44 : 26} />
         ))}
       </div>
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-green-700 shadow-sm">
-        <I d={P.lock} className="w-3 h-3" /> Connected by secure login
+      <span className={`inline-flex items-center gap-1.5 rounded-full bg-white font-semibold text-green-700 shadow-sm ${large ? 'px-3.5 py-1.5 text-xs' : 'px-2.5 py-1 text-[10px]'}`}>
+        <I d={P.lock} className={large ? 'w-3.5 h-3.5' : 'w-3 h-3'} /> Connected by secure login
       </span>
     </div>
   )

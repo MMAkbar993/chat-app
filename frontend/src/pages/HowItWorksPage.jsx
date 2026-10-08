@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import {
-  AppMockup, ProfileMockup, KycSlider, MetaTagVisual, SocialConnectVisual,
+  AppMockup, ProfileMockup, KycSlider, SocialConnectVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
 } from '../components/marketing/HowItWorksMockups'
 import FaqSection from '../components/settings/FaqSection'
@@ -47,6 +47,7 @@ const HERO_BG = {
 const NAV = [
   { href: '#steps', label: 'How it works' },
   { href: '#verification', label: 'Verification' },
+  { href: '#websites', label: 'Websites' },
   { href: '#features', label: 'Features' },
   { href: '#share', label: 'Share links' },
   { href: '#security', label: 'Security' },
@@ -89,30 +90,40 @@ const IDENTITY = {
   ],
 }
 
-const VERIFICATION = [
+const SOCIAL = {
+  title: 'Social profile verification',
+  lead: 'Connect your professional social accounts securely.',
+  points: [
+    'Connect supported social accounts by logging in through the platform itself.',
+    'This confirms that you control the account, rather than simply adding a social media link.',
+    'Supported platforms include X, Instagram, YouTube, Kick and Twitch.',
+    'Connected profiles can appear on your public Pulse profile.',
+  ],
+}
+
+// The same three routes, in the same words, as the cards in Settings → Website Verification —
+// so someone reading this page recognises the screen when they reach it.
+const WEBSITE_ROUTES = [
   {
-    title: 'Website verification',
-    lead: 'Show which company you work for — as its administrator, or as one of its people.',
-    visual: <MetaTagVisual />,
-    points: [
-      'Three ways to verify: a meta tag in your site\'s <head>, a DNS TXT record, or a company email address.',
-      'The meta tag and the DNS record prove you control the domain, and make you the Website Administrator for it on Pulse.',
-      'A company email address instead confirms you work there, and lists you as a Verified Representative straight away — no approval step, no waiting on anyone.',
-      'Representatives do not manage the company\'s business profile or its other representatives; that stays with the administrator.',
-      'Once a domain has an administrator, later arrivals verify by company email — a business can only be claimed once.',
-      'Verified websites appear on your public Pulse profile, and you can step back from a company at any time.',
-    ],
+    title: 'HTML Head Tag',
+    grant: 'admin',
+    blurb: 'Add a meta tag to your website\'s <head> section.',
+    points: ['Verifies ownership of the website', 'Shows the website on your public profile', 'Lets you manage the Business Profile & Reps'],
+    path: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
   },
   {
-    title: 'Social profile verification',
-    lead: 'Connect your professional social accounts securely.',
-    visual: <SocialConnectVisual />,
-    points: [
-      'Connect supported social accounts by logging in through the platform itself.',
-      'This confirms that you control the account, rather than simply adding a social media link.',
-      'Supported platforms include X, Instagram, YouTube, Kick and Twitch.',
-      'Connected profiles can appear on your public Pulse profile.',
-    ],
+    title: 'DNS Record',
+    grant: 'admin',
+    blurb: 'Add a TXT record to your domain\'s DNS settings.',
+    points: ['Verifies ownership of the website', 'Shows the website on your public profile', 'Lets you manage the Business Profile & Reps'],
+    path: 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4',
+  },
+  {
+    title: 'Business Email',
+    grant: 'rep',
+    blurb: 'Verify using a company email address (e.g. name@yourcompany.com).',
+    points: ['Confirms you work for the business', 'Shows the business on your public profile', 'Adds you as a Verified Representative'],
+    path: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   },
 ]
 
@@ -202,6 +213,32 @@ function Icon({ path, className = 'w-5 h-5' }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={path} />
     </svg>
+  )
+}
+
+function RouteCard({ route }) {
+  const admin = route.grant === 'admin'
+  return (
+    <div className={`flex flex-col rounded-2xl border p-6 shadow-sm ${admin ? 'border-violet-100 bg-violet-50/40' : 'border-green-100 bg-green-50/40'}`}>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${admin ? 'bg-violet-100 text-violet-600' : 'bg-green-100 text-green-600'}`}>
+          <Icon path={route.path} />
+        </span>
+        <span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 text-white ${admin ? 'bg-violet-600' : 'bg-green-600'}`}>
+          {admin ? 'Admin Access' : 'Representative'}
+        </span>
+      </div>
+      <p className="text-lg font-bold text-gray-900">{route.title}</p>
+      <p className="mt-1 text-sm text-gray-500">{route.blurb}</p>
+      <ul className="mt-4 space-y-2">
+        {route.points.map((p) => (
+          <li key={p} className="flex gap-2.5 text-sm text-gray-700">
+            <Icon path="M5 13l4 4L19 7" className={`w-4 h-4 mt-0.5 shrink-0 ${admin ? 'text-violet-500' : 'text-green-500'}`} />
+            <span>{p}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
@@ -378,22 +415,23 @@ export default function HowItWorksPage() {
             <KycSlider />
           </div>
 
-          <div className="mt-5 grid md:grid-cols-2 gap-5">
-            {VERIFICATION.map((v) => (
-              <div key={v.title} className="rounded-2xl bg-white p-5 shadow-sm flex flex-col">
-                {v.visual}
-                <p className="mt-5 font-bold">{v.title}</p>
-                <p className="text-sm font-medium text-violet-600">{v.lead}</p>
-                <ul className="mt-4 space-y-2.5">
-                  {v.points.map((p) => (
-                    <li key={p} className="flex gap-2.5 text-sm text-gray-600 leading-relaxed">
-                      <Icon path="M5 13l4 4L19 7" className="w-3.5 h-3.5 mt-1 shrink-0 text-violet-500" />
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="mt-5 rounded-3xl bg-white/60 p-5 sm:p-8 grid lg:grid-cols-2 gap-10 items-center">
+            <SocialConnectVisual large />
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
+                <Icon path="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" className="w-5 h-5" />
+              </span>
+              <p className="mt-5 text-xl font-bold">{SOCIAL.title}</p>
+              <p className="text-sm font-medium text-violet-600">{SOCIAL.lead}</p>
+              <ul className="mt-4 space-y-2.5">
+                {SOCIAL.points.map((p) => (
+                  <li key={p} className="flex gap-2.5 text-sm text-gray-600 leading-relaxed">
+                    <Icon path="M5 13l4 4L19 7" className="w-3.5 h-3.5 mt-1 shrink-0 text-violet-500" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
@@ -404,8 +442,30 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
+      {/* Websites & representation */}
+      <section id="websites" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto">
+            <Eyebrow>Websites &amp; representation</Eyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Show which company you work for</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              Choose how to verify. Each route gives different access on Pulse.
+            </p>
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {WEBSITE_ROUTES.map((r) => <RouteCard key={r.title} route={r} />)}
+          </div>
+
+          <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
+            A business can only be claimed once. After an admin verifies by head tag or DNS, everyone
+            else joins by company email as a Representative — no approval needed.
+          </p>
+        </div>
+      </section>
+
       {/* Features */}
-      <section id="features" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
+      <section id="features" className="px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-extrabold tracking-tight">Everything your business communication needs</h2>
