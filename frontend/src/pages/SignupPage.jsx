@@ -26,7 +26,7 @@ export default function SignupPage() {
           <button
             type="button"
             onClick={() => setShowFaq(true)}
-            className="text-xs font-medium text-gray-500 hover:text-gray-700 hover:underline"
+            className="text-sm font-medium text-violet-600 hover:underline"
           >
             Have questions? View our FAQ
           </button>

@@ -56,7 +56,7 @@ export default function SignupForm({ onSuccess }) {
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Create an account</h1>
-        <p className="text-base text-gray-500 mt-1">Personal Information &amp; Primary Role</p>
+        <p className="text-gray-500 mt-1">Personal information &amp; primary role</p>
       </div>
 
       {serverError && (

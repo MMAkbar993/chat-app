@@ -63,7 +63,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-base text-gray-500 mt-1">Please enter your details to sign in.</p>
+          <p className="text-gray-500 mt-1">Sign in to continue to Pulse</p>
         </div>
 
         {serverError && (
@@ -78,7 +78,6 @@ export default function LoginPage() {
           placeholder="Enter your email"
           error={errors.email?.message}
           required
-          iconPosition="right"
           icon={MailIcon}
           {...register('email', {
             required: 'Email is required',
@@ -91,10 +90,15 @@ export default function LoginPage() {
             Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
             <input
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              className={`w-full border rounded-xl px-4 py-3.5 pr-10 text-base bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
+              placeholder="Enter your password"
+              className={`w-full border rounded-xl pl-10 pr-10 py-3.5 text-base bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 transition-colors
                 ${errors.password ? 'border-red-400' : 'border-gray-200'}`}
               {...register('password', { required: 'Password is required' })}
             />
@@ -126,9 +130,9 @@ export default function LoginPage() {
               className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-400"
               {...register('remember')}
             />
-            <span className="text-xs text-gray-600">Remember for 30 days</span>
+            <span className="text-sm text-gray-600">Remember me for 30 days</span>
           </label>
-          <Link to="/forgot-password" className="text-xs text-violet-600 hover:underline">
+          <Link to="/forgot-password" className="text-sm font-medium text-violet-600 hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -140,12 +144,6 @@ export default function LoginPage() {
           </svg>
         </Button>
 
-        <p className="text-center text-xs text-gray-400">
-          By signing in you agree to our{' '}
-          <Link to="/terms" className="text-violet-600 hover:underline">Terms</Link>
-          {' '}and{' '}
-          <Link to="/privacy" className="text-violet-600 hover:underline">Privacy Policy</Link>
-        </p>
       </form>
     </AuthLayout>
   )
