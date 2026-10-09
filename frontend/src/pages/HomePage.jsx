@@ -11,6 +11,31 @@ import { QaRow } from '../components/settings/FaqSection'
 // case in about a third of the length and links there for depth. All copy lives in
 // homeContent.js — edit it there.
 
+// ─── SOCIAL PROOF — fill these in ─────────────────────────────────────────────
+// The section stays hidden on the live site until at least one logo has a file or one stat has
+// a number, so a placeholder can never go out by accident. In development (npm run dev) an empty
+// config shows grey placeholder boxes and "TODO" numbers instead, so the layout can be reviewed.
+const SOCIAL_PROOF = {
+  label: 'Trusted by affiliate teams across iGaming',
+  // TODO: up to 5 partner logos. Put the files in frontend/public/marketing/logos/ and set
+  // src to e.g. '/marketing/logos/brand.svg' and alt to the company name.
+  // Get each company's permission before using their logo.
+  logos: [
+    { src: '', alt: 'Partner logo' }, // TODO
+    { src: '', alt: 'Partner logo' }, // TODO
+    { src: '', alt: 'Partner logo' }, // TODO
+    { src: '', alt: 'Partner logo' }, // TODO
+    { src: '', alt: 'Partner logo' }, // TODO
+  ],
+  // TODO: real numbers only. Leave a value empty ('') to leave that stat out.
+  stats: [
+    { value: '', suffix: '+', label: 'verified members' }, // TODO e.g. value: '1,200'
+    { value: '', suffix: '', label: 'companies verified' }, // TODO e.g. value: '300'
+    { value: '', suffix: '', label: 'countries' }, // TODO e.g. value: '40'
+  ],
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 const NAV = [
   { href: '/how-it-works', label: 'How it works' },
   { href: '#pricing', label: 'Pricing' },
@@ -23,6 +48,11 @@ const LEAD = 'mt-4 text-gray-600 leading-relaxed'
 const CHECK = 'M5 13l4 4L19 7'
 const ARROW = 'M13 7l5 5m0 0l-5 5m5-5H6'
 const BTN_PRIMARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors shadow-md shadow-violet-600/20 ${FOCUS}`
+// "€6.99", and "€70" rather than "€70.00".
+const euro = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`
+// Percentage saved by paying yearly, rounded down so it is never overstated.
+const yearlySaving = (monthly, yearly) => Math.floor((1 - yearly / (monthly * 12)) * 100)
+
 const BTN_SECONDARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-white border border-gray-200 hover:border-violet-300 font-semibold transition-colors ${FOCUS}`
 
 function SectionIntro({ eyebrow, heading, children }) {
@@ -36,29 +66,44 @@ function SectionIntro({ eyebrow, heading, children }) {
 }
 
 function SocialProof() {
-  const { logos, stats, logosLabel } = C.socialProof
-  if (!logos.length && !stats.length) return null
+  const logos = SOCIAL_PROOF.logos.filter((l) => l.src)
+  const stats = SOCIAL_PROOF.stats.filter((s) => String(s.value).trim())
+  const preview = import.meta.env.DEV && !logos.length && !stats.length
+  if (!preview && !logos.length && !stats.length) return null
+
+  const shownStats = preview
+    ? SOCIAL_PROOF.stats.map((s) => ({ ...s, value: 'TODO' }))
+    : stats
+
   return (
     <section aria-label="Social proof" className="px-4 sm:px-6 py-10 border-y border-gray-100">
       <div className="max-w-6xl mx-auto">
-        {logos.length > 0 ? (
-          <>
-            <p className="text-center text-sm font-medium text-gray-500">{logosLabel}</p>
-            <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
-              {logos.map((l) => (
-                <li key={l.src}>
-                  <img src={l.src} alt={l.alt} className="h-8 w-auto opacity-70 grayscale" />
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <dl className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            {stats.map((s) => (
+        <p className="text-center text-sm font-medium text-gray-500">{SOCIAL_PROOF.label}</p>
+
+        {/* Wraps three to a row on phones with the last row centred, one row from tablet up. */}
+        {(preview || logos.length > 0) && (
+          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-5 sm:gap-x-12">
+            {preview
+              ? SOCIAL_PROOF.logos.map((l, i) => (
+                  <li key={i}>
+                    <span role="img" aria-label={l.alt} className="block h-8 w-24 rounded-md bg-gray-300/60" />
+                  </li>
+                ))
+              : logos.map((l) => (
+                  <li key={l.src}>
+                    <img src={l.src} alt={l.alt} className="h-8 w-auto max-w-28 object-contain opacity-70 grayscale" />
+                  </li>
+                ))}
+          </ul>
+        )}
+
+        {shownStats.length > 0 && (
+          <dl className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 text-center">
+            {shownStats.map((s) => (
               // Label first in the markup (as a definition list requires), number first on screen.
               <div key={s.label} className="flex flex-col-reverse">
                 <dt className="text-sm text-gray-500">{s.label}</dt>
-                <dd className="text-3xl font-extrabold tracking-tight text-gray-900">{s.value}</dd>
+                <dd className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">{s.value}{s.suffix}</dd>
               </div>
             ))}
           </dl>
@@ -96,7 +141,7 @@ export default function HomePage() {
               </div>
               <p className="mt-4 text-sm text-gray-500">{C.hero.footnote}</p>
             </div>
-            <TrustedChatMockup />
+            <TrustedChatMockup wide />
           </div>
         </section>
 
@@ -184,10 +229,21 @@ export default function HomePage() {
                 >
                   <h3 className={`text-lg font-bold ${p.highlighted ? 'text-violet-700' : 'text-gray-900'}`}>{p.name}</h3>
                   <p className="mt-3 flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold tracking-tight">{p.price}</span>
+                    <span className="text-4xl font-extrabold tracking-tight">{p.monthly != null ? euro(p.monthly) : p.price}</span>
                     <span className="text-gray-500">{p.period}</span>
                   </p>
-                  <p className="mt-1 h-5 text-sm text-gray-500">{p.note}</p>
+                  <p className="mt-1 min-h-6 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                    {p.yearly != null && (
+                      <>
+                        <span>or {euro(p.yearly)}/year</span>
+                        {yearlySaving(p.monthly, p.yearly) > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
+                            save {yearlySaving(p.monthly, p.yearly)}%
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </p>
                   <ul className="mt-6 space-y-3 flex-1">
                     {p.features.map((f) => (
                       <li key={f} className="flex gap-3 text-sm text-gray-700">

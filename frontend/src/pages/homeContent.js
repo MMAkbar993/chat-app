@@ -22,17 +22,7 @@ export const HOME_CONTENT = {
     footnote: 'Takes about 2 minutes · ID data deleted after 30 days',
   },
 
-  // Hidden entirely until real values are filled in, so a placeholder can't go live by accident.
-  // Use logos OR stats (logos win if both are set).
-  socialProof: {
-    logosLabel: 'Trusted by affiliate teams at',
-    // TODO: up to 5 logos, e.g. { src: '/marketing/logos/brand.svg', alt: 'Brand name' }.
-    // Put the files in frontend/public/marketing/logos/. Get each company's permission first.
-    logos: [],
-    // TODO: e.g. [{ value: '1,200+', label: 'verified members' }, { value: '300', label: 'companies' },
-    //       { value: '40', label: 'countries' }]. Leave empty until the numbers are real.
-    stats: [],
-  },
+  // Social proof (logos and numbers) lives in SOCIAL_PROOF at the top of HomePage.jsx.
 
   problem: {
     eyebrow: 'The problem',
@@ -97,12 +87,12 @@ export const HOME_CONTENT = {
     eyebrow: 'Pricing',
     heading: 'Start free. Upgrade when you need more.',
     // Prices match the live upgrade screen (UpgradeModal PLANS). Change both together.
+    // For Pro, give numbers: the page formats them and works out the yearly saving itself.
     plans: [
       {
         name: 'Free',
         price: '€0',
         period: 'forever',
-        note: null,
         features: [
           'One-to-one messaging',
           'Join groups you are invited to',
@@ -114,9 +104,9 @@ export const HOME_CONTENT = {
       },
       {
         name: 'Pro',
-        price: '€6.99',
+        monthly: 6.99,
+        yearly: 70,
         period: 'per month',
-        note: 'or €70 per year',
         features: [
           'Everything in Free',
           'Create your own groups',
@@ -126,7 +116,8 @@ export const HOME_CONTENT = {
           'Meeting scheduling with Google Calendar',
           'Higher file upload limits',
         ],
-        cta: { label: 'Start with Pro', to: '/signup' },
+        // ?plan=pro makes the sign-up page say they're joining for Pro. No payment happens there.
+        cta: { label: 'Start with Pro', to: '/signup?plan=pro' },
         highlighted: true,
       },
     ],

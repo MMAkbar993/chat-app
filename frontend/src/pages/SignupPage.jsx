@@ -9,6 +9,8 @@ export default function SignupPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const nextPath = searchParams.get('next') || null
+  // Set by the home page's "Start with Pro". Wording only: sign-up, KYC and payment are unchanged.
+  const wantsPro = searchParams.get('plan') === 'pro'
   const [showFaq, setShowFaq] = useState(false)
 
   return (
@@ -33,6 +35,17 @@ export default function SignupPage() {
         </div>
       }
     >
+      {wantsPro && (
+        <div role="note" className="mb-6 flex gap-3 rounded-xl bg-violet-50 px-4 py-3 text-sm text-violet-900">
+          <svg aria-hidden="true" className="w-4 h-4 mt-0.5 shrink-0 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p>
+            You're signing up for Pro. Create your account and verify your ID first; you'll choose
+            billing after that.
+          </p>
+        </div>
+      )}
       <SignupForm onSuccess={() => navigate('/verify')} />
 
       <Modal isOpen={showFaq} onClose={() => setShowFaq(false)} maxWidth="max-w-2xl" scroll>

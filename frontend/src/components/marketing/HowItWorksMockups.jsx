@@ -251,9 +251,11 @@ export function ProfileMockup() {
 // moment the trust is for: a conversation with a stranger, and the profile you get by tapping
 // their name. Badges sit in that pop-up, not the chat header, because that is where the real
 // app shows them — this page should not promise anything the product does not do.
-export function TrustedChatMockup() {
+// wide: fills a half-width column from 1280px up (the home hero), instead of leaving a gap
+// between it and the text beside it. Below 1280px it is the same size either way.
+export function TrustedChatMockup({ wide = false }) {
   return (
-    <div aria-hidden="true" className="relative max-w-md mx-auto lg:mr-0 w-full pb-28 sm:pb-32">
+    <div aria-hidden="true" className={`relative max-w-md mx-auto lg:mr-0 w-full pb-28 sm:pb-32 ${wide ? 'xl:max-w-xl' : ''}`}>
       <WindowFrame>
         <div className="text-left bg-gray-50">
           <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white border-b border-gray-100">
