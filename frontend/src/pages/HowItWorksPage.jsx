@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
-import { Icon, Eyebrow, HeaderLogo, HeaderActions, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
+import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
 import {
-  TrustedChatMockup, KycSlider, SocialProfileVisual,
+  KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
 } from '../components/marketing/HowItWorksMockups'
 import FaqSection from '../components/settings/FaqSection'
@@ -34,8 +34,15 @@ const FAQ_FEATURED = [
   'Does Pulse sell my personal information?',
 ]
 
-// The page's own links, shown in its header in place of the site-wide ones. Ids are stable —
-// the home page and shared links point at them.
+// Same main navigation as the home page, so the site header reads the same everywhere.
+const NAV = [
+  { href: '/how-it-works', label: 'How it works' },
+  { href: '/#pricing', label: 'Pricing' },
+  { href: '#faq', label: 'FAQ' },
+]
+
+// The page's own sections, in the sticky bar under the site header. Ids are stable — the home
+// page and shared links point at them.
 const SECTION_NAV = [
   { id: 'verification', label: 'Verification' },
   { id: 'company', label: 'Company' },
@@ -45,8 +52,8 @@ const SECTION_NAV = [
   { id: 'faq', label: 'FAQ' },
 ]
 
-// Clears the header — 64px, or 108px on phones where the section links get their own row — so
-// a section lands just below it instead of under it.
+// Clears the site header (64px) and the section bar under it, so a section lands just below
+// both instead of under them.
 const SECTION_SCROLL_MARGIN = 'scroll-mt-32'
 
 // ─── Getting verified ─────────────────────────────────────────────────────────
@@ -197,7 +204,7 @@ const SHARE_ITEMS = [
 
 // ─── Comparison ───────────────────────────────────────────────────────────────
 
-// TODO: verify competitor claims before publishing. Telegram and WhatsApp change their features
+// TODO: re-verify competitor claims before launch. Telegram and WhatsApp change their features
 // often, and a wrong cell here is the kind of thing people screenshot.
 //   true = yes · false = no · 'pro' = yes, on Pulse Pro · 'partial' = only in limited form
 // The 'partial' cells, and why: WhatsApp — verified company: some Business accounts can carry a
@@ -209,7 +216,6 @@ const COMPARISON = {
     { label: 'Verified company or website', values: [true, false, 'partial'] },
     { label: 'Search by business name', values: ['pro', false, false] },
     { label: 'Voice and video calls', values: [true, true, true] },
-    { label: 'Screen sharing', values: ['pro', true, true] },
     { label: 'Built for iGaming', values: [true, false, false] },
   ],
 }
@@ -307,11 +313,10 @@ function RouteCard({ route }) {
   )
 }
 
-// This page's header: one bar with the logo, the page's own sections and the sign-in buttons,
-// in place of the site-wide header. The current section is whichever one's top has most
-// recently passed just under the bar. Phones get the section links as a second row inside the
-// same sticky header, scrolling sideways and keeping the current one in view.
-function PageHeader({ theme }) {
+// The sticky "on this page" bar under the site header. The current section is whichever one's
+// top has most recently passed just under the bar; on phones the bar scrolls sideways and keeps
+// that link in view.
+function SectionNav() {
   const [active, setActive] = useState(null)
   const barRef = useRef(null)
   const linkRefs = useRef({})
@@ -320,7 +325,7 @@ function PageHeader({ theme }) {
     let frame = 0
     function update() {
       frame = 0
-      const line = 150 // px from the top: the header plus a little
+      const line = 150 // px from the top: header + this bar + a little
       let current = null
       for (const { id } of SECTION_NAV) {
         const el = document.getElementById(id)
@@ -341,7 +346,7 @@ function PageHeader({ theme }) {
     }
   }, [])
 
-  // Scroll the phone row itself, never the page: scrollIntoView could nudge the window too.
+  // Scroll the bar itself, never the page: scrollIntoView could nudge the window too.
   useEffect(() => {
     const bar = barRef.current
     const link = active && linkRefs.current[active]
@@ -350,41 +355,26 @@ function PageHeader({ theme }) {
     }
   }, [active])
 
-  const linkClass = (id) =>
-    `shrink-0 whitespace-nowrap flex items-center px-3 text-sm font-medium border-b-2 transition-colors ${FOCUS} ${
-      active === id ? 'border-violet-600 text-violet-700 night:text-violet-300' : 'border-transparent text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300'
-    }`
-
   return (
-    <header className="sticky top-0 z-40 bg-white/90 night:bg-gray-950/90 backdrop-blur border-b border-gray-100 night:border-gray-800">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <HeaderLogo />
-        <nav aria-label="On this page" className="hidden lg:flex self-stretch gap-1">
-          {SECTION_NAV.map((s) => (
-            <a key={s.id} href={`#${s.id}`} aria-current={active === s.id ? 'location' : undefined} className={linkClass(s.id)}>
-              {s.label}
-            </a>
-          ))}
-        </nav>
-        <HeaderActions theme={theme} />
+    <nav aria-label="On this page" className="sticky top-16 z-30 bg-white/90 night:bg-gray-950/90 backdrop-blur border-b border-gray-100 night:border-gray-800">
+      <div ref={barRef} className="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
+        {SECTION_NAV.map((s) => (
+          <a
+            key={s.id}
+            ref={(el) => { linkRefs.current[s.id] = el }}
+            href={`#${s.id}`}
+            aria-current={active === s.id ? 'location' : undefined}
+            className={`shrink-0 whitespace-nowrap flex items-center px-3 text-sm font-medium border-b-2 transition-colors ${FOCUS} ${
+              active === s.id
+                ? 'border-violet-600 text-violet-700 night:text-violet-300'
+                : 'border-transparent text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300'
+            }`}
+          >
+            {s.label}
+          </a>
+        ))}
       </div>
-      {/* Phones and tablets: the same links, one row down, scrolling sideways */}
-      <nav aria-label="On this page" className="lg:hidden border-t border-gray-100 night:border-gray-800">
-        <div ref={barRef} className="max-w-6xl mx-auto px-4 sm:px-6 h-11 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {SECTION_NAV.map((s) => (
-            <a
-              key={s.id}
-              ref={(el) => { linkRefs.current[s.id] = el }}
-              href={`#${s.id}`}
-              aria-current={active === s.id ? 'location' : undefined}
-              className={linkClass(s.id)}
-            >
-              {s.label}
-            </a>
-          ))}
-        </div>
-      </nav>
-    </header>
+    </nav>
   )
 }
 
@@ -436,7 +426,7 @@ export default function HowItWorksPage() {
       style={{ colorScheme: dark ? 'dark' : 'light' }}
       className="min-h-screen bg-white night:bg-gray-950 text-gray-900 night:text-white overflow-x-clip"
     >
-      <PageHeader theme={{ dark, onToggle: toggleTheme }} />
+      <MarketingHeader nav={NAV} theme={{ dark, onToggle: toggleTheme }} />
 
       <main>
         {/* Intro — short on purpose; the pitch lives on the home page */}
@@ -459,6 +449,8 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
+
+        <SectionNav />
 
         {/* Verification: one timeline, with the ID check shown screen by screen beside it */}
         <section id="verification" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
@@ -544,19 +536,23 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* What all that adds up to */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white night:bg-gray-950">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Eyebrow>Trusted communication</Eyebrow>
-              <h2 className={H2}>Know who you're communicating with</h2>
-              <p className={LEAD}>
-                Pulse combines professional communication with identity and business verification.
-                Users can see what has been confirmed before they start a conversation, helping
-                reduce impersonation, fake accounts and uncertainty.
-              </p>
+        {/* Company: websites & representation */}
+        <section id="company" className={`px-4 sm:px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto">
+              <Eyebrow>Websites &amp; representation</Eyebrow>
+              <h2 className={H2}>Show which company you work for</h2>
+              <p className={LEAD}>Choose how to verify. Each route gives different access on Pulse.</p>
             </div>
-            <TrustedChatMockup />
+
+            <div className="mt-10 grid md:grid-cols-3 gap-5">
+              {WEBSITE_ROUTES.map((r) => <RouteCard key={r.title} route={r} />)}
+            </div>
+
+            <p className="mt-8 text-sm text-gray-500 night:text-gray-400 max-w-3xl mx-auto text-center">
+              A business can only be claimed once. After an admin verifies by head tag or DNS, everyone
+              else joins by company email as a Representative — no approval needed.
+            </p>
           </div>
         </section>
 
@@ -594,26 +590,6 @@ export default function HowItWorksPage() {
             >
               Create free account
             </Link>
-          </div>
-        </section>
-
-        {/* Company: websites & representation */}
-        <section id="company" className={`px-4 sm:px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto">
-              <Eyebrow>Websites &amp; representation</Eyebrow>
-              <h2 className={H2}>Show which company you work for</h2>
-              <p className={LEAD}>Choose how to verify. Each route gives different access on Pulse.</p>
-            </div>
-
-            <div className="mt-10 grid md:grid-cols-3 gap-5">
-              {WEBSITE_ROUTES.map((r) => <RouteCard key={r.title} route={r} />)}
-            </div>
-
-            <p className="mt-8 text-sm text-gray-500 night:text-gray-400 max-w-3xl mx-auto text-center">
-              A business can only be claimed once. After an admin verifies by head tag or DNS, everyone
-              else joins by company email as a Representative — no approval needed.
-            </p>
           </div>
         </section>
 

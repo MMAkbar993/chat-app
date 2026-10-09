@@ -189,7 +189,7 @@ export function TrustedChatMockup({ wide = false }) {
 // try_files match the directory instead of falling through to the SPA, and it 403s.
 const KYC_SLIDES = [
   { src: '/marketing/kyc-1-start.png', label: 'Start verification', alt: 'Verification for Pulse start screen listing ID verification and face verification, approximately one minute' },
-  { src: '/marketing/kyc-2-document.png', label: 'Prepare your document', alt: 'Prepare your document screen asking for the country and type of ID, and a photo of the front' },
+  { src: '/marketing/kyc-2-document.png', label: 'Prepare your document', alt: 'Prepare your document screen asking for the country and type of ID, and a photo of the front', country: 'Malta' },
   { src: '/marketing/kyc-3-camera.png', label: 'Prepare for the camera', alt: 'Prepare for the camera screen with tips: good lighting, nothing covering your face, no glasses' },
   { src: '/marketing/kyc-4-selfie.png', label: 'Selfie capture', alt: 'Selfie capture screen with a face positioned inside an oval frame' },
   { src: '/marketing/kyc-5-verified.png', label: "You've been verified", alt: "Confirmation screen reading You've been verified, no further action needed" },
@@ -200,6 +200,37 @@ const SLIDE_MS = 3500
 // "tall" (default): real-phone proportions — a home-indicator strip under the screen, thin
 // gradient bezel and side buttons, so it reads as a modern handset rather than a stubby one.
 // "classic": the previous frame. Kept for comparison via ?phone=classic; delete the loser.
+// TODO: retake kyc-2-document.png in Didit with Malta selected, then delete this and the
+// `country` on that slide. Until then this covers the screenshot's country chip (which reads
+// Abkhazia) with one that matches it exactly. Measured from the 686×1161 image: chip at
+// x 37–334, y 303–365, fill #f4f4f6; flag 27px wide, 23px in; text #272d3b, 25px, 76px in.
+// Sizes are in cqw — percent of the screenshot's width — so it lines up in either phone frame.
+function CountryChip({ name }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute flex items-center bg-[#f4f4f6] text-[#272d3b] font-medium leading-none whitespace-nowrap"
+      style={{
+        left: '5.39%', top: '26.10%', width: '43.44%', height: '5.43%',
+        borderRadius: '3.2cqw', paddingLeft: '3.35cqw', gap: '3.79cqw', fontSize: '3.64cqw',
+      }}
+    >
+      {/* Malta: white hoist, red fly. Drawn rather than an emoji — Windows shows flag emoji as letters. */}
+      <svg viewBox="0 0 20 20" className="shrink-0" style={{ width: '3.94cqw', height: '3.94cqw' }}>
+        <defs>
+          <clipPath id="malta-flag-clip"><circle cx="10" cy="10" r="10" /></clipPath>
+        </defs>
+        <g clipPath="url(#malta-flag-clip)">
+          <rect width="10" height="20" fill="#ffffff" />
+          <rect x="10" width="10" height="20" fill="#cf142b" />
+        </g>
+        <circle cx="10" cy="10" r="9.5" fill="none" stroke="rgba(0,0,0,0.12)" />
+      </svg>
+      {name}
+    </span>
+  )
+}
+
 function KycScreen({ index, tall }) {
   return (
     <>
@@ -211,16 +242,17 @@ function KycScreen({ index, tall }) {
           <svg className="w-5 h-2.5" viewBox="0 0 20 10" fill="none"><rect x=".5" y=".5" width="16" height="9" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="11" height="6" rx="1.2" fill="currentColor"/><rect x="17.5" y="3.5" width="1.5" height="3" rx=".7" fill="currentColor"/></svg>
         </span>
       </div>
-      <div className="relative aspect-680/1150">
+      {/* @container: CountryChip sizes itself as a share of this box's width */}
+      <div className="relative aspect-680/1150 @container">
         {KYC_SLIDES.map((s, i) => (
-          <img
+          <div
             key={s.src}
-            src={s.src}
-            alt={s.alt}
             aria-hidden={i !== index}
-            loading="lazy"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
-          />
+            className={`absolute inset-0 transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <img src={s.src} alt={s.alt} loading="lazy" className="w-full h-full object-cover" />
+            {s.country && <CountryChip name={s.country} />}
+          </div>
         ))}
       </div>
       {tall && (
