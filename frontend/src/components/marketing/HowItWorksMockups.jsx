@@ -282,26 +282,42 @@ export function KycSlider() {
       role="region"
       aria-roledescription="carousel"
       aria-label="Identity verification steps"
-      className="flex flex-col sm:flex-row items-center justify-center gap-8"
+      className="relative flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-10"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      {/* Phone */}
-      <div className="flex flex-col items-center gap-4 shrink-0">
-        <div className="w-60 sm:w-64 rounded-[2.5rem] bg-gray-900 p-2.5 shadow-2xl shadow-violet-900/20">
-          <div className="relative rounded-4xl overflow-hidden bg-white aspect-680/1150">
-            {KYC_SLIDES.map((s, i) => (
-              <img
-                key={s.src}
-                src={s.src}
-                alt={s.alt}
-                aria-hidden={i !== index}
-                loading="lazy"
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
-              />
-            ))}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_35%_50%,rgba(139,92,246,0.16),transparent_60%)]"
+      />
+
+      {/* Phone. The screenshots are of the screen alone, so without a status bar and island
+          they read as a card in a frame rather than a phone — which is what looked squashed. */}
+      <div className="relative flex flex-col items-center gap-4 shrink-0">
+        <div className="w-60 rounded-[2.75rem] bg-[#1B1533] p-2.5 shadow-2xl shadow-violet-900/25 ring-1 ring-black/10">
+          <div className="relative rounded-[2.15rem] overflow-hidden bg-white">
+            <div className="relative flex items-center justify-between px-6 pt-2.5 pb-1 text-[11px] font-semibold text-gray-900">
+              <span>9:41</span>
+              <span aria-hidden="true" className="absolute left-1/2 top-2 -translate-x-1/2 w-20 h-5 rounded-full bg-[#1B1533]" />
+              <span aria-hidden="true" className="flex items-center gap-1">
+                <svg className="w-3.5 h-2.5" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2.5" height="4" rx=".6"/><rect x="3.8" y="4" width="2.5" height="6" rx=".6"/><rect x="7.6" y="2" width="2.5" height="8" rx=".6"/><rect x="11.4" y="0" width="2.5" height="10" rx=".6"/></svg>
+                <svg className="w-5 h-2.5" viewBox="0 0 20 10" fill="none"><rect x=".5" y=".5" width="16" height="9" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="11" height="6" rx="1.2" fill="currentColor"/><rect x="17.5" y="3.5" width="1.5" height="3" rx=".7" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div className="relative aspect-680/1150">
+              {KYC_SLIDES.map((s, i) => (
+                <img
+                  key={s.src}
+                  src={s.src}
+                  alt={s.alt}
+                  aria-hidden={i !== index}
+                  loading="lazy"
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -335,49 +351,102 @@ export function KycSlider() {
         </div>
       </div>
 
-      {/* Step list — doubles as the caption, and lets people jump to any screen */}
-      <ol className="w-full sm:w-56 space-y-1.5">
-        {KYC_SLIDES.map((s, i) => (
-          <li key={s.src}>
-            <button
-              type="button"
-              onClick={() => go(i)}
-              aria-current={i === index ? 'step' : undefined}
-              className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                i === index ? 'bg-white shadow-sm' : 'hover:bg-white/60'
-              }`}
-            >
-              <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 transition-colors ${
-                i < index ? 'bg-green-500 text-white' : i === index ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-600'
-              }`}>
-                {i < index ? <I d={P.check} className="w-3.5 h-3.5" stroke={3} /> : i + 1}
-              </span>
-              <span className={`text-sm ${i === index ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{s.label}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
+      {/* Step list in its own card — doubles as the caption and lets people jump to a screen —
+          with who actually runs the check underneath. */}
+      <div className="relative w-full sm:w-60 flex flex-col gap-4">
+        <ol className="rounded-2xl bg-white p-2 ring-1 ring-gray-100 shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)] space-y-0.5">
+          {KYC_SLIDES.map((s, i) => (
+            <li key={s.src}>
+              <button
+                type="button"
+                onClick={() => go(i)}
+                aria-current={i === index ? 'step' : undefined}
+                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                  i === index ? 'bg-violet-50' : 'hover:bg-gray-50'
+                }`}
+              >
+                <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 transition-colors ${
+                  i < index ? 'bg-green-500 text-white' : i === index ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-600'
+                }`}>
+                  {i < index ? <I d={P.check} className="w-3.5 h-3.5" stroke={3} /> : i + 1}
+                </span>
+                <span className={`text-sm ${i === index ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{s.label}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-gray-100 shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)]">
+          <span className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+            <I d={P.shield} className="w-5 h-5" />
+          </span>
+          <span>
+            <span className="block text-sm font-semibold text-gray-900">Verified by Didit</span>
+            <span className="block text-xs text-gray-500">ID and liveness check</span>
+          </span>
+        </div>
+      </div>
     </div>
   )
 }
 
-// Header graphic for social verification.
-// large: the strip was built for a small card. Given a whole row it needs bigger icons and
-// height to match, or it reads as a thin band floating in white space.
-export function SocialConnectVisual({ large = false }) {
+const SOCIAL_ACCOUNTS = [
+  { key: 'twitter', label: 'X' },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'youtube', label: 'YouTube' },
+  { key: 'kick', label: 'Kick' },
+  { key: 'twitch', label: 'Twitch' },
+]
+
+const CARD_SHADOW = 'shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)]'
+
+export function SocialProfileVisual() {
   return (
-    <div
-      aria-hidden="true"
-      className={`rounded-xl bg-lavender flex flex-col items-center justify-center ${large ? 'min-h-64 gap-5 p-8' : 'h-28 gap-3'}`}
-    >
-      <div className={`flex flex-wrap justify-center ${large ? 'gap-3' : 'gap-2'}`}>
-        {['affiliate_roulette', 'twitter', 'instagram', 'youtube', 'kick', 'twitch'].map((k) => (
-          <SocialIcon key={k} platform={k} size={large ? 44 : 26} />
-        ))}
+    <div aria-hidden="true" className="relative flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-0">
+      <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_40%_50%,rgba(139,92,246,0.14),transparent_60%)]" />
+
+      {/* What a stranger sees on the profile */}
+      <div className="relative rounded-3xl bg-violet-100/70 p-4 shrink-0">
+        <div className={`w-60 rounded-2xl bg-white overflow-hidden ${CARD_SHADOW}`}>
+          <div className="h-16 bg-linear-to-r from-violet-600 to-purple-400" />
+          <div className="-mt-10 flex flex-col items-center px-5 pb-5">
+            <span className="relative">
+              <Avatar name="Daniel Reyes" color="from-amber-400 to-orange-500" className="w-20 h-20 text-xl ring-4 ring-white" />
+              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-violet-600 ring-2 ring-white text-white flex items-center justify-center">
+                <I d={P.check} className="w-3.5 h-3.5" stroke={3} />
+              </span>
+            </span>
+            <p className="mt-3 text-base font-bold text-gray-900">Daniel Reyes</p>
+            <p className="text-xs text-gray-500">Affiliate Manager</p>
+            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+              <I d={P.check} className="w-3 h-3" stroke={3} /> Identity verified
+            </span>
+            <p className="mt-4 self-start text-xs font-medium text-gray-500">Connected profiles</p>
+            <div className="mt-2 self-start flex gap-1.5">
+              {SOCIAL_ACCOUNTS.map((a) => <SocialIcon key={a.key} platform={a.key} size={34} />)}
+            </div>
+          </div>
+        </div>
       </div>
-      <span className={`inline-flex items-center gap-1.5 rounded-full bg-white font-semibold text-green-700 shadow-sm ${large ? 'px-3.5 py-1.5 text-xs' : 'px-2.5 py-1 text-[10px]'}`}>
-        <I d={P.lock} className={large ? 'w-3.5 h-3.5' : 'w-3 h-3'} /> Connected by secure login
-      </span>
+
+      {/* Bracket from the card out to each account */}
+      <svg className="hidden sm:block w-8 h-[260px] text-violet-300 shrink-0" viewBox="0 0 32 260" fill="none">
+        <path d="M0 130H14M32 32Q16 32 16 48V212Q16 228 32 228" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+      </svg>
+
+      <ul className={`relative w-52 rounded-2xl bg-white p-2 ring-1 ring-gray-100 divide-y divide-gray-100 ${CARD_SHADOW}`}>
+        {SOCIAL_ACCOUNTS.map((a) => (
+          <li key={a.key} className="h-12 flex items-center gap-3 px-2">
+            <SocialIcon platform={a.key} size={30} />
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-gray-900 leading-tight">{a.label}</span>
+              <span className="block text-[11px] text-gray-500">Verified</span>
+            </span>
+            <span className="w-6 h-6 rounded-full bg-green-50 ring-1 ring-green-100 text-green-600 flex items-center justify-center">
+              <I d={P.check} className="w-3 h-3" stroke={3} />
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

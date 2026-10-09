@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import {
-  AppMockup, ProfileMockup, KycSlider, SocialConnectVisual,
+  AppMockup, ProfileMockup, KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
 } from '../components/marketing/HowItWorksMockups'
 import FaqSection from '../components/settings/FaqSection'
@@ -77,25 +77,23 @@ const STEPS = [
   },
 ]
 
-// Identity gets its own row with the screenshot slider — it's the mandatory check and the
-// one people are most unsure about, so it earns the most room.
+// Identity and social each get a full row: the copy on one side and a picture of the real
+// thing on the other, numbered as the two checks a member goes through.
 const IDENTITY = {
-  title: 'Identity verification',
-  lead: 'Every user is verified before accessing Pulse.',
+  lead: 'We verify your identity using our partner Didit with a government-issued ID and a quick selfie check. This ensures a safe and trusted community where you always know who you\'re speaking with.',
   points: [
-    'Identity is checked through Didit using a government-issued identity document.',
-    'A liveness and biometric check confirms that the document belongs to the person presenting it.',
-    'If the automated check cannot be completed, the request is sent for manual review.',
-    'No anonymous users or unverified accounts can access the platform.',
+    'Identity is checked through Didit using a government-issued ID.',
+    'A liveness and biometric check confirms you are the person on the ID.',
+    'No anonymous or unverified accounts can access the platform.',
+    'Your ID data is secure and never shown on Pulse.',
   ],
 }
 
 const SOCIAL = {
-  title: 'Social profile verification',
-  lead: 'Connect your professional social accounts securely.',
+  lead: 'Link your social profiles to show which accounts you own and build trust with the iGaming community. This confirms that you control the account, not just a link.',
   points: [
-    'Connect supported social accounts by logging in through the platform itself.',
-    'This confirms that you control the account, rather than simply adding a social media link.',
+    'Connect supported social accounts by logging in securely.',
+    'This confirms that you control the account.',
     'Supported platforms include X, Instagram, YouTube, Kick and Twitch.',
     'Connected profiles can appear on your public Pulse profile.',
   ],
@@ -205,6 +203,29 @@ function Eyebrow({ children }) {
       <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
       {children}
     </span>
+  )
+}
+
+function StepEyebrow({ n, children }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm bg-white text-violet-600">
+      {n} <span className="text-violet-300">•</span> {children}
+    </span>
+  )
+}
+
+function CheckList({ items }) {
+  return (
+    <ul className="mt-6 space-y-3.5">
+      {items.map((p) => (
+        <li key={p} className="flex items-center gap-3 text-gray-600">
+          <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+            <Icon path="M5 13l4 4L19 7" className="w-4 h-4" />
+          </span>
+          <span>{p}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -384,27 +405,22 @@ export default function HowItWorksPage() {
             <ProfileMockup />
           </div>
 
-          {/* Identity: the copy beside a walkthrough of the real verification screens */}
-          <div className="mt-14 rounded-3xl bg-white/60 p-5 sm:p-8 grid lg:grid-cols-2 gap-10 items-center">
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
-                <Icon path="M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z" className="w-5 h-5" />
-              </span>
-              <p className="mt-5 text-xl font-bold">{IDENTITY.title}</p>
-              <p className="text-sm font-medium text-violet-600">{IDENTITY.lead}</p>
-              <ul className="mt-4 space-y-2.5">
-                {IDENTITY.points.map((p) => (
-                  <li key={p} className="flex gap-2.5 text-sm text-gray-600 leading-relaxed">
-                    <Icon path="M5 13l4 4L19 7" className="w-3.5 h-3.5 mt-1 shrink-0 text-violet-500" />
-                    <span>{p}</span>
-                  </li>
-                ))}
-              </ul>
+          {/* 1 — Identity */}
+          <div className="mt-20 grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <StepEyebrow n={1}>Identity verification</StepEyebrow>
+              <h3 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] text-gray-900">
+                Every member is{' '}
+                <span className="bg-linear-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">verified</span>
+                {' '}before accessing <span className="text-violet-700">Pulse.</span>
+              </h3>
+              <p className="mt-5 text-lg text-gray-600 leading-relaxed">{IDENTITY.lead}</p>
+              <CheckList items={IDENTITY.points} />
               {/* Backed by the Help Center's retention answer: the ID provider deletes
                   verification data after a maximum of one month, and Pulse keeps only
-                  verification-status metadata. Keep the two in step if either changes. */}
-              <div className="mt-5 flex gap-3 rounded-xl bg-green-50 px-4 py-3">
-                <Icon path="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" className="w-4 h-4 mt-0.5 shrink-0 text-green-600" />
+                  verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
+              <div className="mt-7 flex gap-4 rounded-2xl bg-green-50 px-5 py-4">
+                <Icon path="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" className="w-6 h-6 mt-0.5 shrink-0 text-green-600" />
                 <p className="text-sm text-green-800 leading-relaxed">
                   <span className="font-semibold">Your ID data is not kept.</span> Your documents
                   and selfie are automatically deleted after 30 days. Pulse only keeps a record
@@ -415,23 +431,18 @@ export default function HowItWorksPage() {
             <KycSlider />
           </div>
 
-          <div className="mt-5 rounded-3xl bg-white/60 p-5 sm:p-8 grid lg:grid-cols-2 gap-10 items-center">
-            <SocialConnectVisual large />
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
-                <Icon path="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" className="w-5 h-5" />
-              </span>
-              <p className="mt-5 text-xl font-bold">{SOCIAL.title}</p>
-              <p className="text-sm font-medium text-violet-600">{SOCIAL.lead}</p>
-              <ul className="mt-4 space-y-2.5">
-                {SOCIAL.points.map((p) => (
-                  <li key={p} className="flex gap-2.5 text-sm text-gray-600 leading-relaxed">
-                    <Icon path="M5 13l4 4L19 7" className="w-3.5 h-3.5 mt-1 shrink-0 text-violet-500" />
-                    <span>{p}</span>
-                  </li>
-                ))}
-              </ul>
+          {/* 2 — Social */}
+          <div className="mt-24 grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <StepEyebrow n={2}>Social profile verification</StepEyebrow>
+              <h3 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] text-gray-900">
+                Connect your professional social accounts{' '}
+                <span className="bg-linear-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">securely.</span>
+              </h3>
+              <p className="mt-5 text-lg text-gray-600 leading-relaxed">{SOCIAL.lead}</p>
+              <CheckList items={SOCIAL.points} />
             </div>
+            <SocialProfileVisual />
           </div>
 
           <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
