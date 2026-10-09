@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // Non-component pieces shared by the public marketing pages. Kept apart from
 // MarketingChrome.jsx so that file exports only components (fast refresh needs that).
@@ -45,4 +45,43 @@ export function useScrollOnArrive(hash) {
     if (target) target.scrollIntoView()
     else window.scrollTo(0, 0)
   }, [hash])
+}
+
+// The same key the app uses (ChatPage), so the choice is one setting across Pulse: pick dark in
+// the app and these pages open dark, and the other way round. '1' = dark, '0' = light.
+const THEME_KEY = 'pulse:darkMode'
+
+function storedTheme() {
+  try {
+    const v = localStorage.getItem(THEME_KEY)
+    if (v === '1') return true
+    if (v === '0') return false
+  } catch { /* storage blocked: fall back to the system setting */ }
+  return null
+}
+
+// [dark, toggle]. With nothing saved, follows the device's light/dark setting — and keeps
+// following it if that changes — until the visitor picks one themselves.
+export function useMarketingTheme() {
+  const [chosen, setChosen] = useState(storedTheme)
+  const [system, setSystem] = useState(
+    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (!mq) return undefined
+    const onChange = (e) => setSystem(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  const dark = chosen ?? system
+  const toggle = useCallback(() => {
+    const next = !dark
+    setChosen(next)
+    try { localStorage.setItem(THEME_KEY, next ? '1' : '0') } catch { /* not remembered, still applied */ }
+  }, [dark])
+
+  return [dark, toggle]
 }

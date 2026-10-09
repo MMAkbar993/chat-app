@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { HOME_META } from './howItWorksMeta'
 import { HOME_CONTENT as C } from './homeContent'
 import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
-import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive } from '../components/marketing/marketingHelpers'
+import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
 import { TrustedChatMockup, ProfileMockup } from '../components/marketing/HowItWorksMockups'
 import { QaRow } from '../components/settings/FaqSection'
 
@@ -44,7 +44,7 @@ const NAV = [
 
 // text-balance evens out line lengths, so a heading never leaves one word alone on its last line.
 const H2 = 'mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight text-balance'
-const LEAD = 'mt-4 text-gray-600 leading-relaxed'
+const LEAD = 'mt-4 text-gray-600 night:text-gray-300 leading-relaxed'
 const CHECK = 'M5 13l4 4L19 7'
 const ARROW = 'M13 7l5 5m0 0l-5 5m5-5H6'
 const BTN_PRIMARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors shadow-md shadow-violet-600/20 ${FOCUS}`
@@ -53,7 +53,7 @@ const euro = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`
 // Percentage saved by paying yearly, rounded down so it is never overstated.
 const yearlySaving = (monthly, yearly) => Math.floor((1 - yearly / (monthly * 12)) * 100)
 
-const BTN_SECONDARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-white border border-gray-200 hover:border-violet-300 font-semibold transition-colors ${FOCUS}`
+const BTN_SECONDARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-white night:bg-gray-900 border border-gray-200 night:border-gray-700 hover:border-violet-300 night:hover:border-violet-500 font-semibold transition-colors ${FOCUS}`
 
 function SectionIntro({ eyebrow, heading, children }) {
   return (
@@ -76,9 +76,9 @@ function SocialProof() {
     : stats
 
   return (
-    <section aria-label="Social proof" className="px-4 sm:px-6 py-10 border-y border-gray-100">
+    <section aria-label="Social proof" className="px-4 sm:px-6 py-10 border-y border-gray-100 night:border-gray-800">
       <div className="max-w-6xl mx-auto">
-        <p className="text-center text-sm font-medium text-gray-500">{SOCIAL_PROOF.label}</p>
+        <p className="text-center text-sm font-medium text-gray-500 night:text-gray-400">{SOCIAL_PROOF.label}</p>
 
         {/* Wraps three to a row on phones with the last row centred, one row from tablet up. */}
         {(preview || logos.length > 0) && (
@@ -86,7 +86,7 @@ function SocialProof() {
             {preview
               ? SOCIAL_PROOF.logos.map((l, i) => (
                   <li key={i}>
-                    <span role="img" aria-label={l.alt} className="block h-8 w-24 rounded-md bg-gray-300/60" />
+                    <span role="img" aria-label={l.alt} className="block h-8 w-24 rounded-md bg-gray-300/60 night:bg-gray-700/60" />
                   </li>
                 ))
               : logos.map((l) => (
@@ -102,8 +102,8 @@ function SocialProof() {
             {shownStats.map((s) => (
               // Label first in the markup (as a definition list requires), number first on screen.
               <div key={s.label} className="flex flex-col-reverse">
-                <dt className="text-sm text-gray-500">{s.label}</dt>
-                <dd className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">{s.value}{s.suffix}</dd>
+                <dt className="text-sm text-gray-500 night:text-gray-400">{s.label}</dt>
+                <dd className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 night:text-white">{s.value}{s.suffix}</dd>
               </div>
             ))}
           </dl>
@@ -118,12 +118,17 @@ export default function HomePage() {
   usePageMeta(HOME_META)
   useScrollOnArrive(hash)
   const [openFaq, setOpenFaq] = useState(null)
+  const [dark, toggleTheme] = useMarketingTheme()
 
   // overflow-x-clip, not -hidden: hidden makes this div a scroll container, which stops the
   // sticky header sticking — it would scroll away with the page.
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-clip">
-      <MarketingHeader nav={NAV} />
+    <div
+      data-theme={dark ? 'dark' : 'light'}
+      style={{ colorScheme: dark ? 'dark' : 'light' }}
+      className="min-h-screen bg-white night:bg-gray-950 text-gray-900 night:text-white overflow-x-clip"
+    >
+      <MarketingHeader nav={NAV} theme={{ dark, onToggle: toggleTheme }} />
 
       <main>
         {/* 1. Hero */}
@@ -134,12 +139,12 @@ export default function HomePage() {
               <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight text-balance">
                 {C.hero.headline}
               </h1>
-              <p className="mt-5 text-lg text-gray-600 leading-relaxed">{C.hero.subtext}</p>
+              <p className="mt-5 text-lg text-gray-600 night:text-gray-300 leading-relaxed">{C.hero.subtext}</p>
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                 <Link to={C.hero.primaryCta.to} className={BTN_PRIMARY}>{C.hero.primaryCta.label}</Link>
                 <Link to={C.hero.secondaryCta.to} className={BTN_SECONDARY}>{C.hero.secondaryCta.label}</Link>
               </div>
-              <p className="mt-4 text-sm text-gray-500">{C.hero.footnote}</p>
+              <p className="mt-4 text-sm text-gray-500 night:text-gray-400">{C.hero.footnote}</p>
             </div>
             <TrustedChatMockup wide />
           </div>
@@ -149,17 +154,17 @@ export default function HomePage() {
         <SocialProof />
 
         {/* 3. The problem */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender">
+        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.problem.eyebrow} heading={C.problem.heading} />
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
               {C.problem.cards.map((c) => (
-                <li key={c.title} className="rounded-2xl bg-white p-6 shadow-sm">
-                  <span className="w-11 h-11 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                <li key={c.title} className="rounded-2xl bg-white night:bg-gray-900 p-6 shadow-sm">
+                  <span className="w-11 h-11 rounded-xl bg-rose-50 night:bg-rose-500/10 text-rose-500 night:text-rose-400 flex items-center justify-center">
                     <Icon path={c.icon} />
                   </span>
                   <h3 className="mt-4 text-lg font-bold">{c.title}</h3>
-                  <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">{c.body}</p>
+                  <p className="mt-1.5 text-sm text-gray-600 night:text-gray-300 leading-relaxed">{c.body}</p>
                 </li>
               ))}
             </ul>
@@ -172,16 +177,16 @@ export default function HomePage() {
             <SectionIntro eyebrow={C.fixes.eyebrow} heading={C.fixes.heading} />
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
               {C.fixes.cards.map((c) => (
-                <li key={c.title} className="flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <li key={c.title} className="flex flex-col rounded-2xl border border-gray-100 night:border-gray-800 bg-white night:bg-gray-900 p-6 shadow-sm">
                   <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
                     <Icon path={c.icon} />
                   </span>
                   <h3 className="mt-4 text-lg font-bold">{c.title}</h3>
-                  <p className="mt-1.5 text-sm text-gray-600 leading-relaxed flex-1">{c.body}</p>
+                  <p className="mt-1.5 text-sm text-gray-600 night:text-gray-300 leading-relaxed flex-1">{c.body}</p>
                   <Link
                     to={c.to}
                     aria-label={`${C.fixes.linkLabel} about ${c.title.toLowerCase()}`}
-                    className={`mt-4 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}
+                    className={`mt-4 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}
                   >
                     {C.fixes.linkLabel}
                     <Icon path={ARROW} className="w-4 h-4" />
@@ -193,7 +198,7 @@ export default function HomePage() {
         </section>
 
         {/* 5. Verified profile showcase */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender">
+        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Eyebrow>{C.showcase.eyebrow}</Eyebrow>
@@ -201,8 +206,8 @@ export default function HomePage() {
               <p className={LEAD}>{C.showcase.body}</p>
               <ul className="mt-6 space-y-3">
                 {C.showcase.points.map((p) => (
-                  <li key={p} className="flex items-center gap-3 text-gray-600">
-                    <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+                  <li key={p} className="flex items-center gap-3 text-gray-600 night:text-gray-300">
+                    <span className="w-7 h-7 rounded-lg bg-violet-100 night:bg-violet-500/20 text-violet-600 night:text-violet-300 flex items-center justify-center shrink-0">
                       <Icon path={CHECK} className="w-4 h-4" />
                     </span>
                     {p}
@@ -223,21 +228,21 @@ export default function HomePage() {
               {C.pricing.plans.map((p) => (
                 <li
                   key={p.name}
-                  className={`flex flex-col rounded-3xl bg-white p-7 ${
-                    p.highlighted ? 'ring-2 ring-violet-600 shadow-xl shadow-violet-900/10' : 'ring-1 ring-gray-200 shadow-sm'
+                  className={`flex flex-col rounded-3xl bg-white night:bg-gray-900 p-7 ${
+                    p.highlighted ? 'ring-2 ring-violet-600 shadow-xl shadow-violet-900/10' : 'ring-1 ring-gray-200 night:ring-gray-700 shadow-sm'
                   }`}
                 >
-                  <h3 className={`text-lg font-bold ${p.highlighted ? 'text-violet-700' : 'text-gray-900'}`}>{p.name}</h3>
+                  <h3 className={`text-lg font-bold ${p.highlighted ? 'text-violet-700 night:text-violet-300' : 'text-gray-900 night:text-white'}`}>{p.name}</h3>
                   <p className="mt-3 flex items-baseline gap-2">
                     <span className="text-4xl font-extrabold tracking-tight">{p.monthly != null ? euro(p.monthly) : p.price}</span>
-                    <span className="text-gray-500">{p.period}</span>
+                    <span className="text-gray-500 night:text-gray-400">{p.period}</span>
                   </p>
-                  <p className="mt-1 min-h-6 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                  <p className="mt-1 min-h-6 flex flex-wrap items-center gap-2 text-sm text-gray-500 night:text-gray-400">
                     {p.yearly != null && (
                       <>
                         <span>or {euro(p.yearly)}/year</span>
                         {yearlySaving(p.monthly, p.yearly) > 0 && (
-                          <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">
+                          <span className="inline-flex items-center rounded-full bg-green-50 night:bg-green-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-green-700 night:text-green-300">
                             save {yearlySaving(p.monthly, p.yearly)}%
                           </span>
                         )}
@@ -246,8 +251,8 @@ export default function HomePage() {
                   </p>
                   <ul className="mt-6 space-y-3 flex-1">
                     {p.features.map((f) => (
-                      <li key={f} className="flex gap-3 text-sm text-gray-700">
-                        <Icon path={CHECK} className="w-5 h-5 shrink-0 text-violet-600" />
+                      <li key={f} className="flex gap-3 text-sm text-gray-700 night:text-gray-200">
+                        <Icon path={CHECK} className="w-5 h-5 shrink-0 text-violet-600 night:text-violet-300" />
                         {f}
                       </li>
                     ))}
@@ -257,7 +262,7 @@ export default function HomePage() {
                     className={`mt-8 inline-flex justify-center rounded-xl px-6 py-3 font-bold transition-colors ${FOCUS} ${
                       p.highlighted
                         ? 'bg-violet-600 hover:bg-violet-700 text-white'
-                        : 'bg-white border border-gray-200 hover:border-violet-300 text-gray-900'
+                        : 'bg-white night:bg-gray-900 border border-gray-200 night:border-gray-700 hover:border-violet-300 night:hover:border-violet-500 text-gray-900 night:text-white'
                     }`}
                   >
                     {p.cta.label}
@@ -269,15 +274,15 @@ export default function HomePage() {
         </section>
 
         {/* 7. Short FAQ */}
-        <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 scroll-mt-16">
+        <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 scroll-mt-16">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.faq.eyebrow} heading={C.faq.heading} />
-            <div className="mt-10 max-w-3xl mx-auto rounded-2xl border border-gray-100 bg-white px-5 py-2">
+            <div className="mt-10 max-w-3xl mx-auto rounded-2xl border border-gray-100 night:border-gray-800 bg-white night:bg-gray-900 px-5 py-2">
               {C.faq.items.map((item) => (
                 <QaRow
                   key={item.q}
                   item={item}
-                  darkMode={false}
+                  darkMode={dark}
                   open={openFaq === item.q}
                   onToggle={() => setOpenFaq(openFaq === item.q ? null : item.q)}
                 />
@@ -286,7 +291,7 @@ export default function HomePage() {
             <div className="mt-6 text-center">
               <Link
                 to={C.faq.seeAll.to}
-                className={`inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}
+                className={`inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}
               >
                 {C.faq.seeAll.label}
                 <Icon path={ARROW} className="w-4 h-4" />

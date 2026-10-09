@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import { Icon, Eyebrow, HeaderLogo, HeaderActions, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
-import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive } from '../components/marketing/marketingHelpers'
+import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
 import {
   TrustedChatMockup, KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
@@ -253,7 +253,7 @@ const WHAT_PULSE_SEES = [
 ]
 
 const H2 = 'mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight text-balance'
-const LEAD = 'mt-4 text-gray-600 leading-relaxed'
+const LEAD = 'mt-4 text-gray-600 night:text-gray-300 leading-relaxed'
 const CHECK = 'M5 13l4 4L19 7'
 const CROSS = 'M6 18L18 6M6 6l12 12'
 const LOCK = 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
@@ -262,8 +262,8 @@ function CheckList({ items }) {
   return (
     <ul className="mt-6 space-y-3.5">
       {items.map((p) => (
-        <li key={p} className="flex items-center gap-3 text-gray-600">
-          <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+        <li key={p} className="flex items-center gap-3 text-gray-600 night:text-gray-300">
+          <span className="w-7 h-7 rounded-lg bg-violet-100 night:bg-violet-500/20 text-violet-600 night:text-violet-300 flex items-center justify-center shrink-0">
             <Icon path={CHECK} className="w-4 h-4" />
           </span>
           <span>{p}</span>
@@ -284,20 +284,20 @@ function ProBadge() {
 function RouteCard({ route }) {
   const admin = route.grant === 'admin'
   return (
-    <div className={`flex flex-col rounded-2xl border p-6 shadow-sm ${admin ? 'border-violet-100 bg-violet-50/40' : 'border-green-100 bg-green-50/40'}`}>
+    <div className={`flex flex-col rounded-2xl border p-6 shadow-sm ${admin ? 'border-violet-100 night:border-violet-500/20 bg-violet-50/40 night:bg-violet-500/10' : 'border-green-100 night:border-green-500/20 bg-green-50/40 night:bg-green-500/10'}`}>
       <div className="flex items-center justify-between gap-2 mb-4">
-        <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${admin ? 'bg-violet-100 text-violet-600' : 'bg-green-100 text-green-600'}`}>
+        <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${admin ? 'bg-violet-100 night:bg-violet-500/20 text-violet-600 night:text-violet-300' : 'bg-green-100 night:bg-green-500/20 text-green-600 night:text-green-400'}`}>
           <Icon path={route.path} />
         </span>
         <span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 text-white ${admin ? 'bg-violet-600' : 'bg-green-600'}`}>
           {admin ? 'Admin Access' : 'Representative'}
         </span>
       </div>
-      <h3 className="text-lg font-bold text-gray-900">{route.title}</h3>
-      <p className="mt-1 text-sm text-gray-500">{route.blurb}</p>
+      <h3 className="text-lg font-bold text-gray-900 night:text-white">{route.title}</h3>
+      <p className="mt-1 text-sm text-gray-500 night:text-gray-400">{route.blurb}</p>
       <ul className="mt-4 space-y-2">
         {route.points.map((p) => (
-          <li key={p} className="flex gap-2.5 text-sm text-gray-700">
+          <li key={p} className="flex gap-2.5 text-sm text-gray-700 night:text-gray-200">
             <Icon path={CHECK} className={`w-4 h-4 mt-0.5 shrink-0 ${admin ? 'text-violet-500' : 'text-green-500'}`} />
             <span>{p}</span>
           </li>
@@ -311,7 +311,7 @@ function RouteCard({ route }) {
 // in place of the site-wide header. The current section is whichever one's top has most
 // recently passed just under the bar. Phones get the section links as a second row inside the
 // same sticky header, scrolling sideways and keeping the current one in view.
-function PageHeader() {
+function PageHeader({ theme }) {
   const [active, setActive] = useState(null)
   const barRef = useRef(null)
   const linkRefs = useRef({})
@@ -352,11 +352,11 @@ function PageHeader() {
 
   const linkClass = (id) =>
     `shrink-0 whitespace-nowrap flex items-center px-3 text-sm font-medium border-b-2 transition-colors ${FOCUS} ${
-      active === id ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-600 hover:text-violet-600'
+      active === id ? 'border-violet-600 text-violet-700 night:text-violet-300' : 'border-transparent text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300'
     }`
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100">
+    <header className="sticky top-0 z-40 bg-white/90 night:bg-gray-950/90 backdrop-blur border-b border-gray-100 night:border-gray-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <HeaderLogo />
         <nav aria-label="On this page" className="hidden lg:flex self-stretch gap-1">
@@ -366,10 +366,10 @@ function PageHeader() {
             </a>
           ))}
         </nav>
-        <HeaderActions />
+        <HeaderActions theme={theme} />
       </div>
       {/* Phones and tablets: the same links, one row down, scrolling sideways */}
-      <nav aria-label="On this page" className="lg:hidden border-t border-gray-100">
+      <nav aria-label="On this page" className="lg:hidden border-t border-gray-100 night:border-gray-800">
         <div ref={barRef} className="max-w-6xl mx-auto px-4 sm:px-6 h-11 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
           {SECTION_NAV.map((s) => (
             <a
@@ -393,12 +393,12 @@ function CompareCell({ value }) {
     return (
       // On phones "Pro" sits under the tick, so the column stays narrow enough for all four to fit.
       <span className="inline-flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
-        <span className="w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+        <span className="w-6 h-6 rounded-full bg-green-50 night:bg-green-500/10 text-green-600 night:text-green-400 flex items-center justify-center">
           <Icon path={CHECK} className="w-3.5 h-3.5" />
         </span>
         <span className="sr-only">Yes</span>
         {value === 'pro' && (
-          <span className="text-[11px] font-semibold text-violet-700">
+          <span className="text-[11px] font-semibold text-violet-700 night:text-violet-300">
             <span aria-hidden="true">Pro</span>
             <span className="sr-only">, on Pulse Pro</span>
           </span>
@@ -407,11 +407,11 @@ function CompareCell({ value }) {
     )
   }
   if (value === 'partial') {
-    return <span className="text-xs font-medium text-gray-500">Limited</span>
+    return <span className="text-xs font-medium text-gray-500 night:text-gray-400">Limited</span>
   }
   return (
     <span className="inline-flex">
-      <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center">
+      <span className="w-6 h-6 rounded-full bg-gray-100 night:bg-gray-800 text-gray-400 night:text-gray-500 flex items-center justify-center">
         <Icon path={CROSS} className="w-3.5 h-3.5" />
       </span>
       <span className="sr-only">No</span>
@@ -426,12 +426,17 @@ export default function HowItWorksPage() {
   // Temporary: compare phone frames with ?phone=classic until one is chosen.
   const [searchParams] = useSearchParams()
   const phoneStyle = searchParams.get('phone') === 'classic' ? 'classic' : 'tall'
+  const [dark, toggleTheme] = useMarketingTheme()
 
   // overflow-x-clip, not -hidden: hidden makes this div a scroll container, which stops the
   // sticky header sticking — it would scroll away with the page.
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-clip">
-      <PageHeader />
+    <div
+      data-theme={dark ? 'dark' : 'light'}
+      style={{ colorScheme: dark ? 'dark' : 'light' }}
+      className="min-h-screen bg-white night:bg-gray-950 text-gray-900 night:text-white overflow-x-clip"
+    >
+      <PageHeader theme={{ dark, onToggle: toggleTheme }} />
 
       <main>
         {/* Intro — short on purpose; the pitch lives on the home page */}
@@ -442,7 +447,7 @@ export default function HowItWorksPage() {
               From sign-up to your first verified conversation
             </h1>
             {/* TODO: confirm "About 2 minutes" — see the TIMELINE timings above. */}
-            <p className="mt-5 text-lg text-gray-600 leading-relaxed">
+            <p className="mt-5 text-lg text-gray-600 night:text-gray-300 leading-relaxed">
               About 2 minutes to create your account and verify your identity.
             </p>
             <Link
@@ -456,7 +461,7 @@ export default function HowItWorksPage() {
 
 
         {/* Verification: one timeline, with the ID check shown screen by screen beside it */}
-        <section id="verification" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender ${SECTION_SCROLL_MARGIN}`}>
+        <section id="verification" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="max-w-2xl">
               <Eyebrow>Verification</Eyebrow>
@@ -473,7 +478,7 @@ export default function HowItWorksPage() {
                     )}
                     <span
                       aria-hidden="true"
-                      className="absolute left-0 top-0 w-10 h-10 rounded-full bg-violet-600 text-white font-bold flex items-center justify-center ring-4 ring-lavender"
+                      className="absolute left-0 top-0 w-10 h-10 rounded-full bg-violet-600 text-white font-bold flex items-center justify-center ring-4 ring-lavender night:ring-gray-950"
                     >
                       {i + 1}
                     </span>
@@ -482,16 +487,16 @@ export default function HowItWorksPage() {
                     </h3>
                     {(s.time || s.required !== undefined) && (
                       <p className="mt-1.5 flex flex-wrap gap-2 text-xs font-semibold">
-                        {s.time && <span className="rounded-full bg-white px-2.5 py-1 text-gray-700 shadow-sm">{s.time}</span>}
+                        {s.time && <span className="rounded-full bg-white night:bg-gray-900 px-2.5 py-1 text-gray-700 night:text-gray-200 shadow-sm">{s.time}</span>}
                         {s.required === true && <span className="rounded-full bg-violet-600 px-2.5 py-1 text-white">Required</span>}
-                        {s.required === false && <span className="rounded-full bg-white px-2.5 py-1 text-gray-500 shadow-sm">Optional</span>}
+                        {s.required === false && <span className="rounded-full bg-white night:bg-gray-900 px-2.5 py-1 text-gray-500 night:text-gray-400 shadow-sm">Optional</span>}
                       </p>
                     )}
-                    <p className="mt-2 text-gray-600 leading-relaxed">{s.desc}</p>
+                    <p className="mt-2 text-gray-600 night:text-gray-300 leading-relaxed">{s.desc}</p>
                     {s.links && (
                       <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                         {s.links.map((l) => (
-                          <a key={l.href} href={l.href} className={`font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}>
+                          <a key={l.href} href={l.href} className={`font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}>
                             {l.label} →
                           </a>
                         ))}
@@ -502,14 +507,14 @@ export default function HowItWorksPage() {
               </ol>
 
               <div>
-                <p className="mb-4 text-sm font-semibold text-gray-500 text-center lg:text-left">Step 2, screen by screen</p>
+                <p className="mb-4 text-sm font-semibold text-gray-500 night:text-gray-400 text-center lg:text-left">Step 2, screen by screen</p>
                 <KycSlider phone={phoneStyle} />
                 {/* Backed by the Help Center's retention answer: the ID provider deletes
                     verification data after a maximum of one month, and Pulse keeps only
                     verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
-                <div className="mt-8 flex gap-4 rounded-2xl bg-green-50 px-5 py-4">
-                  <Icon path={LOCK} className="w-6 h-6 mt-0.5 shrink-0 text-green-600" />
-                  <p className="text-sm text-green-800 leading-relaxed">
+                <div className="mt-8 flex gap-4 rounded-2xl bg-green-50 night:bg-green-500/10 px-5 py-4">
+                  <Icon path={LOCK} className="w-6 h-6 mt-0.5 shrink-0 text-green-600 night:text-green-400" />
+                  <p className="text-sm text-green-800 night:text-green-300 leading-relaxed">
                     <span className="font-semibold">Your ID data is not kept.</span> Your documents
                     and selfie are automatically deleted after 30 days. Pulse only keeps a record
                     that your identity was verified.
@@ -523,15 +528,15 @@ export default function HowItWorksPage() {
               <h3 className="text-xl font-bold">What if…</h3>
               <ul className="mt-5 grid md:grid-cols-3 gap-5">
                 {WHAT_IF.map((w) => (
-                  <li key={w.q} className="rounded-2xl bg-white p-6 shadow-sm">
+                  <li key={w.q} className="rounded-2xl bg-white night:bg-gray-900 p-6 shadow-sm">
                     <h4 className="font-bold">{w.q}</h4>
-                    <p className="mt-2 text-sm text-gray-600 leading-relaxed">{w.a}</p>
+                    <p className="mt-2 text-sm text-gray-600 night:text-gray-300 leading-relaxed">{w.a}</p>
                   </li>
                 ))}
               </ul>
-              <p className="mt-5 text-sm text-gray-600">
+              <p className="mt-5 text-sm text-gray-600 night:text-gray-300">
                 Still stuck?{' '}
-                <a href="mailto:pulse@affiliateroulette.com" className={`font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}>
+                <a href="mailto:pulse@affiliateroulette.com" className={`font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}>
                   Contact Pulse Support
                 </a>
               </p>
@@ -540,7 +545,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* What all that adds up to */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white">
+        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white night:bg-gray-950">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Eyebrow>Trusted communication</Eyebrow>
@@ -556,7 +561,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Social verification — step 3, in detail */}
-        <section id="social" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender ${SECTION_SCROLL_MARGIN}`}>
+        <section id="social" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -568,7 +573,7 @@ export default function HowItWorksPage() {
               <SocialProfileVisual />
             </div>
 
-            <p className="mt-14 text-sm text-gray-500 max-w-3xl mx-auto text-center">
+            <p className="mt-14 text-sm text-gray-500 night:text-gray-400 max-w-3xl mx-auto text-center">
               Identity verification is mandatory. Website and social profile verification are
               optional, but they provide additional context and help others understand who you are
               and who you represent.
@@ -578,10 +583,10 @@ export default function HowItWorksPage() {
 
         {/* Mid-page CTA */}
         <section className="px-4 sm:px-6 py-10">
-          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl border border-violet-100 bg-violet-50 px-6 sm:px-8 py-6 text-center sm:text-left">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl border border-violet-100 night:border-violet-500/20 bg-violet-50 night:bg-violet-500/10 px-6 sm:px-8 py-6 text-center sm:text-left">
             <div>
               <h2 className="text-xl font-bold">Ready to get verified?</h2>
-              <p className="mt-1 text-sm text-gray-600">Create your account and verify your identity in a couple of minutes.</p>
+              <p className="mt-1 text-sm text-gray-600 night:text-gray-300">Create your account and verify your identity in a couple of minutes.</p>
             </div>
             <Link
               to="/signup"
@@ -605,7 +610,7 @@ export default function HowItWorksPage() {
               {WEBSITE_ROUTES.map((r) => <RouteCard key={r.title} route={r} />)}
             </div>
 
-            <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
+            <p className="mt-8 text-sm text-gray-500 night:text-gray-400 max-w-3xl mx-auto text-center">
               A business can only be claimed once. After an admin verifies by head tag or DNS, everyone
               else joins by company email as a Representative — no approval needed.
             </p>
@@ -613,7 +618,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Features */}
-        <section id="features" className={`px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="features" className={`px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 night:border-gray-800 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="max-w-2xl mx-auto text-center">
               <Eyebrow>Features</Eyebrow>
@@ -631,7 +636,7 @@ export default function HowItWorksPage() {
                   <div className="space-y-8">
                     {row.items.map((f) => (
                       <div key={f.title} className="flex gap-4">
-                        <span className="w-11 h-11 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
+                        <span className="w-11 h-11 rounded-xl bg-violet-50 night:bg-violet-500/10 text-violet-600 night:text-violet-300 flex items-center justify-center shrink-0">
                           <Icon path={f.path} className="w-5 h-5" />
                         </span>
                         <div>
@@ -639,7 +644,7 @@ export default function HowItWorksPage() {
                             {f.title}
                             {f.pro && <ProBadge />}
                           </h3>
-                          <p className="mt-1.5 text-gray-600 leading-relaxed">{f.desc}</p>
+                          <p className="mt-1.5 text-gray-600 night:text-gray-300 leading-relaxed">{f.desc}</p>
                         </div>
                       </div>
                     ))}
@@ -649,7 +654,7 @@ export default function HowItWorksPage() {
             </div>
 
             <p className="mt-14 text-center">
-              <Link to="/#pricing" className={`inline-flex items-center gap-1.5 font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}>
+              <Link to="/#pricing" className={`inline-flex items-center gap-1.5 font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}>
                 Compare Free and Pro
                 <Icon path="M13 7l5 5m0 0l-5 5m5-5H6" className="w-4 h-4" />
               </Link>
@@ -658,7 +663,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Share links */}
-        <section id="share-links" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender ${SECTION_SCROLL_MARGIN}`}>
+        <section id="share-links" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div>
               <Eyebrow>Share links</Eyebrow>
@@ -674,7 +679,7 @@ export default function HowItWorksPage() {
                     <span aria-hidden="true" className="w-2 h-2 mt-2 rounded-full bg-violet-500 shrink-0" />
                     <div>
                       <h3 className="font-bold">{s.title}</h3>
-                      <p className="mt-1 text-sm text-gray-600 leading-relaxed">{s.desc}</p>
+                      <p className="mt-1 text-sm text-gray-600 night:text-gray-300 leading-relaxed">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -694,14 +699,14 @@ export default function HowItWorksPage() {
             </div>
 
             {/* All four columns fit on a phone; sideways scrolling is only a fallback below 320px. */}
-            <div className="mt-10 max-w-3xl mx-auto overflow-x-auto rounded-2xl ring-1 ring-gray-200">
+            <div className="mt-10 max-w-3xl mx-auto overflow-x-auto rounded-2xl ring-1 ring-gray-200 night:ring-gray-700">
               <table className="w-full min-w-80 text-left text-xs sm:text-sm">
                 <caption className="sr-only">Pulse compared with Telegram and WhatsApp</caption>
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th scope="col" className="px-3 sm:px-5 py-4 font-semibold text-gray-500">Feature</th>
+                  <tr className="border-b border-gray-200 night:border-gray-700">
+                    <th scope="col" className="px-3 sm:px-5 py-4 font-semibold text-gray-500 night:text-gray-400">Feature</th>
                     {COMPARISON.columns.map((c, i) => (
-                      <th key={c} scope="col" className={`px-2 sm:px-5 py-4 text-center font-bold ${i === 0 ? 'bg-violet-50 text-violet-700' : 'text-gray-900'}`}>
+                      <th key={c} scope="col" className={`px-2 sm:px-5 py-4 text-center font-bold ${i === 0 ? 'bg-violet-50 night:bg-violet-500/10 text-violet-700 night:text-violet-300' : 'text-gray-900 night:text-white'}`}>
                         {c}
                       </th>
                     ))}
@@ -709,10 +714,10 @@ export default function HowItWorksPage() {
                 </thead>
                 <tbody>
                   {COMPARISON.rows.map((r) => (
-                    <tr key={r.label} className="border-b border-gray-100 last:border-b-0">
-                      <th scope="row" className="px-3 sm:px-5 py-3.5 font-medium text-gray-700">{r.label}</th>
+                    <tr key={r.label} className="border-b border-gray-100 night:border-gray-800 last:border-b-0">
+                      <th scope="row" className="px-3 sm:px-5 py-3.5 font-medium text-gray-700 night:text-gray-200">{r.label}</th>
                       {r.values.map((v, i) => (
-                        <td key={COMPARISON.columns[i]} className={`px-2 sm:px-5 py-3.5 text-center ${i === 0 ? 'bg-violet-50/60' : ''}`}>
+                        <td key={COMPARISON.columns[i]} className={`px-2 sm:px-5 py-3.5 text-center ${i === 0 ? 'bg-violet-50/60 night:bg-violet-500/10' : ''}`}>
                           <CompareCell value={v} />
                         </td>
                       ))}
@@ -731,7 +736,7 @@ export default function HowItWorksPage() {
               <div>
                 <Eyebrow dark>Security</Eyebrow>
                 <h2 className={H2}>Security and privacy</h2>
-                <p className="mt-4 text-gray-400 leading-relaxed">
+                <p className="mt-4 text-gray-400 night:text-gray-500 leading-relaxed">
                   Being verified should not mean being exposed. You control how discoverable you are
                   and who can contact you.
                 </p>
@@ -746,7 +751,7 @@ export default function HowItWorksPage() {
                     <span aria-hidden="true" className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
                     {s.title}
                   </h3>
-                  <p className="mt-1.5 text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                  <p className="mt-1.5 text-sm text-gray-400 night:text-gray-500 leading-relaxed">{s.desc}</p>
                 </div>
               ))}
             </div>
@@ -766,7 +771,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className={`px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="faq" className={`px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="max-w-2xl mx-auto mb-10 text-center">
               <Eyebrow>FAQ</Eyebrow>
@@ -774,7 +779,7 @@ export default function HowItWorksPage() {
               <p className={LEAD}>Everything you might want to know before joining Pulse.</p>
             </div>
             <div className="max-w-4xl mx-auto">
-              <FaqSection darkMode={false} categories={FAQ_CATEGORIES} featured={FAQ_FEATURED} linkable />
+              <FaqSection darkMode={dark} categories={FAQ_CATEGORIES} featured={FAQ_FEATURED} linkable />
             </div>
           </div>
         </section>

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Dark theme for the public marketing pages (home, How It Works), switched by data-theme on the
+   page's root element. Deliberately not Tailwind's own `dark:`, which follows the operating
+   system and is already used in a few places inside the app — repointing it would change how
+   those behave. */
+@custom-variant night (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme {
   --color-primary: #7C3AED;
   --color-primary-dark: #6D28D9;

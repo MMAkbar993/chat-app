@@ -54,7 +54,7 @@ function Tick({ className = 'w-3.5 h-3.5' }) {
 
 function Badge({ children }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-medium text-gray-700">
+    <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-700 night:text-gray-200">
       <I d={P.check} className="w-2.5 h-2.5 text-green-500" stroke={3} />
       {children}
     </span>
@@ -63,7 +63,7 @@ function Badge({ children }) {
 
 function WindowFrame({ children, className = '' }) {
   return (
-    <div className={`rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-violet-900/10 overflow-hidden ${className}`}>
+    <div className={`rounded-2xl border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 shadow-2xl shadow-violet-900/10 overflow-hidden ${className}`}>
       <div className="h-8 flex items-center gap-1.5 px-4 bg-[#1B1533]">
         <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
         <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
@@ -79,10 +79,10 @@ function WindowFrame({ children, className = '' }) {
 // A collapsible section header, drawn the way the real profile modal draws them.
 function MockSection({ label, open, children }) {
   return (
-    <div className="rounded-xl bg-gray-50 px-3.5 py-3 mb-2.5 last:mb-0">
+    <div className="rounded-xl bg-gray-50 night:bg-gray-950 px-3.5 py-3 mb-2.5 last:mb-0">
       <div className="flex items-center justify-between">
-        <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
-        <I d="M19 9l-7 7-7-7" className={`w-3.5 h-3.5 text-gray-400 ${open ? 'rotate-180' : ''}`} />
+        <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 night:text-gray-500">{label}</p>
+        <I d="M19 9l-7 7-7-7" className={`w-3.5 h-3.5 text-gray-400 night:text-gray-500 ${open ? 'rotate-180' : ''}`} />
       </div>
       {open && <div className="mt-2">{children}</div>}
     </div>
@@ -95,15 +95,15 @@ function MockSection({ label, open, children }) {
 export function ProfileMockup() {
   return (
     <div aria-hidden="true" className="relative max-w-sm mx-auto lg:mr-0 w-full">
-      <div className="rounded-2xl bg-white shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 overflow-hidden text-left">
+      <div className="rounded-2xl bg-white night:bg-gray-900 shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 night:ring-gray-800 overflow-hidden text-left">
         <div className="h-16 bg-linear-to-r from-violet-500 to-violet-400" />
         <div className="px-5 pb-5">
           <div className="-mt-8 mb-2 relative w-fit">
-            <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-16 h-16 text-lg ring-4 ring-white" />
-            <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" />
+            <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-16 h-16 text-lg ring-4 ring-white night:ring-gray-900" />
+            <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white night:border-gray-900" />
           </div>
-          <p className="font-bold text-gray-900">Daniel Reyes</p>
-          <p className="text-[11px] text-gray-400">@danielreyes</p>
+          <p className="font-bold text-gray-900 night:text-white">Daniel Reyes</p>
+          <p className="text-[11px] text-gray-400 night:text-gray-500">@danielreyes</p>
           <p className="text-[11px] text-green-500 mb-3">Online</p>
           <div className="flex flex-wrap gap-1.5 mb-4">
             <Badge>KYC Verified</Badge>
@@ -112,7 +112,7 @@ export function ProfileMockup() {
           </div>
           <MockSection label="Personal information" open={false} />
           <MockSection label="Websites" open>
-            <p className="flex items-center gap-1.5 text-xs font-medium text-violet-600">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-violet-600 night:text-violet-300">
               <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
             </p>
           </MockSection>
@@ -137,38 +137,38 @@ export function TrustedChatMockup({ wide = false }) {
   return (
     <div aria-hidden="true" className={`relative max-w-md mx-auto lg:mr-0 w-full pb-28 sm:pb-32 ${wide ? 'xl:max-w-xl' : ''}`}>
       <WindowFrame>
-        <div className="text-left bg-gray-50">
-          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white border-b border-gray-100">
+        <div className="text-left bg-gray-50 night:bg-gray-950">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white night:bg-gray-900 border-b border-gray-100 night:border-gray-800">
             <span className="relative">
               <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-8 h-8 text-[11px]" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white night:border-gray-900" />
             </span>
             <div>
-              <p className="text-xs font-semibold text-gray-900">Daniel Reyes</p>
+              <p className="text-xs font-semibold text-gray-900 night:text-white">Daniel Reyes</p>
               <p className="text-[10px] text-green-500">Online</p>
             </div>
           </div>
           <div className="px-4 py-4 space-y-2.5">
-            <div className="max-w-[78%] rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-[11px] text-gray-700 shadow-sm">
+            <div className="max-w-[78%] rounded-2xl rounded-bl-sm bg-white night:bg-gray-900 px-3 py-2 text-[11px] text-gray-700 night:text-gray-200 shadow-sm">
               Hi! We're launching a new casino brand next month. Open to a partnership?
             </div>
             <div className="ml-auto max-w-[78%] rounded-2xl rounded-br-sm bg-violet-600 px-3 py-2 text-[11px] text-white shadow-sm">
               Sounds interesting. Let me take a look at your profile first.
             </div>
           </div>
-          <div className="px-4 py-2.5 bg-white border-t border-gray-100">
-            <div className="h-7 rounded-full bg-gray-100" />
+          <div className="px-4 py-2.5 bg-white night:bg-gray-900 border-t border-gray-100 night:border-gray-800">
+            <div className="h-7 rounded-full bg-gray-100 night:bg-gray-800" />
           </div>
         </div>
       </WindowFrame>
 
       {/* What tapping the name opens */}
-      <div className="absolute right-0 sm:-right-4 bottom-0 w-64 rounded-2xl bg-white p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100">
+      <div className="absolute right-0 sm:-right-4 bottom-0 w-64 rounded-2xl bg-white night:bg-gray-900 p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100 night:ring-gray-800">
         <div className="flex items-center gap-3">
           <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-11 h-11 text-sm" />
           <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-900">Daniel Reyes</p>
-            <p className="text-[11px] text-gray-500">Affiliate Manager</p>
+            <p className="text-sm font-bold text-gray-900 night:text-white">Daniel Reyes</p>
+            <p className="text-[11px] text-gray-500 night:text-gray-400">Affiliate Manager</p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -176,7 +176,7 @@ export function TrustedChatMockup({ wide = false }) {
           <Badge>Website Verified</Badge>
           <Badge>Socials Verified</Badge>
         </div>
-        <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-violet-600">
+        <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-violet-600 night:text-violet-300">
           <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
         </p>
       </div>
@@ -300,7 +300,7 @@ export function KycSlider({ phone = 'tall' }) {
             type="button"
             onClick={() => go(index - 1)}
             aria-label="Previous step"
-            className="w-9 h-9 rounded-full bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:text-violet-600 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-white night:bg-gray-900 shadow-sm ring-1 ring-gray-200 night:ring-gray-700 text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300 flex items-center justify-center transition-colors"
           >
             <I d="M15 19l-7-7 7-7" />
           </button>
@@ -319,7 +319,7 @@ export function KycSlider({ phone = 'tall' }) {
             type="button"
             onClick={() => go(index + 1)}
             aria-label="Next step"
-            className="w-9 h-9 rounded-full bg-white shadow-sm ring-1 ring-gray-200 text-gray-600 hover:text-violet-600 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-white night:bg-gray-900 shadow-sm ring-1 ring-gray-200 night:ring-gray-700 text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300 flex items-center justify-center transition-colors"
           >
             <I d="M9 5l7 7-7 7" />
           </button>
@@ -329,7 +329,7 @@ export function KycSlider({ phone = 'tall' }) {
       {/* Step list in its own card — doubles as the caption and lets people jump to a screen —
           with who actually runs the check underneath. */}
       <div className="relative w-full sm:w-60 flex flex-col gap-4">
-        <ol className="rounded-2xl bg-white p-2 ring-1 ring-gray-100 shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)] space-y-0.5">
+        <ol className="rounded-2xl bg-white night:bg-gray-900 p-2 ring-1 ring-gray-100 night:ring-gray-800 shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)] space-y-0.5">
           {KYC_SLIDES.map((s, i) => (
             <li key={s.src}>
               <button
@@ -337,26 +337,26 @@ export function KycSlider({ phone = 'tall' }) {
                 onClick={() => go(i)}
                 aria-current={i === index ? 'step' : undefined}
                 className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                  i === index ? 'bg-violet-50' : 'hover:bg-gray-50'
+                  i === index ? 'bg-violet-50 night:bg-violet-500/10' : 'hover:bg-gray-50 night:hover:bg-gray-800'
                 }`}
               >
                 <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 transition-colors ${
-                  i < index ? 'bg-green-500 text-white' : i === index ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-600'
+                  i < index ? 'bg-green-500 text-white' : i === index ? 'bg-violet-600 text-white' : 'bg-violet-100 night:bg-violet-500/20 text-violet-600 night:text-violet-300'
                 }`}>
                   {i < index ? <I d={P.check} className="w-3.5 h-3.5" stroke={3} /> : i + 1}
                 </span>
-                <span className={`text-sm ${i === index ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{s.label}</span>
+                <span className={`text-sm ${i === index ? 'font-semibold text-gray-900 night:text-white' : 'text-gray-500 night:text-gray-400'}`}>{s.label}</span>
               </button>
             </li>
           ))}
         </ol>
-        <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-gray-100 shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)]">
-          <span className="w-10 h-10 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3 rounded-2xl bg-white night:bg-gray-900 px-4 py-3 ring-1 ring-gray-100 night:ring-gray-800 shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)]">
+          <span className="w-10 h-10 rounded-full bg-violet-100 night:bg-violet-500/20 text-violet-600 night:text-violet-300 flex items-center justify-center shrink-0">
             <I d={P.shield} className="w-5 h-5" />
           </span>
           <span>
-            <span className="block text-sm font-semibold text-gray-900">Verified by Didit</span>
-            <span className="block text-xs text-gray-500">ID and liveness check</span>
+            <span className="block text-sm font-semibold text-gray-900 night:text-white">Verified by Didit</span>
+            <span className="block text-xs text-gray-500 night:text-gray-400">ID and liveness check</span>
           </span>
         </div>
       </div>
@@ -383,22 +383,22 @@ export function SocialProfileVisual() {
       />
 
       {/* What a stranger sees on the profile */}
-      <div className="relative rounded-3xl bg-violet-100/70 p-4 shrink-0">
-        <div className={`w-60 rounded-2xl bg-white overflow-hidden ${CARD_SHADOW}`}>
+      <div className="relative rounded-3xl bg-violet-100/70 night:bg-violet-500/15 p-4 shrink-0">
+        <div className={`w-60 rounded-2xl bg-white night:bg-gray-900 overflow-hidden ${CARD_SHADOW}`}>
           <div className="h-16 bg-linear-to-r from-violet-600 to-purple-400" />
           <div className="-mt-10 flex flex-col items-center px-5 pb-5">
             <span className="relative">
-              <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-20 h-20 text-xl ring-4 ring-white" />
-              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-violet-600 ring-2 ring-white text-white flex items-center justify-center">
+              <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-20 h-20 text-xl ring-4 ring-white night:ring-gray-900" />
+              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-violet-600 ring-2 ring-white night:ring-gray-900 text-white flex items-center justify-center">
                 <I d={P.check} className="w-3.5 h-3.5" stroke={3} />
               </span>
             </span>
-            <p className="mt-3 text-base font-bold text-gray-900">Daniel Reyes</p>
-            <p className="text-xs text-gray-500">Affiliate Manager</p>
-            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+            <p className="mt-3 text-base font-bold text-gray-900 night:text-white">Daniel Reyes</p>
+            <p className="text-xs text-gray-500 night:text-gray-400">Affiliate Manager</p>
+            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 night:bg-green-500/10 px-2.5 py-1 text-[11px] font-semibold text-green-700 night:text-green-300">
               <I d={P.check} className="w-3 h-3" stroke={3} /> Identity verified
             </span>
-            <p className="mt-4 self-start text-xs font-medium text-gray-500">Connected profiles</p>
+            <p className="mt-4 self-start text-xs font-medium text-gray-500 night:text-gray-400">Connected profiles</p>
             <div className="mt-2 self-start flex gap-1.5">
               {SOCIAL_ACCOUNTS.map((a) => <SocialIcon key={a.key} platform={a.key} size={34} />)}
             </div>
@@ -411,15 +411,15 @@ export function SocialProfileVisual() {
         <path d="M0 130H14M32 32Q16 32 16 48V212Q16 228 32 228" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
       </svg>
 
-      <ul className={`relative w-52 rounded-2xl bg-white p-2 ring-1 ring-gray-100 divide-y divide-gray-100 ${CARD_SHADOW}`}>
+      <ul className={`relative w-52 rounded-2xl bg-white night:bg-gray-900 p-2 ring-1 ring-gray-100 night:ring-gray-800 divide-y divide-gray-100 night:divide-gray-800 ${CARD_SHADOW}`}>
         {SOCIAL_ACCOUNTS.map((a) => (
           <li key={a.key} className="h-12 flex items-center gap-3 px-2">
             <SocialIcon platform={a.key} size={30} />
             <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold text-gray-900 leading-tight">{a.label}</span>
-              <span className="block text-[11px] text-gray-500">Verified</span>
+              <span className="block text-sm font-semibold text-gray-900 night:text-white leading-tight">{a.label}</span>
+              <span className="block text-[11px] text-gray-500 night:text-gray-400">Verified</span>
             </span>
-            <span className="w-6 h-6 rounded-full bg-green-50 ring-1 ring-green-100 text-green-600 flex items-center justify-center">
+            <span className="w-6 h-6 rounded-full bg-green-50 night:bg-green-500/10 ring-1 ring-green-100 night:ring-green-500/20 text-green-600 night:text-green-400 flex items-center justify-center">
               <I d={P.check} className="w-3 h-3" stroke={3} />
             </span>
           </li>
@@ -435,28 +435,28 @@ export function GroupChatMockup() {
   return (
     <div aria-hidden="true">
       <WindowFrame>
-        <div className="text-left bg-gray-50">
-          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white border-b border-gray-100">
+        <div className="text-left bg-gray-50 night:bg-gray-950">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white night:bg-gray-900 border-b border-gray-100 night:border-gray-800">
             <Avatar name="EU Partners" color="from-violet-500 to-purple-600" className="w-8 h-8 text-[11px]" />
             <div>
-              <p className="text-xs font-semibold text-gray-900">EU Partners</p>
-              <p className="text-[10px] text-gray-500">12 members</p>
+              <p className="text-xs font-semibold text-gray-900 night:text-white">EU Partners</p>
+              <p className="text-[10px] text-gray-500 night:text-gray-400">12 members</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-violet-50 border-b border-violet-100 text-[10px] text-violet-700">
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-violet-50 night:bg-violet-500/10 border-b border-violet-100 night:border-violet-500/20 text-[10px] text-violet-700 night:text-violet-300">
             <I d={P.pin} className="w-3 h-3" /> <span className="font-semibold">Pinned:</span> Q3 targets are in the sheet below
           </div>
           <div className="px-4 py-4 flex flex-col gap-3">
             <div className="flex items-end gap-2">
               <Avatar name="Lena Fischer" color="from-pink-400 to-rose-500" className="w-6 h-6 text-[9px]" />
               <div>
-                <div className="rounded-2xl rounded-bl-sm bg-white shadow-sm px-3 py-2">
+                <div className="rounded-2xl rounded-bl-sm bg-white night:bg-gray-900 shadow-sm px-3 py-2">
                   <p className="text-[10px] font-semibold text-pink-500">Lena Fischer</p>
-                  <p className="text-[11px] text-gray-700">Signed the new deal with Spinwave 🎉</p>
+                  <p className="text-[11px] text-gray-700 night:text-gray-200">Signed the new deal with Spinwave 🎉</p>
                 </div>
                 <div className="flex gap-1 mt-1">
-                  <span className="rounded-full bg-white shadow-sm px-1.5 py-0.5 text-[10px]">🎉 4</span>
-                  <span className="rounded-full bg-white shadow-sm px-1.5 py-0.5 text-[10px]">👍 2</span>
+                  <span className="rounded-full bg-white night:bg-gray-900 shadow-sm px-1.5 py-0.5 text-[10px]">🎉 4</span>
+                  <span className="rounded-full bg-white night:bg-gray-900 shadow-sm px-1.5 py-0.5 text-[10px]">👍 2</span>
                 </div>
               </div>
             </div>
@@ -476,14 +476,14 @@ export function GroupChatMockup() {
             </div>
             <div className="flex items-end gap-2">
               <Avatar name="Tom Becker" color="from-amber-400 to-orange-500" className="w-6 h-6 text-[9px]" />
-              <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-white shadow-sm px-3 py-2">
+              <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-white night:bg-gray-900 shadow-sm px-3 py-2">
                 <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-[8px]">▶</span>
                 <span className="flex items-center gap-0.5 h-5">
                   {[6, 12, 8, 16, 10, 18, 7, 14, 9, 12, 6, 10].map((h, i) => (
                     <span key={i} className="w-0.5 rounded-full bg-violet-300" style={{ height: h }} />
                   ))}
                 </span>
-                <span className="text-[9px] text-gray-400">0:14</span>
+                <span className="text-[9px] text-gray-400 night:text-gray-500">0:14</span>
               </div>
             </div>
           </div>
@@ -503,18 +503,18 @@ export function CallMockup() {
           <span className="inline-flex items-center gap-1 rounded-full bg-violet-600 px-2 py-0.5 text-[9px] font-semibold text-white">
             <I d={P.screen} className="w-2.5 h-2.5" /> Sharing screen
           </span>
-          <span className="text-[10px] text-gray-400">12:47</span>
+          <span className="text-[10px] text-gray-400 night:text-gray-500">12:47</span>
         </span>
       </div>
 
       {/* Shared screen: a dashboard being presented */}
-      <div className="relative rounded-xl bg-white p-4">
-        <p className="text-[11px] font-bold text-gray-900 mb-3">Affiliate dashboard · Q3</p>
+      <div className="relative rounded-xl bg-white night:bg-gray-900 p-4">
+        <p className="text-[11px] font-bold text-gray-900 night:text-white mb-3">Affiliate dashboard · Q3</p>
         <div className="grid grid-cols-3 gap-2 mb-4">
           {[['Clicks', '24.1k'], ['FTDs', '312'], ['Revenue', '€18.4k']].map(([k, v]) => (
-            <div key={k} className="rounded-lg bg-gray-50 px-2.5 py-2">
-              <p className="text-[9px] text-gray-400">{k}</p>
-              <p className="text-sm font-bold text-gray-900">{v}</p>
+            <div key={k} className="rounded-lg bg-gray-50 night:bg-gray-950 px-2.5 py-2">
+              <p className="text-[9px] text-gray-400 night:text-gray-500">{k}</p>
+              <p className="text-sm font-bold text-gray-900 night:text-white">{v}</p>
             </div>
           ))}
         </div>
@@ -524,7 +524,7 @@ export function CallMockup() {
           ))}
         </div>
         {/* Picture-in-picture of the other participant */}
-        <div className="absolute bottom-3 right-3 w-20 h-14 rounded-lg bg-linear-to-br from-sky-400 to-blue-600 ring-2 ring-white shadow-lg flex items-center justify-center">
+        <div className="absolute bottom-3 right-3 w-20 h-14 rounded-lg bg-linear-to-br from-sky-400 to-blue-600 ring-2 ring-white night:ring-gray-900 shadow-lg flex items-center justify-center">
           <span className="text-sm font-bold text-white">DR</span>
         </div>
       </div>
@@ -551,41 +551,41 @@ const SEARCH_RESULTS = [
 export function SearchMockup() {
   return (
     <div aria-hidden="true" className="relative pb-10 sm:pb-8">
-      <div className="rounded-2xl bg-white shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 p-5 text-left">
-        <p className="text-sm font-bold text-gray-900 mb-3">Add Contact</p>
-        <p className="text-[11px] font-semibold text-gray-700 mb-1.5">Search by Business Name</p>
-        <div className="flex items-center gap-2 rounded-xl border border-violet-300 ring-2 ring-violet-100 bg-white px-3 py-2 mb-3">
-          <I d={P.search} className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-xs text-gray-900">northstar</span>
+      <div className="rounded-2xl bg-white night:bg-gray-900 shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 night:ring-gray-800 p-5 text-left">
+        <p className="text-sm font-bold text-gray-900 night:text-white mb-3">Add Contact</p>
+        <p className="text-[11px] font-semibold text-gray-700 night:text-gray-200 mb-1.5">Search by Business Name</p>
+        <div className="flex items-center gap-2 rounded-xl border border-violet-300 night:border-violet-500 ring-2 ring-violet-100 night:ring-violet-500/30 bg-white night:bg-gray-900 px-3 py-2 mb-3">
+          <I d={P.search} className="w-3.5 h-3.5 text-gray-400 night:text-gray-500" />
+          <span className="text-xs text-gray-900 night:text-white">northstar</span>
           <span className="w-px h-3.5 bg-violet-600 animate-pulse" />
         </div>
-        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">3 results found for "northstar"</p>
+        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-400 night:text-gray-500 mb-2">3 results found for "northstar"</p>
         <div className="space-y-1">
           {SEARCH_RESULTS.map((r) => (
             <div key={r.name} className="flex items-center gap-2.5 rounded-xl px-1.5 py-1.5">
               <Avatar name={r.name} color={r.color} className="w-8 h-8 text-[10px]" />
               <div className="flex-1 min-w-0">
-                <p className="flex items-center gap-1 text-xs font-semibold text-gray-900">{r.name} <Tick className="w-3 h-3" /></p>
-                <p className="text-[10px] text-gray-500 truncate">{r.title}</p>
-                <p className="text-[10px] text-gray-400 truncate">northstarbet.com</p>
+                <p className="flex items-center gap-1 text-xs font-semibold text-gray-900 night:text-white">{r.name} <Tick className="w-3 h-3" /></p>
+                <p className="text-[10px] text-gray-500 night:text-gray-400 truncate">{r.title}</p>
+                <p className="text-[10px] text-gray-400 night:text-gray-500 truncate">northstarbet.com</p>
               </div>
-              <span className="rounded-full border border-violet-300 px-2.5 py-1 text-[10px] font-semibold text-violet-600">Add</span>
+              <span className="rounded-full border border-violet-300 night:border-violet-500 px-2.5 py-1 text-[10px] font-semibold text-violet-600 night:text-violet-300">Add</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Scheduled meeting, overlapping the search card */}
-      <div className="absolute -bottom-2 right-2 sm:-right-6 w-60 rounded-xl bg-white shadow-xl ring-1 ring-gray-100 p-3.5 text-left">
+      <div className="absolute -bottom-2 right-2 sm:-right-6 w-60 rounded-xl bg-white night:bg-gray-900 shadow-xl ring-1 ring-gray-100 night:ring-gray-800 p-3.5 text-left">
         <div className="flex items-start gap-2.5">
           <span className="w-9 h-9 rounded-lg bg-violet-600 text-white flex flex-col items-center justify-center leading-none shrink-0">
             <span className="text-[8px] font-semibold uppercase">Thu</span>
             <span className="text-sm font-bold">18</span>
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-gray-900">Partnership call</p>
-            <p className="text-[10px] text-gray-500">14:00 – 14:30 · with Daniel Reyes</p>
-            <p className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-green-700">
+            <p className="text-xs font-bold text-gray-900 night:text-white">Partnership call</p>
+            <p className="text-[10px] text-gray-500 night:text-gray-400">14:00 – 14:30 · with Daniel Reyes</p>
+            <p className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-green-700 night:text-green-300">
               <I d={P.calendar} className="w-2.5 h-2.5" /> Synced to Google Calendar
             </p>
           </div>
@@ -611,7 +611,7 @@ export function ShareLinksMockup() {
             </div>
             <div className="text-right">
               <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Affiliate team</p>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-violet-700 ring-2 ring-violet-400/60">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white night:bg-gray-900 px-2.5 py-1.5 text-[11px] font-semibold text-violet-700 night:text-violet-300 ring-2 ring-violet-400/60">
                 <I d={P.chat} className="w-3.5 h-3.5" /> Contact Us on Pulse
               </span>
             </div>
@@ -623,20 +623,20 @@ export function ShareLinksMockup() {
       </WindowFrame>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-100">
-          <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Your share link</p>
-          <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
-            <span className="flex-1 min-w-0 truncate text-[11px] text-gray-700">pulse.affiliateroulette.com/u/danielreyes</span>
+        <div className="rounded-2xl bg-white night:bg-gray-900 p-4 shadow-lg ring-1 ring-gray-100 night:ring-gray-800">
+          <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 night:text-gray-500 mb-2">Your share link</p>
+          <div className="flex items-center gap-2 rounded-lg bg-gray-50 night:bg-gray-950 px-2.5 py-2">
+            <span className="flex-1 min-w-0 truncate text-[11px] text-gray-700 night:text-gray-200">pulse.affiliateroulette.com/u/danielreyes</span>
             <span className="shrink-0 rounded-md bg-violet-600 px-2 py-1 text-[10px] font-semibold text-white">Copy</span>
           </div>
         </div>
-        <div className="rounded-2xl bg-white p-4 shadow-lg ring-1 ring-gray-100">
-          <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Group invite link</p>
+        <div className="rounded-2xl bg-white night:bg-gray-900 p-4 shadow-lg ring-1 ring-gray-100 night:ring-gray-800">
+          <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 night:text-gray-500 mb-2">Group invite link</p>
           <div className="flex items-center gap-2.5">
             <Avatar name="EU Partners" color="from-violet-500 to-purple-600" className="w-8 h-8 text-[10px]" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-gray-900">EU Partners</p>
-              <p className="text-[10px] text-gray-500 truncate">12 members · /join/k7Qm2x</p>
+              <p className="text-xs font-semibold text-gray-900 night:text-white">EU Partners</p>
+              <p className="text-[10px] text-gray-500 night:text-gray-400 truncate">12 members · /join/k7Qm2x</p>
             </div>
             <span className="shrink-0 rounded-md bg-violet-600 px-2 py-1 text-[10px] font-semibold text-white">Join</span>
           </div>
