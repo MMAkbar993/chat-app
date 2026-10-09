@@ -389,63 +389,70 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Verification */}
+      {/* 1 — Identity: copy left, phone right */}
       <section id="verification" className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Eyebrow>Trusted communication</Eyebrow>
-              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Know who you're communicating with</h2>
-              <p className="mt-4 text-gray-600 leading-relaxed">
-                Pulse combines professional communication with identity and business verification.
-                Users can see what has been confirmed before they start a conversation, helping
-                reduce impersonation, fake accounts and uncertainty.
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <StepEyebrow n={1}>Identity verification</StepEyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Every member is verified before accessing Pulse</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">{IDENTITY.lead}</p>
+            <CheckList items={IDENTITY.points} />
+            {/* Backed by the Help Center's retention answer: the ID provider deletes
+                verification data after a maximum of one month, and Pulse keeps only
+                verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
+            <div className="mt-7 flex gap-4 rounded-2xl bg-green-50 px-5 py-4">
+              <Icon path="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" className="w-6 h-6 mt-0.5 shrink-0 text-green-600" />
+              <p className="text-sm text-green-800 leading-relaxed">
+                <span className="font-semibold">Your ID data is not kept.</span> Your documents
+                and selfie are automatically deleted after 30 days. Pulse only keeps a record
+                that your identity was verified.
               </p>
             </div>
-            <ProfileMockup />
           </div>
+          <KycSlider />
+        </div>
+      </section>
 
-          {/* 1 — Identity */}
-          <div className="mt-20 grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <StepEyebrow n={1}>Identity verification</StepEyebrow>
-              <h3 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] text-gray-900">
-                Every member is{' '}
-                <span className="bg-linear-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">verified</span>
-                {' '}before accessing <span className="text-violet-700">Pulse.</span>
-              </h3>
-              <p className="mt-5 text-lg text-gray-600 leading-relaxed">{IDENTITY.lead}</p>
-              <CheckList items={IDENTITY.points} />
-              {/* Backed by the Help Center's retention answer: the ID provider deletes
-                  verification data after a maximum of one month, and Pulse keeps only
-                  verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
-              <div className="mt-7 flex gap-4 rounded-2xl bg-green-50 px-5 py-4">
-                <Icon path="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" className="w-6 h-6 mt-0.5 shrink-0 text-green-600" />
-                <p className="text-sm text-green-800 leading-relaxed">
-                  <span className="font-semibold">Your ID data is not kept.</span> Your documents
-                  and selfie are automatically deleted after 30 days. Pulse only keeps a record
-                  that your identity was verified.
-                </p>
-              </div>
+      {/* What all that adds up to: centred, on white, between the two checks */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto">
+            <Eyebrow>Trusted communication</Eyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Know who you're communicating with</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
+              Pulse combines professional communication with identity and business verification.
+              Users can see what has been confirmed before they start a conversation, helping
+              reduce impersonation, fake accounts and uncertainty.
+            </p>
+          </div>
+          <div className="relative mt-12 max-w-lg mx-auto">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-20 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.16),transparent_65%)]"
+            />
+            <div className="relative">
+              <ProfileMockup />
             </div>
-            <KycSlider />
           </div>
+        </div>
+      </section>
 
-          {/* 2 — Social */}
-          <div className="mt-24 grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+      {/* 2 — Social: picture left, copy right (copy still comes first on mobile) */}
+      <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="lg:order-2">
               <StepEyebrow n={2}>Social profile verification</StepEyebrow>
-              <h3 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] text-gray-900">
-                Connect your professional social accounts{' '}
-                <span className="bg-linear-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">securely.</span>
-              </h3>
-              <p className="mt-5 text-lg text-gray-600 leading-relaxed">{SOCIAL.lead}</p>
+              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Connect your professional social accounts securely</h2>
+              <p className="mt-4 text-gray-600 leading-relaxed">{SOCIAL.lead}</p>
               <CheckList items={SOCIAL.points} />
             </div>
-            <SocialProfileVisual />
+            <div className="lg:order-1">
+              <SocialProfileVisual />
+            </div>
           </div>
 
-          <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
+          <p className="mt-14 text-sm text-gray-500 max-w-3xl mx-auto text-center">
             Identity verification is mandatory. Website and social profile verification are
             optional, but they provide additional context and help others understand who you are
             and who you represent.

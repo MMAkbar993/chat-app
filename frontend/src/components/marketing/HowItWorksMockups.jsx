@@ -214,7 +214,7 @@ function MockSection({ label, open, children }) {
 // collapsed, as the real profile lets you do, which keeps the card from running tall.
 export function ProfileMockup() {
   return (
-    <div aria-hidden="true" className="relative max-w-sm mx-auto lg:mr-0 w-full">
+    <div aria-hidden="true" className="relative max-w-sm mx-auto w-full">
       <div className="rounded-2xl bg-white shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 overflow-hidden text-left">
         <div className="h-16 bg-linear-to-r from-violet-500 to-violet-400" />
         <div className="px-5 pb-5">
