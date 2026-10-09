@@ -22,16 +22,45 @@ export function Eyebrow({ children, dark = false }) {
   )
 }
 
+// The logo, linking home. Shared so every marketing header carries the same one.
+export function HeaderLogo() {
+  return (
+    <Link to="/" className={`shrink-0 rounded ${FOCUS}`}>
+      <img src="/full-logo.png" alt="Pulse home" className="h-7" />
+    </Link>
+  )
+}
+
+// Sign in / Create account, or Go to App for someone already signed in.
+export function HeaderActions() {
+  const { user } = useAuth()
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      {user ? (
+        <Link to="/chat" className={`px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors ${FOCUS}`}>
+          Go to App
+        </Link>
+      ) : (
+        <>
+          <Link to="/login" className={`hidden sm:block px-3 py-2 text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors rounded ${FOCUS}`}>
+            Sign in
+          </Link>
+          <Link to="/signup" className={`px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors ${FOCUS}`}>
+            Create account
+          </Link>
+        </>
+      )}
+    </div>
+  )
+}
+
 // `nav` items are either in-page anchors ("#pricing") or routes ("/how-it-works").
 export function MarketingHeader({ nav = [] }) {
-  const { user } = useAuth()
   const link = `text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors rounded ${FOCUS}`
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className={`rounded ${FOCUS}`}>
-          <img src="/full-logo.png" alt="Pulse home" className="h-7" />
-        </Link>
+        <HeaderLogo />
         <nav aria-label="Main" className="hidden lg:flex items-center gap-6">
           {nav.map((n) => (
             n.href.startsWith('#')
@@ -39,22 +68,7 @@ export function MarketingHeader({ nav = [] }) {
               : <Link key={n.href} to={n.href} className={link}>{n.label}</Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2 shrink-0">
-          {user ? (
-            <Link to="/chat" className={`px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors ${FOCUS}`}>
-              Go to App
-            </Link>
-          ) : (
-            <>
-              <Link to="/login" className={`hidden sm:block px-3 py-2 ${link}`}>
-                Sign in
-              </Link>
-              <Link to="/signup" className={`px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors ${FOCUS}`}>
-                Create account
-              </Link>
-            </>
-          )}
-        </div>
+        <HeaderActions />
       </div>
     </header>
   )
