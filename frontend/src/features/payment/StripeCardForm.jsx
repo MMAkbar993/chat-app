@@ -53,7 +53,7 @@ export default function StripeCardForm({ onSuccess, planType, standalone = false
         await client.get('/payment/billing').catch(() => {})
         const res = await client.post('/kyc/create-session')
         if (res.data.url) {
-          window.location.href = res.data.url
+          navigate('/verify')
           return
         }
         // No verification session needed (already verified, or KYC bypassed) — subscription is active.
