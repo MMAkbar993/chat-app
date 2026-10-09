@@ -863,8 +863,12 @@ function QaRow({ item, darkMode, open, onToggle }) {
 
 // `categories` limits which sections show (e.g. the public How It Works page only needs the
 // ones a prospect asks about); omit it for the full Help Center.
-export default function FaqSection({ darkMode, categories }) {
+// `featured` (optional) is a list of exact question texts. When given, only those show at first
+// — in that order, as one "Common questions" card — with a button to reveal everything. Search
+// still covers every question, so nothing is hidden from someone who goes looking.
+export default function FaqSection({ darkMode, categories, featured }) {
   const [search, setSearch] = useState('')
+  const [showAll, setShowAll] = useState(false)
   // Keyed by "category::question" so two categories can't collide on a similar wording.
   const [openKey, setOpenKey] = useState(null)
 
@@ -881,6 +885,20 @@ export default function FaqSection({ darkMode, categories }) {
   }, [term, categories])
 
   const total = groups.reduce((n, g) => n + g.items.length, 0)
+
+  const featuredItems = useMemo(() => {
+    if (!featured) return null
+    const all = FAQ.flatMap((g) => g.items.map((item) => ({ item, category: g.category })))
+    const found = featured.map((q) => all.find((x) => x.item.q === q)).filter(Boolean)
+    // A renamed question would otherwise just vanish from the list without a trace.
+    if (import.meta.env.DEV && found.length !== featured.length) {
+      console.warn('FaqSection: some featured questions were not found', featured.filter((q) => !all.some((x) => x.item.q === q)))
+    }
+    return found
+  }, [featured])
+  const scopedTotal = (categories ? FAQ.filter((g) => categories.includes(g.category)) : FAQ)
+    .reduce((n, g) => n + g.items.length, 0)
+  const collapsed = Boolean(featuredItems?.length) && !term && !showAll
   const card = `rounded-2xl border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`
   const sub = darkMode ? 'text-gray-400' : 'text-gray-500'
 
@@ -935,7 +953,42 @@ export default function FaqSection({ darkMode, categories }) {
         )}
       </div>
 
-      {groups.map((group) => (
+      {collapsed && (
+        <>
+          <div className={`${card} p-5`}>
+            <h5 className={`text-xs font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`}>
+              Common questions
+            </h5>
+            <div>
+              {featuredItems.map(({ item, category }) => {
+                const key = `${category}::${item.q}`
+                return (
+                  <QaRow
+                    key={key}
+                    item={item}
+                    darkMode={darkMode}
+                    open={openKey === key}
+                    onToggle={() => setOpenKey(openKey === key ? null : key)}
+                  />
+                )
+              })}
+            </div>
+          </div>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className={`rounded-xl border px-5 py-2.5 text-sm font-semibold transition-colors ${
+                darkMode ? 'border-gray-600 text-gray-200 hover:bg-gray-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              See all {scopedTotal} questions
+            </button>
+          </div>
+        </>
+      )}
+
+      {!collapsed && groups.map((group) => (
         <div key={group.category} className={`${card} p-5`}>
           <h5 className={`text-xs font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-violet-300' : 'text-violet-600'}`}>
             {group.category}

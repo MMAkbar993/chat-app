@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import {
-  AppMockup, ProfileMockup, KycSlider, SocialProfileVisual,
+  AppMockup, TrustedChatMockup, KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
 } from '../components/marketing/HowItWorksMockups'
 import FaqSection from '../components/settings/FaqSection'
@@ -17,6 +17,17 @@ const FAQ_CATEGORIES = [
   'Voice & Video Calls',
   'Pulse Pro',
   'Privacy & Data Protection',
+]
+
+// Shown first on this page; the rest sit behind "See all questions". Exact question texts from
+// FaqSection — a mismatch is warned about in development.
+const FAQ_FEATURED = [
+  'What is Pulse?',
+  'Why does Pulse need my ID?',
+  'Can other Pulse users see my ID?',
+  'How long is my KYC information stored?',
+  'Do I need Pulse Pro to use Pulse?',
+  'Does Pulse sell my personal information?',
 ]
 
 // Share-link copy follows the Help Center's own answers on sharing a profile.
@@ -188,18 +199,14 @@ const SECURITY = [
     desc: 'Block users from messaging or calling you, and report accounts or groups to our team for review.',
   },
   {
-    title: 'Private and encrypted in transit',
-    desc: 'Your conversations are protected with encryption while data is transferred between your device and Pulse.',
-  },
-  {
-    title: 'Control your data',
-    desc: 'Your verification data is handled according to our KYC and Privacy Policies. You can deactivate or delete your account at any time.',
+    title: 'Private and in your control',
+    desc: 'Conversations are encrypted in transit between your device and Pulse. Verification data is handled under our KYC and Privacy Policies, and you can deactivate or delete your account at any time.',
   },
 ]
 
-function Eyebrow({ children }) {
+function Eyebrow({ children, dark = false }) {
   return (
-    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm bg-white text-violet-600">
+    <span className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${dark ? 'bg-white/10 text-violet-300' : 'bg-white text-violet-600'}`}>
       <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
       {children}
     </span>
@@ -364,9 +371,10 @@ export default function HowItWorksPage() {
       {/* Getting started */}
       <section id="steps" className="px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-extrabold tracking-tight">Get connected and start communicating</h2>
-            <p className="mt-3 text-gray-600">
+          <div className="max-w-2xl mx-auto text-center">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Get connected and start communicating</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
               Create your account, verify your identity and start communicating with iGaming
               professionals in one trusted workspace.
             </p>
@@ -428,7 +436,7 @@ export default function HowItWorksPage() {
               reduce impersonation, fake accounts and uncertainty.
             </p>
           </div>
-          <ProfileMockup />
+          <TrustedChatMockup />
         </div>
       </section>
 
@@ -478,9 +486,10 @@ export default function HowItWorksPage() {
       {/* Features */}
       <section id="features" className="px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-extrabold tracking-tight">Everything your business communication needs</h2>
-            <p className="mt-3 text-gray-600">
+          <div className="max-w-2xl mx-auto text-center">
+            <Eyebrow>Features</Eyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Everything your business communication needs</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
               Pulse brings the tools you use every day into one professional workspace, so you can
               communicate, collaborate and build partnerships without switching between multiple apps.
             </p>
@@ -541,7 +550,8 @@ export default function HowItWorksPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Security and privacy</h2>
+              <Eyebrow dark>Security</Eyebrow>
+              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Security and privacy</h2>
               <p className="mt-4 text-gray-400 leading-relaxed">
                 Being verified should not mean being exposed. You control how discoverable you are
                 and who can contact you.
@@ -568,13 +578,14 @@ export default function HowItWorksPage() {
       <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 scroll-mt-16">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mx-auto mb-10 text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight">Frequently asked questions</h2>
-            <p className="mt-3 text-gray-600">
+            <Eyebrow>FAQ</Eyebrow>
+            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Frequently asked questions</h2>
+            <p className="mt-4 text-gray-600 leading-relaxed">
               Everything you might want to know before joining Pulse.
             </p>
           </div>
           <div className="max-w-4xl mx-auto">
-            <FaqSection darkMode={false} categories={FAQ_CATEGORIES} />
+            <FaqSection darkMode={false} categories={FAQ_CATEGORIES} featured={FAQ_FEATURED} />
           </div>
         </div>
       </section>
