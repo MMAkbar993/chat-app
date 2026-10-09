@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
-import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
+import { Icon, Eyebrow, HeaderLogo, HeaderActions, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
 import {
   KycSlider, SocialProfileVisual,
@@ -34,15 +34,8 @@ const FAQ_FEATURED = [
   'Does Pulse sell my personal information?',
 ]
 
-// Same main navigation as the home page, so the site header reads the same everywhere.
-const NAV = [
-  { href: '/how-it-works', label: 'How it works' },
-  { href: '/#pricing', label: 'Pricing' },
-  { href: '#faq', label: 'FAQ' },
-]
-
-// The page's own sections, in the sticky bar under the site header. Ids are stable — the home
-// page and shared links point at them.
+// The page's own sections, shown in its header in place of the site-wide links. Ids are stable —
+// the home page and shared links point at them.
 const SECTION_NAV = [
   { id: 'verification', label: 'Verification' },
   { id: 'company', label: 'Company' },
@@ -52,8 +45,8 @@ const SECTION_NAV = [
   { id: 'faq', label: 'FAQ' },
 ]
 
-// Clears the site header (64px) and the section bar under it, so a section lands just below
-// both instead of under them.
+// Clears the header — 64px, or 108px on phones where the section links get their own row — so
+// a section lands just below it instead of under it.
 const SECTION_SCROLL_MARGIN = 'scroll-mt-32'
 
 // ─── Getting verified ─────────────────────────────────────────────────────────
@@ -313,10 +306,11 @@ function RouteCard({ route }) {
   )
 }
 
-// The sticky "on this page" bar under the site header. The current section is whichever one's
-// top has most recently passed just under the bar; on phones the bar scrolls sideways and keeps
-// that link in view.
-function SectionNav() {
+// This page's header: one bar with the logo, the page's own sections and the sign-in buttons,
+// in place of the site-wide header. The current section is whichever one's top has most
+// recently passed just under the bar. Phones get the section links as a second row inside the
+// same sticky header, scrolling sideways and keeping the current one in view.
+function PageHeader({ theme }) {
   const [active, setActive] = useState(null)
   const barRef = useRef(null)
   const linkRefs = useRef({})
@@ -325,7 +319,7 @@ function SectionNav() {
     let frame = 0
     function update() {
       frame = 0
-      const line = 150 // px from the top: header + this bar + a little
+      const line = 150 // px from the top: the header plus a little
       let current = null
       for (const { id } of SECTION_NAV) {
         const el = document.getElementById(id)
@@ -346,7 +340,7 @@ function SectionNav() {
     }
   }, [])
 
-  // Scroll the bar itself, never the page: scrollIntoView could nudge the window too.
+  // Scroll the phone row itself, never the page: scrollIntoView could nudge the window too.
   useEffect(() => {
     const bar = barRef.current
     const link = active && linkRefs.current[active]
@@ -355,26 +349,41 @@ function SectionNav() {
     }
   }, [active])
 
+  const linkClass = (id) =>
+    `shrink-0 whitespace-nowrap flex items-center px-3 text-sm font-medium border-b-2 transition-colors ${FOCUS} ${
+      active === id ? 'border-violet-600 text-violet-700 night:text-violet-300' : 'border-transparent text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300'
+    }`
+
   return (
-    <nav aria-label="On this page" className="sticky top-16 z-30 bg-white/90 night:bg-gray-950/90 backdrop-blur border-b border-gray-100 night:border-gray-800">
-      <div ref={barRef} className="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
-        {SECTION_NAV.map((s) => (
-          <a
-            key={s.id}
-            ref={(el) => { linkRefs.current[s.id] = el }}
-            href={`#${s.id}`}
-            aria-current={active === s.id ? 'location' : undefined}
-            className={`shrink-0 whitespace-nowrap flex items-center px-3 text-sm font-medium border-b-2 transition-colors ${FOCUS} ${
-              active === s.id
-                ? 'border-violet-600 text-violet-700 night:text-violet-300'
-                : 'border-transparent text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300'
-            }`}
-          >
-            {s.label}
-          </a>
-        ))}
+    <header className="sticky top-0 z-40 bg-white/90 night:bg-gray-950/90 backdrop-blur border-b border-gray-100 night:border-gray-800">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <HeaderLogo />
+        <nav aria-label="On this page" className="hidden lg:flex self-stretch gap-1">
+          {SECTION_NAV.map((s) => (
+            <a key={s.id} href={`#${s.id}`} aria-current={active === s.id ? 'location' : undefined} className={linkClass(s.id)}>
+              {s.label}
+            </a>
+          ))}
+        </nav>
+        <HeaderActions theme={theme} />
       </div>
-    </nav>
+      {/* Phones and tablets: the same links, one row down, scrolling sideways */}
+      <nav aria-label="On this page" className="lg:hidden border-t border-gray-100 night:border-gray-800">
+        <div ref={barRef} className="max-w-6xl mx-auto px-4 sm:px-6 h-11 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
+          {SECTION_NAV.map((s) => (
+            <a
+              key={s.id}
+              ref={(el) => { linkRefs.current[s.id] = el }}
+              href={`#${s.id}`}
+              aria-current={active === s.id ? 'location' : undefined}
+              className={linkClass(s.id)}
+            >
+              {s.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+    </header>
   )
 }
 
@@ -426,7 +435,7 @@ export default function HowItWorksPage() {
       style={{ colorScheme: dark ? 'dark' : 'light' }}
       className="min-h-screen bg-white night:bg-gray-950 text-gray-900 night:text-white overflow-x-clip"
     >
-      <MarketingHeader nav={NAV} theme={{ dark, onToggle: toggleTheme }} />
+      <PageHeader theme={{ dark, onToggle: toggleTheme }} />
 
       <main>
         {/* Intro — short on purpose; the pitch lives on the home page */}
@@ -449,8 +458,6 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-
-        <SectionNav />
 
         {/* Verification: one timeline, with the ID check shown screen by screen beside it */}
         <section id="verification" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
