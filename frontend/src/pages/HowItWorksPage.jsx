@@ -1,12 +1,16 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
-import { HERO_BG, usePageMeta, useScrollOnArrive } from '../components/marketing/marketingHelpers'
+import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive } from '../components/marketing/marketingHelpers'
 import {
-  AppMockup, TrustedChatMockup, KycSlider, SocialProfileVisual,
+  TrustedChatMockup, KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
 } from '../components/marketing/HowItWorksMockups'
 import FaqSection from '../components/settings/FaqSection'
+
+// The detailed explainer. Selling — the hero pitch, pricing, the short FAQ — lives on the home
+// page at "/"; this page walks through how each part works.
 
 // The Help Center sections a prospect actually asks about before signing up. Same content as
 // the in-app FAQ, so the two can't drift apart.
@@ -30,68 +34,72 @@ const FAQ_FEATURED = [
   'Does Pulse sell my personal information?',
 ]
 
-// Share-link copy follows the Help Center's own answers on sharing a profile.
-const SHARE_ITEMS = [
-  {
-    title: 'Your profile share link',
-    desc: 'Every Pulse user has a unique link to their verified profile. Find yours under Settings → Profile Info and share it wherever you want people to find you.',
-  },
-  {
-    title: 'Add it to your website and email signature',
-    desc: 'Link to your Pulse profile from your website footer, contact page, email signature, LinkedIn or digital business card, so people can confirm they are contacting the right person.',
-  },
-  {
-    title: 'Group invite links',
-    desc: 'Group admins can create an invite link from Group Info and share it anywhere. Anyone who opens it can see the group before joining, and admins can reset or revoke the link at any time.',
-  },
-]
-
-// Copy on this page is supplied by the product team — keep the wording as given.
-
+// Same three items as the home page's header, so the two pages share one main navigation.
+// In-page sections have their own bar below it (SECTION_NAV).
 const NAV = [
-  { href: '#steps', label: 'How it works' },
-  { href: '#verification', label: 'Verification' },
-  { href: '#websites', label: 'Websites' },
-  { href: '#features', label: 'Features' },
-  { href: '#share', label: 'Share links' },
-  { href: '#security', label: 'Security' },
+  { href: '/how-it-works', label: 'How it works' },
+  { href: '/#pricing', label: 'Pricing' },
   { href: '#faq', label: 'FAQ' },
 ]
 
-const STEPS = [
+// The sticky "on this page" bar. Ids are stable — the home page and shared links point at them.
+const SECTION_NAV = [
+  { id: 'verification', label: 'Verification' },
+  { id: 'company', label: 'Company' },
+  { id: 'features', label: 'Features' },
+  { id: 'share-links', label: 'Share links' },
+  { id: 'security', label: 'Security' },
+  { id: 'faq', label: 'FAQ' },
+]
+
+// Header (64px) plus the section bar, so a section lands just below both instead of under them.
+const SECTION_SCROLL_MARGIN = 'scroll-mt-32'
+
+// ─── Getting verified ─────────────────────────────────────────────────────────
+
+// TODO: confirm the timings. The ID check's own start screen says about 1 minute; the 1 minute
+// for creating an account is an estimate. The intro's "About 2 minutes" is these two added up.
+const TIMELINE = [
   {
     title: 'Create your account',
+    time: 'About 1 min',
+    required: true,
     desc: 'Sign up with your email address and add your role, job title and company information to your profile.',
-    path: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
   },
   {
-    title: 'Verify your identity',
-    desc: 'Complete identity verification using a government-issued ID. Every user must be verified before accessing Pulse.',
-    path: 'M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z',
+    title: 'Verify your identity with Didit',
+    time: 'About 1 min',
+    required: true,
+    desc: 'A government-issued ID and a liveness check confirm you are the person on the ID. No anonymous or unverified accounts can access Pulse.',
   },
   {
-    title: 'Verify your professional presence',
-    desc: 'Optionally verify the websites and social profiles connected to your work, so others can see who you represent.',
-    path: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    title: 'Verify your website and socials',
+    required: false,
+    desc: 'Optionally verify the website and social profiles connected to your work, so others can see who you represent.',
+    links: [{ href: '#company', label: 'Company verification' }, { href: '#social', label: 'Social verification' }],
   },
   {
-    title: 'Communicate and do business',
-    desc: 'Message individuals or groups, make calls, share files, schedule meetings and build professional relationships—all from one place.',
-    path: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+    title: 'Start communicating',
+    desc: 'Message individuals or groups, make calls, share files and schedule meetings with verified professionals, all from one place.',
   },
 ]
 
-// Identity and social each get a full row: the copy on one side and a picture of the real
-// thing on the other, numbered as the two checks a member goes through.
-const IDENTITY = {
-  lead: 'We verify your identity using our partner Didit with a government-issued ID and a quick selfie check. This ensures a safe and trusted community where you always know who you\'re speaking with.',
-  points: [
-    'Identity is checked through Didit using a government-issued ID.',
-    'A liveness and biometric check confirms you are the person on the ID.',
-    'No anonymous or unverified accounts can access the platform.',
-    'Your ID data is secure and never shown on Pulse.',
-  ],
-}
+// Answers follow the Help Center: "What happens if my verification fails?", the KYC Policy's
+// list of accepted documents, and "What happens if I change companies?".
+const WHAT_IF = [
+  {
+    q: 'My verification failed',
+    a: 'It usually comes down to image quality, lighting, an unsupported document or the liveness check. You can try again straight away from the verification screen. If it keeps failing, contact Pulse Support and we will review it with you.',
+  },
+  {
+    q: "My ID type isn't accepted",
+    a: 'Pulse accepts a passport, national identity card, driving licence or residence permit, though what is available depends on your country. If yours is not accepted, contact Pulse Support to find out what you can use.',
+  },
+  {
+    q: 'I changed company',
+    a: 'Step back from your old company under Settings → Website Verification, then verify your new one: with your new company email to join as a representative, or with a head tag or DNS record if you run its website.',
+  },
+]
 
 const SOCIAL = {
   lead: 'Link your social profiles to show which accounts you own and build trust with the iGaming community. This confirms that you control the account, not just a link.',
@@ -129,6 +137,10 @@ const WEBSITE_ROUTES = [
   },
 ]
 
+// ─── Features ─────────────────────────────────────────────────────────────────
+
+// `pro: true` puts a Pro badge on the feature. Only for features that are Pro-only — calls and
+// file sharing work on Free with limits, so they say so in words instead.
 const F = {
   messaging: {
     title: 'Direct and group messaging',
@@ -142,12 +154,14 @@ const F = {
   },
   screen: {
     title: 'Screen sharing',
-    desc: 'Share your screen during a call to present a deck, explain a dashboard or walk someone through a live demonstration. Available with Pro.',
+    pro: true,
+    desc: 'Share your screen during a call to present a deck, explain a dashboard or walk someone through a live demonstration.',
     path: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
   },
   search: {
     title: 'Search by business name',
-    desc: 'Find professionals by the company or brand they work for, even if you do not know their username. Available with Pro.',
+    pro: true,
+    desc: 'Find professionals by the company or brand they work for, even if you do not know their username.',
     path: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
   },
   files: {
@@ -157,7 +171,8 @@ const F = {
   },
   calendar: {
     title: 'Calendar scheduling',
-    desc: 'Schedule meetings with your contacts and keep them synchronized with Google Calendar. Available with Pro.',
+    pro: true,
+    desc: 'Schedule meetings with your contacts and keep them synchronized with Google Calendar.',
     path: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
   },
 }
@@ -169,6 +184,43 @@ const FEATURE_ROWS = [
   { items: [F.calls, F.screen], visual: <CallMockup />, flip: true },
   { items: [F.search, F.calendar], visual: <SearchMockup /> },
 ]
+
+// Share-link copy follows the Help Center's own answers on sharing a profile.
+const SHARE_ITEMS = [
+  {
+    title: 'Your profile share link',
+    desc: 'Every Pulse user has a unique link to their verified profile. Find yours under Settings → Profile Info and share it wherever you want people to find you.',
+  },
+  {
+    title: 'Add it to your website and email signature',
+    desc: 'Link to your Pulse profile from your website footer, contact page, email signature, LinkedIn or digital business card, so people can confirm they are contacting the right person.',
+  },
+  {
+    title: 'Group invite links',
+    desc: 'Group admins can create an invite link from Group Info and share it anywhere. Anyone who opens it can see the group before joining, and admins can reset or revoke the link at any time.',
+  },
+]
+
+// ─── Comparison ───────────────────────────────────────────────────────────────
+
+// TODO: verify competitor claims before publishing. Telegram and WhatsApp change their features
+// often, and a wrong cell here is the kind of thing people screenshot.
+//   true = yes · false = no · 'pro' = yes, on Pulse Pro · 'partial' = only in limited form
+// The 'partial' cells, and why: WhatsApp — verified company: some Business accounts can carry a
+// Meta Verified badge, which is not the same as checking someone works there.
+const COMPARISON = {
+  columns: ['Pulse', 'Telegram', 'WhatsApp'],
+  rows: [
+    { label: 'ID-verified members', values: [true, false, false] },
+    { label: 'Verified company or website', values: [true, false, 'partial'] },
+    { label: 'Search by business name', values: ['pro', false, false] },
+    { label: 'Voice and video calls', values: [true, true, true] },
+    { label: 'Screen sharing', values: ['pro', true, true] },
+    { label: 'Built for iGaming', values: [true, false, false] },
+  ],
+}
+
+// ─── Security ─────────────────────────────────────────────────────────────────
 
 const SECURITY = [
   {
@@ -197,13 +249,20 @@ const SECURITY = [
   },
 ]
 
-function StepEyebrow({ n, children }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm bg-white text-violet-600">
-      {n} <span className="text-violet-300">•</span> {children}
-    </span>
-  )
-}
+// Plain statements of what Pulse holds. Each one is backed by the Help Center: "Are Pulse
+// messages end-to-end encrypted?" (no — in transit only, access restricted by policy) and the
+// retention answer (documents deleted within a month, only the verification record kept).
+const WHAT_PULSE_SEES = [
+  'Messages are encrypted in transit between your device and Pulse, not end-to-end. Access to them is restricted by policy.',
+  'ID documents and selfies are deleted after 30 days.',
+  'Pulse keeps only a record that you were verified.',
+]
+
+const H2 = 'mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight text-balance'
+const LEAD = 'mt-4 text-gray-600 leading-relaxed'
+const CHECK = 'M5 13l4 4L19 7'
+const CROSS = 'M6 18L18 6M6 6l12 12'
+const LOCK = 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
 
 function CheckList({ items }) {
   return (
@@ -211,12 +270,20 @@ function CheckList({ items }) {
       {items.map((p) => (
         <li key={p} className="flex items-center gap-3 text-gray-600">
           <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
-            <Icon path="M5 13l4 4L19 7" className="w-4 h-4" />
+            <Icon path={CHECK} className="w-4 h-4" />
           </span>
           <span>{p}</span>
         </li>
       ))}
     </ul>
+  )
+}
+
+function ProBadge() {
+  return (
+    <span className="inline-flex items-center rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+      Pro
+    </span>
   )
 }
 
@@ -232,17 +299,113 @@ function RouteCard({ route }) {
           {admin ? 'Admin Access' : 'Representative'}
         </span>
       </div>
-      <p className="text-lg font-bold text-gray-900">{route.title}</p>
+      <h3 className="text-lg font-bold text-gray-900">{route.title}</h3>
       <p className="mt-1 text-sm text-gray-500">{route.blurb}</p>
       <ul className="mt-4 space-y-2">
         {route.points.map((p) => (
           <li key={p} className="flex gap-2.5 text-sm text-gray-700">
-            <Icon path="M5 13l4 4L19 7" className={`w-4 h-4 mt-0.5 shrink-0 ${admin ? 'text-violet-500' : 'text-green-500'}`} />
+            <Icon path={CHECK} className={`w-4 h-4 mt-0.5 shrink-0 ${admin ? 'text-violet-500' : 'text-green-500'}`} />
             <span>{p}</span>
           </li>
         ))}
       </ul>
     </div>
+  )
+}
+
+// The sticky "on this page" bar. The current section is whichever one's top has most recently
+// passed just under the bar; on phones the bar scrolls sideways and keeps that link in view.
+function SectionNav() {
+  const [active, setActive] = useState(null)
+  const barRef = useRef(null)
+  const linkRefs = useRef({})
+
+  useEffect(() => {
+    let frame = 0
+    function update() {
+      frame = 0
+      const line = 150 // px from the top: header + this bar + a little
+      let current = null
+      for (const { id } of SECTION_NAV) {
+        const el = document.getElementById(id)
+        if (el && el.getBoundingClientRect().top <= line) current = id
+      }
+      setActive(current)
+    }
+    function onScroll() {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  // Scroll the bar itself, never the page: scrollIntoView could nudge the window too.
+  useEffect(() => {
+    const bar = barRef.current
+    const link = active && linkRefs.current[active]
+    if (bar && link) {
+      bar.scrollTo({ left: link.offsetLeft - bar.clientWidth / 2 + link.clientWidth / 2, behavior: 'smooth' })
+    }
+  }, [active])
+
+  return (
+    <nav aria-label="On this page" className="sticky top-16 z-30 bg-white/90 backdrop-blur border-b border-gray-100">
+      <div
+        ref={barRef}
+        className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden"
+      >
+        {SECTION_NAV.map((s) => (
+          <a
+            key={s.id}
+            ref={(el) => { linkRefs.current[s.id] = el }}
+            href={`#${s.id}`}
+            aria-current={active === s.id ? 'location' : undefined}
+            className={`shrink-0 whitespace-nowrap px-3 py-3 text-sm font-medium border-b-2 transition-colors ${FOCUS} ${
+              active === s.id ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-600 hover:text-violet-600'
+            }`}
+          >
+            {s.label}
+          </a>
+        ))}
+      </div>
+    </nav>
+  )
+}
+
+function CompareCell({ value }) {
+  if (value === true || value === 'pro') {
+    return (
+      // On phones "Pro" sits under the tick, so the column stays narrow enough for all four to fit.
+      <span className="inline-flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
+        <span className="w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+          <Icon path={CHECK} className="w-3.5 h-3.5" />
+        </span>
+        <span className="sr-only">Yes</span>
+        {value === 'pro' && (
+          <span className="text-[11px] font-semibold text-violet-700">
+            <span aria-hidden="true">Pro</span>
+            <span className="sr-only">, on Pulse Pro</span>
+          </span>
+        )}
+      </span>
+    )
+  }
+  if (value === 'partial') {
+    return <span className="text-xs font-medium text-gray-500">Limited</span>
+  }
+  return (
+    <span className="inline-flex">
+      <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center">
+        <Icon path={CROSS} className="w-3.5 h-3.5" />
+      </span>
+      <span className="sr-only">No</span>
+    </span>
   )
 }
 
@@ -255,275 +418,364 @@ export default function HowItWorksPage() {
   const phoneStyle = searchParams.get('phone') === 'classic' ? 'classic' : 'tall'
 
   // overflow-x-clip, not -hidden: hidden makes this div a scroll container, which stops the
-  // sticky header sticking — it would scroll away with the page.
+  // sticky header and section bar sticking — they would scroll away with the page.
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-clip">
       <MarketingHeader nav={NAV} />
 
-      {/* Hero */}
-      <section className="px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24" style={HERO_BG}>
-        <div className="max-w-3xl mx-auto text-center">
-          <Eyebrow>Professional communication for iGaming</Eyebrow>
-          <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            The verified communication platform for{' '}
-            <span className="bg-linear-to-r from-sky-400 to-violet-600 bg-clip-text text-transparent">iGaming</span>.
-          </h1>
-          <p className="mt-5 text-lg text-gray-600 leading-relaxed">
-            Pulse brings messaging, group chats, voice and video calls, file sharing, screen sharing
-            and meeting scheduling together in one secure web app. Communicate and do business with
-            confidence, knowing who you are speaking with and who they represent.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link to="/signup" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors shadow-md shadow-violet-600/20">
-              Create your account
-            </Link>
-            <a href="#steps" className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white border border-gray-200 hover:border-violet-300 font-semibold transition-colors">
-              See how Pulse works
-            </a>
-          </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-gray-700">
-            {['No fake accounts', 'No anonymous users', 'Only verified professionals'].map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <Icon path="M5 13l4 4L19 7" className="w-4 h-4 text-violet-600" />
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* The product itself, front and centre — without this, nothing above says "messenger" */}
-        <div className="max-w-5xl mx-auto mt-14 sm:mt-16">
-          <AppMockup />
-        </div>
-      </section>
-
-      {/* Getting started */}
-      <section id="steps" className="px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mx-auto text-center">
+      <main>
+        {/* Intro — short on purpose; the pitch lives on the home page */}
+        <section className="px-4 sm:px-6 pt-14 sm:pt-16 pb-12 sm:pb-14" style={HERO_BG}>
+          <div className="max-w-3xl mx-auto text-center">
             <Eyebrow>How it works</Eyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Get connected and start communicating</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">
-              Create your account, verify your identity and start communicating with iGaming
-              professionals in one trusted workspace.
+            <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight text-balance">
+              From sign-up to your first verified conversation
+            </h1>
+            {/* TODO: confirm "About 2 minutes" — see the TIMELINE timings above. */}
+            <p className="mt-5 text-lg text-gray-600 leading-relaxed">
+              About 2 minutes to create your account and verify your identity.
             </p>
+            <Link
+              to="/signup"
+              className={`inline-block mt-7 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-colors shadow-md shadow-violet-600/20 ${FOCUS}`}
+            >
+              Create free account
+            </Link>
           </div>
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-10">
-            {STEPS.map((s, i) => (
-              <div key={s.title} className="relative rounded-2xl border border-gray-100 bg-gray-50/70 px-6 pt-9 pb-6">
-                {/* Step number sits on the card's top edge, so the order reads before anything else */}
-                <span className="absolute -top-4 left-6 w-8 h-8 rounded-full bg-violet-600 text-white text-sm font-bold flex items-center justify-center shadow-md ring-4 ring-white">
-                  {i + 1}
-                </span>
-                {i < STEPS.length - 1 && (
-                  <span className="hidden lg:block absolute top-0 -right-5 w-5 border-t-2 border-dashed border-violet-200" />
-                )}
-                <span className="w-11 h-11 mb-4 rounded-xl bg-white shadow-sm flex items-center justify-center text-violet-600">
-                  <Icon path={s.path} className="w-5 h-5" />
-                </span>
-                <p className="font-bold">{s.title}</p>
-                <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* 1 — Identity: copy left, phone right */}
-      <section id="verification" className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender scroll-mt-16">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <StepEyebrow n={1}>Identity verification</StepEyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Every member is verified before accessing Pulse</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">{IDENTITY.lead}</p>
-            <CheckList items={IDENTITY.points} />
-            {/* Backed by the Help Center's retention answer: the ID provider deletes
-                verification data after a maximum of one month, and Pulse keeps only
-                verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
-            <div className="mt-7 flex gap-4 rounded-2xl bg-green-50 px-5 py-4">
-              <Icon path="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" className="w-6 h-6 mt-0.5 shrink-0 text-green-600" />
-              <p className="text-sm text-green-800 leading-relaxed">
-                <span className="font-semibold">Your ID data is not kept.</span> Your documents
-                and selfie are automatically deleted after 30 days. Pulse only keeps a record
-                that your identity was verified.
+        <SectionNav />
+
+        {/* Verification: one timeline, with the ID check shown screen by screen beside it */}
+        <section id="verification" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="max-w-2xl">
+              <Eyebrow>Verification</Eyebrow>
+              <h2 className={H2}>How getting verified works</h2>
+              <p className={LEAD}>Two steps are required, and they are the only thing between you and your first conversation.</p>
+            </div>
+
+            <div className="mt-12 grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+              <ol className="relative">
+                {TIMELINE.map((s, i) => (
+                  <li key={s.title} className="relative pl-14 pb-10 last:pb-0">
+                    {i < TIMELINE.length - 1 && (
+                      <span aria-hidden="true" className="absolute left-5 top-11 bottom-1 w-0.5 -translate-x-1/2 bg-violet-200" />
+                    )}
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-0 w-10 h-10 rounded-full bg-violet-600 text-white font-bold flex items-center justify-center ring-4 ring-lavender"
+                    >
+                      {i + 1}
+                    </span>
+                    <h3 className="pt-1.5 text-lg font-bold">
+                      <span className="sr-only">Step {i + 1}: </span>{s.title}
+                    </h3>
+                    {(s.time || s.required !== undefined) && (
+                      <p className="mt-1.5 flex flex-wrap gap-2 text-xs font-semibold">
+                        {s.time && <span className="rounded-full bg-white px-2.5 py-1 text-gray-700 shadow-sm">{s.time}</span>}
+                        {s.required === true && <span className="rounded-full bg-violet-600 px-2.5 py-1 text-white">Required</span>}
+                        {s.required === false && <span className="rounded-full bg-white px-2.5 py-1 text-gray-500 shadow-sm">Optional</span>}
+                      </p>
+                    )}
+                    <p className="mt-2 text-gray-600 leading-relaxed">{s.desc}</p>
+                    {s.links && (
+                      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        {s.links.map((l) => (
+                          <a key={l.href} href={l.href} className={`font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}>
+                            {l.label} →
+                          </a>
+                        ))}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+
+              <div>
+                <p className="mb-4 text-sm font-semibold text-gray-500 text-center lg:text-left">Step 2, screen by screen</p>
+                <KycSlider phone={phoneStyle} />
+                {/* Backed by the Help Center's retention answer: the ID provider deletes
+                    verification data after a maximum of one month, and Pulse keeps only
+                    verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
+                <div className="mt-8 flex gap-4 rounded-2xl bg-green-50 px-5 py-4">
+                  <Icon path={LOCK} className="w-6 h-6 mt-0.5 shrink-0 text-green-600" />
+                  <p className="text-sm text-green-800 leading-relaxed">
+                    <span className="font-semibold">Your ID data is not kept.</span> Your documents
+                    and selfie are automatically deleted after 30 days. Pulse only keeps a record
+                    that your identity was verified.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* What if… */}
+            <div className="mt-16">
+              <h3 className="text-xl font-bold">What if…</h3>
+              <ul className="mt-5 grid md:grid-cols-3 gap-5">
+                {WHAT_IF.map((w) => (
+                  <li key={w.q} className="rounded-2xl bg-white p-6 shadow-sm">
+                    <h4 className="font-bold">{w.q}</h4>
+                    <p className="mt-2 text-sm text-gray-600 leading-relaxed">{w.a}</p>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-5 text-sm text-gray-600">
+                Still stuck?{' '}
+                <a href="mailto:pulse@affiliateroulette.com" className={`font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}>
+                  Contact Pulse Support
+                </a>
               </p>
             </div>
           </div>
-          <KycSlider phone={phoneStyle} />
-        </div>
-      </section>
+        </section>
 
-      {/* What all that adds up to, on white between the two checks */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <Eyebrow>Trusted communication</Eyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Know who you're communicating with</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">
-              Pulse combines professional communication with identity and business verification.
-              Users can see what has been confirmed before they start a conversation, helping
-              reduce impersonation, fake accounts and uncertainty.
-            </p>
-          </div>
-          <TrustedChatMockup />
-        </div>
-      </section>
-
-      {/* 2 — Social */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* What all that adds up to */}
+        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <StepEyebrow n={2}>Social profile verification</StepEyebrow>
-              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Connect your professional social accounts securely</h2>
-              <p className="mt-4 text-gray-600 leading-relaxed">{SOCIAL.lead}</p>
-              <CheckList items={SOCIAL.points} />
+              <Eyebrow>Trusted communication</Eyebrow>
+              <h2 className={H2}>Know who you're communicating with</h2>
+              <p className={LEAD}>
+                Pulse combines professional communication with identity and business verification.
+                Users can see what has been confirmed before they start a conversation, helping
+                reduce impersonation, fake accounts and uncertainty.
+              </p>
             </div>
-            <SocialProfileVisual />
+            <TrustedChatMockup />
           </div>
+        </section>
 
-          <p className="mt-14 text-sm text-gray-500 max-w-3xl mx-auto text-center">
-            Identity verification is mandatory. Website and social profile verification are
-            optional, but they provide additional context and help others understand who you are
-            and who you represent.
-          </p>
-        </div>
-      </section>
-
-      {/* Websites & representation */}
-      <section id="websites" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto">
-            <Eyebrow>Websites &amp; representation</Eyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Show which company you work for</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">
-              Choose how to verify. Each route gives different access on Pulse.
-            </p>
-          </div>
-
-          <div className="mt-10 grid md:grid-cols-3 gap-5">
-            {WEBSITE_ROUTES.map((r) => <RouteCard key={r.title} route={r} />)}
-          </div>
-
-          <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
-            A business can only be claimed once. After an admin verifies by head tag or DNS, everyone
-            else joins by company email as a Representative — no approval needed.
-          </p>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mx-auto text-center">
-            <Eyebrow>Features</Eyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Everything your business communication needs</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">
-              Pulse brings the tools you use every day into one professional workspace, so you can
-              communicate, collaborate and build partnerships without switching between multiple apps.
-            </p>
-          </div>
-
-          <div className="mt-14 space-y-20">
-            {FEATURE_ROWS.map((row) => (
-              <div key={row.items[0].title} className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-                <div className={row.flip ? 'lg:order-2' : ''}>{row.visual}</div>
-                <div className="space-y-8">
-                  {row.items.map((f) => (
-                    <div key={f.title} className="flex gap-4">
-                      <span className="w-11 h-11 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
-                        <Icon path={f.path} className="w-5 h-5" />
-                      </span>
-                      <div>
-                        <p className="text-lg font-bold">{f.title}</p>
-                        <p className="mt-1.5 text-gray-600 leading-relaxed">{f.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {/* Social verification — step 3, in detail */}
+        <section id="social" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <Eyebrow>Social verification</Eyebrow>
+                <h2 className={H2}>Connect your professional social accounts securely</h2>
+                <p className={LEAD}>{SOCIAL.lead}</p>
+                <CheckList items={SOCIAL.points} />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <SocialProfileVisual />
+            </div>
 
-      {/* Security and privacy */}
-      {/* Share links */}
-      <section id="share" className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender scroll-mt-16">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-          <div>
-            <Eyebrow>Share links</Eyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Share your verified profile anywhere</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">
-              Give people an easy way to find you on Pulse and confirm your identity before they
-              get in touch. This is especially useful for affiliate managers and other
-              professionals who are often impersonated.
+            <p className="mt-14 text-sm text-gray-500 max-w-3xl mx-auto text-center">
+              Identity verification is mandatory. Website and social profile verification are
+              optional, but they provide additional context and help others understand who you are
+              and who you represent.
             </p>
-            <div className="mt-8 space-y-6">
-              {SHARE_ITEMS.map((s) => (
-                <div key={s.title} className="flex gap-3">
-                  <span className="w-2 h-2 mt-2 rounded-full bg-violet-500 shrink-0" />
-                  <div>
-                    <p className="font-bold">{s.title}</p>
-                    <p className="mt-1 text-sm text-gray-600 leading-relaxed">{s.desc}</p>
+          </div>
+        </section>
+
+        {/* Mid-page CTA */}
+        <section className="px-4 sm:px-6 py-10">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl border border-violet-100 bg-violet-50 px-6 sm:px-8 py-6 text-center sm:text-left">
+            <div>
+              <h2 className="text-xl font-bold">Ready to get verified?</h2>
+              <p className="mt-1 text-sm text-gray-600">Create your account and verify your identity in a couple of minutes.</p>
+            </div>
+            <Link
+              to="/signup"
+              className={`shrink-0 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-colors ${FOCUS}`}
+            >
+              Create free account
+            </Link>
+          </div>
+        </section>
+
+        {/* Company: websites & representation */}
+        <section id="company" className={`px-4 sm:px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto">
+              <Eyebrow>Websites &amp; representation</Eyebrow>
+              <h2 className={H2}>Show which company you work for</h2>
+              <p className={LEAD}>Choose how to verify. Each route gives different access on Pulse.</p>
+            </div>
+
+            <div className="mt-10 grid md:grid-cols-3 gap-5">
+              {WEBSITE_ROUTES.map((r) => <RouteCard key={r.title} route={r} />)}
+            </div>
+
+            <p className="mt-8 text-sm text-gray-500 max-w-3xl mx-auto text-center">
+              A business can only be claimed once. After an admin verifies by head tag or DNS, everyone
+              else joins by company email as a Representative — no approval needed.
+            </p>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" className={`px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="max-w-2xl mx-auto text-center">
+              <Eyebrow>Features</Eyebrow>
+              <h2 className={H2}>Everything your business communication needs</h2>
+              <p className={LEAD}>
+                Pulse brings the tools you use every day into one professional workspace, so you can
+                communicate, collaborate and build partnerships without switching between multiple apps.
+              </p>
+            </div>
+
+            <div className="mt-14 space-y-20">
+              {FEATURE_ROWS.map((row) => (
+                <div key={row.items[0].title} className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                  <div className={row.flip ? 'lg:order-2' : ''}>{row.visual}</div>
+                  <div className="space-y-8">
+                    {row.items.map((f) => (
+                      <div key={f.title} className="flex gap-4">
+                        <span className="w-11 h-11 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
+                          <Icon path={f.path} className="w-5 h-5" />
+                        </span>
+                        <div>
+                          <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold">
+                            {f.title}
+                            {f.pro && <ProBadge />}
+                          </h3>
+                          <p className="mt-1.5 text-gray-600 leading-relaxed">{f.desc}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-          <ShareLinksMockup />
-        </div>
-      </section>
 
-      <section id="security" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-900 text-white scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Eyebrow dark>Security</Eyebrow>
-              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Security and privacy</h2>
-              <p className="mt-4 text-gray-400 leading-relaxed">
-                Being verified should not mean being exposed. You control how discoverable you are
-                and who can contact you.
-              </p>
-            </div>
-            <PrivacyMockup />
-          </div>
-
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
-            {SECURITY.map((s) => (
-              <div key={s.title}>
-                <p className="flex items-center gap-2.5 font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
-                  {s.title}
-                </p>
-                <p className="mt-1.5 text-sm text-gray-400 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mx-auto mb-10 text-center">
-            <Eyebrow>FAQ</Eyebrow>
-            <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Frequently asked questions</h2>
-            <p className="mt-4 text-gray-600 leading-relaxed">
-              Everything you might want to know before joining Pulse.
+            <p className="mt-14 text-center">
+              <Link to="/#pricing" className={`inline-flex items-center gap-1.5 font-semibold text-violet-700 hover:text-violet-800 rounded ${FOCUS}`}>
+                Compare Free and Pro
+                <Icon path="M13 7l5 5m0 0l-5 5m5-5H6" className="w-4 h-4" />
+              </Link>
             </p>
           </div>
-          <div className="max-w-4xl mx-auto">
-            <FaqSection darkMode={false} categories={FAQ_CATEGORIES} featured={FAQ_FEATURED} />
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <CtaBanner
-        title="Ready to join Pulse?"
-        body="Create your account, verify your identity and connect with iGaming professionals in one trusted workspace."
-        buttonLabel="Create your account"
-      />
+        {/* Share links */}
+        <section id="share-links" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+              <Eyebrow>Share links</Eyebrow>
+              <h2 className={H2}>Share your verified profile anywhere</h2>
+              <p className={LEAD}>
+                Give people an easy way to find you on Pulse and confirm your identity before they
+                get in touch. This is especially useful for affiliate managers and other
+                professionals who are often impersonated.
+              </p>
+              <div className="mt-8 space-y-6">
+                {SHARE_ITEMS.map((s) => (
+                  <div key={s.title} className="flex gap-3">
+                    <span aria-hidden="true" className="w-2 h-2 mt-2 rounded-full bg-violet-500 shrink-0" />
+                    <div>
+                      <h3 className="font-bold">{s.title}</h3>
+                      <p className="mt-1 text-sm text-gray-600 leading-relaxed">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <ShareLinksMockup />
+          </div>
+        </section>
+
+        {/* Comparison */}
+        <section id="compare" className={`px-4 sm:px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto">
+              <Eyebrow>Compare</Eyebrow>
+              <h2 className={H2}>How Pulse compares</h2>
+              <p className={LEAD}>General messengers show you a username. Pulse shows you who is behind it.</p>
+            </div>
+
+            {/* All four columns fit on a phone; sideways scrolling is only a fallback below 320px. */}
+            <div className="mt-10 max-w-3xl mx-auto overflow-x-auto rounded-2xl ring-1 ring-gray-200">
+              <table className="w-full min-w-80 text-left text-xs sm:text-sm">
+                <caption className="sr-only">Pulse compared with Telegram and WhatsApp</caption>
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th scope="col" className="px-3 sm:px-5 py-4 font-semibold text-gray-500">Feature</th>
+                    {COMPARISON.columns.map((c, i) => (
+                      <th key={c} scope="col" className={`px-2 sm:px-5 py-4 text-center font-bold ${i === 0 ? 'bg-violet-50 text-violet-700' : 'text-gray-900'}`}>
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARISON.rows.map((r) => (
+                    <tr key={r.label} className="border-b border-gray-100 last:border-b-0">
+                      <th scope="row" className="px-3 sm:px-5 py-3.5 font-medium text-gray-700">{r.label}</th>
+                      {r.values.map((v, i) => (
+                        <td key={COMPARISON.columns[i]} className={`px-2 sm:px-5 py-3.5 text-center ${i === 0 ? 'bg-violet-50/60' : ''}`}>
+                          <CompareCell value={v} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* Security and privacy */}
+        <section id="security" className={`px-4 sm:px-6 py-16 sm:py-20 bg-gray-900 text-white ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <Eyebrow dark>Security</Eyebrow>
+                <h2 className={H2}>Security and privacy</h2>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  Being verified should not mean being exposed. You control how discoverable you are
+                  and who can contact you.
+                </p>
+              </div>
+              <PrivacyMockup />
+            </div>
+
+            <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-7">
+              {SECURITY.map((s) => (
+                <div key={s.title}>
+                  <h3 className="flex items-center gap-2.5 font-semibold">
+                    <span aria-hidden="true" className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
+                    {s.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm text-gray-400 leading-relaxed">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-14 rounded-2xl bg-white/5 ring-1 ring-white/10 p-6 sm:p-8">
+              <h3 className="text-lg font-bold">What Pulse can see</h3>
+              <ul className="mt-4 space-y-3">
+                {WHAT_PULSE_SEES.map((t) => (
+                  <li key={t} className="flex gap-3 text-sm text-gray-300 leading-relaxed">
+                    <Icon path={LOCK} className="w-4 h-4 mt-0.5 shrink-0 text-violet-300" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className={`px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 ${SECTION_SCROLL_MARGIN}`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="max-w-2xl mx-auto mb-10 text-center">
+              <Eyebrow>FAQ</Eyebrow>
+              <h2 className={H2}>Frequently asked questions</h2>
+              <p className={LEAD}>Everything you might want to know before joining Pulse.</p>
+            </div>
+            <div className="max-w-4xl mx-auto">
+              <FaqSection darkMode={false} categories={FAQ_CATEGORIES} featured={FAQ_FEATURED} linkable />
+            </div>
+          </div>
+        </section>
+
+        <CtaBanner
+          title="Ready to join Pulse?"
+          body="Create your account, verify your identity and connect with iGaming professionals in one trusted workspace."
+          buttonLabel="Create free account"
+        />
+      </main>
 
       <MarketingFooter />
     </div>

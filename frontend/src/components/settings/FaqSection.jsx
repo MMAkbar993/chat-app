@@ -243,7 +243,7 @@ const FAQ = [
         a: [
           'If you leave a company, you can remove the associated website or company from your Pulse profile.',
           'The Website Admin can also remove you as an approved representative of the company.',
-          'If you join a new company, you can request to become a representative of an existing verified website or verify a new website through Settings → Website Verification.',
+          'If you join a new company, verify it through Settings → Website Verification: with your new company email address to become a representative straight away, or with a head tag or DNS record if you run its website.',
           'This helps keep the company information displayed on Pulse profiles accurate and up to date.',
         ],
       },
@@ -837,9 +837,9 @@ function Answer({ blocks, darkMode }) {
   )
 }
 
-export function QaRow({ item, darkMode, open, onToggle }) {
+export function QaRow({ item, darkMode, open, onToggle, id }) {
   return (
-    <div className={`border-b last:border-b-0 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+    <div id={id} className={`border-b last:border-b-0 scroll-mt-32 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
       <button
         type="button"
         onClick={onToggle}
@@ -861,16 +861,49 @@ export function QaRow({ item, darkMode, open, onToggle }) {
   )
 }
 
+// "What is a liveness check?" → "faq-what-is-a-liveness-check". Stable as long as the question's
+// wording is, so links to an answer keep working until someone rewrites the question.
+function faqAnchor(q) {
+  return 'faq-' + q.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 // `categories` limits which sections show (e.g. the public How It Works page only needs the
 // ones a prospect asks about); omit it for the full Help Center.
 // `featured` (optional) is a list of exact question texts. When given, only those show at first
 // — in that order, as one "Common questions" card — with a button to reveal everything. Search
 // still covers every question, so nothing is hidden from someone who goes looking.
-export default function FaqSection({ darkMode, categories, featured }) {
+// `linkable` (public page only) gives every question an id, writes it into the URL when the
+// answer is opened, and opens the answer named in the URL on arrival — so
+// /how-it-works#faq-what-is-a-liveness-check lands on that answer, open. Left off inside the app,
+// where rewriting the address bar would be noise.
+export default function FaqSection({ darkMode, categories, featured, linkable = false }) {
   const [search, setSearch] = useState('')
-  const [showAll, setShowAll] = useState(false)
+  // Read once, on arrival. Worked out before the first render rather than in an effect, so the
+  // answer is already open — and its id already on the page — when the page scrolls to it.
+  const [arrivedAt] = useState(() => {
+    if (!linkable || typeof window === 'undefined') return null
+    const id = decodeURIComponent(window.location.hash.slice(1))
+    if (!id.startsWith('faq-')) return null
+    const scoped = categories ? FAQ.filter((g) => categories.includes(g.category)) : FAQ
+    for (const g of scoped) {
+      for (const item of g.items) {
+        if (faqAnchor(item.q) === id) return { key: `${g.category}::${item.q}`, q: item.q }
+      }
+    }
+    return null
+  })
+  // An answer outside the featured few needs the full list showing.
+  const [showAll, setShowAll] = useState(Boolean(arrivedAt && featured && !featured.includes(arrivedAt.q)))
   // Keyed by "category::question" so two categories can't collide on a similar wording.
-  const [openKey, setOpenKey] = useState(null)
+  const [openKey, setOpenKey] = useState(arrivedAt?.key ?? null)
+
+  function toggle(key, q) {
+    const next = openKey === key ? null : key
+    setOpenKey(next)
+    // replaceState rather than a router navigation: a navigation would re-run the page's
+    // scroll-to-hash and jump the view on every click. Keeps the router's own history state.
+    if (linkable) window.history.replaceState(window.history.state, '', next ? `#${faqAnchor(q)}` : '#faq')
+  }
 
   const term = search.trim().toLowerCase()
 
@@ -924,6 +957,7 @@ export default function FaqSection({ darkMode, categories, featured }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search the Help Center…"
+            aria-label="Search the Help Center"
             className={`w-full rounded-xl pl-10 pr-9 py-2.5 text-sm outline-none border ${
               darkMode
                 ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-500'
@@ -945,10 +979,21 @@ export default function FaqSection({ darkMode, categories, featured }) {
         </div>
 
         {term && (
-          <p className={`text-xs mt-2 ${sub}`}>
-            {total === 0
-              ? 'No answers matched. Try a different word, or contact support below.'
-              : `${total} ${total === 1 ? 'answer' : 'answers'} for “${search.trim()}”`}
+          <p role="status" className={`text-xs mt-2 ${sub}`}>
+            {total === 0 ? (
+              <>
+                No answers match “{search.trim()}”. Try another word, or{' '}
+                <a
+                  href="mailto:pulse@affiliateroulette.com"
+                  className={`font-semibold underline underline-offset-2 ${darkMode ? 'text-violet-300' : 'text-violet-700'}`}
+                >
+                  contact support
+                </a>
+                .
+              </>
+            ) : (
+              `${total} ${total === 1 ? 'answer' : 'answers'} for “${search.trim()}”`
+            )}
           </p>
         )}
       </div>
@@ -965,10 +1010,11 @@ export default function FaqSection({ darkMode, categories, featured }) {
                 return (
                   <QaRow
                     key={key}
+                    id={linkable ? faqAnchor(item.q) : undefined}
                     item={item}
                     darkMode={darkMode}
                     open={openKey === key}
-                    onToggle={() => setOpenKey(openKey === key ? null : key)}
+                    onToggle={() => toggle(key, item.q)}
                   />
                 )
               })}
@@ -999,12 +1045,13 @@ export default function FaqSection({ darkMode, categories, featured }) {
               return (
                 <QaRow
                   key={key}
+                  id={linkable ? faqAnchor(item.q) : undefined}
                   item={item}
                   darkMode={darkMode}
                   // While searching, show every match expanded — collapsing a result set the
                   // user just filtered down to makes them click twice for what they asked for.
                   open={term ? true : openKey === key}
-                  onToggle={() => setOpenKey(openKey === key ? null : key)}
+                  onToggle={() => toggle(key, item.q)}
                 />
               )
             })}

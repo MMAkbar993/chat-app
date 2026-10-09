@@ -37,7 +37,7 @@ export function usePageMeta(meta) {
 }
 
 // Client-side navigation keeps the previous page's scroll position and ignores the #hash, so a
-// link to "/how-it-works#websites" would land wherever the last page was scrolled to. This
+// link to "/how-it-works#company" would land wherever the last page was scrolled to. This
 // jumps to the hash target if there is one, and to the top otherwise.
 export function useScrollOnArrive(hash) {
   useEffect(() => {
