@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import {
@@ -265,6 +265,9 @@ function RouteCard({ route }) {
 
 export default function HowItWorksPage() {
   const { user } = useAuth()
+  // Temporary: compare phone frames with ?phone=classic until one is chosen.
+  const [searchParams] = useSearchParams()
+  const phoneStyle = searchParams.get('phone') === 'classic' ? 'classic' : 'tall'
 
   // A direct visit already gets these from the pre-built HTML; this covers arriving here by
   // navigating inside the app, and puts the defaults back when leaving.
@@ -409,14 +412,14 @@ export default function HowItWorksPage() {
               </p>
             </div>
           </div>
-          <KycSlider />
+          <KycSlider phone={phoneStyle} />
         </div>
       </section>
 
-      {/* What all that adds up to: centred, on white, between the two checks */}
+      {/* What all that adds up to, on white between the two checks */}
       <section className="px-4 sm:px-6 py-16 sm:py-20 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div>
             <Eyebrow>Trusted communication</Eyebrow>
             <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Know who you're communicating with</h2>
             <p className="mt-4 text-gray-600 leading-relaxed">
@@ -425,31 +428,21 @@ export default function HowItWorksPage() {
               reduce impersonation, fake accounts and uncertainty.
             </p>
           </div>
-          <div className="relative mt-12 max-w-lg mx-auto">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-20 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.16),transparent_65%)]"
-            />
-            <div className="relative">
-              <ProfileMockup />
-            </div>
-          </div>
+          <ProfileMockup />
         </div>
       </section>
 
-      {/* 2 — Social: picture left, copy right (copy still comes first on mobile) */}
+      {/* 2 — Social */}
       <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="lg:order-2">
+            <div>
               <StepEyebrow n={2}>Social profile verification</StepEyebrow>
               <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight">Connect your professional social accounts securely</h2>
               <p className="mt-4 text-gray-600 leading-relaxed">{SOCIAL.lead}</p>
               <CheckList items={SOCIAL.points} />
             </div>
-            <div className="lg:order-1">
-              <SocialProfileVisual />
-            </div>
+            <SocialProfileVisual />
           </div>
 
           <p className="mt-14 text-sm text-gray-500 max-w-3xl mx-auto text-center">

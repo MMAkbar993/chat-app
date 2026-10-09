@@ -214,7 +214,7 @@ function MockSection({ label, open, children }) {
 // collapsed, as the real profile lets you do, which keeps the card from running tall.
 export function ProfileMockup() {
   return (
-    <div aria-hidden="true" className="relative max-w-sm mx-auto w-full">
+    <div aria-hidden="true" className="relative max-w-sm mx-auto lg:mr-0 w-full">
       <div className="rounded-2xl bg-white shadow-2xl shadow-violet-900/10 ring-1 ring-gray-100 overflow-hidden text-left">
         <div className="h-16 bg-linear-to-r from-violet-500 to-violet-400" />
         <div className="px-5 pb-5">
@@ -260,7 +260,68 @@ const KYC_SLIDES = [
 
 const SLIDE_MS = 3500
 
-export function KycSlider() {
+// "tall" (default): real-phone proportions — a home-indicator strip under the screen, thin
+// gradient bezel and side buttons, so it reads as a modern handset rather than a stubby one.
+// "classic": the previous frame. Kept for comparison via ?phone=classic; delete the loser.
+function KycScreen({ index, tall }) {
+  return (
+    <>
+      <div className={`relative flex items-center justify-between px-6 text-[11px] font-semibold text-gray-900 ${tall ? 'pt-3.5 pb-2' : 'pt-2.5 pb-1'}`}>
+        <span>9:41</span>
+        <span aria-hidden="true" className={`absolute left-1/2 -translate-x-1/2 rounded-full bg-[#111018] ${tall ? 'top-2.5 w-24 h-6' : 'top-2 w-20 h-5'}`} />
+        <span aria-hidden="true" className="flex items-center gap-1">
+          <svg className="w-3.5 h-2.5" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2.5" height="4" rx=".6"/><rect x="3.8" y="4" width="2.5" height="6" rx=".6"/><rect x="7.6" y="2" width="2.5" height="8" rx=".6"/><rect x="11.4" y="0" width="2.5" height="10" rx=".6"/></svg>
+          <svg className="w-5 h-2.5" viewBox="0 0 20 10" fill="none"><rect x=".5" y=".5" width="16" height="9" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="11" height="6" rx="1.2" fill="currentColor"/><rect x="17.5" y="3.5" width="1.5" height="3" rx=".7" fill="currentColor"/></svg>
+        </span>
+      </div>
+      <div className="relative aspect-680/1150">
+        {KYC_SLIDES.map((s, i) => (
+          <img
+            key={s.src}
+            src={s.src}
+            alt={s.alt}
+            aria-hidden={i !== index}
+            loading="lazy"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ))}
+      </div>
+      {tall && (
+        <div aria-hidden="true" className="h-10 flex items-end justify-center pb-2.5">
+          <span className="w-28 h-1 rounded-full bg-gray-900" />
+        </div>
+      )}
+    </>
+  )
+}
+
+function PhoneFrame({ variant, index }) {
+  if (variant === 'classic') {
+    return (
+      <div className="w-60 rounded-[2.75rem] bg-[#1B1533] p-2.5 shadow-2xl shadow-violet-900/25 ring-1 ring-black/10">
+        <div className="relative rounded-[2.15rem] overflow-hidden bg-white">
+          <KycScreen index={index} />
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="relative w-64">
+      {/* Side buttons */}
+      <span aria-hidden="true" className="absolute -left-[3px] top-24 w-[3px] h-7 rounded-l bg-gray-700" />
+      <span aria-hidden="true" className="absolute -left-[3px] top-36 w-[3px] h-12 rounded-l bg-gray-700" />
+      <span aria-hidden="true" className="absolute -left-[3px] top-52 w-[3px] h-12 rounded-l bg-gray-700" />
+      <span aria-hidden="true" className="absolute -right-[3px] top-40 w-[3px] h-20 rounded-r bg-gray-700" />
+      <div className="rounded-[3rem] bg-linear-to-b from-gray-600 via-gray-800 to-gray-900 p-[7px] shadow-2xl shadow-violet-900/30 ring-1 ring-black/20">
+        <div className="relative rounded-[2.6rem] overflow-hidden bg-white ring-1 ring-black/40">
+          <KycScreen index={index} tall />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function KycSlider({ phone = 'tall' }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   // Auto-advancing is decoration, so it's off for anyone who has asked their OS for less
@@ -290,36 +351,13 @@ export function KycSlider() {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_35%_50%,rgba(139,92,246,0.16),transparent_60%)]"
+        className="pointer-events-none absolute left-1/3 top-1/2 w-80 h-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-400/20 blur-3xl"
       />
 
       {/* Phone. The screenshots are of the screen alone, so without a status bar and island
           they read as a card in a frame rather than a phone — which is what looked squashed. */}
       <div className="relative flex flex-col items-center gap-4 shrink-0">
-        <div className="w-60 rounded-[2.75rem] bg-[#1B1533] p-2.5 shadow-2xl shadow-violet-900/25 ring-1 ring-black/10">
-          <div className="relative rounded-[2.15rem] overflow-hidden bg-white">
-            <div className="relative flex items-center justify-between px-6 pt-2.5 pb-1 text-[11px] font-semibold text-gray-900">
-              <span>9:41</span>
-              <span aria-hidden="true" className="absolute left-1/2 top-2 -translate-x-1/2 w-20 h-5 rounded-full bg-[#1B1533]" />
-              <span aria-hidden="true" className="flex items-center gap-1">
-                <svg className="w-3.5 h-2.5" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2.5" height="4" rx=".6"/><rect x="3.8" y="4" width="2.5" height="6" rx=".6"/><rect x="7.6" y="2" width="2.5" height="8" rx=".6"/><rect x="11.4" y="0" width="2.5" height="10" rx=".6"/></svg>
-                <svg className="w-5 h-2.5" viewBox="0 0 20 10" fill="none"><rect x=".5" y=".5" width="16" height="9" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="11" height="6" rx="1.2" fill="currentColor"/><rect x="17.5" y="3.5" width="1.5" height="3" rx=".7" fill="currentColor"/></svg>
-              </span>
-            </div>
-            <div className="relative aspect-680/1150">
-              {KYC_SLIDES.map((s, i) => (
-                <img
-                  key={s.src}
-                  src={s.src}
-                  alt={s.alt}
-                  aria-hidden={i !== index}
-                  loading="lazy"
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === index ? 'opacity-100' : 'opacity-0'}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        <PhoneFrame variant={phone} index={index} />
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -402,7 +440,10 @@ const CARD_SHADOW = 'shadow-[0_16px_40px_-16px_rgba(76,29,149,0.28)]'
 export function SocialProfileVisual() {
   return (
     <div aria-hidden="true" className="relative flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-0">
-      <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_40%_50%,rgba(139,92,246,0.14),transparent_60%)]" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/3 top-1/2 w-80 h-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-400/20 blur-3xl"
+      />
 
       {/* What a stranger sees on the profile */}
       <div className="relative rounded-3xl bg-violet-100/70 p-4 shrink-0">
@@ -410,7 +451,7 @@ export function SocialProfileVisual() {
           <div className="h-16 bg-linear-to-r from-violet-600 to-purple-400" />
           <div className="-mt-10 flex flex-col items-center px-5 pb-5">
             <span className="relative">
-              <Avatar name="Daniel Reyes" color="from-amber-400 to-orange-500" className="w-20 h-20 text-xl ring-4 ring-white" />
+              <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-20 h-20 text-xl ring-4 ring-white" />
               <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-violet-600 ring-2 ring-white text-white flex items-center justify-center">
                 <I d={P.check} className="w-3.5 h-3.5" stroke={3} />
               </span>
