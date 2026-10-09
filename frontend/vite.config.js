@@ -2,13 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import staticPageMeta from './vite-plugins/staticPageMeta.js'
-import { SITE_URL, HOW_IT_WORKS_META } from './src/pages/howItWorksMeta.js'
+import { SITE_URL, HOME_META, HOW_IT_WORKS_META } from './src/pages/howItWorksMeta.js'
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    staticPageMeta({ siteUrl: SITE_URL, pages: [HOW_IT_WORKS_META] }),
+    staticPageMeta({ siteUrl: SITE_URL, pages: [HOW_IT_WORKS_META, HOME_META] }),
   ],
   server: {
     proxy: {

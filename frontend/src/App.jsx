@@ -18,6 +18,7 @@ import CookiePolicyPage from './pages/CookiePolicyPage'
 import KycPolicyPage from './pages/KycPolicyPage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import HowItWorksPage from './pages/HowItWorksPage'
+import HomePage from './pages/HomePage'
 import BusinessProfilePage from './pages/BusinessProfilePage'
 import JoinGroupPage from './pages/JoinGroupPage'
 import SocialConnectErrorPage from './pages/SocialConnectErrorPage'
@@ -122,6 +123,9 @@ export default function App() {
           {/* Deliberately outside GuestRoute: this is the page to send prospects to, and a
               signed-in user following that link should see it, not get bounced to /chat. */}
           <Route path="/how-it-works" element={<HowItWorksPage />} />
+          {/* The public home page. Inside GuestRoute on purpose: signed-in members who open the
+              bare domain keep landing in the app, as they did before this page existed. */}
+          <Route path="/" element={<GuestRoute><HomePage /></GuestRoute>} />
           {/* Business share link — opened by visitors to a company's website, usually signed out. */}
           <Route path="/b/:slug" element={<BusinessProfilePage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />

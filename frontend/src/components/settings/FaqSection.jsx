@@ -837,14 +837,14 @@ function Answer({ blocks, darkMode }) {
   )
 }
 
-function QaRow({ item, darkMode, open, onToggle }) {
+export function QaRow({ item, darkMode, open, onToggle }) {
   return (
     <div className={`border-b last:border-b-0 ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="w-full flex items-start justify-between gap-3 text-left py-3.5"
+        className="w-full flex items-start justify-between gap-3 text-left py-3.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
       >
         <span className={`text-sm font-medium ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.q}</span>
         <svg

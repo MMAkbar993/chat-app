@@ -20,7 +20,7 @@ function escapeHtml(s) {
 
 export function headTags({
   siteUrl, path: pagePath, title, description, image,
-  imageWidth, imageHeight, imageAlt, twitterCard = 'summary',
+  imageWidth, imageHeight, imageAlt, twitterCard = 'summary', sitewideDefault = false,
 }) {
   const url = `${siteUrl}${pagePath}`
   const imageUrl = image ? `${siteUrl}${image}` : null
@@ -37,10 +37,12 @@ export function headTags({
   return [
     `<title>${escapeHtml(title)}</title>`,
     `<meta name="description" content="${escapeHtml(description)}" />`,
-    `<link rel="canonical" href="${escapeHtml(url)}" />`,
+    // Not for the root page: its HTML is served at every route, and a canonical or og:url
+    // naming "/" would claim each of those pages is the home page.
+    ...(sitewideDefault ? [] : [`<link rel="canonical" href="${escapeHtml(url)}" />`]),
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="Pulse" />`,
-    `<meta property="og:url" content="${escapeHtml(url)}" />`,
+    ...(sitewideDefault ? [] : [`<meta property="og:url" content="${escapeHtml(url)}" />`]),
     `<meta property="og:title" content="${escapeHtml(title)}" />`,
     `<meta property="og:description" content="${escapeHtml(description)}" />`,
     ...imageMeta,
@@ -51,8 +53,10 @@ export function headTags({
   ].join('\n    ')
 }
 
-export function writePageHtml(outDir, siteUrl, page) {
-  const source = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8')
+// `source` is the built index.html as Vite wrote it. Every page must start from that copy: the
+// root page overwrites index.html itself, and a page built after it from the rewritten file would
+// carry the root page's tags as well as its own.
+export function writePageHtml(outDir, siteUrl, page, source = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8')) {
   const html = source.replace(/<title>[\s\S]*?<\/title>/, headTags({ siteUrl, ...page }))
   // Fail the build loudly rather than silently shipping a page with the default tags.
   if (html === source) throw new Error('staticPageMeta: no <title> found in the built index.html')
@@ -70,7 +74,8 @@ export default function staticPageMeta({ siteUrl, pages }) {
       outDir = path.resolve(config.root, config.build.outDir)
     },
     closeBundle() {
-      for (const page of pages) writePageHtml(outDir, siteUrl, page)
+      const source = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8')
+      for (const page of pages) writePageHtml(outDir, siteUrl, page, source)
     },
   }
 }

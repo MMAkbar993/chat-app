@@ -15,9 +15,7 @@ export default function AuthLayout({ children, footerLink, wide = false }) {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_45%,rgba(139,92,246,0.20),transparent_70%)]"
       />
 
-      {/* There is no "/" route — it falls through to /login — so the logo goes to the public
-          explainer, the one page a logged-out visitor might actually want from here. */}
-      <Link to="/how-it-works" className="relative mb-8">
+      <Link to="/" className="relative mb-8">
         <img src="/full-logo.png" alt="Pulse" className="h-10" />
       </Link>
 

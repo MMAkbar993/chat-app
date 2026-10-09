@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
+import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
+import { HERO_BG, usePageMeta, useScrollOnArrive } from '../components/marketing/marketingHelpers'
 import {
   AppMockup, TrustedChatMockup, KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
@@ -47,13 +47,6 @@ const SHARE_ITEMS = [
 ]
 
 // Copy on this page is supplied by the product team — keep the wording as given.
-
-// Same dotted/glow treatment as the public profile and group-invite pages, so the pages a
-// stranger sees before they have an account all look like one product.
-const HERO_BG = {
-  backgroundImage: 'radial-gradient(rgba(109,40,217,0.08) 1px, transparent 1px), radial-gradient(circle at 15% 10%, rgba(139,92,246,0.10), transparent 45%), radial-gradient(circle at 85% 90%, rgba(139,92,246,0.08), transparent 45%)',
-  backgroundSize: '18px 18px, auto, auto',
-}
 
 const NAV = [
   { href: '#steps', label: 'How it works' },
@@ -204,15 +197,6 @@ const SECURITY = [
   },
 ]
 
-function Eyebrow({ children, dark = false }) {
-  return (
-    <span className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${dark ? 'bg-white/10 text-violet-300' : 'bg-white text-violet-600'}`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-      {children}
-    </span>
-  )
-}
-
 function StepEyebrow({ n, children }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm bg-white text-violet-600">
@@ -233,14 +217,6 @@ function CheckList({ items }) {
         </li>
       ))}
     </ul>
-  )
-}
-
-function Icon({ path, className = 'w-5 h-5' }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={path} />
-    </svg>
   )
 }
 
@@ -271,65 +247,18 @@ function RouteCard({ route }) {
 }
 
 export default function HowItWorksPage() {
-  const { user } = useAuth()
+  const { hash } = useLocation()
+  usePageMeta(HOW_IT_WORKS_META)
+  useScrollOnArrive(hash)
   // Temporary: compare phone frames with ?phone=classic until one is chosen.
   const [searchParams] = useSearchParams()
   const phoneStyle = searchParams.get('phone') === 'classic' ? 'classic' : 'tall'
 
-  // A direct visit already gets these from the pre-built HTML; this covers arriving here by
-  // navigating inside the app, and puts the defaults back when leaving.
-  useEffect(() => {
-    const prevTitle = document.title
-    document.title = HOW_IT_WORKS_META.title
-    let tag = document.querySelector('meta[name="description"]')
-    const created = !tag
-    if (created) {
-      tag = document.createElement('meta')
-      tag.name = 'description'
-      document.head.appendChild(tag)
-    }
-    const prevDescription = tag.content
-    tag.content = HOW_IT_WORKS_META.description
-    return () => {
-      document.title = prevTitle
-      if (created) tag.remove()
-      else tag.content = prevDescription
-    }
-  }, [])
-
+  // overflow-x-clip, not -hidden: hidden makes this div a scroll container, which stops the
+  // sticky header sticking — it would scroll away with the page.
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          {/* Self-link, not "/" — that has no route and falls through to the login redirect,
-              so clicking the logo on a marketing page would bounce you off it. */}
-          <Link to="/how-it-works"><img src="/full-logo.png" alt="Pulse" className="h-7" /></Link>
-          <nav className="hidden lg:flex items-center gap-6">
-            {NAV.map((n) => (
-              <a key={n.href} href={n.href} className="text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors">
-                {n.label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2 shrink-0">
-            {user ? (
-              <Link to="/chat" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors">
-                Go to App
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="hidden sm:block px-3 py-2 text-sm font-medium text-gray-600 hover:text-violet-600 transition-colors">
-                  Sign in
-                </Link>
-                <Link to="/signup" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors">
-                  Create account
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white text-gray-900 overflow-x-clip">
+      <MarketingHeader nav={NAV} />
 
       {/* Hero */}
       <section className="px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-24" style={HERO_BG}>
@@ -590,36 +519,13 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Closing CTA — same width as the page's text column */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-6xl mx-auto rounded-3xl px-6 sm:px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
-          <h2 className="text-3xl font-extrabold tracking-tight">Ready to join Pulse?</h2>
-          <p className="mt-3 text-white/85 max-w-xl mx-auto">
-            Create your account, verify your identity and connect with iGaming professionals in
-            one trusted workspace.
-          </p>
-          <Link
-            to="/signup"
-            className="inline-block mt-7 px-7 py-3 rounded-xl bg-white text-violet-700 font-bold hover:bg-violet-50 transition-colors shadow-lg"
-          >
-            Create your account
-          </Link>
-        </div>
-      </section>
+      <CtaBanner
+        title="Ready to join Pulse?"
+        body="Create your account, verify your identity and connect with iGaming professionals in one trusted workspace."
+        buttonLabel="Create your account"
+      />
 
-      {/* Footer */}
-      <footer className="px-4 sm:px-6 py-10 border-t border-gray-100">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <img src="/full-logo.png" alt="Pulse" className="h-6 opacity-70" />
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
-            <Link to="/terms" className="hover:text-violet-600 transition-colors">Terms</Link>
-            <Link to="/privacy" className="hover:text-violet-600 transition-colors">Privacy</Link>
-            <Link to="/cookies" className="hover:text-violet-600 transition-colors">Cookies</Link>
-            <Link to="/kyc-policy" className="hover:text-violet-600 transition-colors">KYC Policy</Link>
-          </div>
-          <p className="text-xs text-gray-400">&copy;{new Date().getFullYear()} Pulse. All rights reserved.</p>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   )
 }
