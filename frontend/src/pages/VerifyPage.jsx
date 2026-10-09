@@ -115,15 +115,16 @@ export default function VerifyPage() {
 
         {status === 'intro' && (
           <>
-            <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z" />
-              </svg>
-            </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">Verify your identity</h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-gray-500 text-sm">
               Every Pulse member is verified, so you always know who you're talking to.
               Verification is handled securely by our partner Didit.
+            </p>
+            {/* The other worry besides retention: what strangers will see. Only the name comes
+                off the ID, in a format chosen under Settings → Profile Info. */}
+            <p className="text-gray-500 text-sm mt-3 mb-6">
+              The only detail from your ID shown on Pulse is your name — and you choose how it
+              appears in Settings, such as first name only. Nothing else from your ID is ever shown.
             </p>
 
             <ul className="space-y-2.5 text-left mb-6">
