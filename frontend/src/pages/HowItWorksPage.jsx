@@ -506,7 +506,7 @@ export default function HowItWorksPage() {
               </ol>
 
               <div>
-                <p className="mb-4 text-sm font-semibold text-gray-500 night:text-gray-400 text-center lg:text-left">Step 2, screen by screen</p>
+                <p className="mb-4 text-sm font-semibold text-gray-500 night:text-gray-400 text-center lg:text-left">What the identity check looks like</p>
                 <KycSlider phone={phoneStyle} />
                 {/* Backed by the Help Center's retention answer: the ID provider deletes
                     verification data after a maximum of one month, and Pulse keeps only
