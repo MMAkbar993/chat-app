@@ -163,7 +163,7 @@ export function TrustedChatMockup({ wide = false }) {
       </WindowFrame>
 
       {/* What tapping the name opens */}
-      <div className="absolute right-0 sm:-right-4 bottom-0 w-64 rounded-2xl bg-white night:bg-gray-900 p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100 night:ring-gray-800">
+      <div className="absolute right-0 sm:-right-4 bottom-0 w-84 max-w-full rounded-2xl bg-white night:bg-gray-900 p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100 night:ring-gray-800">
         <div className="flex items-center gap-3">
           <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-11 h-11 text-sm" />
           <div className="min-w-0">
@@ -171,14 +171,21 @@ export function TrustedChatMockup({ wide = false }) {
             <p className="text-[11px] text-gray-500 night:text-gray-400">Affiliate Manager</p>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        {/* One row: the card is sized so all three fit side by side */}
+        <div className="mt-3 flex flex-nowrap gap-1.5 whitespace-nowrap">
           <Badge>KYC Verified</Badge>
           <Badge>Website Verified</Badge>
           <Badge>Socials Verified</Badge>
         </div>
-        <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-violet-600 night:text-violet-300">
-          <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
-        </p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-violet-600 night:text-violet-300">
+            <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
+          </p>
+          {/* The accounts behind "Socials Verified", in their own colours */}
+          <div className="flex gap-1">
+            {['twitter', 'instagram', 'youtube'].map((k) => <SocialIcon key={k} platform={k} size={22} />)}
+          </div>
+        </div>
       </div>
     </div>
   )
