@@ -76,6 +76,128 @@ function WindowFrame({ children, className = '' }) {
 
 // ─── Verification ───────────────────────────────────────────────────────────
 
+// ─── The app itself ─────────────────────────────────────────────────────────
+// What a member sees after signing in: chat list, an open conversation, a call coming in. Used by
+// the home page so visitors can tell at a glance that Pulse is a messenger like Telegram or Teams.
+
+const CHAT_LIST = [
+  { name: 'Daniel Reyes', color: 'from-sky-400 to-blue-600', preview: "Let's jump on a quick call?", time: '10:42', active: true },
+  { name: 'EU Partners', color: 'from-violet-500 to-purple-600', preview: 'Lena: Deal signed 🎉', time: '10:18', unread: 3, group: true },
+  { name: 'Marta Kowalski', color: 'from-pink-400 to-rose-500', preview: 'Voice message', time: '09:55', unread: 1 },
+  { name: 'Tom Becker', color: 'from-amber-400 to-orange-500', preview: 'Commission_Plan.pdf', time: 'Yesterday' },
+  { name: 'Priya Nair', color: 'from-emerald-400 to-teal-500', preview: 'Thanks, talk Thursday', time: 'Yesterday' },
+]
+
+export function AppMockup() {
+  return (
+    <div aria-hidden="true" className="relative">
+      <WindowFrame>
+        <div className="flex h-105 text-left">
+          {/* Nav rail */}
+          <div className="hidden md:flex flex-col items-center gap-3 w-14 py-4 border-r border-gray-100 night:border-gray-800 bg-gray-50 night:bg-gray-950">
+            <span className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center"><I d={P.chat} /></span>
+            {[P.user, P.group, P.phone, P.gear].map((d) => (
+              <span key={d} className="w-8 h-8 rounded-lg text-gray-400 night:text-gray-500 flex items-center justify-center"><I d={d} /></span>
+            ))}
+          </div>
+
+          {/* Chat list */}
+          <div className="hidden sm:flex flex-col w-[40%] lg:w-[36%] border-r border-gray-100 night:border-gray-800">
+            <div className="flex items-center justify-between px-4 pt-4 pb-3">
+              <span className="text-sm font-bold text-gray-900 night:text-white">Chats</span>
+              <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center"><I d={P.plus} className="w-3.5 h-3.5" /></span>
+            </div>
+            <div className="mx-4 mb-2 flex items-center gap-2 rounded-lg bg-gray-100 night:bg-gray-800 px-2.5 py-1.5 text-[11px] text-gray-400 night:text-gray-500">
+              <I d={P.search} className="w-3 h-3" /> Search chats
+            </div>
+            {CHAT_LIST.map((c) => (
+              <div key={c.name} className={`flex items-center gap-2.5 px-4 py-2.5 ${c.active ? 'bg-violet-50 night:bg-violet-500/10' : ''}`}>
+                <Avatar name={c.name} color={c.color} className="w-9 h-9 text-[11px]" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1 min-w-0">
+                      <span className="text-xs font-semibold text-gray-900 night:text-white truncate">{c.name}</span>
+                      {!c.group && <Tick className="w-3 h-3" />}
+                    </span>
+                    <span className="text-[9px] text-gray-400 night:text-gray-500 shrink-0">{c.time}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-gray-500 night:text-gray-400 truncate">{c.preview}</span>
+                    {c.unread && (
+                      <span className="w-4 h-4 rounded-full bg-gray-500 text-white text-[9px] font-medium flex items-center justify-center shrink-0">{c.unread}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Conversation */}
+          <div className="flex-1 min-w-0 flex flex-col bg-gray-50 night:bg-gray-950">
+            <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-white night:bg-gray-900 border-b border-gray-100 night:border-gray-800">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-8 h-8 text-[11px]" />
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1 text-xs font-semibold text-gray-900 night:text-white">Daniel Reyes <Tick className="w-3 h-3" /></p>
+                  <p className="text-[10px] text-gray-500 night:text-gray-400 truncate">Affiliate Manager · northstarbet.com</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-violet-600 night:text-violet-300 shrink-0">
+                <I d={P.phone} /><I d={P.video} />
+              </div>
+            </div>
+
+            <div className="flex-1 px-4 py-4 flex flex-col gap-2.5 overflow-hidden">
+              <div className="self-start max-w-[80%] rounded-2xl rounded-tl-sm bg-white night:bg-gray-900 shadow-sm px-3 py-2 text-[11px] text-gray-700 night:text-gray-200">
+                Hi! Thanks for reaching out, happy to talk about a partnership.
+              </div>
+              <div className="self-end max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-600 px-3 py-2 text-[11px] text-white">
+                Great. I run two casino review sites, both verified on my profile.
+              </div>
+              <div className="self-start flex items-center gap-2.5 rounded-2xl rounded-tl-sm bg-white night:bg-gray-900 shadow-sm px-3 py-2">
+                <span className="w-8 h-8 rounded-lg bg-violet-50 night:bg-violet-500/10 text-violet-600 night:text-violet-300 flex items-center justify-center"><I d={P.file} /></span>
+                <span>
+                  <span className="block text-[11px] font-medium text-gray-800 night:text-gray-100">Commission_Plan_2026.pdf</span>
+                  <span className="block text-[9px] text-gray-400 night:text-gray-500">240 KB</span>
+                </span>
+              </div>
+              <div className="self-end max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-600 px-3 py-2 text-[11px] text-white">
+                Perfect. Let's jump on a quick call?
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-white night:bg-gray-900 border-t border-gray-100 night:border-gray-800">
+              <I d={P.plus} className="w-4 h-4 text-gray-400 night:text-gray-500" />
+              <span className="flex-1 rounded-full bg-gray-100 night:bg-gray-800 px-3 py-1.5 text-[11px] text-gray-400 night:text-gray-500">Type a message…</span>
+              <I d={P.mic} className="w-4 h-4 text-gray-400 night:text-gray-500" />
+            </div>
+          </div>
+        </div>
+      </WindowFrame>
+
+      {/* Floating callouts — the two things that make Pulse different from any other chat app */}
+      <div className="hidden sm:flex absolute -top-5 -right-4 lg:-right-8 items-center gap-2.5 rounded-xl bg-white night:bg-gray-900 px-3.5 py-2.5 shadow-xl ring-1 ring-gray-100 night:ring-gray-800">
+        <span className="w-8 h-8 rounded-lg bg-green-50 night:bg-green-500/10 text-green-600 night:text-green-400 flex items-center justify-center"><I d={P.shield} /></span>
+        <span className="text-left">
+          <span className="block text-xs font-bold text-gray-900 night:text-white">KYC Verified</span>
+          <span className="block text-[10px] text-gray-500 night:text-gray-400">Identity confirmed</span>
+        </span>
+      </div>
+      <div className="hidden sm:flex absolute -bottom-6 -left-4 lg:-left-8 items-center gap-3 rounded-xl bg-white night:bg-gray-900 px-3.5 py-2.5 shadow-xl ring-1 ring-gray-100 night:ring-gray-800">
+        <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-9 h-9 text-[11px]" />
+        <span className="text-left">
+          <span className="block text-xs font-bold text-gray-900 night:text-white">Daniel Reyes</span>
+          <span className="block text-[10px] text-gray-500 night:text-gray-400">Incoming video call…</span>
+        </span>
+        <span className="flex gap-1.5 ml-1">
+          <span className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center"><I d={P.x} className="w-3.5 h-3.5" /></span>
+          <span className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center"><I d={P.video} className="w-3.5 h-3.5" /></span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // The page someone lands on when they open a shared profile link (/u/username), drawn the way
 // PublicProfilePage draws it — banner with Send Message, chips, websites, verified accounts —
 // inside a browser window whose address bar shows the link itself. Keep the two in step.
@@ -198,7 +320,7 @@ export function TrustedChatMockup({ wide = false }) {
       </WindowFrame>
 
       {/* What tapping the name opens */}
-      <div className="absolute right-0 sm:-right-4 bottom-0 w-84 max-w-full rounded-2xl bg-white night:bg-gray-900 p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100 night:ring-gray-800">
+      <div className="absolute right-0 sm:-right-4 bottom-0 w-max max-w-full rounded-2xl bg-white night:bg-gray-900 p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100 night:ring-gray-800">
         <div className="flex items-center gap-3">
           <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-11 h-11 text-sm" />
           <div className="min-w-0">
@@ -206,8 +328,9 @@ export function TrustedChatMockup({ wide = false }) {
             <p className="text-[11px] text-gray-500 night:text-gray-400">Affiliate Manager</p>
           </div>
         </div>
-        {/* One row: the card is sized so all three fit side by side */}
-        <div className="mt-3 flex flex-nowrap gap-1.5 whitespace-nowrap">
+        {/* The card sizes to this row, so the badges stay on one line whatever the font; only a
+            screen too narrow for all three wraps them. */}
+        <div className="mt-3 flex flex-wrap gap-1.5 whitespace-nowrap">
           <Badge>KYC Verified</Badge>
           <Badge>Website Verified</Badge>
           <Badge>Socials Verified</Badge>

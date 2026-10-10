@@ -26,8 +26,8 @@ export const HOME_CONTENT = {
 
   problem: {
     eyebrow: 'The problem',
-    heading: 'In iGaming, anyone can claim to be anyone.',
-    lead: "Business relationships often begin with a username and a profile picture. But how do you know who's really behind them?",
+    heading: 'On Telegram or Teams, anyone can claim to be anyone.',
+    lead: "Every day, iGaming professionals connect through usernames, profile pictures, and company names. But how can you be sure the person you're speaking with is really who they claim to be?",
     cards: [
       {
         title: 'Fake identities',
@@ -72,6 +72,12 @@ export const HOME_CONTENT = {
         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
       },
     ],
+  },
+
+  app: {
+    eyebrow: 'See Pulse in action',
+    heading: 'Familiar like Telegram or Teams. Verified like nothing else.',
+    lead: 'Chats, groups, voice and video calls, and file sharing work the way you already know, with every person behind them verified.',
   },
 
   showcase: {

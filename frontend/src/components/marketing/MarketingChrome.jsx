@@ -79,7 +79,7 @@ export function MarketingHeader({ nav = [], theme }) {
   const link = `text-sm font-medium text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300 transition-colors rounded ${FOCUS}`
   return (
     <header className="sticky top-0 z-40 bg-white/85 night:bg-gray-950/85 backdrop-blur border-b border-gray-100 night:border-gray-800">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
         <HeaderLogo />
         <nav aria-label="Main" className="hidden lg:flex items-center gap-6">
           {nav.map((n) => (
@@ -97,7 +97,7 @@ export function MarketingHeader({ nav = [], theme }) {
 // The purple closing block. Same width as the page's text column.
 export function CtaBanner({ title, body, buttonLabel, to = '/signup' }) {
   return (
-    <section className="px-4 sm:px-6 py-16 sm:py-20">
+    <section className="px-6 py-16 sm:py-20">
       <div className="max-w-6xl mx-auto rounded-3xl px-6 sm:px-8 py-12 text-center bg-linear-to-br from-violet-600 via-purple-600 to-fuchsia-600 text-white">
         <h2 className="text-3xl font-extrabold tracking-tight">{title}</h2>
         <p className="mt-3 text-white/85 max-w-xl mx-auto">{body}</p>
@@ -115,7 +115,7 @@ export function CtaBanner({ title, body, buttonLabel, to = '/signup' }) {
 export function MarketingFooter() {
   const link = `hover:text-violet-600 night:hover:text-violet-300 transition-colors rounded ${FOCUS}`
   return (
-    <footer className="px-4 sm:px-6 py-10 border-t border-gray-100 night:border-gray-800">
+    <footer className="px-6 py-10 border-t border-gray-100 night:border-gray-800">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <img src="/full-logo.png" alt="Pulse" className="h-6 opacity-70" />
         <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 night:text-gray-400">

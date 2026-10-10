@@ -4,7 +4,7 @@ import { HOME_META } from './howItWorksMeta'
 import { HOME_CONTENT as C } from './homeContent'
 import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
-import { TrustedChatMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
+import { AppMockup, TrustedChatMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
 import { QaRow } from '../components/settings/FaqSection'
 
 // The short sales page at "/". How It Works stays the detailed explainer; this page makes the
@@ -76,7 +76,7 @@ function SocialProof() {
     : stats
 
   return (
-    <section aria-label="Social proof" className="px-4 sm:px-6 py-10 border-y border-gray-100 night:border-gray-800">
+    <section aria-label="Social proof" className="px-6 py-10 border-y border-gray-100 night:border-gray-800">
       <div className="max-w-6xl mx-auto">
         <p className="text-center text-sm font-medium text-gray-500 night:text-gray-400">{SOCIAL_PROOF.label}</p>
 
@@ -132,7 +132,7 @@ export default function HomePage() {
 
       <main>
         {/* 1. Hero */}
-        <section className="px-4 sm:px-6 pt-14 sm:pt-20 pb-16 sm:pb-24" style={HERO_BG}>
+        <section className="px-6 pt-14 sm:pt-20 pb-16 sm:pb-24" style={HERO_BG}>
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <Eyebrow>{C.hero.badge}</Eyebrow>
@@ -154,7 +154,7 @@ export default function HomePage() {
         <SocialProof />
 
         {/* 3. The problem */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
+        <section className="px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.problem.eyebrow} heading={C.problem.heading}>{C.problem.lead}</SectionIntro>
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
@@ -172,7 +172,7 @@ export default function HomePage() {
         </section>
 
         {/* 4. How Pulse fixes it */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20">
+        <section className="px-6 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.fixes.eyebrow} heading={C.fixes.heading}>{C.fixes.lead}</SectionIntro>
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
@@ -197,8 +197,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. Verified profile showcase */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
+        {/* 5. What Pulse looks like once you're in */}
+        <section className="px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
+          <div className="max-w-6xl mx-auto">
+            <SectionIntro eyebrow={C.app.eyebrow} heading={C.app.heading}>{C.app.lead}</SectionIntro>
+            <div className="mt-12 max-w-5xl mx-auto">
+              <AppMockup />
+            </div>
+          </div>
+        </section>
+
+        {/* 6. Verified profile showcase */}
+        <section className="px-6 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Eyebrow>{C.showcase.eyebrow}</Eyebrow>
@@ -220,8 +230,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 6. Built for the iGaming industry */}
-        <section className="px-4 sm:px-6 py-16 sm:py-20">
+        {/* 7. Built for the iGaming industry */}
+        <section className="px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.industries.eyebrow} heading={C.industries.heading}>{C.industries.lead}</SectionIntro>
             <ul className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -245,8 +255,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 7. Pricing */}
-        <section id="pricing" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16 bg-lavender night:bg-violet-950/30">
+        {/* 8. Pricing */}
+        <section id="pricing" className="px-6 py-16 sm:py-20 scroll-mt-16">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.pricing.eyebrow} heading={C.pricing.heading} />
             <ul className="mt-10 max-w-4xl mx-auto grid md:grid-cols-2 gap-5">
@@ -298,8 +308,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 8. Short FAQ */}
-        <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 scroll-mt-16">
+        {/* 9. Short FAQ */}
+        <section id="faq" className="px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 scroll-mt-16">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.faq.eyebrow} heading={C.faq.heading} />
             <div className="mt-10 max-w-3xl mx-auto rounded-2xl border border-gray-100 night:border-gray-800 bg-white night:bg-gray-900 px-5 py-2">
@@ -325,7 +335,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 9. Final CTA */}
+        {/* 10. Final CTA */}
         <CtaBanner title={C.cta.title} body={C.cta.body} buttonLabel={C.cta.buttonLabel} />
       </main>
 

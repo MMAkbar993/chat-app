@@ -362,7 +362,7 @@ function PageHeader({ theme }) {
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 night:bg-gray-950/90 backdrop-blur border-b border-gray-100 night:border-gray-800">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
         <HeaderLogo />
         <nav aria-label="On this page" className="hidden lg:flex self-stretch gap-1">
           {SECTION_NAV.map((s) => (
@@ -375,7 +375,7 @@ function PageHeader({ theme }) {
       </div>
       {/* Phones and tablets: the same links, one row down, scrolling sideways */}
       <nav aria-label="On this page" className="lg:hidden border-t border-gray-100 night:border-gray-800">
-        <div ref={barRef} className="max-w-6xl mx-auto px-4 sm:px-6 h-11 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
+        <div ref={barRef} className="max-w-6xl mx-auto px-6 h-11 flex gap-1 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
           {SECTION_NAV.map((s) => (
             <a
               key={s.id}
@@ -445,7 +445,7 @@ export default function HowItWorksPage() {
 
       <main>
         {/* Intro — short on purpose; the pitch lives on the home page */}
-        <section className="px-4 sm:px-6 pt-14 sm:pt-16 pb-12 sm:pb-14" style={HERO_BG}>
+        <section className="px-6 pt-14 sm:pt-16 pb-12 sm:pb-14" style={HERO_BG}>
           <div className="max-w-3xl mx-auto text-center">
             <Eyebrow>How it works</Eyebrow>
             <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight text-balance">
@@ -466,7 +466,7 @@ export default function HowItWorksPage() {
 
 
         {/* Verification: one timeline, with the ID check shown screen by screen beside it */}
-        <section id="verification" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="verification" className={`px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="max-w-2xl">
               <Eyebrow>Verification</Eyebrow>
@@ -550,7 +550,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Company: websites & representation */}
-        <section id="company" className={`px-4 sm:px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="company" className={`px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="text-center max-w-2xl mx-auto">
               <Eyebrow>Websites &amp; representation</Eyebrow>
@@ -570,7 +570,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Social verification — step 3, in detail */}
-        <section id="social" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="social" className={`px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -591,7 +591,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Mid-page CTA */}
-        <section className="px-4 sm:px-6 py-10">
+        <section className="px-6 py-10">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5 rounded-2xl border border-violet-100 night:border-violet-500/20 bg-violet-50 night:bg-violet-500/10 px-6 sm:px-8 py-6 text-center sm:text-left">
             <div>
               <h2 className="text-xl font-bold">Ready to get verified?</h2>
@@ -607,7 +607,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Features */}
-        <section id="features" className={`px-4 sm:px-6 py-16 sm:py-20 border-t border-gray-100 night:border-gray-800 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="features" className={`px-6 py-16 sm:py-20 border-t border-gray-100 night:border-gray-800 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="max-w-2xl mx-auto text-center">
               <Eyebrow>Features</Eyebrow>
@@ -652,7 +652,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Share links */}
-        <section id="share-links" className={`px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="share-links" className={`px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div>
               <Eyebrow>Share links</Eyebrow>
@@ -679,7 +679,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Comparison */}
-        <section id="compare" className={`px-4 sm:px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="compare" className={`px-6 py-16 sm:py-20 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="text-center max-w-2xl mx-auto">
               <Eyebrow>Compare</Eyebrow>
@@ -719,7 +719,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Security and privacy */}
-        <section id="security" className={`px-4 sm:px-6 py-16 sm:py-20 bg-gray-900 text-white ${SECTION_SCROLL_MARGIN}`}>
+        <section id="security" className={`px-6 py-16 sm:py-20 bg-gray-900 text-white ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -760,7 +760,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className={`px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 ${SECTION_SCROLL_MARGIN}`}>
+        <section id="faq" className={`px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 ${SECTION_SCROLL_MARGIN}`}>
           <div className="max-w-6xl mx-auto">
             <div className="max-w-2xl mx-auto mb-10 text-center">
               <Eyebrow>FAQ</Eyebrow>
