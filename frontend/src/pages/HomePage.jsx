@@ -160,8 +160,8 @@ export default function HomePage() {
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
               {C.problem.cards.map((c) => (
                 <li key={c.title} className="rounded-2xl bg-white night:bg-gray-900 p-6 shadow-sm">
-                  <span className="w-11 h-11 rounded-xl bg-rose-50 night:bg-rose-500/10 text-rose-500 night:text-rose-400 flex items-center justify-center">
-                    <Icon path={c.icon} />
+                  <span className="w-12 h-12 rounded-2xl bg-linear-to-br from-rose-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/25 ring-4 ring-rose-50 night:ring-rose-500/10">
+                    <Icon path={c.icon} className="w-6 h-6" />
                   </span>
                   <h3 className="mt-4 text-lg font-bold">{c.title}</h3>
                   <p className="mt-1.5 text-sm text-gray-600 night:text-gray-300 leading-relaxed">{c.body}</p>
@@ -178,8 +178,8 @@ export default function HomePage() {
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
               {C.fixes.cards.map((c) => (
                 <li key={c.title} className="flex flex-col rounded-2xl border border-gray-100 night:border-gray-800 bg-white night:bg-gray-900 p-6 shadow-sm">
-                  <span className="w-11 h-11 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center">
-                    <Icon path={c.icon} />
+                  <span className="w-12 h-12 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-violet-500/25 ring-4 ring-violet-50 night:ring-violet-500/10">
+                    <Icon path={c.icon} className="w-6 h-6" />
                   </span>
                   <h3 className="mt-4 text-lg font-bold">{c.title}</h3>
                   <p className="mt-1.5 text-sm text-gray-600 night:text-gray-300 leading-relaxed flex-1">{c.body}</p>

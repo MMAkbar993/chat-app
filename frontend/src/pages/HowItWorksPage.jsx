@@ -197,19 +197,25 @@ const SHARE_ITEMS = [
 
 // ─── Comparison ───────────────────────────────────────────────────────────────
 
-// TODO: re-verify competitor claims before launch. Telegram and WhatsApp change their features
+// TODO: re-verify competitor claims before launch. Telegram and Teams change their features
 // often, and a wrong cell here is the kind of thing people screenshot.
-//   true = yes · false = no · 'pro' = yes, on Pulse Pro · 'partial' = only in limited form
-// The 'partial' cells, and why: WhatsApp — verified company: some Business accounts can carry a
-// Meta Verified badge, which is not the same as checking someone works there.
+//   true = yes · false = no · 'pro' = yes, on Pulse Pro · 'partial' = shown as "Limited"
+// Pulse cells follow the product: creating groups is Pro (createGroup on the server); business
+// profiles are open to any verified website admin, so that cell is a plain yes, not Pro.
 const COMPARISON = {
-  columns: ['Pulse', 'Telegram', 'WhatsApp'],
+  columns: ['Pulse', 'Telegram', 'Teams'],
   rows: [
-    { label: 'ID-verified members', values: [true, false, false] },
-    { label: 'Verified company or website', values: [true, false, 'partial'] },
-    { label: 'Search by business name', values: ['pro', false, false] },
-    { label: 'Voice and video calls', values: [true, true, true] },
-    { label: 'Built for iGaming', values: [true, false, false] },
+    { label: 'KYC-verified member identities', values: [true, false, false] },
+    { label: 'Verified websites on profiles', values: [true, false, false] },
+    { label: 'Verified social accounts on profiles', values: [true, false, false] },
+    { label: 'Verified company representatives', values: [true, false, false] },
+    { label: 'Shareable professional profiles', values: [true, 'partial', false] },
+    { label: 'Public business profiles', values: [true, 'partial', 'partial'] },
+    { label: 'Built for the iGaming industry', values: [true, false, false] },
+    { label: 'Direct messaging', values: [true, true, true] },
+    { label: 'Group chats', values: ['pro', true, true] },
+    { label: 'Voice & video calls', values: [true, true, true] },
+    { label: 'Shareable contact links', values: [true, true, 'partial'] },
   ],
 }
 
@@ -684,7 +690,7 @@ export default function HowItWorksPage() {
             {/* All four columns fit on a phone; sideways scrolling is only a fallback below 320px. */}
             <div className="mt-10 max-w-3xl mx-auto overflow-x-auto rounded-2xl ring-1 ring-gray-200 night:ring-gray-700">
               <table className="w-full min-w-80 text-left text-xs sm:text-sm">
-                <caption className="sr-only">Pulse compared with Telegram and WhatsApp</caption>
+                <caption className="sr-only">Pulse compared with Telegram and Microsoft Teams</caption>
                 <thead>
                   <tr className="border-b border-gray-200 night:border-gray-700">
                     <th scope="col" className="px-3 sm:px-5 py-4 font-semibold text-gray-500 night:text-gray-400">Feature</th>
