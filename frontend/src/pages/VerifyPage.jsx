@@ -41,6 +41,11 @@ export default function VerifyPage() {
     async function init() {
       try {
         const res = await client.post('/kyc/create-session')
+        // Approved by Didit without a name to take: an admin checks the ID by hand.
+        if (res.data.status === 'review') {
+          if (!stopped) setStatus('review')
+          return
+        }
         if (!res.data.url) {
           // Dev bypass — backend already set status to verified, go straight to dashboard
           if (!stopped) {
@@ -72,7 +77,7 @@ export default function VerifyPage() {
             clearInterval(interval)
             await refreshUser()
             setTimeout(() => navigate('/dashboard'), 1500)
-          } else if (kyc_status === 'failed') {
+          } else if (kyc_status === 'failed' || kyc_status === 'review') {
             clearInterval(interval)
           }
         } catch {
@@ -146,6 +151,21 @@ export default function VerifyPage() {
               <Link to="/kyc-policy" target="_blank" className="text-violet-600 hover:underline">KYC Policy</Link>
               {' '}and{' '}
               <Link to="/privacy" target="_blank" className="text-violet-600 hover:underline">Privacy Policy</Link>
+            </p>
+          </>
+        )}
+
+        {status === 'review' && (
+          <>
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Your ID is being reviewed</h2>
+            <p className="text-gray-500 text-sm">
+              Your check went through, but our team needs to confirm a few details by hand.
+              We'll email you as soon as you're approved.
             </p>
           </>
         )}

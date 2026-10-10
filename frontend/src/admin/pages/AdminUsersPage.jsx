@@ -39,16 +39,20 @@ function Badge({ blocked, kycStatus }) {
       ? { label: 'Active', color: 'green' }
       : kycStatus === 'failed'
         ? { label: 'Failed KYC', color: 'red' }
-        : { label: 'KYC Pending', color: 'amber' }
+        : kycStatus === 'review'
+          ? { label: 'Needs review', color: 'violet' }
+          : { label: 'KYC Pending', color: 'amber' }
   const colors = {
     red:   'bg-red-100 text-red-700',
     green: 'bg-green-100 text-green-700',
     amber: 'bg-amber-100 text-amber-700',
+    violet: 'bg-violet-100 text-violet-700',
   }
   const dots = {
     red:   'bg-red-500',
     green: 'bg-green-500',
     amber: 'bg-amber-500',
+    violet: 'bg-violet-500',
   }
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colors[color]}`}>
@@ -182,6 +186,129 @@ function isProPlan(plan, status) {
   return ['monthly', 'yearly'].includes(plan) && ['active', 'past_due'].includes(status)
 }
 
+const KYC_LABELS = {
+  verified: 'Verified',
+  review: 'Needs manual review',
+  pending: 'Not completed',
+  failed: 'Failed',
+}
+
+// Manual decisions on a member's identity check. The legal name typed here becomes their
+// verified name — the only source their display name can be taken from — so it must match the
+// ID exactly. The server tidies an all-capitals name.
+function KycPanel({ detail, onChanged }) {
+  const status = detail.kyc_status || 'pending'
+  const [name, setName] = useState(detail.full_name || '')
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState('')
+  const [confirmAction, setConfirmAction] = useState(null)
+
+  async function run(action) {
+    setError('')
+    setBusy(action)
+    try {
+      const body = action === 'approve' || action === 'rename' ? { action, legal_name: name } : { action }
+      const { data } = await adminClient.post(`/users/${detail.id}/kyc`, body)
+      setName(data.user.full_name || '')
+      onChanged(data.user)
+    } catch (err) {
+      setError(err.response?.data?.error || 'That did not work. Try again.')
+    } finally {
+      setBusy(null)
+      setConfirmAction(null)
+    }
+  }
+
+  const btn = 'text-xs font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-40'
+  const needsName = status === 'review' || status === 'verified'
+
+  return (
+    <div className={`rounded-xl border p-4 space-y-3 ${status === 'review' ? 'border-violet-200 bg-violet-50/50' : 'border-gray-100'}`}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm font-semibold text-gray-800">Identity check</p>
+        <Badge blocked={false} kycStatus={status} />
+      </div>
+
+      {status === 'review' && (
+        <p className="text-xs text-gray-600">
+          Didit approved this ID but did not return a name. Open the session in the Didit dashboard,
+          check the document, and enter the legal name exactly as it appears on it.
+          {detail.kyc_session_id && <> Session ID: <span className="font-mono">{detail.kyc_session_id}</span></>}
+        </p>
+      )}
+      {status === 'verified' && (
+        <p className="text-xs text-gray-600">
+          Shown on Pulse as <span className="font-semibold">{detail.display_name || detail.full_name}</span>.
+          Correct the legal name only if it does not match the ID.
+        </p>
+      )}
+      {status === 'failed' && (
+        <p className="text-xs text-gray-600">The check failed. Let the member try again, or approve them by hand after checking their ID.</p>
+      )}
+      {status === 'pending' && (
+        <p className="text-xs text-gray-600">The member has not finished the identity check yet.</p>
+      )}
+
+      {(needsName || status === 'failed') && (
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Legal name (as on the ID)</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+          />
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      <div className="flex flex-wrap gap-2">
+        {status !== 'verified' && (
+          <button disabled={!!busy || !name.trim()} onClick={() => setConfirmAction('approve')}
+            className={`${btn} bg-green-600 hover:bg-green-700 text-white`}>
+            {busy === 'approve' ? 'Approving…' : 'Approve with this name'}
+          </button>
+        )}
+        {status === 'verified' && (
+          <button disabled={!!busy || !name.trim() || name.trim() === detail.full_name} onClick={() => setConfirmAction('rename')}
+            className={`${btn} bg-violet-600 hover:bg-violet-700 text-white`}>
+            {busy === 'rename' ? 'Saving…' : 'Save corrected name'}
+          </button>
+        )}
+        {(status === 'review' || status === 'pending') && (
+          <button disabled={!!busy} onClick={() => setConfirmAction('reject')}
+            className={`${btn} border border-red-200 text-red-600 hover:bg-red-50`}>
+            Reject
+          </button>
+        )}
+        {status !== 'pending' && (
+          <button disabled={!!busy} onClick={() => setConfirmAction('retry')}
+            className={`${btn} border border-gray-200 text-gray-600 hover:bg-gray-50`}>
+            Let them retry the ID check
+          </button>
+        )}
+      </div>
+
+      {confirmAction && (
+        <div className="rounded-lg bg-white border border-gray-200 p-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-gray-700">
+            {{
+              approve: `Approve this member as "${name.trim()}"? They get access and a welcome email.`,
+              rename: `Change their legal name to "${name.trim()}"? Their display name updates to match.`,
+              reject: 'Mark this identity check as failed? They will not be able to use Pulse.',
+              retry: 'Clear this check so the member goes through the ID check again? They lose access until they pass.',
+            }[confirmAction]}
+          </p>
+          <span className="flex gap-2">
+            <button onClick={() => setConfirmAction(null)} className={`${btn} border border-gray-200 text-gray-600 hover:bg-gray-50`}>Cancel</button>
+            <button onClick={() => run(confirmAction)} className={`${btn} bg-gray-900 hover:bg-gray-800 text-white`}>Confirm</button>
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function UserDetailModal({ userId, onClose, onSaved }) {
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -261,7 +388,7 @@ function UserDetailModal({ userId, onClose, onSaved }) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-400">Verification</p>
-                <p className="text-sm font-semibold text-gray-800 capitalize">{detail.kyc_status || 'pending'}</p>
+                <p className="text-sm font-semibold text-gray-800">{KYC_LABELS[detail.kyc_status] || KYC_LABELS.pending}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-400">Last Active</p>
@@ -276,6 +403,16 @@ function UserDetailModal({ userId, onClose, onSaved }) {
                 <p className="text-sm font-semibold text-gray-800">{fmtDate(detail.created_at)}</p>
               </div>
             </div>
+
+            <KycPanel
+              key={`${detail.kyc_status}-${detail.full_name}`}
+              detail={detail}
+              onChanged={(u) => {
+                setDetail((d) => ({ ...d, ...u }))
+                setForm((f) => ({ ...f, full_name: u.full_name || '' }))
+                onSaved({ keepOpen: true })
+              }}
+            />
 
             {/* Package */}
             <div>
@@ -406,23 +543,28 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null) // null | 'add' | { user }
   const [confirm, setConfirm] = useState(null) // null | { type, user }
+  const [kycFilter, setKycFilter] = useState('') // '' | 'review'
+  const [reviewCount, setReviewCount] = useState(0)
   const LIMIT = 20
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await adminClient.get('/users', { params: { search, page, limit: LIMIT } })
+      const { data } = await adminClient.get('/users', { params: { search, page, limit: LIMIT, kyc: kycFilter } })
       setUsers(data.users)
       setTotal(data.total)
+      setReviewCount(data.reviewCount || 0)
     } catch {}
     setLoading(false)
-  }, [search, page])
+  }, [search, page, kycFilter])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { setPage(1) }, [search])
+  useEffect(() => { setPage(1) }, [search, kycFilter])
 
-  function handleSaved(savedUser) {
-    setModal(null)
+  // keepOpen: an action inside the detail view (e.g. a KYC decision) refreshes the list behind it
+  // without closing the member the admin is looking at.
+  function handleSaved(opts) {
+    if (!opts?.keepOpen) setModal(null)
     load()
   }
 
@@ -481,6 +623,29 @@ export default function AdminUsersPage() {
           placeholder="Search by name, email or phone..."
           className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
         />
+      </div>
+
+      {/* KYC filter */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { value: '', label: 'All members' },
+          { value: 'review', label: 'Needs review', count: reviewCount },
+        ].map((f) => (
+          <button
+            key={f.value || 'all'}
+            onClick={() => setKycFilter(f.value)}
+            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
+              kycFilter === f.value ? 'bg-violet-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {f.label}
+            {f.count > 0 && (
+              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${kycFilter === f.value ? 'bg-white/20 text-white' : 'bg-violet-100 text-violet-700'}`}>
+                {f.count}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Table */}
@@ -613,7 +778,7 @@ export default function AdminUsersPage() {
         <UserModal onClose={() => setModal(null)} onSave={handleSaved} />
       )}
       {modal?.userId && (
-        <UserDetailModal userId={modal.userId} onClose={() => setModal(null)} onSaved={() => { setModal(null); load() }} />
+        <UserDetailModal userId={modal.userId} onClose={() => setModal(null)} onSaved={handleSaved} />
       )}
       {confirm?.type === 'delete' && (
         <ConfirmDialog

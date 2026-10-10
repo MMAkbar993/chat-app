@@ -4,7 +4,7 @@ import {
   findUserById,
   updateKycSession,
   updateKycStatus,
-  updateFullName,
+  setVerifiedName,
 } from '../db/queries/users.js'
 import { sendWelcomeEmail } from '../config/email.js'
 
@@ -24,12 +24,20 @@ export async function applyKycDecision(userId, decision) {
   if (decision.status === 'Approved') {
     const user = await findUserById(userId)
     const wasAlreadyVerified = user?.kyc_status === 'verified'
-    await updateKycStatus(userId, 'verified')
+    // A repeat webhook for someone already verified (by Didit or by an admin) changes nothing.
+    if (wasAlreadyVerified) return 'verified'
+
+    // The name on Pulse must come from the ID. An approval without one goes to an admin
+    // (status 'review', account stays inactive) rather than keeping the name typed at sign-up.
     const verifiedName = extractVerifiedName(decision)
-    if (verifiedName) await updateFullName(userId, verifiedName)
-    if (!wasAlreadyVerified && user) {
-      sendWelcomeEmail(user.email, user.display_name || user.full_name).catch(() => {})
+    if (!verifiedName) {
+      if (user?.kyc_status !== 'review') await updateKycStatus(userId, 'review')
+      return 'review'
     }
+
+    const { displayName } = await setVerifiedName(userId, verifiedName)
+    await updateKycStatus(userId, 'verified')
+    if (user) sendWelcomeEmail(user.email, displayName).catch(() => {})
     return 'verified'
   }
   if (FAILED_STATUSES.includes(decision.status)) {
@@ -45,6 +53,9 @@ export async function createKycSession(userId) {
 
   if (user.kyc_status === 'verified') {
     return { url: null }
+  }
+  if (user.kyc_status === 'review') {
+    return { url: null, status: 'review' }
   }
 
   if (!config.diditApiKey || !config.diditWorkflowId) {

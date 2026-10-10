@@ -18,7 +18,7 @@ import {
   blockUser,
   unblockUser,
   getUserDetailHandler,
-  changeUserPackage,
+  changeUserPackage, kycAction,
   listReports,
   billingOverview,
   listVerifiedWebsites,
@@ -62,6 +62,7 @@ adminRouter.post('/users/:id/block', blockUser)
 adminRouter.post('/users/:id/unblock', unblockUser)
 adminRouter.get('/users/:id', getUserDetailHandler)
 adminRouter.patch('/users/:id/package', changeUserPackage)
+adminRouter.post('/users/:id/kyc', kycAction)
 
 adminRouter.get('/reports', listReports)
 

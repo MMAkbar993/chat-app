@@ -30,7 +30,7 @@ const NAME_SUFFIXES = new Set(['jr', 'jr.', 'snr', 'sr', 'sr.', 'ii', 'iii', 'iv
 // part, and the first name paired with each later part. Options are built from full_name rather
 // than free text so a display name always stays truthful to the KYC'd identity — but which part
 // you go by is your choice, since "the first word" isn't the first name for everyone.
-function displayNameOptions(fullName, current) {
+function displayNameOptions(fullName) {
   const full = (fullName || '').trim()
   const parts = full.split(/\s+/).filter(Boolean)
   const opts = []
@@ -40,8 +40,8 @@ function displayNameOptions(fullName, current) {
   // suffix in "Edward Paul Tabus Jr" and a second surname in "Ana García López", so "first
   // word + last word" happens to be the wrong answer for both.
   if (parts.length > 2) parts.slice(1).forEach((p) => opts.push(`${parts[0]} ${p}`))
-  // Keep whatever is already saved selectable, even if it predates this list.
-  if (current && !opts.includes(current)) opts.unshift(current)
+  // No exceptions for an old saved value: the name shown must come from the ID, and the server
+  // (utils/names.js) rejects anything else. Keep the two lists in step.
   return [...new Set(opts)]
 }
 
@@ -286,10 +286,11 @@ function ProfileInfoForm({ profile, darkMode, onSaved }) {
     job_title:     profile.job_title || '',
     company_name:  profile.company_name || '',
   })
-  const [displayName, setDisplayName] = useState(
-    () => profile.display_name || profile.full_name || ''
-  )
-  const displayNameChoices = displayNameOptions(profile.full_name, profile.display_name)
+  const [displayName, setDisplayName] = useState(() => {
+    const allowed = displayNameOptions(profile.full_name)
+    return allowed.includes(profile.display_name) ? profile.display_name : (profile.full_name || '')
+  })
+  const displayNameChoices = displayNameOptions(profile.full_name)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState({})

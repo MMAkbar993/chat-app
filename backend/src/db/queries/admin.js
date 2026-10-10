@@ -45,8 +45,8 @@ export async function getDashboardStats() {
 
 export async function getUserDetail(id) {
   const userResult = await query(
-    `SELECT id, full_name, username, email, phone, country, avatar_url, is_active, blocked_at,
-            created_at, last_seen_at, login_count, kyc_status, subscription_plan, subscription_status
+    `SELECT id, full_name, display_name, username, email, phone, country, avatar_url, is_active, blocked_at,
+            created_at, last_seen_at, login_count, kyc_status, kyc_session_id, subscription_plan, subscription_status
      FROM users WHERE id = $1 AND is_admin = false`,
     [id]
   )
@@ -242,23 +242,31 @@ export async function getRecentGroups(limit = 5) {
   return result.rows
 }
 
-export async function getAllUsers({ search = '', page = 1, limit = 20 } = {}) {
+const KYC_FILTERS = new Set(['review', 'pending', 'failed', 'verified'])
+
+// kyc (optional): one of KYC_FILTERS. reviewCount is always returned so the admin panel can show
+// how many accounts are waiting on a decision, whatever list is being viewed.
+export async function getAllUsers({ search = '', page = 1, limit = 20, kyc = '' } = {}) {
   const offset = (page - 1) * limit
   const pat = `%${search}%`
+  const kycFilter = KYC_FILTERS.has(kyc) ? kyc : null
   const rows = await query(
     `SELECT id, full_name, email, phone, country, created_at, last_seen_at, avatar_url, is_active, blocked_at, kyc_status
      FROM users WHERE is_admin = false
        AND (full_name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1)
+       AND ($4::text IS NULL OR kyc_status = $4)
      ORDER BY created_at DESC
      LIMIT $2 OFFSET $3`,
-    [pat, limit, offset]
+    [pat, limit, offset, kycFilter]
   )
   const total = await query(
     `SELECT COUNT(*) FROM users WHERE is_admin = false
-       AND (full_name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1)`,
-    [pat]
+       AND (full_name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1)
+       AND ($2::text IS NULL OR kyc_status = $2)`,
+    [pat, kycFilter]
   )
-  return { users: rows.rows, total: parseInt(total.rows[0].count) }
+  const review = await query(`SELECT COUNT(*) FROM users WHERE is_admin = false AND kyc_status = 'review'`)
+  return { users: rows.rows, total: parseInt(total.rows[0].count), reviewCount: parseInt(review.rows[0].count) }
 }
 
 export async function countAdmins() {

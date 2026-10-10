@@ -1,3 +1,4 @@
+import { tidyLegalName, pickDisplayName } from '../../utils/names.js'
 import { query } from '../../config/database.js'
 
 export async function createUser({ full_name, username, country, email, primary_role, primary_role_other, phone, password_hash }) {
@@ -76,11 +77,19 @@ export async function updateKycStatus(userId, status) {
   )
 }
 
-export async function updateFullName(userId, fullName) {
+// Sets the verified legal name (from the ID, or from an admin on manual review), tidying an
+// all-capitals name, and keeps display_name a valid rendering of it — the member's chosen format
+// if it still fits, otherwise the full name. The only place full_name changes after sign-up.
+export async function setVerifiedName(userId, rawName) {
+  const fullName = tidyLegalName(rawName)
+  if (!fullName) throw Object.assign(new Error('A legal name is required'), { status: 400 })
+  const current = await query(`SELECT display_name FROM users WHERE id = $1`, [userId])
+  const displayName = pickDisplayName(fullName, current.rows[0]?.display_name)
   await query(
-    `UPDATE users SET full_name = $1 WHERE id = $2`,
-    [fullName, userId]
+    `UPDATE users SET full_name = $1, display_name = $2, updated_at = NOW() WHERE id = $3`,
+    [fullName, displayName, userId]
   )
+  return { fullName, displayName }
 }
 
 export async function incrementLoginCount(userId) {

@@ -10,6 +10,7 @@ import {
 } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail, sendWebsiteVerifiedEmail, sendWebsiteVerifyCode } from '../config/email.js'
+import { isAllowedDisplayName } from '../utils/names.js'
 import { normaliseDomain, deleteBusinessByDomain, transferBusinessByDomain, getProfileBusiness } from '../db/queries/businesses.js'
 
 // Catches http(s)://, www., and bare domain-looking text (e.g. "affiliateroulette.com") so people
@@ -160,6 +161,15 @@ export async function updateProfile(req, res, next) {
 
     // Same rule as bio and job title: a free-text field on a profile is not a way around
     // website verification.
+    // The name others see must come from the ID: display_name can only be one of the renderings
+    // of full_name the Settings dropdown offers. Checked here, not only in the dropdown.
+    if (display_name !== undefined && display_name !== null && display_name !== '') {
+      const current = await findUserById(req.user.id)
+      if (!isAllowedDisplayName(current?.full_name, display_name)) {
+        return res.status(400).json({ error: 'Your display name must be taken from your verified name.' })
+      }
+    }
+
     if (containsUrl(bio) || containsUrl(job_title) || containsUrl(status)) {
       return res.status(400).json({
         error: 'You cannot include website URLs in your description. All websites must be verified under Settings → Website Verification before they can be added to your profile.',

@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import speakeasy from 'speakeasy'
 import { config } from '../config/env.js'
-import { findUserByEmail } from '../db/queries/users.js'
+import { findUserByEmail, setVerifiedName, updateKycStatus } from '../db/queries/users.js'
+import { sendWelcomeEmail } from '../config/email.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { query } from '../config/database.js'
@@ -187,8 +188,8 @@ export async function dashboard(req, res, next) {
 
 export async function listUsers(req, res, next) {
   try {
-    const { search = '', page = 1, limit = 20 } = req.query
-    const result = await getAllUsers({ search, page: parseInt(page), limit: parseInt(limit) })
+    const { search = '', page = 1, limit = 20, kyc = '' } = req.query
+    const result = await getAllUsers({ search, page: parseInt(page), limit: parseInt(limit), kyc })
     res.json(result)
   } catch (err) {
     next(err)
@@ -220,9 +221,51 @@ export async function updateUser(req, res, next) {
     }
     const user = await updateManagedUser(id, { full_name, email, phone, country })
     if (!user) return res.status(404).json({ error: 'User not found' })
-    res.json({ user })
+    const { fullName, displayName } = await setVerifiedName(id, full_name)
+    res.json({ user: { ...user, full_name: fullName, display_name: displayName } })
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Email already exists' })
+    next(err)
+  }
+}
+
+// Manual identity-check decisions.
+//   approve  { legal_name }  set the legal name from the ID the admin checked, and verify
+//   rename   { legal_name }  correct a verified member's legal name
+//   reject                   mark the check failed; the member is shown the retry screen
+//   retry                    clear the check so the member goes through Didit again
+export async function kycAction(req, res, next) {
+  try {
+    const { id } = req.params
+    const { action, legal_name } = req.body || {}
+    const found = await query(`SELECT id, email, kyc_status FROM users WHERE id = $1 AND is_admin = false`, [id])
+    const member = found.rows[0]
+    if (!member) return res.status(404).json({ error: 'User not found' })
+
+    if (action === 'approve' || action === 'rename') {
+      if (!String(legal_name || '').trim()) {
+        return res.status(400).json({ error: 'Enter the legal name exactly as it appears on the ID' })
+      }
+      if (action === 'rename' && member.kyc_status !== 'verified') {
+        return res.status(400).json({ error: 'Only a verified member can have their legal name corrected' })
+      }
+      const { displayName } = await setVerifiedName(id, legal_name)
+      if (action === 'approve') {
+        await updateKycStatus(id, 'verified')
+        if (member.kyc_status !== 'verified') sendWelcomeEmail(member.email, displayName).catch(() => {})
+      }
+    } else if (action === 'reject') {
+      await updateKycStatus(id, 'failed')
+    } else if (action === 'retry') {
+      await updateKycStatus(id, 'pending')
+      await query(`UPDATE users SET kyc_session_id = NULL WHERE id = $1`, [id])
+    } else {
+      return res.status(400).json({ error: 'Unknown action' })
+    }
+
+    const user = await getUserDetail(id)
+    res.json({ user })
+  } catch (err) {
     next(err)
   }
 }
