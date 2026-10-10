@@ -4,7 +4,7 @@ import { HOME_META } from './howItWorksMeta'
 import { HOME_CONTENT as C } from './homeContent'
 import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
-import { TrustedChatMockup, ProfileMockup } from '../components/marketing/HowItWorksMockups'
+import { TrustedChatMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
 import { QaRow } from '../components/settings/FaqSection'
 
 // The short sales page at "/". How It Works stays the detailed explainer; this page makes the
@@ -216,7 +216,7 @@ export default function HomePage() {
               </ul>
               <Link to={C.showcase.cta.to} className={`mt-8 ${BTN_PRIMARY}`}>{C.showcase.cta.label}</Link>
             </div>
-            <ProfileMockup />
+            <PublicProfileMockup />
           </div>
         </section>
 
