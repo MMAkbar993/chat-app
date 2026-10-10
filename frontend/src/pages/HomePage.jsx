@@ -156,7 +156,7 @@ export default function HomePage() {
         {/* 3. The problem */}
         <section className="px-4 sm:px-6 py-16 sm:py-20 bg-lavender night:bg-violet-950/30">
           <div className="max-w-6xl mx-auto">
-            <SectionIntro eyebrow={C.problem.eyebrow} heading={C.problem.heading} />
+            <SectionIntro eyebrow={C.problem.eyebrow} heading={C.problem.heading}>{C.problem.lead}</SectionIntro>
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
               {C.problem.cards.map((c) => (
                 <li key={c.title} className="rounded-2xl bg-white night:bg-gray-900 p-6 shadow-sm">
@@ -174,7 +174,7 @@ export default function HomePage() {
         {/* 4. How Pulse fixes it */}
         <section className="px-4 sm:px-6 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto">
-            <SectionIntro eyebrow={C.fixes.eyebrow} heading={C.fixes.heading} />
+            <SectionIntro eyebrow={C.fixes.eyebrow} heading={C.fixes.heading}>{C.fixes.lead}</SectionIntro>
             <ul className="mt-10 grid md:grid-cols-3 gap-5">
               {C.fixes.cards.map((c) => (
                 <li key={c.title} className="flex flex-col rounded-2xl border border-gray-100 night:border-gray-800 bg-white night:bg-gray-900 p-6 shadow-sm">
@@ -206,7 +206,7 @@ export default function HomePage() {
               <p className={LEAD}>{C.showcase.body}</p>
               <ul className="mt-6 space-y-3">
                 {C.showcase.points.map((p) => (
-                  <li key={p} className="flex items-center gap-3 text-gray-600 night:text-gray-300">
+                  <li key={p} className="flex items-start gap-3 text-gray-600 night:text-gray-300">
                     <span className="w-7 h-7 rounded-lg bg-violet-100 night:bg-violet-500/20 text-violet-600 night:text-violet-300 flex items-center justify-center shrink-0">
                       <Icon path={CHECK} className="w-4 h-4" />
                     </span>
@@ -220,8 +220,33 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 6. Pricing */}
-        <section id="pricing" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16">
+        {/* 6. Built for the iGaming industry */}
+        <section className="px-4 sm:px-6 py-16 sm:py-20">
+          <div className="max-w-6xl mx-auto">
+            <SectionIntro eyebrow={C.industries.eyebrow} heading={C.industries.heading}>{C.industries.lead}</SectionIntro>
+            <ul className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {C.industries.cards.map((c) => (
+                <li key={c.title} className="flex gap-4 rounded-2xl border border-gray-100 night:border-gray-800 bg-white night:bg-gray-900 p-6 shadow-sm">
+                  <span className="w-11 h-11 rounded-xl bg-violet-50 night:bg-violet-500/10 text-violet-600 night:text-violet-300 flex items-center justify-center shrink-0">
+                    <Icon path={c.icon} />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-bold">{c.title}</h3>
+                    <p className="mt-1 text-sm text-gray-600 night:text-gray-300 leading-relaxed">{c.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-center">
+              <span className="inline-flex items-center rounded-full bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-violet-600/20">
+                {C.industries.more}
+              </span>
+            </p>
+          </div>
+        </section>
+
+        {/* 7. Pricing */}
+        <section id="pricing" className="px-4 sm:px-6 py-16 sm:py-20 scroll-mt-16 bg-lavender night:bg-violet-950/30">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.pricing.eyebrow} heading={C.pricing.heading} />
             <ul className="mt-10 max-w-4xl mx-auto grid md:grid-cols-2 gap-5">
@@ -273,7 +298,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 7. Short FAQ */}
+        {/* 8. Short FAQ */}
         <section id="faq" className="px-4 sm:px-6 py-16 sm:py-20 bg-gray-50 night:bg-gray-950 scroll-mt-16">
           <div className="max-w-6xl mx-auto">
             <SectionIntro eyebrow={C.faq.eyebrow} heading={C.faq.heading} />
@@ -300,7 +325,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 8. Final CTA */}
+        {/* 9. Final CTA */}
         <CtaBanner title={C.cta.title} body={C.cta.body} buttonLabel={C.cta.buttonLabel} />
       </main>
 

@@ -13,9 +13,9 @@
 export const HOME_CONTENT = {
   hero: {
     badge: 'Verified communication for iGaming',
-    headline: 'Stop doing deals with fake affiliate managers.',
+    headline: 'The iGaming industry, connected and verified.',
     subtext:
-      'Every person on Pulse is ID-verified, and you can see which company they really work for before you reply.',
+      'Chat, call, and collaborate with iGaming professionals on a platform built around verified identities and trusted business connections.',
     primaryCta: { label: 'Create free account', to: '/signup' },
     secondaryCta: { label: 'See how it works', to: '/how-it-works' },
     // TODO: confirm "about 2 minutes" — the ID check's own screen says about 1 minute, plus sign-up.
@@ -26,46 +26,48 @@ export const HOME_CONTENT = {
 
   problem: {
     eyebrow: 'The problem',
-    heading: 'In iGaming, anyone can claim to be anyone',
+    heading: 'In iGaming, anyone can claim to be anyone.',
+    lead: "Business relationships often begin with a username and a profile picture. But how do you know who's really behind them?",
     cards: [
       {
-        title: 'Impersonators everywhere',
-        body: 'Fake accounts copy real affiliate managers on Telegram and other apps, down to the name and photo.',
+        title: 'Fake identities',
+        body: 'Impersonators can copy names, photos, and company details to appear legitimate.',
         icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
       },
       {
-        title: 'No way to check',
-        body: 'A username and a profile picture prove nothing. Anyone can set them in a minute.',
+        title: 'Unverified connections',
+        body: "Most messaging platforms don't verify who users are or which businesses they represent.",
         icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
       },
       {
-        title: 'Deals at risk',
-        body: 'One wrong contact can cost you a partnership, a payout or your reputation.',
+        title: 'Business at risk',
+        body: 'One fraudulent contact can put partnerships, payments, and professional reputations at risk.',
         icon: 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',
       },
     ],
   },
 
   fixes: {
-    eyebrow: 'How Pulse fixes it',
-    heading: 'Verification built into every conversation',
+    eyebrow: 'Why Pulse',
+    heading: 'Everything you need to connect with confidence.',
+    lead: 'One platform for verified identities, professional connections, and everyday communication across iGaming.',
     linkLabel: 'Learn more',
     cards: [
       {
         title: 'Verified identity',
-        body: 'Every member passes a government ID and liveness check through our partner Didit before they can message anyone.',
+        body: 'Every member completes identity and liveness verification through our trusted partner, Didit, before messaging.',
         to: '/how-it-works#verification',
         icon: 'M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z',
       },
       {
-        title: 'Verified company',
-        body: 'Prove where you work with a head tag or DNS record on your website, or with your business email address.',
+        title: 'Verified business connections',
+        body: 'Verify your company or professional affiliation so others can see which business you represent.',
         to: '/how-it-works#company',
         icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
       },
       {
-        title: 'Everything in one place',
-        body: 'Chat, groups, voice and video calls, file and screen sharing, and meeting scheduling.',
+        title: 'Communication made simple',
+        body: 'Stay connected with chats, group conversations, voice and video calls, and more, all in one place.',
         to: '/how-it-works#features',
         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
       },
@@ -73,14 +75,54 @@ export const HOME_CONTENT = {
   },
 
   showcase: {
-    eyebrow: 'Your verified profile',
-    heading: 'One link that proves who you are',
-    body: 'Share your verified profile link anywhere: email signature, website, LinkedIn.',
+    eyebrow: 'Your professional identity',
+    heading: 'Your identity. Your business. One verified profile.',
+    body: 'Build trust before the first message. Share your Pulse profile with partners, colleagues, and new connections so they can review your verification status in one place.',
     points: [
-      'KYC, website and social verification shown at a glance',
-      'Your own link, found under Settings → Profile Info',
+      'Display your identity, website, and social verification badges.',
+      'Share your unique profile link in emails, websites, and social media.',
+      "Help business partners confirm they're connecting with the right person.",
     ],
     cta: { label: 'Get your verified profile', to: '/signup' },
+  },
+
+  industries: {
+    eyebrow: 'Built for your industry',
+    heading: 'One industry. One place to connect.',
+    lead: 'From operators to affiliates, Pulse brings iGaming professionals together on one verified communication platform.',
+    cards: [
+      {
+        title: 'Casino Operators',
+        body: 'Connect with partners and manage industry relationships.',
+        icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+      },
+      {
+        title: 'Affiliates & Publishers',
+        body: 'Build connections with operators and affiliate teams.',
+        icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
+      },
+      {
+        title: 'Affiliate Networks',
+        body: 'Stay in touch with advertisers, publishers, and partners.',
+        icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+      },
+      {
+        title: 'Game Providers',
+        body: 'Connect with operators and potential business partners.',
+        icon: 'M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z',
+      },
+      {
+        title: 'Streamers & Creators',
+        body: 'Collaborate with brands and industry professionals.',
+        icon: 'M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z',
+      },
+      {
+        title: 'Agencies & Service Providers',
+        body: 'Grow your network and communicate with clients.',
+        icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+      },
+    ],
+    more: '+20 Other iGaming Niches!',
   },
 
   pricing: {
