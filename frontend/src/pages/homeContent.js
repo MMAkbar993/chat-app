@@ -192,7 +192,7 @@ export const HOME_CONTENT = {
       },
       {
         q: 'What happens to my ID data?',
-        a: ['As soon as your check is complete, your ID document, selfie and video are permanently deleted. Pulse keeps only your verified name and the fact that you are verified. The only detail from your ID other members see is your name, shown the way you choose in Settings.'],
+        a: ['Once your identity is successfully verified, your ID documents, selfie, and verification data are permanently deleted. Pulse only retains your verified name and confirmation that your identity has been verified. The only detail from your ID other members see is your name, shown the way you choose in Settings.'],
       },
       {
         q: 'Who can join Pulse?',

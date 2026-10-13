@@ -520,7 +520,7 @@ export default function HowItWorksPage() {
                 <div className="mt-8 flex gap-4 rounded-2xl bg-green-50 night:bg-green-500/10 px-5 py-4">
                   <Icon path={LOCK} className="w-6 h-6 mt-0.5 shrink-0 text-green-600 night:text-green-400" />
                   <p className="text-sm text-green-800 night:text-green-300 leading-relaxed">
-                    <span className="font-semibold">Verified, then deleted.</span> As soon as your check is complete, your ID document, selfie and video are permanently deleted. Pulse keeps only your verified name and the fact that you are verified.
+                    <span className="font-semibold">Your privacy comes first.</span> Once your identity is successfully verified, your ID documents, selfie, and verification data are permanently deleted. Pulse only retains your verified name and confirmation that your identity has been verified.
                   </p>
                 </div>
               </div>
