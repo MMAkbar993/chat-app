@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { HOME_META } from './howItWorksMeta'
 import { HOME_CONTENT as C } from './homeContent'
-import { Icon, Eyebrow, MarketingHeader, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
+import { Icon, Eyebrow, MarketingHeader, MarketingFooter } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
 import { AppMockup, TrustedChatMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
 import { QaRow } from '../components/settings/FaqSection'
@@ -335,8 +335,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 10. Final CTA */}
-        <CtaBanner title={C.cta.title} body={C.cta.body} buttonLabel={C.cta.buttonLabel} />
       </main>
 
       <MarketingFooter />

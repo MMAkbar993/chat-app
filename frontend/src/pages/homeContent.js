@@ -200,9 +200,4 @@ export const HOME_CONTENT = {
     ],
   },
 
-  cta: {
-    title: 'Ready to join Pulse?',
-    body: 'Create your account, verify your identity and connect with iGaming professionals in one trusted workspace.',
-    buttonLabel: 'Create free account',
-  },
 }
