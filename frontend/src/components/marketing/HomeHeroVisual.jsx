@@ -7,10 +7,14 @@ import GroupAvatar from '../ui/GroupAvatar'
 // verified profile behind the name, a phone on the chat list, and a second phone mid video call.
 // Illustration only (aria-hidden); people and companies are fictional.
 //
-// PEOPLE photos: drop licensed headshots into public/marketing/people/ and set `photo` here.
-// Until then each shows as coloured initials, and the layout is the same either way.
+// PEOPLE photos live in public/marketing/people/; anyone without one shows as coloured initials.
+// Daniel's photo is a portrait (it fills the video call too), so round avatars aim at the top of
+// it with `focus`, where his face is. The pictures are AI-generated, not real people.
 const PEOPLE = {
-  daniel: { name: 'Daniel Reyes', role: 'Affiliate Manager', color: 'from-sky-400 to-blue-600', photo: null },
+  daniel: {
+    name: 'Daniel Reyes', role: 'Affiliate Manager', color: 'from-sky-400 to-blue-600',
+    photo: '/marketing/people/daniel-video.jpg', focus: '50% 10%',
+  },
   alex: { name: 'Alex Carter', color: 'from-amber-400 to-orange-500', photo: null },
   lena: { name: 'Lena Fischer', color: 'from-pink-400 to-rose-500', photo: null },
   marco: { name: 'Marco Rossi', color: 'from-emerald-400 to-teal-500', photo: null },
@@ -18,7 +22,9 @@ const PEOPLE = {
 
 function Person({ who, className = 'w-8 h-8 text-[11px]' }) {
   const p = PEOPLE[who]
-  if (p.photo) return <img src={p.photo} alt="" className={`rounded-full object-cover shrink-0 ${className}`} />
+  if (p.photo) {
+    return <img src={p.photo} alt="" className={`rounded-full object-cover shrink-0 ${className}`} style={{ objectPosition: p.focus }} />
+  }
   const initials = p.name.split(' ').map((w) => w[0]).join('')
   return (
     <span className={`rounded-full shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br ${p.color} ${className}`}>
@@ -188,7 +194,11 @@ function VideoCallScreen() {
   return (
     <div className="absolute inset-0 flex flex-col items-center text-center">
       {p.photo ? (
-        <img src={p.photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <>
+          <img src={p.photo} alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
+          {/* shade the top and bottom so the name and buttons read over the picture */}
+          <div className="absolute inset-0 bg-linear-to-b from-black/45 via-transparent to-black/55" />
+        </>
       ) : (
         <div className="absolute inset-0 bg-linear-to-b from-slate-700 via-slate-800 to-gray-950" />
       )}
@@ -198,7 +208,7 @@ function VideoCallScreen() {
       </div>
       {!p.photo && <Person who="daniel" className="relative mt-6 w-16 h-16 text-lg ring-4 ring-white/10" />}
       {/* your own camera, top corner */}
-      <div className="absolute top-14 right-2 w-7 h-10 rounded-md bg-linear-to-br from-violet-400 to-fuchsia-500 ring-1 ring-white/30" />
+      <img src="/marketing/people/self-view.jpg" alt="" className="absolute top-14 right-2 w-7 h-10 rounded-md object-cover ring-1 ring-white/40 shadow" />
       <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2.5">
         <span className="w-6 h-6 rounded-full bg-white/15 text-white flex items-center justify-center"><I d={P.mic} className="w-3 h-3" /></span>
         <span className="w-6 h-6 rounded-full bg-white/15 text-white flex items-center justify-center"><I d={P.video} className="w-3 h-3" /></span>
