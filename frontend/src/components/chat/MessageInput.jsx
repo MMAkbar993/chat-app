@@ -39,11 +39,31 @@ function formatSecs(s) {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
-export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, editingMessage, onClearEdit, onEditSubmit, droppedFile }) {
+// How many attachments one send can carry.
+const MAX_FILES_AT_ONCE = 10
+
+function mediaTypeOf(file, fallback = 'file') {
+  if (file.type.startsWith('image/')) return 'image'
+  if (file.type.startsWith('video/')) return 'video'
+  if (file.type.startsWith('audio/')) return 'audio'
+  return fallback === 'image' ? 'file' : fallback
+}
+
+// Files picked, dropped or pasted, ready for the preview. Anything past the limit is counted, not
+// silently lost, so the preview can say so.
+function toPending(files, fallbackType = 'file') {
+  const kept = files.slice(0, MAX_FILES_AT_ONCE)
+  return {
+    items: kept.map((file) => ({ file, localUrl: URL.createObjectURL(file), mediaType: mediaTypeOf(file, fallbackType) })),
+    skipped: files.length - kept.length,
+  }
+}
+
+export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, onRemoveMediaPreview, editingMessage, onClearEdit, onEditSubmit, droppedFiles }) {
   const { showToast } = useToast()
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
-  const [pendingMedia, setPendingMedia] = useState(null) // { file, localUrl, mediaType }
+  const [pendingMedia, setPendingMedia] = useState(null) // { items: [{ file, localUrl, mediaType }], skipped }
   const [showEmoji, setShowEmoji] = useState(false)
   const [recording, setRecording] = useState(false)
   const [recordSecs, setRecordSecs] = useState(false)
@@ -92,14 +112,10 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
 
   // Same pattern for a file dropped onto the chat window — hand it straight to the same
   // caption-preview flow the attachment menu uses.
-  const [prevDroppedFile, setPrevDroppedFile] = useState(null)
-  if (droppedFile && droppedFile !== prevDroppedFile) {
-    setPrevDroppedFile(droppedFile)
-    const mediaType = droppedFile.type.startsWith('image/') ? 'image'
-      : droppedFile.type.startsWith('video/') ? 'video'
-      : droppedFile.type.startsWith('audio/') ? 'audio'
-      : 'file'
-    setPendingMedia({ file: droppedFile, localUrl: URL.createObjectURL(droppedFile), mediaType })
+  const [prevDroppedFiles, setPrevDroppedFiles] = useState(null)
+  if (droppedFiles && droppedFiles !== prevDroppedFiles) {
+    setPrevDroppedFiles(droppedFiles)
+    setPendingMedia(toPending(droppedFiles))
   }
 
   // Sync audio element events
@@ -200,7 +216,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       // pasted screenshot collide on the server — give each one a unique name.
       const ext = item.type.split('/')[1] || 'png'
       const named = new File([file], `pasted-${Date.now()}.${ext}`, { type: item.type })
-      setPendingMedia({ file: named, localUrl: URL.createObjectURL(named), mediaType: 'image' })
+      setPendingMedia(toPending([named], 'image'))
       return
     }
   }
@@ -227,26 +243,41 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     }, 0)
   }
 
-  function handleAttach(fileUrl, messageType, caption, fileName) {
-    onSend(fileUrl, messageType, replyTo?.id || null, caption, fileName)
-    onClearReply?.()
-    setShowAttachMenu(false)
+  function handleFilesSelected(files, fallbackType) {
+    setPendingMedia(toPending(files, fallbackType))
   }
 
-  function handleFileSelected(file, localUrl, mediaType) {
-    setPendingMedia({ file, localUrl, mediaType })
-  }
-
-  async function handleSendMedia(caption) {
-    const pending = pendingMedia
+  // Sends each attachment as its own message, in the order picked. All placeholders appear at
+  // once and every file uploads in parallel; sending waits for each upload in turn, so the chat
+  // order matches the picker even when a later file finishes first. The caption and any reply
+  // go on the first one that sends. A failed upload drops only that one.
+  async function handleSendMedia(caption, items) {
     setPendingMedia(null)
-    onMediaPreview?.(pending.localUrl, pending.mediaType, caption, pending.file?.name || null)
-    try {
-      const { fileUrl, messageType, fileName } = await uploadFile(pending.file)
-      handleAttach(fileUrl, messageType || pending.mediaType, caption, fileName || pending.file?.name || null)
-    } catch (err) {
-      showToast(getUploadErrorMessage(err), 'error')
-      onMediaPreview?.(null, null)
+    setShowAttachMenu(false)
+    let replyId = replyTo?.id || null
+    let captionLeft = caption
+    onClearReply?.()
+    const jobs = items.map((it, i) => ({
+      it,
+      tempId: onMediaPreview?.(it.localUrl, it.mediaType, i === 0 ? caption : null, it.file?.name || null),
+      upload: uploadFile(it.file).then((r) => ({ ok: true, r }), (err) => ({ ok: false, err })),
+    }))
+    let uploadErrors = 0
+    for (const job of jobs) {
+      const res = await job.upload
+      if (!res.ok) {
+        onRemoveMediaPreview?.(job.tempId)
+        if (uploadErrors++ === 0) showToast(getUploadErrorMessage(res.err), 'error')
+        continue
+      }
+      const { fileUrl, messageType, fileName } = res.r
+      const sent = await onSend(fileUrl, messageType || job.it.mediaType, replyId, captionLeft, fileName || job.it.file?.name || null)
+      if (sent === false) {
+        onRemoveMediaPreview?.(job.tempId)
+        continue
+      }
+      replyId = null
+      captionLeft = null
     }
   }
 
@@ -391,7 +422,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
             </svg>
           </button>
           {showAttachMenu && (
-            <AttachmentMenu darkMode={darkMode} onClose={() => setShowAttachMenu(false)} onFileSelected={handleFileSelected} />
+            <AttachmentMenu darkMode={darkMode} onClose={() => setShowAttachMenu(false)} onFilesSelected={handleFilesSelected} />
           )}
         </div>
 
@@ -525,9 +556,8 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
 
       {pendingMedia && (
         <MediaCaptionModal
-          file={pendingMedia.file}
-          localUrl={pendingMedia.localUrl}
-          mediaType={pendingMedia.mediaType}
+          items={pendingMedia.items}
+          skipped={pendingMedia.skipped}
           darkMode={darkMode}
           onCancel={() => setPendingMedia(null)}
           onSend={handleSendMedia}

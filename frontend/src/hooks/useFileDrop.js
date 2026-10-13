@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 
 // Dropping a file onto an area: whether one is being dragged over it (for an overlay), and the
-// file that was dropped. Spread `dropHandlers` onto the element that accepts the drop.
+// files that were dropped. Spread `dropHandlers` onto the element that accepts the drop.
 export function useFileDrop() {
   const dragCounterRef = useRef(0)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
-  const [droppedFile, setDroppedFile] = useState(null)
+  const [droppedFiles, setDroppedFiles] = useState(null) // File[] from the last drop
 
   // dragenter/dragleave fire on every child crossed, not just the container's own boundary —
   // a counter (instead of a plain boolean) is the standard fix so the overlay doesn't flicker
@@ -31,14 +31,14 @@ export function useFileDrop() {
     e.preventDefault()
     dragCounterRef.current = 0
     setIsDraggingFile(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) setDroppedFile(file)
+    const files = Array.from(e.dataTransfer.files || [])
+    if (files.length) setDroppedFiles(files)
   }
 
   return {
     isDraggingFile,
-    droppedFile,
-    setDroppedFile,
+    droppedFiles,
+    setDroppedFiles,
     dropHandlers: {
       onDragEnter: handleDragEnter,
       onDragOver: handleDragOver,

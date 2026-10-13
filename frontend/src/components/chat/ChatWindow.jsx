@@ -42,9 +42,8 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   const prependingRef = useRef(false)
   const prependAnchorRef = useRef(0)
   const searchInputRef = useRef(null)
-  const tempMediaRef = useRef(null)
   const scrolledForConvRef = useRef(null)
-  const { isDraggingFile, droppedFile, setDroppedFile, dropHandlers } = useFileDrop()
+  const { isDraggingFile, droppedFiles, setDroppedFiles, dropHandlers } = useFileDrop()
   const [showContactInfo, setShowContactInfo] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
@@ -261,7 +260,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     setGroupParticipants([])
     setContactBannerDismissed(false)
     setEditingMessage(null)
-    setDroppedFile(null)
+    setDroppedFiles(null)
     closeSearch()
     if (!activeConversation?.id) return
     if (activeConversation.type === 'group') {
@@ -344,16 +343,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
 
   const isTyping = typingUsers[activeConversation.id]
 
+  // An "uploading" bubble shown while a picked file uploads; returns its id so a failed upload
+  // can take it away again. The real message replaces it when it arrives.
   function handleMediaPreview(localUrl, messageType, caption = null, fileName = null) {
-    if (!localUrl) {
-      if (tempMediaRef.current) {
-        setMessages((prev) => prev.filter((m) => m.id !== tempMediaRef.current))
-        tempMediaRef.current = null
-      }
-      return
-    }
-    const tempId = `uploading-${Date.now()}`
-    tempMediaRef.current = tempId
+    const tempId = `uploading-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     setMessages((prev) => [...prev, {
       id: tempId,
       sender_id: user.id,
@@ -366,6 +359,11 @@ export default function ChatWindow({ darkMode, onCallStart }) {
       created_at: new Date().toISOString(),
       uploading: true,
     }])
+    return tempId
+  }
+
+  function removeMediaPreview(tempId) {
+    if (tempId) setMessages((prev) => prev.filter((m) => m.id !== tempId))
   }
 
   async function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null, fileName = null) {
@@ -806,10 +804,11 @@ export default function ChatWindow({ darkMode, onCallStart }) {
             replyTo={replyTo}
             onClearReply={clearReply}
             onMediaPreview={handleMediaPreview}
+            onRemoveMediaPreview={removeMediaPreview}
             editingMessage={editingMessage}
             onClearEdit={() => setEditingMessage(null)}
             onEditSubmit={handleEditMessage}
-            droppedFile={droppedFile}
+            droppedFiles={droppedFiles}
           />
         )}
       </div>

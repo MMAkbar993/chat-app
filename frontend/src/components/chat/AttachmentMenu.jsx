@@ -74,7 +74,7 @@ function CameraModal({ onCapture, onClose, darkMode }) {
   )
 }
 
-export default function AttachmentMenu({ onClose, onFileSelected, darkMode }) {
+export default function AttachmentMenu({ onClose, onFilesSelected, darkMode }) {
   const menuRef = useRef(null)
   const galleryRef = useRef(null)
   const audioRef = useRef(null)
@@ -90,20 +90,17 @@ export default function AttachmentMenu({ onClose, onFileSelected, darkMode }) {
   }, [onClose])
 
   function handleFile(e, type) {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
     e.target.value = ''
-    const detectedType = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : type
-    const localUrl = URL.createObjectURL(file)
-    onFileSelected(file, localUrl, detectedType)
+    onFilesSelected(files, type)
     onClose()
   }
 
   function handleCameraCapture(blob) {
     setShowCamera(false)
     const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' })
-    const localUrl = URL.createObjectURL(blob)
-    onFileSelected(file, localUrl, 'image')
+    onFilesSelected([file], 'image')
     onClose()
   }
 
@@ -161,7 +158,7 @@ export default function AttachmentMenu({ onClose, onFileSelected, darkMode }) {
         File
       </button>
 
-      <input ref={galleryRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => handleFile(e, 'image')} />
+      <input ref={galleryRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleFile(e, 'image')} />
       <input ref={audioRef}   type="file" accept="audio/*"          className="hidden" onChange={(e) => handleFile(e, 'audio')} />
       <input ref={fileRef}    type="file"                            className="hidden" onChange={(e) => handleFile(e, 'file')} />
     </div>
