@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import adminClient from '../api/adminClient'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function Avatar({ name, url }) {
   const initials = name ? name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '?'
@@ -24,15 +26,18 @@ export default function AdminGroupsPage() {
   const [loading, setLoading] = useState(true)
   const LIMIT = 20
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/groups', { params: { search, page, limit: LIMIT } })
       setGroups(data.groups)
       setTotal(data.total)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load groups'), 'error')
+    }
     setLoading(false)
-  }, [search, page])
+  }, [search, page, showToast])
 
   useEffect(() => { load() }, [load])
   useEffect(() => { setPage(1) }, [search])

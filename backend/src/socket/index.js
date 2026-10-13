@@ -70,7 +70,9 @@ export function initSocket(httpServer) {
             io.to(`user:${senderId}`).emit('message-status-updated', { messageIds, status: 'delivered', conversationId })
           }
         }
-      } catch {}
+      } catch (err) {
+        console.error('mark-delivered failed', err)
+      }
     })
 
     socket.on('leave-conversation', (conversationId) => {
@@ -86,7 +88,9 @@ export function initSocket(httpServer) {
             io.to(`user:${senderId}`).emit('message-status-updated', { messageIds, status: 'read', conversationId })
           }
         }
-      } catch {}
+      } catch (err) {
+        console.error('mark-read failed', err)
+      }
     })
 
     // `ack` lets the sender find out whether this actually landed. Without it a send into a

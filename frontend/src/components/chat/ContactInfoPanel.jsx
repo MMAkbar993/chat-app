@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext'
 import { getUserById, blockUser, unblockUser, reportUser } from '../../api/users'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import MediaGallery from './MediaGallery'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function Section({ title, children, darkMode }) {
   return (
@@ -73,7 +74,9 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
         dropConversation(conversation.id)
         onClose()
       }
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, isBlocked ? 'Could not unblock this user' : 'Could not block this user'), 'error')
+    }
   }
 
   async function handleReport() {
@@ -83,7 +86,9 @@ export default function ContactInfoPanel({ conversation, darkMode, onClose, onCa
       setShowReportPrompt(false)
       setReportReason('')
       showToast('Report submitted', 'success')
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not send the report'), 'error')
+    }
   }
 
   const name = conversation.other_user_display_name || conversation.other_user_name || profile?.display_name || profile?.full_name || 'Account Deleted'

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import adminClient from '../api/adminClient'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -13,15 +15,18 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true)
   const LIMIT = 20
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/reports', { params: { page, limit: LIMIT } })
       setReports(data.reports)
       setTotal(data.total)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load reports'), 'error')
+    }
     setLoading(false)
-  }, [page])
+  }, [page, showToast])
 
   useEffect(() => { load() }, [load])
 

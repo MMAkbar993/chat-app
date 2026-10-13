@@ -8,6 +8,8 @@ import {
   archiveConversation, pinConversation, favoriteConversation, muteConversation,
   deleteConversationApi, clearMessagesApi,
 } from '../api/conversations'
+import { useToast } from './ToastContext'
+import { apiErrorMessage } from '../utils/apiError'
 
 const ChatContext = createContext(null)
 
@@ -25,6 +27,8 @@ const SEND_ACK_TIMEOUT_MS = 6000
 export function ChatProvider({ children }) {
   const { socket } = useSocket()
   const { user } = useAuth()
+  const { showToast } = useToast()
+  const convLoadFailedRef = useRef(false)
   const [conversations, setConversations] = useState([])
   const [activeConversation, setActiveConversation] = useState(null)
   const [messages, setMessages] = useState([])
@@ -84,6 +88,7 @@ export function ChatProvider({ children }) {
       const data = await getConversations()
       const convs = data.conversations || []
       setConversations(convs)
+      convLoadFailedRef.current = false
       setLastSeenMap((prev) => {
         const next = { ...prev }
         convs.forEach((c) => {
@@ -93,8 +98,11 @@ export function ChatProvider({ children }) {
         })
         return next
       })
-    } catch {}
-  }, [])
+    } catch (err) {
+      if (!convLoadFailedRef.current) showToast(apiErrorMessage(err, 'Could not load your chats'), 'error')
+      convLoadFailedRef.current = true
+    }
+  }, [showToast])
 
   useEffect(() => {
     loadConversations()
@@ -125,9 +133,11 @@ export function ChatProvider({ children }) {
       setConversations((prev) =>
         prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c))
       )
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load this chat'), 'error')
+    }
     setLoadingMessages(false)
-  }, [socket])
+  }, [socket, showToast])
 
   // Older history is fetched a page at a time, keyed on the timestamp of the oldest message
   // we currently hold — the chat only ever loaded the most recent page before this, so
@@ -155,10 +165,12 @@ export function ChatProvider({ children }) {
           return fresh.length ? enrichMessagesWithReplyMeta([...fresh, ...prev]) : prev
         })
       }
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load older messages'), 'error')
+    }
     loadingOlderRef.current = false
     setLoadingOlderMessages(false)
-  }, [])
+  }, [showToast])
 
   // Pages back through the open conversation's history until messageId is loaded, then puts
   // everything fetched on screen in one update — so the view settles once instead of jumping
@@ -282,13 +294,16 @@ export function ChatProvider({ children }) {
   const removeConversation = useCallback(async (id) => {
     try {
       await deleteConversationApi(id)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not delete the chat'), 'error')
+      return
+    }
     setConversations((prev) => prev.map((c) => c.id === id ? { ...c, is_deleted: true } : c))
     if (activeConvRef.current?.id === id) {
       setActiveConversation(null)
       setMessages([])
     }
-  }, [])
+  }, [showToast])
 
   // Drop a conversation from local state immediately without calling the delete API
   const dropConversation = useCallback((id) => {
@@ -305,8 +320,10 @@ export function ChatProvider({ children }) {
       setConversations((prev) =>
         prev.map((c) => c.id === id ? { ...c, unread_count: Math.max(1, c.unread_count || 1) } : c)
       )
-    } catch {}
-  }, [])
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not mark the chat as unread'), 'error')
+    }
+  }, [showToast])
 
   const clearConversationMessages = useCallback(async (id) => {
     try {
@@ -315,8 +332,10 @@ export function ChatProvider({ children }) {
         setMessages([])
       }
       await loadConversations()
-    } catch {}
-  }, [loadConversations])
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not clear the chat'), 'error')
+    }
+  }, [loadConversations, showToast])
 
   useEffect(() => {
     if (!socket) return
@@ -343,7 +362,9 @@ export function ChatProvider({ children }) {
           const prefs = getNotifPrefs()
           if (!isMuted && prefs.sound !== false) playReceivedSound()
           if (!isMuted) showBrowserNotif(msg)
-        } catch {}
+        } catch {
+          // sound and browser notifications are extras: never let them stop a message arriving
+        }
       }
       if (activeConvRef.current?.id === msg.conversation_id) {
         setMessages((prev) => {

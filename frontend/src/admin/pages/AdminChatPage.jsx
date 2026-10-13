@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import adminClient from '../api/adminClient'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -13,15 +15,18 @@ export default function AdminChatPage() {
   const [loading, setLoading] = useState(true)
   const LIMIT = 20
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/conversations', { params: { page, limit: LIMIT } })
       setConversations(data.conversations)
       setTotal(data.total)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load conversations'), 'error')
+    }
     setLoading(false)
-  }, [page])
+  }, [page, showToast])
 
   useEffect(() => { load() }, [load])
 

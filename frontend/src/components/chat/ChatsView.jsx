@@ -10,6 +10,7 @@ import ChatItemMenu from './ChatItemMenu'
 import ChatFilterMenu from './ChatFilterMenu'
 import { SponsoredChatRow } from '../ads/SponsoredAd'
 import SearchScopeMenu from './SearchScopeMenu'
+import { apiErrorMessage } from '../../utils/apiError'
 
 const SEARCH_PLACEHOLDERS = {
   all: 'Search chats',
@@ -138,7 +139,9 @@ export default function ChatsView({ darkMode, mobileHidden }) {
       openConversation(data.conversation)
       setShowNewChat(false)
       setNewChatSearch('')
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not open the chat'), 'error')
+    }
   }
 
   const all = filteredConversations.filter((c) => {

@@ -9,6 +9,7 @@ import LinkPreviewCard from './LinkPreviewCard'
 import VoiceMessage from './VoiceMessage'
 import { forwardMessageApi } from '../../api/conversations'
 import { getReplyPreviewText, getReplyImageUrl, hasReplyPreview } from '../../utils/replyPreview'
+import { apiErrorMessage } from '../../utils/apiError'
 
 
 function formatTime(ts) {
@@ -142,7 +143,9 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   async function handleForward(targetConversationId) {
     try {
       await forwardMessageApi(msg.id, targetConversationId)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not forward the message'), 'error')
+    }
   }
 
   function handleReaction(emoji) {

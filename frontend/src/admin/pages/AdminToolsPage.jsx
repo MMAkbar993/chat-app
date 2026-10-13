@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import adminClient from '../api/adminClient'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -51,14 +53,17 @@ function BroadcastsSection() {
   const [history, setHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(true)
 
+  const { showToast } = useToast()
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true)
     try {
       const { data } = await adminClient.get('/broadcasts')
       setHistory(data.broadcasts)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load past broadcasts'), 'error')
+    }
     setLoadingHistory(false)
-  }, [])
+  }, [showToast])
 
   useEffect(() => { loadHistory() }, [loadHistory])
 
@@ -252,14 +257,17 @@ function SystemEmailsSection() {
   const [emails, setEmails] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/system-emails')
       setEmails(data.emails)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load system emails'), 'error')
+    }
     setLoading(false)
-  }, [])
+  }, [showToast])
 
   useEffect(() => { load() }, [load])
 

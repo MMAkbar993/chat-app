@@ -59,7 +59,9 @@ function urlVariants(url) {
     const alt = new URL(base)
     alt.hostname = u.hostname.startsWith('www.') ? u.hostname.slice(4) : `www.${u.hostname}`
     out.push(alt.toString().replace(/\/$/, ''))
-  } catch {}
+  } catch {
+    // not a parseable URL: match on the address as given
+  }
   return [...new Set(out)]
 }
 
@@ -116,7 +118,9 @@ async function createNotification(userId, type, data = {}) {
     if (io) {
       io.to(`user:${userId}`).emit('notification', { id: result.rows[0].id, type, data })
     }
-  } catch {}
+  } catch (err) {
+    console.error('createNotification failed', err)
+  }
 }
 
 export async function markTourSeenHandler(req, res, next) {
@@ -614,7 +618,9 @@ export async function transferWebsiteOwnership(req, res, next) {
     try {
       const raw = url.startsWith('http') ? url : `https://${url}`
       domainName = new URL(raw).hostname.replace(/^www\./, '')
-    } catch {}
+    } catch {
+      // not a parseable URL: leave the domain name blank
+    }
 
     // Give new owner a verified_websites entry
     await query(
@@ -1035,7 +1041,9 @@ export async function confirmWebsiteVerification(req, res, next) {
     try {
       const raw = url.startsWith('http') ? url : `https://${url}`
       domainName = new URL(raw).hostname.replace(/^www\./, '')
-    } catch {}
+    } catch {
+      // not a parseable URL: leave the domain name blank
+    }
 
     await query(
       `UPDATE users SET website_verified = true,

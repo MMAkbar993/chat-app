@@ -85,7 +85,7 @@ function AdminProtectedRoute({ children }) {
   if (loading) return <Spinner />
   if (!admin) return <Navigate to="/admin/login" replace />
   if (admin.mustSetup2FA) return <AdminSetup2FAPage />
-  return <AdminLayout>{children}</AdminLayout>
+  return <ToastProvider><AdminLayout>{children}</AdminLayout></ToastProvider>
 }
 
 function AdminGuestRoute({ children }) {

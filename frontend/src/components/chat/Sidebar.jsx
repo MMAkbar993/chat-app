@@ -7,6 +7,8 @@ import UserProfileModal from '../ui/UserProfileModal'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 import { SponsoredSidebarCard } from '../ads/SponsoredAd'
 import { isProUser } from '../../utils/plan'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 const NAV = [
   { key: 'chats', label: 'Chats', icon: (
@@ -104,6 +106,7 @@ function timeAgo(dateStr) {
 export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDarkMode, mobileHidden }) {
   const { user } = useAuth()
   const { socket } = useSocket()
+  const { showToast } = useToast()
   const { conversations } = useChat()
   const [notifications, setNotifications] = useState([])
   const [showPanel, setShowPanel] = useState(false)
@@ -155,7 +158,9 @@ export default function Sidebar({ active, onNav, onEditProfile, darkMode, onDark
     try {
       await clearNotifications()
       setNotifications([])
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not clear notifications'), 'error')
+    }
     setClearing(false)
   }
 

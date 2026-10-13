@@ -9,6 +9,8 @@ import {
 } from '../../api/users'
 import { useSocket } from '../../context/SocketContext'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 // ─── shared visual bits ─────────────────────────────────────────────────────
 
@@ -261,6 +263,7 @@ function dnsInfoFor(url, token) {
 export default function WebsiteVerificationSection({ darkMode, profile, onProfileChange }) {
   const { socket } = useSocket()
   const { refreshUser, setUser } = useAuth()
+  const { showToast } = useToast()
   const [websites, setWebsites] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   const [pendingRequests, setPendingRequests] = useState([])
@@ -398,7 +401,9 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
       await revokeRepresentative(userId)
       setRepresentatives((prev) => prev.filter((r) => r.user_id !== userId))
       window.dispatchEvent(new CustomEvent('rep-status-changed', { detail: { userId } }))
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not remove this representative'), 'error')
+    }
     setRevokingRep(null)
   }
 
@@ -590,7 +595,9 @@ export default function WebsiteVerificationSection({ darkMode, profile, onProfil
           .then((d) => setRepresentatives(d.representatives || []))
           .catch(() => {})
       }
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not update this request'), 'error')
+    }
   }
 
   async function handleCancelRequest(id) {

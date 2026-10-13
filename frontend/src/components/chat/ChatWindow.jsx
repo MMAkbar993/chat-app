@@ -16,6 +16,7 @@ import GroupInfoPanel from '../groups/GroupInfoPanel'
 import ChatHeaderMenu from './ChatHeaderMenu'
 import UserProfileModal from '../ui/UserProfileModal'
 import ScheduleMeetingModal from '../calendar/ScheduleMeetingModal'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function formatDuration(secs) {
   if (!secs) return ''
@@ -42,7 +43,7 @@ function formatLastSeen(ts) {
 
 function CallEventPill({ msg, userId, darkMode, meAvatar, meName }) {
   let callData = {}
-  try { callData = JSON.parse(msg.content || '{}') } catch {}
+  try { callData = JSON.parse(msg.content || '{}') } catch { /* an old or malformed call record: show it without details */ }
   const isCaller = msg.sender_id === userId
   const isVideo = callData.call_type === 'video'
   const callType = isVideo ? 'Video' : 'Audio'
@@ -400,7 +401,9 @@ export default function ChatWindow({ darkMode, onCallStart }) {
         setIsBlocked(true)
         showToast('User blocked', 'warning')
       }
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, isBlocked ? 'Could not unblock this user' : 'Could not block this user'), 'error')
+    }
   }
 
   async function handleAddContact() {
@@ -518,14 +521,18 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     try {
       await deleteMessageApi(msgId)
       setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, is_deleted: true, content: null } : m))
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not delete the message'), 'error')
+    }
   }
 
   async function handleDeleteMessageForMe(msgId) {
     try {
       await deleteMessageForMeApi(msgId)
       setMessages((prev) => prev.filter((m) => m.id !== msgId))
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not delete the message'), 'error')
+    }
   }
 
   const items = groupByDate(messages)

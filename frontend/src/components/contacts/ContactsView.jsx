@@ -7,6 +7,7 @@ import AddContactModal from './AddContactModal'
 import UserProfileModal from '../ui/UserProfileModal'
 import EditContactModal from './EditContactModal'
 import InviteOthersModal from './InviteOthersModal'
+import { apiErrorMessage } from '../../utils/apiError'
 
 export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHidden }) {
   const [contacts, setContacts] = useState([])
@@ -23,7 +24,9 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
     try {
       const data = await getContacts()
       setContacts(data.contacts || [])
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load your contacts'), 'error')
+    }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -61,7 +64,9 @@ export default function ContactsView({ darkMode, onNavigate, onNewCall, mobileHi
       openConversation(data.conversation)
       setSelectedContact(null)
       onNavigate('chats')
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not open the chat'), 'error')
+    }
   }
 
   function handleCall(contact, callType) {

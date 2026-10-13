@@ -39,7 +39,9 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await client.get('/auth/me')
       setUser(data.user)
-    } catch {}
+    } catch {
+      // keep the user we have; an expired session is handled by the client's 401 refresh
+    }
   }
 
   function login(userData, token) {

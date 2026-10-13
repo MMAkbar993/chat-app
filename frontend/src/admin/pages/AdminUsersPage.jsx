@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import adminClient from '../api/adminClient'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 const COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia','Australia',
@@ -547,6 +549,7 @@ export default function AdminUsersPage() {
   const [reviewCount, setReviewCount] = useState(0)
   const LIMIT = 20
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -554,9 +557,11 @@ export default function AdminUsersPage() {
       setUsers(data.users)
       setTotal(data.total)
       setReviewCount(data.reviewCount || 0)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load members'), 'error')
+    }
     setLoading(false)
-  }, [search, page, kycFilter])
+  }, [search, page, kycFilter, showToast])
 
   useEffect(() => { load() }, [load])
   useEffect(() => { setPage(1) }, [search, kycFilter])
@@ -572,7 +577,9 @@ export default function AdminUsersPage() {
     try {
       await adminClient.delete(`/users/${user.id}`)
       load()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not delete this member'), 'error')
+    }
     setConfirm(null)
   }
 
@@ -580,7 +587,9 @@ export default function AdminUsersPage() {
     try {
       await adminClient.post(`/users/${user.id}/block`)
       load()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not block this member'), 'error')
+    }
     setConfirm(null)
   }
 
@@ -588,7 +597,9 @@ export default function AdminUsersPage() {
     try {
       await adminClient.post(`/users/${user.id}/unblock`)
       load()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not unblock this member'), 'error')
+    }
     setConfirm(null)
   }
 

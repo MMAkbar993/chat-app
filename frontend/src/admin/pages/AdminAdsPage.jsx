@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import adminClient from '../api/adminClient'
 import { ROLE_LABELS } from '../../utils/roleLabels'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 const ROLE_ENTRIES = Object.entries(ROLE_LABELS).sort((a, b) => a[1].localeCompare(b[1]))
 
@@ -214,14 +216,17 @@ export default function AdminAdsPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/ads')
       setAds(data.ads || [])
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load ads'), 'error')
+    }
     setLoading(false)
-  }, [])
+  }, [showToast])
 
   useEffect(() => { load() }, [load])
 
@@ -230,7 +235,9 @@ export default function AdminAdsPage() {
     try {
       await adminClient.delete(`/ads/${ad.id}`)
       load()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not delete the ad'), 'error')
+    }
   }
 
   if (editing) {

@@ -25,6 +25,7 @@ import CallingCard from '../components/calls/CallingCard'
 import IncomingCallModal from '../components/calls/IncomingCallModal'
 import UpgradeModal from '../features/payment/UpgradeModal'
 import ProductTour from '../components/onboarding/ProductTour'
+import { apiErrorMessage } from '../utils/apiError'
 
 const DARK_MODE_KEY = 'pulse:darkMode'
 
@@ -251,7 +252,9 @@ export default function ChatPage() {
       const data = await getOrCreateDirect(targetUserId)
       const convId = data.conversation?.id || data.id
       initiateCall(callType, targetUserId, convId, { name: targetName, avatar: targetAvatar })
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not start the call'), 'error')
+    }
   }
 
   function initiateCall(callType, targetUserId, conversationId, targetInfo) {
@@ -306,7 +309,7 @@ export default function ChatPage() {
       {section === 'chats' && <ChatsView darkMode={darkMode} mobileHidden={mobileDetail} />}
       {section === 'contacts' && <ContactsView darkMode={darkMode} onNavigate={setSection} onNewCall={handleNewCall} mobileHidden={mobileDetail} />}
       {section === 'groups' && <GroupsView darkMode={darkMode} mobileHidden={mobileDetail} />}
-      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch {} }} mobileHidden={mobileDetail} />}
+      {section === 'calls' && <CallsView darkMode={darkMode} onCallStart={handleCallStart} onNewCall={handleNewCall} onOpenChat={async (userId) => { try { const data = await getOrCreateDirect(userId); openConversation(data.conversation); setSection('chats') } catch (err) { showToast(apiErrorMessage(err, 'Could not open the chat'), 'error') } }} mobileHidden={mobileDetail} />}
       {section === 'settings' && (
         <SettingsView darkMode={darkMode} onDarkMode={() => setDarkMode((d) => !d)} activeSection={settingsSection} onSelect={setSettingsSection} mobileHidden={mobileDetail} onStartTour={() => setTourRestartCount((c) => c + 1)} />
       )}

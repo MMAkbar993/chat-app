@@ -32,7 +32,7 @@ export function playSentSound() {
     const t = ctx.currentTime
     tone(700, t, 0.09, 0.18, 'sine')
     tone(500, t + 0.06, 0.09, 0.1, 'sine')
-  } catch {}
+  } catch { /* no audio device or autoplay blocked: stay silent */ }
 }
 
 // Two-tone ding — message received
@@ -42,7 +42,7 @@ export function playReceivedSound() {
     const t = ctx.currentTime
     tone(880, t, 0.15, 0.28, 'sine')
     tone(1100, t + 0.12, 0.2, 0.22, 'sine')
-  } catch {}
+  } catch { /* no audio device or autoplay blocked: stay silent */ }
 }
 
 // Ascending three-tone — call connected
@@ -53,7 +53,7 @@ export function playCallConnected() {
     tone(660, t, 0.12, 0.28, 'sine')
     tone(880, t + 0.1, 0.15, 0.25, 'sine')
     tone(1100, t + 0.22, 0.22, 0.22, 'sine')
-  } catch {}
+  } catch { /* no audio device or autoplay blocked: stay silent */ }
 }
 
 // Descending two-tone — call ended
@@ -63,7 +63,7 @@ export function playCallEnded() {
     const t = ctx.currentTime
     tone(440, t, 0.15, 0.28, 'sine')
     tone(330, t + 0.12, 0.22, 0.22, 'sine')
-  } catch {}
+  } catch { /* no audio device or autoplay blocked: stay silent */ }
 }
 
 // Repeating phone-style ringtone
@@ -77,7 +77,7 @@ function ringOnce() {
     tone(440, t, 0.38, 0.22, 'triangle')
     tone(480, t + 0.48, 0.38, 0.45, 'sine')
     tone(440, t + 0.48, 0.38, 0.22, 'triangle')
-  } catch {}
+  } catch { /* no audio device or autoplay blocked: stay silent */ }
 }
 
 export function playRingtone() {

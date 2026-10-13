@@ -13,6 +13,7 @@ import ConfirmDialog from '../ui/ConfirmDialog'
 import UserProfileModal from '../ui/UserProfileModal'
 import MediaGallery from '../chat/MediaGallery'
 import client from '../../api/client'
+import { apiErrorMessage } from '../../utils/apiError'
 
 export default function GroupInfoPanel({ conversation, darkMode, onClose, onCallStart, onSearch }) {
   const { user } = useAuth()
@@ -217,7 +218,9 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
     try {
       const data = await getContacts()
       setContacts(data.contacts || [])
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load your contacts'), 'error')
+    }
   }
 
   useEffect(() => {
@@ -227,7 +230,9 @@ export default function GroupInfoPanel({ conversation, darkMode, onClose, onCall
       try {
         const data = await searchUsers(addSearch)
         setUserSearchResults(data.users || [])
-      } catch {}
+      } catch {
+        // live search while typing: on failure the results just stay empty
+      }
     }, 300)
     return () => clearTimeout(t)
   }, [addSearch, showAddMembers])

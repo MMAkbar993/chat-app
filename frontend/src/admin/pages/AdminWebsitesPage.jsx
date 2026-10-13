@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import adminClient from '../api/adminClient'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -23,14 +25,17 @@ function WebsitesSection() {
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/websites', { params: { status } })
       setWebsites(data.websites)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load websites'), 'error')
+    }
     setLoading(false)
-  }, [status])
+  }, [status, showToast])
 
   useEffect(() => { load() }, [load])
 
@@ -141,14 +146,17 @@ function BusinessesSection() {
   const [confirming, setConfirming] = useState(null)
   const [busy, setBusy] = useState(false)
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/businesses', { params: { search } })
       setBusinesses(data.businesses)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load businesses'), 'error')
+    }
     setLoading(false)
-  }, [search])
+  }, [search, showToast])
 
   useEffect(() => {
     const t = setTimeout(load, 300)
@@ -161,7 +169,9 @@ function BusinessesSection() {
       await adminClient.delete(`/businesses/${confirming.id}`)
       setConfirming(null)
       await load()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not delete this business'), 'error')
+    }
     setBusy(false)
   }
 
@@ -254,14 +264,17 @@ function RepresentationRequestsSection() {
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState(null)
 
+  const { showToast } = useToast()
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminClient.get('/websites/representation-requests', { params: { status } })
       setRequests(data.requests)
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not load requests'), 'error')
+    }
     setLoading(false)
-  }, [status])
+  }, [status, showToast])
 
   useEffect(() => { load() }, [load])
 
@@ -270,7 +283,9 @@ function RepresentationRequestsSection() {
     try {
       await adminClient.post(`/websites/representation-requests/${id}/action`, { action })
       load()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not update this request'), 'error')
+    }
     setActingId(null)
   }
 

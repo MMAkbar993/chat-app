@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getContacts } from '../../api/contacts'
 import { createGroup } from '../../api/groups'
+import { useToast } from '../../context/ToastContext'
+import { apiErrorMessage } from '../../utils/apiError'
 
 export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
   const [name, setName] = useState('')
@@ -8,6 +10,7 @@ export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState([])
   const [loading, setLoading] = useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
     getContacts().then((d) => setContacts(d.contacts || [])).catch(() => {})
@@ -28,7 +31,9 @@ export default function CreateGroupModal({ darkMode, onClose, onCreated }) {
       const data = await createGroup(name.trim(), selected)
       onCreated?.(data.group)
       onClose()
-    } catch {}
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not create the group'), 'error')
+    }
     setLoading(false)
   }
 

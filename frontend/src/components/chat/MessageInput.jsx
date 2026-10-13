@@ -276,7 +276,9 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       setRecording(true)
       setRecordSecs(0)
       recordTimerRef.current = setInterval(() => setRecordSecs((s) => s + 1), 1000)
-    } catch {}
+    } catch {
+      showToast('Could not use the microphone. Check that your browser allows it.', 'error')
+    }
   }
 
   function stopRecording() {
