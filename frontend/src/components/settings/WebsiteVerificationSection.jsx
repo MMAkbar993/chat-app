@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { SUPPORT_MAILTO } from '../../config/site'
 import {
   getMyVerifiedWebsites, initWebsiteVerify, confirmWebsiteVerify, removeWebsiteVerify,
   getRepresentationRequests, handleRepresentationRequest, removeMyRepresentationFor,
@@ -232,7 +233,7 @@ function HelpCard({ darkMode }) {
         <p className={`text-xs mt-0.5 ${sub}`}>If you believe this is an error or have any questions, contact our support team.</p>
       </div>
       <a
-        href="mailto:pulse@affiliateroulette.com"
+        href={SUPPORT_MAILTO}
         className={`text-xs font-semibold border rounded-xl px-4 py-2 transition-colors shrink-0 ${
           darkMode
             ? 'bg-violet-600 border-violet-600 text-white hover:bg-violet-500'

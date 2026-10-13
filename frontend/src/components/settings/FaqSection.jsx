@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { SUPPORT_MAILTO } from '../../config/site'
 
 // Content is owned by the product team — treat it as copy, not code, and keep the wording
 // they supplied. Two exceptions are marked inline below where the supplied answer described
@@ -984,7 +985,7 @@ export default function FaqSection({ darkMode, categories, featured, linkable = 
               <>
                 No answers match “{search.trim()}”. Try another word, or{' '}
                 <a
-                  href="mailto:pulse@affiliateroulette.com"
+                  href={SUPPORT_MAILTO}
                   className={`font-semibold underline underline-offset-2 ${darkMode ? 'text-violet-300' : 'text-violet-700'}`}
                 >
                   contact support
@@ -1067,7 +1068,7 @@ export default function FaqSection({ darkMode, categories, featured, linkable = 
           <p className={`text-xs mt-0.5 ${sub}`}>Settings → Other → Feedback &amp; Support reaches our team.</p>
         </div>
         <a
-          href="mailto:pulse@affiliateroulette.com"
+          href={SUPPORT_MAILTO}
           className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors shrink-0"
         >
           Contact Support

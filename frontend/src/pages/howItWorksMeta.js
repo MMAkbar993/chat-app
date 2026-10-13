@@ -3,7 +3,9 @@
 // that link-preview scrapers and search engines see. Plain JS on purpose: the build imports it
 // from vite.config.js, outside the React bundle.
 
-export const SITE_URL = 'https://pulse.affiliateroulette.com'
+import { SITE_URL } from '../config/site.js'
+
+export { SITE_URL }
 
 // The home page is served from the root index.html, which is also the fallback for every other
 // route — public profiles (/u/…), business pages (/b/…) and the app itself. So these tags become

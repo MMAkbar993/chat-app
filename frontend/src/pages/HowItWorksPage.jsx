@@ -3,6 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { HOW_IT_WORKS_META } from './howItWorksMeta'
 import { Icon, Eyebrow, HeaderLogo, HeaderActions, MarketingFooter, CtaBanner } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
+import { SUPPORT_MAILTO } from '../config/site'
 import {
   KycSlider, SocialProfileVisual,
   GroupChatMockup, CallMockup, SearchMockup, PrivacyMockup, ShareLinksMockup,
@@ -541,7 +542,7 @@ export default function HowItWorksPage() {
               </ul>
               <p className="mt-5 text-sm text-gray-600 night:text-gray-300">
                 Still stuck?{' '}
-                <a href="mailto:pulse@affiliateroulette.com" className={`font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}>
+                <a href={SUPPORT_MAILTO} className={`font-semibold text-violet-700 night:text-violet-300 hover:text-violet-800 night:hover:text-violet-200 rounded ${FOCUS}`}>
                   Contact Pulse Support
                 </a>
               </p>
