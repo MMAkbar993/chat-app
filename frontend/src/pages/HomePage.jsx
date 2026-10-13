@@ -4,7 +4,8 @@ import { HOME_META } from './howItWorksMeta'
 import { HOME_CONTENT as C } from './homeContent'
 import { Icon, Eyebrow, MarketingHeader, MarketingFooter } from '../components/marketing/MarketingChrome'
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
-import { AppMockup, TrustedChatMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
+import { AppMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
+import HomeHeroVisual from '../components/marketing/HomeHeroVisual'
 import { QaRow } from '../components/settings/FaqSection'
 
 // The short sales page at "/". How It Works stays the detailed explainer; this page makes the
@@ -54,6 +55,54 @@ const euro = (n) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`
 const yearlySaving = (monthly, yearly) => Math.floor((1 - yearly / (monthly * 12)) * 100)
 
 const BTN_SECONDARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-white night:bg-gray-900 border border-gray-200 night:border-gray-700 hover:border-violet-300 night:hover:border-violet-500 font-semibold transition-colors ${FOCUS}`
+
+// Store badges for apps that are not out yet: drawn here rather than the stores' official
+// artwork (which is only for live listings), and not links.
+const APPLE = 'M16.37 1.43c0 1.14-.42 2.2-1.2 3.04-.85.92-2.07 1.53-3.17 1.44-.13-1.1.42-2.25 1.18-3.05.85-.9 2.24-1.52 3.19-1.43zM20.5 17.1c-.55 1.27-.81 1.84-1.52 2.96-.99 1.56-2.38 3.5-4.11 3.52-1.53.01-1.93-1-4.01-.99-2.08.01-2.52 1.01-4.05.99-1.73-.02-3.05-1.77-4.04-3.33-2.77-4.36-3.06-9.49-1.3-12.2 1.25-1.93 3.22-3.06 5.07-3.06 1.88 0 3.07 1.03 4.63 1.03 1.51 0 2.43-1.03 4.61-1.03 1.65 0 3.39.9 4.63 2.45-4.07 2.23-3.41 8.04.06 9.67z'
+
+function StoreTile({ icon, small, big }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 px-4 py-2.5 text-left">
+      {icon}
+      <div className="leading-tight">
+        <p className="text-[11px] text-gray-500 night:text-gray-400">{small}</p>
+        <p className="text-lg font-semibold -mt-0.5">{big}</p>
+        <p className="text-[11px] text-gray-400 night:text-gray-500">Coming soon</p>
+      </div>
+    </div>
+  )
+}
+
+function ComingSoonApps({ label }) {
+  return (
+    <div className="mt-8 max-w-md mx-auto lg:mx-0">
+      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-gray-400 night:text-gray-500">
+        <span className="h-px flex-1 bg-gray-200 night:bg-gray-800" />
+        {label}
+        <span className="h-px flex-1 bg-gray-200 night:bg-gray-800" />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <StoreTile
+          small="Download on the"
+          big="App Store"
+          icon={<svg viewBox="0 0 24 24" className="w-7 h-7 shrink-0 fill-gray-900 night:fill-white" aria-hidden="true"><path d={APPLE} /></svg>}
+        />
+        <StoreTile
+          small="Get it on"
+          big="Google Play"
+          icon={(
+            <svg viewBox="0 0 24 24" className="w-7 h-7 shrink-0" aria-hidden="true">
+              <path d="M3.61 1.81 13.79 12 3.61 22.19A1.5 1.5 0 0 1 3 21V3a1.5 1.5 0 0 1 .61-1.19z" fill="#2196F3" />
+              <path d="M3.61 1.81 16.9 9.36 13.79 12z" fill="#4CAF50" />
+              <path d="M3.61 22.19 13.79 12l3.11 2.64z" fill="#F44336" />
+              <path d="M16.9 9.36l3.7 2.1a.62.62 0 0 1 0 1.08l-3.7 2.1L13.79 12z" fill="#FFC107" />
+            </svg>
+          )}
+        />
+      </div>
+    </div>
+  )
+}
 
 function SectionIntro({ eyebrow, heading, children }) {
   return (
@@ -137,7 +186,8 @@ export default function HomePage() {
             <div className="text-center lg:text-left">
               <Eyebrow>{C.hero.badge}</Eyebrow>
               <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight text-balance">
-                {C.hero.headline}
+                {C.hero.headline}{' '}
+                <span className="block text-violet-600 night:text-violet-400">{C.hero.headlineAccent}</span>
               </h1>
               <p className="mt-5 text-lg text-gray-600 night:text-gray-300 leading-relaxed">{C.hero.subtext}</p>
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
@@ -145,8 +195,9 @@ export default function HomePage() {
                 <Link to={C.hero.secondaryCta.to} className={BTN_SECONDARY}>{C.hero.secondaryCta.label}</Link>
               </div>
               <p className="mt-4 text-sm text-gray-500 night:text-gray-400">{C.hero.footnote}</p>
+              {C.hero.comingSoon && <ComingSoonApps label={C.hero.comingSoon} />}
             </div>
-            <TrustedChatMockup wide />
+            <HomeHeroVisual />
           </div>
         </section>
 

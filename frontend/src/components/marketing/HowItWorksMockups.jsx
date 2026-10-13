@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import SocialIcon from '../ui/SocialIcon'
+import { P } from './mockupIcons'
+import { I, Avatar, Tick, WindowFrame } from './MockupParts'
 
 // Illustrations for the public How It Works page, drawn as miniature Pulse UI rather than
 // stock art — the whole point is that a first-time visitor recognises "this is a messenger,
@@ -7,72 +9,6 @@ import SocialIcon from '../ui/SocialIcon'
 // Everything here is decorative, so each mockup is hidden from screen readers; the section
 // copy next to it carries the actual meaning.
 
-const P = {
-  chat: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-  user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-  group: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m16-14a4 4 0 010 7.75M9 7a4 4 0 118 0 4 4 0 01-8 0z',
-  phone: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z',
-  video: 'M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z',
-  gear: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
-  search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
-  file: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-  mic: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z',
-  screen: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-  calendar: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-  plus: 'M12 4v16m8-8H4',
-  check: 'M5 13l4 4L19 7',
-  pin: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z',
-  x: 'M6 18L18 6M6 6l12 12',
-  shield: 'M9 12.75l1.5 1.5 3.75-3.75M12 3l7 3v5c0 4.5-3 8.25-7 9.5-4-1.25-7-5-7-9.5V6l7-3z',
-  lock: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
-}
-
-function I({ d, className = 'w-4 h-4', stroke = 2 }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={stroke} d={d} />
-    </svg>
-  )
-}
-
-function Avatar({ name, color, className = 'w-8 h-8 text-[11px]' }) {
-  const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('')
-  return (
-    <span className={`rounded-full shrink-0 flex items-center justify-center font-bold text-white bg-linear-to-br ${color} ${className}`}>
-      {initials}
-    </span>
-  )
-}
-
-function Tick({ className = 'w-3.5 h-3.5' }) {
-  return (
-    <span className={`rounded-full bg-violet-600 text-white flex items-center justify-center shrink-0 ${className}`}>
-      <I d={P.check} className="w-2/3 h-2/3" stroke={3.5} />
-    </span>
-  )
-}
-
-function Badge({ children }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-700 night:text-gray-200">
-      <I d={P.check} className="w-2.5 h-2.5 text-green-500" stroke={3} />
-      {children}
-    </span>
-  )
-}
-
-function WindowFrame({ children, className = '' }) {
-  return (
-    <div className={`rounded-2xl border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 shadow-2xl shadow-violet-900/10 overflow-hidden ${className}`}>
-      <div className="h-8 flex items-center gap-1.5 px-4 bg-[#1B1533]">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-      </div>
-      {children}
-    </div>
-  )
-}
 
 // ─── Verification ───────────────────────────────────────────────────────────
 
@@ -284,70 +220,6 @@ export function PublicProfileMockup() {
   )
 }
 
-// The social section right below already shows a full profile card, so this one shows the
-// moment the trust is for: a conversation with a stranger, and the profile you get by tapping
-// their name. Badges sit in that pop-up, not the chat header, because that is where the real
-// app shows them — this page should not promise anything the product does not do.
-// wide: fills a half-width column from 1280px up (the home hero), instead of leaving a gap
-// between it and the text beside it. Below 1280px it is the same size either way.
-export function TrustedChatMockup({ wide = false }) {
-  return (
-    <div aria-hidden="true" className={`relative max-w-md mx-auto lg:mr-0 w-full pb-28 sm:pb-32 ${wide ? 'xl:max-w-xl' : ''}`}>
-      <WindowFrame>
-        <div className="text-left bg-gray-50 night:bg-gray-950">
-          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white night:bg-gray-900 border-b border-gray-100 night:border-gray-800">
-            <span className="relative">
-              <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-8 h-8 text-[11px]" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white night:border-gray-900" />
-            </span>
-            <div>
-              <p className="text-xs font-semibold text-gray-900 night:text-white">Daniel Reyes</p>
-              <p className="text-[10px] text-green-500">Online</p>
-            </div>
-          </div>
-          <div className="px-4 py-4 space-y-2.5">
-            <div className="max-w-[78%] rounded-2xl rounded-bl-sm bg-white night:bg-gray-900 px-3 py-2 text-[11px] text-gray-700 night:text-gray-200 shadow-sm">
-              Hi! We're launching a new casino brand next month. Open to a partnership?
-            </div>
-            <div className="ml-auto max-w-[78%] rounded-2xl rounded-br-sm bg-violet-600 px-3 py-2 text-[11px] text-white shadow-sm">
-              Sounds interesting. Let me take a look at your profile first.
-            </div>
-          </div>
-          <div className="px-4 py-2.5 bg-white night:bg-gray-900 border-t border-gray-100 night:border-gray-800">
-            <div className="h-7 rounded-full bg-gray-100 night:bg-gray-800" />
-          </div>
-        </div>
-      </WindowFrame>
-
-      {/* What tapping the name opens */}
-      <div className="absolute right-0 sm:-right-4 bottom-0 w-max max-w-full rounded-2xl bg-white night:bg-gray-900 p-4 text-left shadow-2xl shadow-violet-900/20 ring-1 ring-gray-100 night:ring-gray-800">
-        <div className="flex items-center gap-3">
-          <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-11 h-11 text-sm" />
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-900 night:text-white">Daniel Reyes</p>
-            <p className="text-[11px] text-gray-500 night:text-gray-400">Affiliate Manager</p>
-          </div>
-        </div>
-        {/* The card sizes to this row, so the badges stay on one line whatever the font; only a
-            screen too narrow for all three wraps them. */}
-        <div className="mt-3 flex flex-wrap gap-1.5 whitespace-nowrap">
-          <Badge>KYC Verified</Badge>
-          <Badge>Website Verified</Badge>
-          <Badge>Socials Verified</Badge>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="flex items-center gap-1.5 text-xs font-medium text-violet-600 night:text-violet-300">
-            <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
-          </p>
-          {/* The accounts behind "Socials Verified", in their own colours */}
-          <div className="flex gap-1">
-            {['twitter', 'instagram', 'youtube'].map((k) => <SocialIcon key={k} platform={k} size={22} />)}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // Real screenshots of the identity check, in order. Labels are the screens' own headings.
 // They live in /marketing/, not /how-it-works/: a real folder at a page's path makes Nginx's

@@ -13,13 +13,18 @@
 export const HOME_CONTENT = {
   hero: {
     badge: 'Verified communication for iGaming',
-    headline: 'The iGaming industry, connected and verified.',
+    // Shown on two lines, the second in the brand colour.
+    headline: 'The iGaming industry,',
+    headlineAccent: 'connected and verified.',
     subtext:
       'Chat, call, and collaborate with iGaming professionals on a platform built around verified identities and trusted business connections.',
     primaryCta: { label: 'Create free account', to: '/signup' },
     secondaryCta: { label: 'See how it works', to: '/how-it-works' },
     // TODO: confirm "about 2 minutes" — the ID check's own screen says about 1 minute, plus sign-up.
     footnote: 'Takes about 2 minutes · ID data deleted after 30 days',
+    // The phone apps are not out yet. Remove this line (and the badges go) or swap the label
+    // for links once they are.
+    comingSoon: 'Coming soon to',
   },
 
   // Social proof (logos and numbers) lives in SOCIAL_PROOF at the top of HomePage.jsx.
