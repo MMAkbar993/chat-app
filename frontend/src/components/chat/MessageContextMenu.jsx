@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
 
-export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onReact, onMoreReactions, onPin, isPinned, canPin, onClose, isMe, canEdit, darkMode, dir = 'down' }) {
+export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit, onDelete, onDeleteForMe, onReact, onMoreReactions, onPin, isPinned, canPin, onClose, isMe, canEdit, editLabel = 'Edit', darkMode, dir = 'down' }) {
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function MessageContextMenu({ onReply, onForward, onCopy, onEdit,
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
-          Edit
+          {editLabel}
         </button>
       )}
 

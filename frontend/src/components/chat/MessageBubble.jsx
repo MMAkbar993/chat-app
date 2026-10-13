@@ -111,7 +111,10 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const { socket } = useSocket()
   const { showToast } = useToast()
   const isMe = msg.sender_id === user?.id
-  const canEdit = isMe && msg.message_type === 'text'
+  // Text, or the caption under your own photo, video or file.
+  const isCaptioned = ['image', 'video', 'file'].includes(msg.message_type) && Boolean(msg.media_url)
+  const canEdit = isMe && !msg.is_deleted && (msg.message_type === 'text' || isCaptioned)
+  const editLabel = !isCaptioned ? 'Edit' : msg.content ? 'Edit caption' : 'Add caption'
   const [hovered, setHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
@@ -415,6 +418,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               isMe={isMe}
               dir={menuDir}
               canEdit={canEdit}
+              editLabel={editLabel}
               darkMode={darkMode}
               onClose={() => setShowMenu(false)}
               onReact={handleReaction}

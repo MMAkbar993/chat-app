@@ -85,12 +85,17 @@ export async function getMessageById(id) {
   return result.rows[0] || null
 }
 
+// Text messages, and the caption of a photo, video or file (stored in content beside media_url).
+// A caption may be cleared (content null); a text message may not, the handler checks that.
+export const CAPTIONED_TYPES = ['image', 'video', 'file']
+
 export async function editMessage(id, senderId, content) {
   const result = await query(
     `UPDATE messages SET content = $1, edited_at = NOW()
-     WHERE id = $2 AND sender_id = $3 AND is_deleted = false AND message_type = 'text'
+     WHERE id = $2 AND sender_id = $3 AND is_deleted = false
+       AND (message_type = 'text' OR (message_type = ANY($4::text[]) AND media_url IS NOT NULL))
      RETURNING id, conversation_id, content, edited_at`,
-    [content, id, senderId]
+    [content, id, senderId, CAPTIONED_TYPES]
   )
   return result.rows[0] || null
 }

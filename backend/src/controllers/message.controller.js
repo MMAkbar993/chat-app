@@ -138,16 +138,18 @@ export async function toggleReactionHandler(req, res, next) {
 
 export async function editMessageHandler(req, res, next) {
   try {
-    const { content } = req.body
-    if (!content?.trim()) return res.status(400).json({ error: 'content required' })
-
     const msg = await getMessageById(req.params.id)
     if (!msg) return res.status(404).json({ error: 'Message not found' })
+
+    // A caption can be removed by saving it empty; a text message cannot be emptied.
+    const content = typeof req.body.content === 'string' ? req.body.content.trim() : ''
+    const isCaption = msg.message_type !== 'text'
+    if (!content && !isCaption) return res.status(400).json({ error: 'content required' })
 
     const ok = await isParticipant(msg.conversation_id, req.user.id)
     if (!ok) return res.status(403).json({ error: 'Not a participant' })
 
-    const updated = await editMessage(req.params.id, req.user.id, content.trim())
+    const updated = await editMessage(req.params.id, req.user.id, content || null)
     if (!updated) return res.status(403).json({ error: 'Cannot edit this message' })
 
     const participants = await getParticipants(updated.conversation_id)

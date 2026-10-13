@@ -165,9 +165,11 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   async function handleSubmit(e) {
     e?.preventDefault()
     const content = text.trim()
-    if (!content) return
+    const editingCaption = Boolean(editingMessage && editingMessage.message_type !== 'text')
+    // Saving a caption empty removes it; anything else needs text.
+    if (!content && !editingCaption) return
     if (editingMessage) {
-      if (content !== editingMessage.content) onEditSubmit?.(editingMessage.id, content)
+      if (content !== (editingMessage.content || '')) onEditSubmit?.(editingMessage.id, content)
       cancelEdit()
       return
     }
@@ -324,8 +326,12 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
           darkMode ? 'bg-gray-800 text-gray-300' : 'bg-violet-50 text-gray-600'
         }`}>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-violet-600">Edit Message</p>
-            <p className="text-xs truncate">{editingMessage.content}</p>
+            <p className="text-xs font-semibold text-violet-600">
+              {editingMessage.message_type === 'text' ? 'Edit Message' : editingMessage.content ? 'Edit caption' : 'Add caption'}
+            </p>
+            <p className="text-xs truncate">
+              {editingMessage.content || (editingMessage.message_type === 'image' ? 'Photo' : editingMessage.message_type === 'video' ? 'Video' : editingMessage.file_name || 'File')}
+            </p>
           </div>
           <button onClick={cancelEdit} className="ml-2 shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
