@@ -7,7 +7,7 @@
 //  Facts on this page must stay in step with the product:
 //    • Prices      → features/payment/UpgradeModal.jsx (PLANS) and Stripe
 //    • Free vs Pro → the Pro gates in calls, groups, contacts search and calendar
-//    • ID data     → the 30-day retention promise on How It Works and the KYC screen
+//    • ID data     → the verify and purge promise on How It Works and the KYC screen
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const HOME_CONTENT = {
@@ -21,7 +21,7 @@ export const HOME_CONTENT = {
     primaryCta: { label: 'Create free account', to: '/signup' },
     secondaryCta: { label: 'See how it works', to: '/how-it-works' },
     // TODO: confirm "about 2 minutes" — the ID check's own screen says about 1 minute, plus sign-up.
-    footnote: 'Takes about 2 minutes · ID data deleted after 30 days',
+    footnote: 'Takes about 2 minutes · ID deleted once you are verified',
     // The phone apps are not out yet. Remove this line (and the badges go) or swap the label
     // for links once they are.
     comingSoon: 'Coming soon to',
@@ -192,7 +192,7 @@ export const HOME_CONTENT = {
       },
       {
         q: 'What happens to my ID data?',
-        a: ['Your documents and selfie are deleted automatically after 30 days. Pulse keeps only a record that you were verified. The only detail from your ID other members see is your name, shown the way you choose in Settings.'],
+        a: ['As soon as your check is complete, your ID document, selfie and video are permanently deleted. Pulse keeps only your verified name and the fact that you are verified. The only detail from your ID other members see is your name, shown the way you choose in Settings.'],
       },
       {
         q: 'Who can join Pulse?',

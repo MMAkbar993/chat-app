@@ -3,7 +3,7 @@ import LegalPage, { Section, SubSection, LegalList } from '../components/legal/L
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPage title="Pulse Privacy Policy" effectiveDate="7th August 2026" lastUpdated="7th August 2026">
+    <LegalPage title="Pulse Privacy Policy" effectiveDate="14th October 2026" lastUpdated="14th October 2026">
 
       <Section title="1. Introduction">
         <p>Pulse ("Pulse", "we", "our", or "us") is committed to protecting your privacy and safeguarding your personal data. We recognise the importance of handling personal information responsibly and transparently, particularly as a platform built around verified identities and secure communications.</p>
@@ -200,7 +200,7 @@ export default function PrivacyPolicyPage() {
           <p>Pulse uses Didit as its identity verification provider. Didit performs identity verification on our behalf using document verification, facial recognition, liveness detection, and fraud prevention technologies. Didit's processing of personal data is governed by its own privacy practices in addition to this Privacy Policy.</p>
         </SubSection>
         <SubSection title="8.6 Storage of Verification Information">
-          <p>Verification-related information is retained only for as long as reasonably necessary to complete the verification process, maintain the security of the Services, prevent fraud and abuse, comply with applicable legal obligations, and resolve disputes and enforce our legal rights.</p>
+          <p>Pulse follows a verify and purge approach. Your identity document, selfie, liveness video and the information read from your document are permanently deleted as soon as your verification has a final result (or, where our team reviews it manually, as soon as that review is complete). From your identity document, Pulse keeps only your verified name and your verification status. Full details are in our KYC & Identity Verification Policy.</p>
           <p>Access to verification information is restricted to authorised personnel and trusted service providers with a legitimate need to access such information.</p>
         </SubSection>
         <SubSection title="8.7 No Commercial Use">
@@ -276,7 +276,7 @@ export default function PrivacyPolicyPage() {
           <p>We retain your account information for as long as your Pulse Account remains active. If your Account is closed or deleted, we may retain certain information for a limited period where necessary to comply with legal obligations, resolve disputes, prevent fraud or abuse, enforce our Terms &amp; Conditions, and protect the security of the Services.</p>
         </SubSection>
         <SubSection title="11.2 Identity Verification (KYC) Data">
-          <p>Identity verification information, including documentation and verification records, is retained only for as long as reasonably necessary to complete and maintain identity verification, prevent fraud and impersonation, protect the security of the Services, comply with applicable legal and regulatory obligations, and exercise or defend legal claims. Retention periods for verification data may vary depending on legal requirements and the nature of the verification performed.</p>
+          <p>Identity documents, selfies, liveness videos and the information read from them are deleted as soon as your verification has a final result, or once a manual review by our team is complete. Your verified name and verification status are kept for as long as your Account exists.</p>
         </SubSection>
         <SubSection title="11.3 Subscription and Billing Records">
           <p>Subscription, payment, and billing records are retained for the period required under applicable accounting, taxation, and financial reporting laws. Payment card information is processed by Stripe and is not stored by Pulse.</p>

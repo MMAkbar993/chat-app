@@ -2,7 +2,7 @@ import LegalPage, { Section, SubSection, LegalList } from '../components/legal/L
 
 export default function KycPolicyPage() {
   return (
-    <LegalPage title="Pulse KYC & Identity Verification Policy" effectiveDate="7th August 2026" lastUpdated="7th August 2026">
+    <LegalPage title="Pulse KYC & Identity Verification Policy" effectiveDate="14th October 2026" lastUpdated="14th October 2026">
 
       <Section title="1. Introduction">
         <p>Pulse is committed to maintaining a secure, trusted, and professional communication platform for the global iGaming industry. A key part of this commitment is ensuring that every individual using the Services is a verified person.</p>
@@ -299,19 +299,21 @@ export default function KycPolicyPage() {
         <p>Pulse recognises that identity verification information is particularly sensitive. We are committed to ensuring that verification data is processed, stored, retained, and protected in accordance with applicable data protection laws, including the General Data Protection Regulation (GDPR).</p>
         <p>Verification data is retained only for as long as reasonably necessary to fulfil the purposes described in this Policy, comply with legal obligations, protect the security of the Services, and exercise or defend legal rights.</p>
         <SubSection title="11.1 Verification Data We Retain">
-          <p>Subject to applicable law and operational requirements, verification data may include verification status, identity verification records, document verification results, facial verification results, liveness detection results, fraud prevention information, manual review records, and communications relating to the verification process.</p>
-          <p>Pulse does not retain more information than is reasonably necessary for these purposes.</p>
+          <p>Pulse follows a verify and purge approach. Once your identity verification has a final result, the only verification information Pulse keeps is your verified legal name, as read from your identity document, and your verification status (for example, whether your identity has been verified).</p>
+          <p>Pulse does not keep copies of your identity document, your selfie or liveness video, your facial data, your document number, your date of birth, or any other information read from your identity document.</p>
         </SubSection>
         <SubSection title="11.2 Secure Storage">
           <p>Verification information is stored using appropriate technical and organisational safeguards designed to protect it against unauthorised access, disclosure, alteration, loss, or misuse.</p>
           <p>Access to verification data is restricted to authorised personnel and trusted service providers with a legitimate need to access such information in the performance of their duties.</p>
         </SubSection>
         <SubSection title="11.3 Retention Periods">
-          <p>Verification data is retained only for as long as necessary to maintain the security and integrity of the Services, prevent fraud and identity abuse, comply with applicable legal and regulatory obligations, resolve disputes, exercise or defend legal claims, and respond to lawful requests from competent authorities.</p>
-          <p>Once verification data is no longer required, it will be securely deleted, anonymised, or otherwise disposed of in accordance with applicable law and Pulse's internal data retention procedures.</p>
+          <p>Your identity document images, selfie, liveness video, the information read from your document and the related facial data are permanently deleted as soon as your verification has a final result, whether it is approved or declined.</p>
+          <p>Where a verification is referred to our team for manual review, this data is kept only until that review is complete, and is then deleted in the same way.</p>
+          <p>Your verified name and verification status are kept for as long as your Pulse Account exists, because they are needed to show that your Account is verified. They are deleted with your Account, subject to Section 12.3.</p>
         </SubSection>
         <SubSection title="11.4 Third-Party Storage">
-          <p>Certain verification information may be processed or stored by Didit, our trusted identity verification provider, in accordance with its contractual obligations, applicable data protection laws, and its own privacy practices.</p>
+          <p>Didit, our identity verification provider, processes your identity document, selfie and liveness check on Pulse's behalf. When a verification has a final result, Pulse instructs Didit to permanently delete that verification, including the document images, selfie, liveness video, extracted information and facial data.</p>
+          <p>Didit may keep a technical log of the requests made by Pulse's systems (for example, when a verification was created or deleted) for up to 12 months. This log does not contain your identity document or images.</p>
           <p>Where third-party providers process verification data on Pulse's behalf, we require them to implement appropriate technical and organisational measures to safeguard that information.</p>
         </SubSection>
         <SubSection title="11.5 Data Security">

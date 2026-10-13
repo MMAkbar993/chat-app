@@ -93,10 +93,9 @@ export const FAQ = [
       {
         q: 'How long is my KYC information stored?',
         a: [
-          'Pulse has configured a maximum one-month retention period for verification data processed through our identity verification provider.',
-          'This provides a limited period in which verification or account issues can be investigated if necessary.',
-          'After the configured retention period, the applicable verification data held by our verification provider is automatically deleted.',
-          'Pulse may retain limited verification metadata necessary to record and manage the verification status of your account.',
+          'Only until your check is complete. Pulse verifies and then deletes: as soon as your identity check has a result, your ID document, selfie, video and the details read from your ID are permanently deleted from our verification provider, Didit.',
+          'If your check needs a manual review by our team, it is deleted as soon as that review is finished.',
+          'From your ID, Pulse keeps only your verified name and a record that your identity was verified.',
         ],
       },
       {
@@ -104,7 +103,7 @@ export const FAQ = [
         a: [
           'Pulse uses Didit rather than developing an internal identity-document verification system.',
           'Verification data is encrypted while being transmitted and while stored, and Didit maintains security and compliance controls designed for identity verification.',
-          'Pulse has also deliberately configured a limited one-month retention period for verification data rather than retaining identity documentation indefinitely.',
+          'Pulse also deletes your verification data as soon as your check is complete, rather than keeping copies of identity documents.',
           'For further information about how personal information is processed, please see our Privacy Policy and KYC & Identity Verification Policy.',
         ],
       },
@@ -745,7 +744,7 @@ export const FAQ = [
         a: [
           'When you delete your Pulse account, the personal data associated with your account will be deleted in accordance with our Privacy Policy and applicable data-protection requirements.',
           'Certain limited information may need to be retained where required or permitted by law, including where necessary for legal, security, fraud-prevention or dispute-resolution purposes.',
-          'Identity verification data processed through our verification provider is also subject to the separate retention periods explained in our KYC & Identity Verification Policy.',
+          'Identity verification data is already deleted once your check is complete, as explained in our KYC & Identity Verification Policy.',
         ],
       },
       {

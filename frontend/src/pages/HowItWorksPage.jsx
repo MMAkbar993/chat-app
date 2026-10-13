@@ -251,11 +251,11 @@ const SECURITY = [
 
 // Plain statements of what Pulse holds. Each one is backed by the Help Center: "Are Pulse
 // messages end-to-end encrypted?" (no — in transit only, access restricted by policy) and the
-// retention answer (documents deleted within a month, only the verification record kept).
+// retention answer (verify and purge: ID deleted once the check is complete, only the name kept).
 const WHAT_PULSE_SEES = [
   'Messages are encrypted in transit between your device and Pulse, not end-to-end. Access to them is restricted by policy.',
-  'ID documents and selfies are deleted after 30 days.',
-  'Pulse keeps only a record that you were verified.',
+  'Your ID document, selfie and video are deleted as soon as your check is complete.',
+  'From your ID, Pulse keeps only your name and the fact that you are verified.',
 ]
 
 const H2 = 'mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight text-balance'
@@ -515,15 +515,12 @@ export default function HowItWorksPage() {
               <div>
                 <p className="mb-4 text-sm font-semibold text-gray-500 night:text-gray-400 text-center lg:text-left">What the identity check looks like</p>
                 <KycSlider phone={phoneStyle} />
-                {/* Backed by the Help Center's retention answer: the ID provider deletes
-                    verification data after a maximum of one month, and Pulse keeps only
-                    verification-status metadata. Keep in step with VerifyPage's IdDataNote. */}
+                {/* Backed by the Help Center's retention answer and KYC Policy section 11: verify
+                    and purge (backend kyc.service.js). Keep in step with VerifyPage's IdDataNote. */}
                 <div className="mt-8 flex gap-4 rounded-2xl bg-green-50 night:bg-green-500/10 px-5 py-4">
                   <Icon path={LOCK} className="w-6 h-6 mt-0.5 shrink-0 text-green-600 night:text-green-400" />
                   <p className="text-sm text-green-800 night:text-green-300 leading-relaxed">
-                    <span className="font-semibold">Your ID data is not kept.</span> Your documents
-                    and selfie are automatically deleted after 30 days. Pulse only keeps a record
-                    that your identity was verified.
+                    <span className="font-semibold">Verified, then deleted.</span> As soon as your check is complete, your ID document, selfie and video are permanently deleted. Pulse keeps only your verified name and the fact that you are verified.
                   </p>
                 </div>
               </div>

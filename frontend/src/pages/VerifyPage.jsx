@@ -3,9 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
 
-// Same promise, same words, as the How It Works page — both rest on the Help Center's retention
-// answer (the ID provider deletes verification data within a month; Pulse keeps only the
-// verification status). Change one, change the other.
+// Same promise, same words, as the How It Works page. Both rest on verify and purge (backend
+// kyc.service.js deletes the check at Didit once it has a result) and the KYC Policy section 11.
+// Change one, change the other.
 function IdDataNote() {
   return (
     <div className="flex gap-3 rounded-xl bg-green-50 px-4 py-3 text-left">
@@ -13,9 +13,7 @@ function IdDataNote() {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
       <p className="text-sm text-green-800 leading-relaxed">
-        <span className="font-semibold">Your ID data is not kept.</span> Your documents and selfie
-        are automatically deleted after 30 days. Pulse only keeps a record that your identity was
-        verified.
+        <span className="font-semibold">Verified, then deleted.</span> As soon as your check is complete, your ID document, selfie and video are permanently deleted. Pulse keeps only your verified name and the fact that you are verified.
       </p>
     </div>
   )
