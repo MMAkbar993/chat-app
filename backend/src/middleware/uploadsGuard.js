@@ -77,7 +77,9 @@ export async function uploadsGuard(req, res, next) {
     if (!filename || filename.startsWith('.')) return res.status(404).end()
 
     if (PUBLIC_PREFIXES.some((p) => filename.startsWith(p))) {
-      res.setHeader('Cache-Control', 'public, max-age=86400')
+      // Each upload gets a new file name, so a picture at a given URL never changes: a week in
+      // any cache is safe. (server.js turns off express.static's own header so this one is sent.)
+      res.setHeader('Cache-Control', 'public, max-age=604800')
       return next()
     }
 

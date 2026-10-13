@@ -364,9 +364,24 @@ server {
     root /home/deploy/chat/frontend/dist;
     index index.html;
 
-    # Handle React client-side routing
+    # Built JS/CSS: Vite puts a content hash in every file name, so a file at a given URL never
+    # changes. Browsers and any CDN keep it for a year; a deploy ships new names.
+    location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    # Handle React client-side routing. index.html and every app route must be re-checked on
+    # each visit (no-cache), or people keep running an old build after a deploy.
     location / {
         try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+
+        # Logos and marketing images keep the same name when replaced, so only a day.
+        location ~* \.(?:png|jpe?g|webp|gif|svg|ico|woff2?)$ {
+            try_files $uri =404;
+            add_header Cache-Control "public, max-age=86400";
+        }
     }
 
     # Proxy API requests to backend

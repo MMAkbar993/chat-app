@@ -1,10 +1,11 @@
 import bcrypt from 'bcryptjs'
 import { query } from '../config/database.js'
 import { findUserById, markTourSeen } from '../db/queries/users.js'
-import { getSocialConnections, getPublicSocialConnections } from '../db/queries/auth_extras.js'
+import { getSocialConnections } from '../db/queries/auth_extras.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail } from '../config/email.js'
 import { isAllowedDisplayName } from '../utils/names.js'
 import { getProfileBusiness } from '../db/queries/businesses.js'
+import { loadPublicProfile } from '../services/publicProfile.service.js'
 
 // The signed-in member's own account: profile, privacy, avatar, email, password, and the
 // account-wide chat actions. Websites and representatives live in website.controller.js.
@@ -224,44 +225,15 @@ export async function getUserById(req, res, next) {
   }
 }
 
+// Same for every viewer, so it comes from the shared profile cache (services/publicProfile.service.js).
+// The browser is told to re-check each time (no-cache): an ETag makes that a cheap 304, and the
+// owner sees their own edit straight away.
 export async function getPublicProfile(req, res, next) {
   try {
-    const result = await query(
-      `SELECT id, full_name, username, primary_role, primary_role_other, avatar_url, display_name, bio, status,
-              country, kyc_status, created_at, website_verified, website_representation_approved
-       FROM users WHERE username = $1`,
-      [req.params.username]
-    )
-    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
-
-    const user = result.rows[0]
-    const [socialConnections, websitesResult, repWebsitesResult] = await Promise.all([
-      getPublicSocialConnections(user.id),
-      query(`SELECT id, url FROM verified_websites WHERE user_id = $1 AND verified = true ORDER BY created_at`, [user.id]),
-      query(`SELECT website_url AS url FROM website_representation_requests WHERE requester_id = $1 AND status = 'approved'`, [user.id]),
-    ])
-
-    res.json({
-      user: {
-        id: user.id,
-        full_name: user.full_name,
-        username: user.username,
-        display_name: user.display_name,
-        primary_role: user.primary_role,
-        primary_role_other: user.primary_role_other,
-        avatar_url: user.avatar_url,
-        bio: user.bio,
-        status: user.status,
-        country: user.country,
-        is_verified: user.kyc_status === 'verified',
-        website_verified: user.website_verified,
-        website_representation_approved: user.website_representation_approved,
-        joined: user.created_at,
-        social_connections: socialConnections,
-        verified_websites: websitesResult.rows,
-        rep_websites: repWebsitesResult.rows,
-      },
-    })
+    const user = await loadPublicProfile(req.params.username)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    res.set('Cache-Control', 'public, no-cache')
+    res.json({ user })
   } catch (err) {
     next(err)
   }

@@ -1,4 +1,5 @@
 import express from 'express'
+import { clearProfilesAfterWrite } from './services/publicProfile.service.js'
 import helmet from 'helmet'
 import { uploadsGuard } from './middleware/uploadsGuard.js'
 import cors from 'cors'
@@ -72,10 +73,28 @@ export function createApp() {
 
   app.use(express.json())
 
+  // Every API answer is private to the person asking unless a route says otherwise (the public
+  // profile does). no-store keeps it out of every cache, shared or not, so a CDN or proxy put
+  // in front later can never hand one member's data to another.
+  app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'private, no-store')
+    next()
+  })
+
+  // Requests that can change what a public profile shows clear the profile cache when they
+  // succeed (services/publicProfile.service.js). Social sign-in callbacks and the ID check's
+  // status poll write on a GET, hence everyMethod.
+  app.use('/api/users', clearProfilesAfterWrite())
+  app.use('/api/businesses', clearProfilesAfterWrite())
+  app.use('/api/admin', clearProfilesAfterWrite())
+  app.use('/api/social', clearProfilesAfterWrite({ everyMethod: true }))
+  app.use('/api/kyc', clearProfilesAfterWrite({ everyMethod: true }))
+
   // Uploaded files. The guard decides who may read each file — avatars and ad creative are
   // public, message attachments require a signed-in participant of that conversation — and
   // only then does express.static get to serve it.
-  app.use('/uploads', uploadsGuard, express.static(path.join(__dirname, '../uploads')))
+  // cacheControl: false leaves the Cache-Control the guard chose for the file's class.
+  app.use('/uploads', uploadsGuard, express.static(path.join(__dirname, '../uploads'), { cacheControl: false }))
 
   // Static assets referenced by server-rendered pages (e.g. the OAuth popup close/notify script —
   // it has to be an external file, not inline, since the CSP's script-src 'self' blocks inline
