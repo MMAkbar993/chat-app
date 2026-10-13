@@ -130,6 +130,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     toggleConversationFlag, removeConversation, clearConversationMessages,
     onlineUsers, lastSeenMap, closeConversation, loadConversations,
     loadOlderMessages, loadingOlderMessages, hasMoreMessages,
+    jumpRequest, clearJumpRequest, loadUntilMessage,
   } = useChat()
   const { showToast } = useToast()
   const bottomRef = useRef(null)
@@ -270,9 +271,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   // soon as the sentinel is merely visible, so the container's own bottom padding stayed below
   // the fold, and it walks every scrollable ancestor rather than just this list. Setting
   // scrollTop on the container is exact and affects nothing else.
+  const jumpingRef = useRef(false)
   const pinToBottom = useCallback((smooth = false) => {
     const el = messagesContainerRef.current
-    if (!el) return
+    if (!el || jumpingRef.current) return
     if (smooth) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     else el.scrollTop = el.scrollHeight
   }, [])
@@ -282,6 +284,8 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     // A prepend of older history must never yank the view to the bottom.
     if (prependingRef.current) { prependingRef.current = false; return }
     const convId = activeConversation?.id
+    // Opening at a search result: let the jump below place the view.
+    if (jumpingRef.current) { scrolledForConvRef.current = convId; return }
     const isNewConv = scrolledForConvRef.current !== convId
     if (isNewConv) scrolledForConvRef.current = convId
     pinToBottom(!isNewConv)
@@ -313,6 +317,41 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   // the view back to the bottom while someone's scrolled up reading history. Only an actual
   // append/removal — a real new message — should trigger the scroll.
   }, [messages.length, activeConversation?.id, pinToBottom])
+
+  // A message opened from search: once the conversation has loaded, page back until that message
+  // is on screen, then scroll to it and highlight it like a followed reply quote.
+  // Each request is handled once (keyed on its timestamp) and abandoned only if the reader moves
+  // to another conversation before it lands — clearing the request must not cancel it.
+  const handledJumpRef = useRef(null)
+  const openConvIdRef = useRef(null)
+  useEffect(() => { openConvIdRef.current = activeConversation?.id ?? null }, [activeConversation?.id])
+  useEffect(() => {
+    if (!jumpRequest || !activeConversation || loadingMessages) return
+    if (jumpRequest.conversationId !== activeConversation.id) return
+    if (handledJumpRef.current === jumpRequest.at) return
+    handledJumpRef.current = jumpRequest.at
+    const { messageId, conversationId } = jumpRequest
+    jumpingRef.current = true
+    ;(async () => {
+      const found = await loadUntilMessage(messageId)
+      // Two frames: one for React to commit the loaded history, one for layout to settle.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        jumpingRef.current = false
+        clearJumpRequest()
+        if (openConvIdRef.current !== conversationId) return
+        const el = document.getElementById(`msg-${messageId}`)
+        if (found || el) {
+          el?.scrollIntoView({ behavior: 'auto', block: 'center' })
+          setJumpedId(messageId)
+          clearTimeout(jumpTimerRef.current)
+          jumpTimerRef.current = setTimeout(() => setJumpedId(null), 2400)
+        } else {
+          showToast('Could not find that message. It may have been deleted.', 'info')
+          pinToBottom()
+        }
+      }))
+    })()
+  }, [jumpRequest, activeConversation, loadingMessages, clearJumpRequest, loadUntilMessage, showToast, pinToBottom])
 
   // Reset panels and load blocked status / group participants when conversation changes
   useEffect(() => {

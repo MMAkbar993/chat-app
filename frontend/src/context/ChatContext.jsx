@@ -14,6 +14,8 @@ const ChatContext = createContext(null)
 // Must match the backend's default page size in getMessages() — a returned page smaller
 // than this is how we know we've reached the start of the conversation.
 const MESSAGE_PAGE_SIZE = 50
+// How far back a jump from search will page before giving up: 40 pages of 50 messages.
+const MAX_JUMP_PAGES = 40
 
 // How long to wait for the server to confirm a send before calling it failed. Long enough to
 // ride out a brief blip on a slow connection, short enough that a genuinely dead socket
@@ -34,6 +36,10 @@ export function ChatProvider({ children }) {
   const [lastSeenMap, setLastSeenMap] = useState({})
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false)
   const [hasMoreMessages, setHasMoreMessages] = useState(false)
+  // { conversationId, messageId, at } — set when a message is opened from search, consumed by
+  // ChatWindow, which scrolls to and highlights it. `at` makes a repeat click on the same
+  // result a new request.
+  const [jumpRequest, setJumpRequest] = useState(null)
   const activeConvRef = useRef(null)
   const conversationsRef = useRef([])
   const messagesRef = useRef([])
@@ -97,7 +103,9 @@ export function ChatProvider({ children }) {
     }
   }, [loadConversations])
 
-  const openConversation = useCallback(async (conv) => {
+  // opts.messageId: open the conversation at that message rather than at the newest one.
+  const openConversation = useCallback(async (conv, opts = {}) => {
+    if (opts.messageId) setJumpRequest({ conversationId: conv.id, messageId: opts.messageId, at: Date.now() })
     if (activeConvRef.current?.id === conv.id) return
     setActiveConversation(conv)
     setMessages([])
@@ -151,6 +159,51 @@ export function ChatProvider({ children }) {
     loadingOlderRef.current = false
     setLoadingOlderMessages(false)
   }, [])
+
+  // Pages back through the open conversation's history until messageId is loaded, then puts
+  // everything fetched on screen in one update — so the view settles once instead of jumping
+  // with every page. Returns whether the message was found. Capped, so a message from years
+  // back cannot set off an unbounded run of requests.
+  const loadUntilMessage = useCallback(async (messageId) => {
+    const conv = activeConvRef.current
+    if (!conv) return false
+    let all = messagesRef.current
+    if (all.some((m) => m.id === messageId)) return true
+    if (loadingOlderRef.current) return false
+
+    loadingOlderRef.current = true
+    setLoadingOlderMessages(true)
+    let more = hasMoreRef.current
+    let found = false
+    try {
+      for (let page = 0; more && page < MAX_JUMP_PAGES; page++) {
+        const oldest = all[0]
+        if (!oldest) break
+        const data = await getMessages(conv.id, oldest.created_at)
+        if (activeConvRef.current?.id !== conv.id) return false
+        const older = data.messages || []
+        more = older.length >= MESSAGE_PAGE_SIZE
+        const known = new Set(all.map((m) => m.id))
+        const fresh = older.filter((m) => !known.has(m.id))
+        if (!fresh.length) break
+        all = [...fresh, ...all]
+        if (fresh.some((m) => m.id === messageId)) { found = true; break }
+      }
+    } catch {
+      // Network trouble: show whatever arrived and let the caller say it could not be found.
+    }
+    hasMoreRef.current = more
+    setHasMoreMessages(more)
+    if (all !== messagesRef.current) {
+      messagesRef.current = all
+      setMessages(enrichMessagesWithReplyMeta(all))
+    }
+    loadingOlderRef.current = false
+    setLoadingOlderMessages(false)
+    return found
+  }, [])
+
+  const clearJumpRequest = useCallback(() => setJumpRequest(null), [])
 
   const closeConversation = useCallback(() => {
     if (activeConvRef.current) {
@@ -430,6 +483,7 @@ export function ChatProvider({ children }) {
       activeConversation, openConversation, closeConversation,
       messages, setMessages, loadingMessages,
       loadOlderMessages, loadingOlderMessages, hasMoreMessages,
+      jumpRequest, clearJumpRequest, loadUntilMessage,
       sendMessage,
       typingUsers,
       replyTo, setReplyTo, clearReply,

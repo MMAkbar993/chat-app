@@ -167,13 +167,16 @@ export default function ChatsView({ darkMode, mobileHidden }) {
     return () => clearTimeout(t)
   }, [search, searchMode])
 
+  // Opens the conversation at the message that matched, not at the newest one.
   async function openFromMessageResult(m) {
     const conv = conversations.find((c) => c.id === m.conversation_id)
-    if (conv) { openConversation(conv); return }
+    if (conv) { openConversation(conv, { messageId: m.id }); return }
     try {
       const data = await getConversation(m.conversation_id)
-      if (data?.conversation) openConversation(data.conversation)
-    } catch {}
+      if (data?.conversation) openConversation(data.conversation, { messageId: m.id })
+    } catch {
+      showToast('Could not open that conversation', 'error')
+    }
   }
 
   // There's no hover state on touch devices to reveal the "..." button, so without a long-press
