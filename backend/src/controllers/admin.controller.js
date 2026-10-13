@@ -5,6 +5,7 @@ import speakeasy from 'speakeasy'
 import { config } from '../config/env.js'
 import { findUserByEmail, setVerifiedName, updateKycStatus } from '../db/queries/users.js'
 import { sendWelcomeEmail } from '../config/email.js'
+import { purgeDiditSession } from '../services/kyc.service.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { query } from '../config/database.js'
@@ -238,7 +239,7 @@ export async function kycAction(req, res, next) {
   try {
     const { id } = req.params
     const { action, legal_name } = req.body || {}
-    const found = await query(`SELECT id, email, kyc_status FROM users WHERE id = $1 AND is_admin = false`, [id])
+    const found = await query(`SELECT id, email, kyc_status, kyc_session_id FROM users WHERE id = $1 AND is_admin = false`, [id])
     const member = found.rows[0]
     if (!member) return res.status(404).json({ error: 'User not found' })
 
@@ -258,9 +259,18 @@ export async function kycAction(req, res, next) {
       await updateKycStatus(id, 'failed')
     } else if (action === 'retry') {
       await updateKycStatus(id, 'pending')
-      await query(`UPDATE users SET kyc_session_id = NULL WHERE id = $1`, [id])
     } else {
       return res.status(400).json({ error: 'Unknown action' })
+    }
+
+    // Decided: the ID the admin looked at is no longer needed, so Didit deletes it (verify and
+    // purge, see kyc.service.js). A retry must not reuse the old session either way.
+    if (member.kyc_session_id) {
+      const purged = await purgeDiditSession(id, member.kyc_session_id)
+      if (!purged && action === 'retry') {
+        // Didit unreachable: still start the member on a fresh check; the purge job retries.
+        await query(`UPDATE users SET kyc_session_id = NULL WHERE id = $1`, [id])
+      }
     }
 
     const user = await getUserDetail(id)

@@ -54,5 +54,5 @@ export async function handleDiditWebhook(payload) {
     `${DIDIT_BASE_URL}/session/${payload.session_id}/decision/`,
     { headers: { 'x-api-key': config.diditApiKey } }
   )
-  await applyKycDecision(userId, data)
+  await applyKycDecision(userId, data, payload.session_id)
 }

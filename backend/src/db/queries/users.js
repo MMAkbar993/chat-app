@@ -69,6 +69,15 @@ export async function updateKycSession(userId, sessionId) {
   )
 }
 
+// After Didit has deleted a session. Only clears it if it is still the member's current session,
+// so a late purge of an old attempt never wipes a check they have since started.
+export async function clearKycSession(userId, sessionId) {
+  await query(
+    `UPDATE users SET kyc_session_id = NULL WHERE id = $1 AND kyc_session_id = $2`,
+    [userId, sessionId]
+  )
+}
+
 export async function updateKycStatus(userId, status) {
   const isActive = status === 'verified'
   await query(

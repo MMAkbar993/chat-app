@@ -27,7 +27,7 @@ export async function statusHandler(req, res, next) {
           `${DIDIT_BASE_URL}/session/${user.kyc_session_id}/decision/`,
           { headers: { 'x-api-key': config.diditApiKey } }
         )
-        const outcome = await applyKycDecision(user.id, data)
+        const outcome = await applyKycDecision(user.id, data, user.kyc_session_id)
         if (outcome) user.kyc_status = outcome
       } catch {
         // Didit unreachable or key not set — use DB status as-is
