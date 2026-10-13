@@ -4,18 +4,14 @@ import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import {
-  getProfile, updateProfile, uploadAvatar, getUserById,
-  getPublicProfile, getMySocialConnections, getBlockedUsers, deactivateAccount,
-  changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats,
-  initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification,
-  requestRepresentation, getRepresentationRequests, handleRepresentationRequest,
-  getApprovedRepresentatives, revokeRepresentative,
-  getWebsiteRepresentatives, transferWebsiteOwnership,
-  getNotifications, markNotificationsRead, clearNotifications, getMyVerifiedWebsites, revokeRepresentation,
-  getMyRepresentationStatus, cancelRepresentationRequest,
-  markTourSeenHandler, getPrivacy, updatePrivacy, updateTimezone,
-  sendRepEmailCode, confirmRepEmailCode, removeMyRepresentation,
+  getProfile, updateProfile, uploadAvatar, getUserById, getPublicProfile, getMySocialConnections, getBlockedUsers, deactivateAccount, changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats, markTourSeenHandler, getPrivacy, updatePrivacy, updateTimezone,
 } from '../controllers/user.controller.js'
+import {
+  initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification, requestRepresentation, getRepresentationRequests, handleRepresentationRequest, getApprovedRepresentatives, revokeRepresentative, getWebsiteRepresentatives, transferWebsiteOwnership, getMyVerifiedWebsites, revokeRepresentation, getMyRepresentationStatus, cancelRepresentationRequest, sendRepEmailCode, confirmRepEmailCode, removeMyRepresentation,
+} from '../controllers/website.controller.js'
+import {
+  getNotifications, markNotificationsRead, clearNotifications,
+} from '../controllers/notification.controller.js'
 import { blockUserHandler, unblockUserHandler, reportUserHandler, submitFeedback } from '../controllers/user_actions.controller.js'
 import { imageOnlyFilter } from '../middleware/fileFilters.js'
 
