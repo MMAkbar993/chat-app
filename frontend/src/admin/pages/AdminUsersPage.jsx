@@ -245,7 +245,7 @@ function KycPanel({ detail, onChanged }) {
         </p>
       )}
       {status === 'failed' && (
-        <p className="text-xs text-gray-600">The check failed. Let the member try again, or approve them by hand after checking their ID.</p>
+        <p className="text-xs text-gray-600">The check failed and its ID data has been deleted. Let the member try again, or approve them by hand only if you have confirmed who they are another way.</p>
       )}
       {status === 'pending' && (
         <p className="text-xs text-gray-600">The member has not finished the identity check yet.</p>
@@ -295,9 +295,9 @@ function KycPanel({ detail, onChanged }) {
         <div className="rounded-lg bg-white border border-gray-200 p-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-gray-700">
             {{
-              approve: `Approve this member as "${name.trim()}"? They get access and a welcome email.`,
+              approve: `Approve this member as "${name.trim()}"? They get access and a welcome email, and their ID data is deleted from Didit.`,
               rename: `Change their legal name to "${name.trim()}"? Their display name updates to match.`,
-              reject: 'Mark this identity check as failed? They will not be able to use Pulse.',
+              reject: 'Mark this identity check as failed? They will not be able to use Pulse, and their ID data is deleted from Didit.',
               retry: 'Clear this check so the member goes through the ID check again? They lose access until they pass.',
             }[confirmAction]}
           </p>
