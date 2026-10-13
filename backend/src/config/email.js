@@ -291,3 +291,24 @@ export async function sendFeedbackNotification({ type, message, userEmail, usern
   }
   await transporter.sendMail({ from: MAIL_FROM, to: SUPPORT_EMAIL, replyTo: userEmail, subject, html })
 }
+
+// A visitor's message from the help bubble on the public site (no account needed). Goes to the
+// support inbox with Reply-To set to the visitor, so answering is just replying.
+export async function sendSupportContactEmail({ name, email, message, page }) {
+  const subject = `[${APP_NAME}] Help request from ${name}`
+  const html = `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">Help request</h2>
+        <p><strong>From:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</p>
+        ${page ? `<p><strong>Page:</strong> ${escapeHtml(page)}</p>` : ''}
+        <p style="white-space:pre-wrap;border-left:3px solid #7c3aed;padding-left:12px">${escapeHtml(message)}</p>
+        <p style="color:#6b7280;font-size:12px">Reply to this email to answer them.</p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Help request from ${name} <${email}>: ${message}`)
+    return
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: SUPPORT_EMAIL, replyTo: email, subject, html })
+}

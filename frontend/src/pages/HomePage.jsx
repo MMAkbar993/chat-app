@@ -6,6 +6,7 @@ import { Icon, Eyebrow, MarketingHeader, MarketingFooter } from '../components/m
 import { HERO_BG, FOCUS, usePageMeta, useScrollOnArrive, useMarketingTheme } from '../components/marketing/marketingHelpers'
 import { AppMockup, PublicProfileMockup } from '../components/marketing/HowItWorksMockups'
 import HomeHeroVisual from '../components/marketing/HomeHeroVisual'
+import LiveChatWidget from '../components/marketing/LiveChatWidget'
 import { QaRow } from '../components/settings/FaqSection'
 
 // The short sales page at "/". How It Works stays the detailed explainer; this page makes the
@@ -389,6 +390,7 @@ export default function HomePage() {
       </main>
 
       <MarketingFooter />
+      <LiveChatWidget dark={dark} />
     </div>
   )
 }

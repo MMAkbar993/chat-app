@@ -11,6 +11,7 @@ import { paymentRouter } from './routes/payment.routes.js'
 import { kycRouter } from './routes/kyc.routes.js'
 import { conversationRouter } from './routes/conversation.routes.js'
 import { messageRouter } from './routes/message.routes.js'
+import { supportRouter } from './routes/support.routes.js'
 import { contactRouter } from './routes/contact.routes.js'
 import { groupRouter } from './routes/group.routes.js'
 import { callRouter } from './routes/call.routes.js'
@@ -107,6 +108,7 @@ export function createApp() {
   app.use('/api/businesses', businessRouter)
   app.use('/api/admin', adminRouter)
   app.use('/api/link-preview', linkPreviewRouter)
+  app.use('/api/support', supportRouter)
 
   app.use(errorHandler)
 
