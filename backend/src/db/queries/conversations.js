@@ -42,6 +42,11 @@ export async function getConversationsForUser(userId) {
      WHERE (c.type != 'direct' OR NOT EXISTS (
        SELECT 1 FROM blocked_users WHERE blocker_id = $1 AND blocked_id = other_user.id
      ))
+       -- Opening someone's profile and pressing Message creates the chat straight away. Until a
+       -- message is actually sent it belongs only to the person who opened it: the other side
+       -- should not find a stranger in their list who never wrote to them.
+       AND (c.type != 'direct' OR c.created_by = $1
+            OR EXISTS (SELECT 1 FROM messages mx WHERE mx.conversation_id = c.id))
      GROUP BY c.id, c.type, c.name, c.avatar_url, c.created_at, c.updated_at, c.admins_only_messaging,
               cp.role,
               m.id, m.content, m.message_type, m.created_at, m.status, m.sender_id, sender.full_name, cp.last_read_at,
