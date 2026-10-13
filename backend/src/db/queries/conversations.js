@@ -23,7 +23,19 @@ export async function getConversationsForUser(userId) {
        EXISTS (
          SELECT 1 FROM contacts ct WHERE ct.user_id = $1 AND ct.contact_id = other_user.id
        ) AS is_contact,
-       COUNT(unread.id) FILTER (WHERE unread.created_at > cp.last_read_at) AS unread_count
+       COUNT(unread.id) FILTER (WHERE unread.created_at > cp.last_read_at) AS unread_count,
+       -- Two other members for the group's two-circle picture, those with a photo first.
+       CASE WHEN c.type = 'group' THEN (
+         SELECT json_agg(json_build_object('name', pm.name, 'avatar', pm.avatar_url))
+         FROM (
+           SELECT COALESCE(gu.display_name, gu.full_name) AS name, gu.avatar_url
+           FROM conversation_participants gp
+           JOIN users gu ON gu.id = gp.user_id
+           WHERE gp.conversation_id = c.id AND gp.user_id != $1
+           ORDER BY gu.avatar_url IS NULL, gp.joined_at
+           LIMIT 2
+         ) pm
+       ) END AS group_members_preview
      FROM conversations c
      JOIN conversation_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1 AND NOT cp.is_hidden
      LEFT JOIN LATERAL (

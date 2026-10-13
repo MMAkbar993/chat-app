@@ -20,6 +20,7 @@ import { apiErrorMessage } from '../../utils/apiError'
 import { formatLastSeen, groupByDate } from '../../utils/chatTime'
 import { useFileDrop } from '../../hooks/useFileDrop'
 import CallEventPill from './CallEventPill'
+import GroupAvatar from '../ui/GroupAvatar'
 
 export default function ChatWindow({ darkMode, onCallStart }) {
   const { user } = useAuth()
@@ -439,6 +440,11 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
+            {isGroup ? (
+              <button onClick={() => setShowProfileModal(true)} className="shrink-0 rounded-full hover:opacity-90 transition-opacity" aria-label="Group info">
+                <GroupAvatar avatarUrl={activeConversation.avatar_url} members={activeConversation.group_members_preview} size={40} darkMode={darkMode} />
+              </button>
+            ) : (
             <button
               onClick={() => setShowProfileModal(true)}
               className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0 hover:ring-2 hover:ring-violet-400 transition-all ${
@@ -451,6 +457,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                 (otherName || '?')[0].toUpperCase()
               )}
             </button>
+            )}
             <div className="min-w-0">
               <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{otherName}</p>
               {isGroup ? (

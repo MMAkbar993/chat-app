@@ -8,6 +8,7 @@ import CreateGroupModal from './CreateGroupModal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import UpgradeModal from '../../features/payment/UpgradeModal'
 import client from '../../api/client'
+import GroupAvatar from '../ui/GroupAvatar'
 
 const FILTERS = [
   { key: 'all',      label: 'All Groups' },
@@ -268,13 +269,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
                     : dm ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
                 } ${g.is_muted ? 'opacity-60' : ''}`}
               >
-                <div className="relative w-11 h-11 shrink-0">
-                  <div className="w-full h-full rounded-full overflow-hidden">
-                    {g.avatar_url
-                      ? <img src={g.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white font-bold text-sm">{(g.name || '?')[0].toUpperCase()}</div>}
-                  </div>
-                </div>
+                <GroupAvatar avatarUrl={g.avatar_url} members={g.group_members_preview} size={44} darkMode={dm} />
                 <div className="flex-1 min-w-0 pr-6">
                   <div className="flex items-center justify-between">
                     <span className={`font-semibold text-sm truncate ${dm ? 'text-white' : 'text-gray-900'}`}>{g.name}</span>

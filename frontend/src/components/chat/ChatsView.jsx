@@ -12,6 +12,7 @@ import ChatFilterMenu from './ChatFilterMenu'
 import { SponsoredChatRow } from '../ads/SponsoredAd'
 import SearchScopeMenu from './SearchScopeMenu'
 import { apiErrorMessage } from '../../utils/apiError'
+import GroupAvatar from '../ui/GroupAvatar'
 
 const SEARCH_PLACEHOLDERS = {
   all: 'Search chats',
@@ -31,11 +32,15 @@ function MessageResultRow({ m, darkMode, onOpen }) {
         darkMode ? 'border-gray-800 hover:bg-gray-800' : 'border-gray-50 hover:bg-gray-50'
       }`}
     >
+      {m.conversation_type === 'group' ? (
+        <GroupAvatar avatarUrl={m.group_avatar} size={44} darkMode={darkMode} />
+      ) : (
       <div className="w-11 h-11 rounded-full overflow-hidden shrink-0">
         {avatar
           ? <img src={avatar} alt="" className="w-full h-full object-cover" />
           : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-sm">{(who || '?')[0].toUpperCase()}</div>}
       </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{who}</span>
@@ -402,10 +407,14 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                       the only avatar in the list, and Telegram gives its list avatar the room
                       that used to be split between two different sizes here. */}
                   <div className="relative shrink-0 w-14 h-14">
+                    {c.type === 'group' ? (
+                      <GroupAvatar avatarUrl={c.avatar_url} members={c.group_members_preview} size={56} darkMode={darkMode} />
+                    ) : (
                     <div className="w-full h-full rounded-full overflow-hidden shadow-sm md:shadow-none">
                       {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" />
                         : <div className="w-full h-full bg-violet-500 flex items-center justify-center text-white font-bold text-base">{(name || '?')[0].toUpperCase()}</div>}
                     </div>
+                    )}
                     {c.type !== 'group' && onlineUsers.has(c.other_user_id) && (
                       <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 border-2 rounded-full ${darkMode ? 'border-gray-900' : 'border-white'}`} />
                     )}
