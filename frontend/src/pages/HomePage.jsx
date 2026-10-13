@@ -57,6 +57,17 @@ const yearlySaving = (monthly, yearly) => Math.floor((1 - yearly / (monthly * 12
 
 const BTN_SECONDARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-white night:bg-gray-900 border border-gray-200 night:border-gray-700 hover:border-violet-300 night:hover:border-violet-500 font-semibold transition-colors ${FOCUS}`
 
+// The hero artwork has its own off-white background and dot grid, which showed as a box on the
+// page's. Fading its edges removes the box. The fades stay inside the artwork's empty margins:
+// content starts about 15% from the top, 8% from the left and ends 7% from the bottom; the
+// phone reaches the right edge, so that side fades only over the last 3%.
+const HERO_ART_MASK = {
+  maskImage: 'linear-gradient(to right, transparent, #000 7%, #000 97%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 94%, transparent)',
+  WebkitMaskImage: 'linear-gradient(to right, transparent, #000 7%, #000 97%, transparent), linear-gradient(to bottom, transparent, #000 12%, #000 94%, transparent)',
+  maskComposite: 'intersect',
+  WebkitMaskComposite: 'source-in',
+}
+
 // Store badges for apps that are not out yet: drawn here rather than the stores' official
 // artwork (which is only for live listings), and not links.
 const APPLE = 'M16.37 1.43c0 1.14-.42 2.2-1.2 3.04-.85.92-2.07 1.53-3.17 1.44-.13-1.1.42-2.25 1.18-3.05.85-.9 2.24-1.52 3.19-1.43zM20.5 17.1c-.55 1.27-.81 1.84-1.52 2.96-.99 1.56-2.38 3.5-4.11 3.52-1.53.01-1.93-1-4.01-.99-2.08.01-2.52 1.01-4.05.99-1.73-.02-3.05-1.77-4.04-3.33-2.77-4.36-3.06-9.49-1.3-12.2 1.25-1.93 3.22-3.06 5.07-3.06 1.88 0 3.07 1.03 4.63 1.03 1.51 0 2.43-1.03 4.61-1.03 1.65 0 3.39.9 4.63 2.45-4.07 2.23-3.41 8.04.06 9.67z'
@@ -67,7 +78,7 @@ function StoreTile({ icon, small, big }) {
       {icon}
       <div className="leading-tight">
         <p className="text-[11px] text-gray-500 night:text-gray-400">{small}</p>
-        <p className="text-lg font-semibold -mt-0.5">{big}</p>
+        <p className="text-base sm:text-lg font-semibold -mt-0.5 whitespace-nowrap">{big}</p>
         <p className="text-[11px] text-gray-400 night:text-gray-500">Coming soon</p>
       </div>
     </div>
@@ -198,7 +209,25 @@ export default function HomePage() {
               <p className="mt-4 text-sm text-gray-500 night:text-gray-400">{C.hero.footnote}</p>
               {C.hero.comingSoon && <ComingSoonApps label={C.hero.comingSoon} />}
             </div>
-            <HomeHeroVisual />
+            {/* Light theme: the approved artwork. Multiply drops its near-white background into the
+                page's, so it has no visible box. Dark theme: the same scene drawn in code, which
+                follows the dark colours (the artwork is light only). */}
+            <div className="w-full max-w-xl mx-auto lg:max-w-none">
+              <img
+                src="/marketing/hero-app.jpg"
+                srcSet="/marketing/hero-app-900.jpg 900w, /marketing/hero-app.jpg 1469w"
+                sizes="(min-width: 1024px) 560px, (min-width: 640px) 576px, 100vw"
+                width={1469}
+                height={1071}
+                fetchPriority="high"
+                alt="Pulse on desktop and phone: a chat with Daniel Reyes with call buttons and his verified profile, the chat list, and a video call"
+                className="night:hidden w-full h-auto mix-blend-multiply"
+                style={HERO_ART_MASK}
+              />
+              <div className="hidden night:block">
+                <HomeHeroVisual />
+              </div>
+            </div>
           </div>
         </section>
 
