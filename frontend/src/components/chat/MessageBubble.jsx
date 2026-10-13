@@ -7,6 +7,7 @@ import ForwardModal from './ForwardModal'
 import EmojiPicker from './EmojiPicker'
 import LinkPreviewCard from './LinkPreviewCard'
 import VoiceMessage from './VoiceMessage'
+import ReadByPopover from './ReadByPopover'
 import { forwardMessageApi } from '../../api/conversations'
 import { getReplyPreviewText, getReplyImageUrl, hasReplyPreview } from '../../utils/replyPreview'
 import { apiErrorMessage } from '../../utils/apiError'
@@ -106,7 +107,7 @@ function fitMediaBoxWidth(naturalWidth, naturalHeight) {
   return Math.round(w)
 }
 
-export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch, isJumpTarget, onJumpToMessage, onTogglePin, canPin, isPinned }) {
+export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete, onDeleteForMe, searchQuery, isCurrentMatch, isJumpTarget, onJumpToMessage, onTogglePin, canPin, isPinned, inGroup = false }) {
   const { user } = useAuth()
   const { socket } = useSocket()
   const { showToast } = useToast()
@@ -116,6 +117,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   const canEdit = isMe && !msg.is_deleted && (msg.message_type === 'text' || isCaptioned)
   const editLabel = !isCaptioned ? 'Edit' : msg.content ? 'Edit caption' : 'Add caption'
   const [hovered, setHovered] = useState(false)
+  const [showReads, setShowReads] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showForward, setShowForward] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -494,7 +496,19 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
             <span className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>edited</span>
           )}
           <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.created_at)}</span>
-          {isMe && <Ticks status={msg.status || 'sent'} />}
+          {isMe && (inGroup && !msg.uploading && !msg.is_deleted ? (
+            <span className="relative inline-flex">
+              <button
+                type="button"
+                onClick={() => setShowReads((v) => !v)}
+                aria-label="See who read this"
+                className="rounded focus-visible:outline-2 focus-visible:outline-violet-500"
+              >
+                <Ticks status={msg.status || 'sent'} />
+              </button>
+              {showReads && <ReadByPopover messageId={msg.id} darkMode={darkMode} onClose={() => setShowReads(false)} />}
+            </span>
+          ) : <Ticks status={msg.status || 'sent'} />)}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { getMessages, getMessageById, createMessage, deleteMessage, deleteMessageForMe, editMessage } from '../db/queries/messages.js'
+import { getMessages, getMessageById, createMessage, deleteMessage, deleteMessageForMe, editMessage, getMessageReads } from '../db/queries/messages.js'
 import { isParticipant, getParticipants, isAdminsOnlyMessaging } from '../db/queries/conversations.js'
 import { toggleReaction, getReactionsForMessage } from '../db/queries/reactions.js'
 import { getIo } from '../socket/index.js'
@@ -197,6 +197,22 @@ export async function removeMessageForMe(req, res, next) {
   try {
     await deleteMessageForMe(req.params.id, req.user.id)
     res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// Who has read one of your own messages, and when. Only the sender may ask, as in other messengers.
+export async function messageReadsHandler(req, res, next) {
+  try {
+    const msg = await getMessageById(req.params.id)
+    if (!msg) return res.status(404).json({ error: 'Message not found' })
+    if (msg.sender_id !== req.user.id) return res.status(403).json({ error: 'Only the sender can see who read this' })
+    const readers = await getMessageReads(msg.id)
+    res.json({
+      read: readers.filter((r) => r.has_read).map(({ id, name, avatar_url, read_at }) => ({ id, name, avatar_url, read_at })),
+      notRead: readers.filter((r) => !r.has_read).map(({ id, name, avatar_url }) => ({ id, name, avatar_url })),
+    })
   } catch (err) {
     next(err)
   }

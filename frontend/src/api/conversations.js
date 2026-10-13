@@ -21,6 +21,7 @@ export const clearMessagesApi     = (id) => client.delete(`/conversations/${id}/
 export const forwardMessageApi    = (messageId, targetConversationId) =>
   client.post(`/conversations/messages/${messageId}/forward`, { targetConversationId }).then((r) => r.data)
 export const editMessageApi          = (id, content) => client.patch(`/conversations/messages/${id}`, { content }).then((r) => r.data)
+export const getMessageReadsApi      = (id) => client.get(`/conversations/messages/${id}/reads`).then((r) => r.data)
 export const deleteMessageApi        = (id) => client.delete(`/conversations/messages/${id}`).then((r) => r.data)
 export const deleteMessageForMeApi   = (id) => client.delete(`/conversations/messages/${id}/for-me`).then((r) => r.data)
 export const toggleReactionApi    = (messageId, emoji) =>

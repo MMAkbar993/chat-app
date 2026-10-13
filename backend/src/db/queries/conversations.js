@@ -205,10 +205,25 @@ export async function isParticipant(conversationId, userId) {
   return result.rows.length > 0
 }
 
+// Also logs a group read event when the member had unseen messages from others, which is what
+// "Read by … at …" on a group message is built from. Opening a chat with nothing new adds nothing.
 export async function markRead(conversationId, userId) {
   await query(
-    `UPDATE conversation_participants SET last_read_at = NOW()
-     WHERE conversation_id = $1 AND user_id = $2`,
+    `WITH upd AS (
+       UPDATE conversation_participants cp SET last_read_at = NOW()
+       FROM conversation_participants prev
+       WHERE cp.conversation_id = $1 AND cp.user_id = $2
+         AND prev.conversation_id = cp.conversation_id AND prev.user_id = cp.user_id
+       RETURNING prev.last_read_at AS prev_read_at, cp.last_read_at AS read_at
+     )
+     INSERT INTO group_read_events (conversation_id, user_id, read_at)
+     SELECT $1, $2, upd.read_at
+     FROM upd JOIN conversations c ON c.id = $1 AND c.type = 'group'
+     WHERE EXISTS (
+       SELECT 1 FROM messages m
+       WHERE m.conversation_id = $1 AND m.sender_id <> $2
+         AND m.created_at > COALESCE(upd.prev_read_at, '-infinity'::timestamptz)
+     )`,
     [conversationId, userId]
   )
 }

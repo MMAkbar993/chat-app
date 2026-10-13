@@ -781,6 +781,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
                 canPin={canPin}
                 isPinned={pinned?.id === item.msg.id}
                 onTogglePin={handleTogglePin}
+                inGroup={isGroup}
               />
             )
           )}

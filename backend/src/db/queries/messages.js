@@ -159,3 +159,23 @@ export async function searchMessages(userId, term, limit = 40) {
   )
   return result.rows
 }
+
+// Everyone else in the chat, and when they read this message: their first group read event at or
+// after it was sent. A member whose last read is past the message but who has no event (it was
+// read before events were recorded) counts as read with no time.
+export async function getMessageReads(messageId) {
+  const result = await query(
+    `SELECT u.id, COALESCE(u.display_name, u.full_name) AS name, u.avatar_url,
+            (cp.last_read_at IS NOT NULL AND cp.last_read_at >= m.created_at) AS has_read,
+            (SELECT MIN(e.read_at) FROM group_read_events e
+              WHERE e.conversation_id = m.conversation_id AND e.user_id = cp.user_id
+                AND e.read_at >= m.created_at) AS read_at
+     FROM messages m
+     JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id AND cp.user_id <> m.sender_id
+     JOIN users u ON u.id = cp.user_id
+     WHERE m.id = $1
+     ORDER BY has_read DESC, read_at NULLS LAST, name`,
+    [messageId]
+  )
+  return result.rows
+}
