@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { formatListTime } from '../../utils/chatTime'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
@@ -38,17 +39,6 @@ function formatLastMessage(content, type) {
   if (type === 'audio') return 'Voice message'
   if (type === 'file') return 'File'
   return content || ' '
-}
-
-function formatDate(ts) {
-  if (!ts) return ''
-  const d = new Date(ts)
-  const today = new Date()
-  const diff = Math.floor((today - d) / 86400000)
-  if (diff === 0) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  if (diff === 1) return 'Yesterday'
-  if (diff < 7) return `${diff} days ago`
-  return d.toLocaleDateString()
 }
 
 function GroupMenu({ darkMode, onClose, onArchive, onMute, onPin, onMarkUnread, onLeave, onDelete, isArchived, isMuted, isPinned }) {
@@ -288,7 +278,7 @@ export default function GroupsView({ darkMode, mobileHidden }) {
                 <div className="flex-1 min-w-0 pr-6">
                   <div className="flex items-center justify-between">
                     <span className={`font-semibold text-sm truncate ${dm ? 'text-white' : 'text-gray-900'}`}>{g.name}</span>
-                    <span className={`text-xs shrink-0 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(g.last_message_at || g.updated_at)}</span>
+                    <span className={`text-xs shrink-0 ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{formatListTime(g.last_message_at || g.updated_at)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`text-xs truncate ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{formatLastMessage(g.last_message, g.last_message_type)}</span>

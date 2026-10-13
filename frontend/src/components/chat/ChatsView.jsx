@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
+import { formatListTime } from '../../utils/chatTime'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
 import { useToast } from '../../context/ToastContext'
@@ -38,7 +39,7 @@ function MessageResultRow({ m, darkMode, onOpen }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{who}</span>
-          <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(m.created_at)}</span>
+          <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatListTime(m.created_at)}</span>
         </div>
         <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           {m.sender_name ? `${m.sender_name}: ` : ''}{m.content}
@@ -82,17 +83,6 @@ function formatLastMessage(content, type) {
   if (type === 'audio') return 'Voice message'
   if (type === 'file') return 'File'
   return content || ' '
-}
-
-function formatDate(ts) {
-  if (!ts) return ''
-  const d = new Date(ts)
-  const today = new Date()
-  const diff = Math.floor((today - d) / 86400000)
-  if (diff === 0) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  if (diff === 1) return 'Yesterday'
-  if (diff < 7) return `${diff} days ago`
-  return d.toLocaleDateString()
 }
 
 function SidebarTicks({ status }) {
@@ -432,7 +422,7 @@ export default function ChatsView({ darkMode, mobileHidden }) {
                         {c.last_message_id && c.last_message_sender_id === user?.id && (
                           <SidebarTicks status={c.last_message_status || 'sent'} />
                         )}
-                        <span className={`text-sm md:text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatDate(c.last_message_at)}</span>
+                        <span className={`text-sm md:text-xs shrink-0 inline-block min-w-16 text-right ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatListTime(c.last_message_at)}</span>
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
