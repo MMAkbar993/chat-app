@@ -62,11 +62,14 @@ export function HeaderActions({ theme }) {
         </Link>
       ) : (
         <>
-          <Link to="/login" className={`hidden sm:block px-3 py-2 text-sm font-medium text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300 transition-colors rounded ${FOCUS}`}>
+          <Link to="/login" className={`px-2 sm:px-3 py-2 text-sm font-medium text-gray-600 night:text-gray-300 hover:text-violet-600 night:hover:text-violet-300 transition-colors rounded ${FOCUS}`}>
             Sign in
           </Link>
-          <Link to="/signup" className={`px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors ${FOCUS}`}>
-            Create account
+          {/* Sign in shows on phones too (members came back to a page with no way in); the short
+              label is what makes room for it there. */}
+          <Link to="/signup" className={`px-3 sm:px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold whitespace-nowrap transition-colors ${FOCUS}`}>
+            <span className="sm:hidden">Sign up</span>
+            <span className="hidden sm:inline">Create account</span>
           </Link>
         </>
       )}

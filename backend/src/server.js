@@ -1,7 +1,7 @@
 import express from 'express'
 import { clearProfilesAfterWrite } from './services/publicProfile.service.js'
 import helmet from 'helmet'
-import { uploadsGuard } from './middleware/uploadsGuard.js'
+import { uploadsGuard, uploadStaticHeaders } from './middleware/uploadsGuard.js'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import path from 'path'
@@ -94,7 +94,7 @@ export function createApp() {
   // public, message attachments require a signed-in participant of that conversation — and
   // only then does express.static get to serve it.
   // cacheControl: false leaves the Cache-Control the guard chose for the file's class.
-  app.use('/uploads', uploadsGuard, express.static(path.join(__dirname, '../uploads'), { cacheControl: false }))
+  app.use('/uploads', uploadsGuard, express.static(path.join(__dirname, '../uploads'), { cacheControl: false, setHeaders: uploadStaticHeaders }))
 
   // Static assets referenced by server-rendered pages (e.g. the OAuth popup close/notify script —
   // it has to be an external file, not inline, since the CSP's script-src 'self' blocks inline

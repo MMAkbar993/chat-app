@@ -29,6 +29,19 @@ const INLINE_EXTENSIONS = new Set([
   '.mp3', '.wav', '.ogg', '.m4a', '.aac',
 ])
 
+// HTML attachments (allowed so members can swap email templates, see fileFilters.js) are always
+// downloads already; on top of that they are sent as plain bytes rather than text/html, so no
+// browser that ignored the attachment disposition could ever render one as a page on our origin.
+const HTML_EXTENSIONS = new Set(['.html', '.htm'])
+
+// express.static's setHeaders hook (server.js): runs before it picks a Content-Type, and a type
+// set here is kept.
+export function uploadStaticHeaders(res, filePath) {
+  if (HTML_EXTENSIONS.has(path.extname(filePath).toLowerCase())) {
+    res.setHeader('Content-Type', 'application/octet-stream')
+  }
+}
+
 // A browser names a saved file from Content-Disposition when one is sent, and otherwise from
 // the URL — which is the randomised on-disk name ("msg-<uuid>-<epoch>.png"). The original name
 // is already stored on the message, so hand it over. The stored name can be truncated with an

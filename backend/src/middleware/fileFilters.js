@@ -5,8 +5,14 @@
 const DANGEROUS_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.msi', '.com', '.scr', '.ps1', '.sh', '.bash',
   '.app', '.dmg', '.apk', '.jar', '.js', '.mjs', '.vbs', '.wsf',
-  '.php', '.py', '.rb', '.pl', '.html', '.htm', '.svg',
+  '.php', '.py', '.rb', '.pl', '.svg', '.xhtml', '.shtml',
 ])
+
+// .html/.htm are allowed as chat attachments (members swap email templates). They can never run
+// inside Pulse: the uploads guard shows only images, video and audio in the page, sends
+// everything else as a download, and labels HTML as plain bytes on top (HTML_EXTENSIONS there).
+// What remains is the ordinary risk of opening any downloaded file on your own computer.
+const ALLOWED_DOC_EXTENSIONS = new Set(['.html', '.htm'])
 
 const DANGEROUS_MIME_PATTERNS = [
   /executable/i, /x-msdownload/i, /x-sh(ellscript)?$/i, /x-bat/i,
@@ -19,7 +25,10 @@ function extOf(filename) {
 }
 
 function isDangerous(file) {
-  if (DANGEROUS_EXTENSIONS.has(extOf(file.originalname || ''))) return true
+  const ext = extOf(file.originalname || '')
+  if (DANGEROUS_EXTENSIONS.has(ext)) return true
+  // An allowed .html file arrives as text/html (or untyped): let exactly that through for it.
+  if (ALLOWED_DOC_EXTENSIONS.has(ext) && /^(text\/html|application\/octet-stream|)$/i.test(file.mimetype || '')) return false
   return DANGEROUS_MIME_PATTERNS.some((p) => p.test(file.mimetype || ''))
 }
 
