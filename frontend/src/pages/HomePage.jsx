@@ -57,51 +57,56 @@ const yearlySaving = (monthly, yearly) => Math.floor((1 - yearly / (monthly * 12
 
 const BTN_SECONDARY = `inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl bg-white night:bg-gray-900 border border-gray-200 night:border-gray-700 hover:border-violet-300 night:hover:border-violet-500 font-semibold transition-colors ${FOCUS}`
 
-// Store badges for apps that are not out yet: drawn here rather than the stores' official
-// artwork (which is only for live listings), and not links.
+// Where Pulse runs and when, from homeContent (availability). Today's option is green, the rest
+// carry their release month. Side by side from 640px, joined by a line; stacked on phones.
 // The Apple logo as published by Simple Icons (simpleicons.org, CC0).
 const APPLE = 'M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701'
 
-function StoreTile({ icon, small, big }) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 px-4 py-2.5 text-left">
-      {icon}
-      <div className="leading-tight">
-        <p className="text-[11px] text-gray-500 night:text-gray-400">{small}</p>
-        <p className="text-base sm:text-lg font-semibold -mt-0.5 whitespace-nowrap">{big}</p>
-        <p className="text-[11px] text-gray-400 night:text-gray-500">Coming soon</p>
-      </div>
-    </div>
-  )
+const GLOBE = 'M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.5 0 4.5-4 4.5-9S14.5 3 12 3 7.5 7 7.5 12s2 9 4.5 9zM3.5 9h17M3.5 15h17'
+const MONITOR = 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
+
+function StepIcon({ icon }) {
+  if (icon === 'apple') {
+    return <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden="true"><path d={APPLE} /></svg>
+  }
+  return <Icon path={icon === 'web' ? GLOBE : MONITOR} className="w-4 h-4" />
 }
 
-function ComingSoonApps({ label }) {
+function Availability({ label, steps }) {
   return (
-    <div className="mt-8 max-w-md mx-auto lg:mx-0">
+    <div className="mt-8 max-w-lg mx-auto lg:mx-0 text-left">
       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-gray-400 night:text-gray-500">
         <span className="h-px flex-1 bg-gray-200 night:bg-gray-800" />
         {label}
         <span className="h-px flex-1 bg-gray-200 night:bg-gray-800" />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <StoreTile
-          small="Download on the"
-          big="App Store"
-          icon={<svg viewBox="0 0 24 24" className="w-7 h-7 shrink-0 fill-gray-900 night:fill-white" aria-hidden="true"><path d={APPLE} /></svg>}
-        />
-        <StoreTile
-          small="Get it on"
-          big="Google Play"
-          icon={(
-            <svg viewBox="0 0 24 24" className="w-7 h-7 shrink-0" aria-hidden="true">
-              <path d="M3.61 1.81 13.79 12 3.61 22.19A1.5 1.5 0 0 1 3 21V3a1.5 1.5 0 0 1 .61-1.19z" fill="#2196F3" />
-              <path d="M3.61 1.81 16.9 9.36 13.79 12z" fill="#4CAF50" />
-              <path d="M3.61 22.19 13.79 12l3.11 2.64z" fill="#F44336" />
-              <path d="M16.9 9.36l3.7 2.1a.62.62 0 0 1 0 1.08l-3.7 2.1L13.79 12z" fill="#FFC107" />
-            </svg>
-          )}
-        />
-      </div>
+      <ol className="relative mt-4 grid gap-3 sm:grid-cols-3 sm:gap-2">
+        {/* the line through the steps: down the left on phones, across on wider screens */}
+        <span aria-hidden="true" className="absolute left-[17px] top-4 bottom-4 w-px bg-violet-200 night:bg-violet-500/30 sm:left-[16.6%] sm:right-[16.6%] sm:top-[17px] sm:bottom-auto sm:w-auto sm:h-px" />
+        {steps.map((s) => (
+          <li key={s.name} className="relative flex items-center gap-3 sm:flex-col sm:text-center sm:gap-2">
+            <span className={`relative z-10 w-9 h-9 shrink-0 rounded-full flex items-center justify-center ring-4 ring-white night:ring-gray-950 ${
+              s.live
+                ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
+                : 'bg-violet-50 text-violet-600 night:bg-violet-500/15 night:text-violet-300'
+            }`}>
+              <StepIcon icon={s.icon} />
+            </span>
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <p className="text-sm font-bold text-gray-900 night:text-white">{s.name}</p>
+              <p className="text-xs text-gray-500 night:text-gray-400">{s.note}</p>
+            </div>
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+              s.live
+                ? 'bg-green-50 text-green-700 night:bg-green-500/15 night:text-green-300'
+                : 'bg-violet-100 text-violet-700 night:bg-violet-500/15 night:text-violet-300'
+            }`}>
+              {s.live && <span className="inline-block w-1.5 h-1.5 mr-1.5 mb-px rounded-full bg-green-500 animate-pulse" />}
+              {s.status}
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
@@ -197,7 +202,7 @@ export default function HomePage() {
                 <Link to={C.hero.secondaryCta.to} className={BTN_SECONDARY}>{C.hero.secondaryCta.label}</Link>
               </div>
               <p className="mt-4 text-sm text-gray-500 night:text-gray-400">{C.hero.footnote}</p>
-              {C.hero.comingSoon && <ComingSoonApps label={C.hero.comingSoon} />}
+              {C.hero.availability && <Availability {...C.hero.availability} />}
             </div>
             <HomeHeroVisual />
           </div>

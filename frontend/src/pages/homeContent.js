@@ -22,9 +22,16 @@ export const HOME_CONTENT = {
     secondaryCta: { label: 'See how it works', to: '/how-it-works' },
     // TODO: confirm "about 2 minutes" — the ID check's own screen says about 1 minute, plus sign-up.
     footnote: 'Takes about 2 minutes · ID deleted once you are verified',
-    // The phone apps are not out yet. Remove this line (and the badges go) or swap the label
-    // for links once they are.
-    comingSoon: 'Coming soon to',
+    // Where Pulse runs, in release order (same as the launch email). `live: true` marks what
+    // people can use today; move it along as each one ships, and update the dates here.
+    availability: {
+      label: 'Pulse Beta',
+      steps: [
+        { name: 'Web App', note: 'In your browser', status: 'Live now', live: true, icon: 'web' },
+        { name: 'Desktop App', note: 'On your computer', status: 'January 2027', icon: 'desktop' },
+        { name: 'App Store', note: 'On your phone', status: 'April 2027', icon: 'apple' },
+      ],
+    },
   },
 
   // Social proof (logos and numbers) lives in SOCIAL_PROOF at the top of HomePage.jsx.
