@@ -100,6 +100,32 @@ export async function sendWebsiteVerifyCode(email, code, domain) {
   await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
+// Nudges a member who signed up but has not finished the identity check (admin panel button).
+// Returns false when the template is switched off in System Emails, so the admin is told nothing
+// was sent instead of being told it worked.
+export async function sendKycReminderEmail(email, name) {
+  const setting = await getEmailSetting('kyc_reminder')
+  if (setting && !setting.enabled) return false
+
+  const verifyUrl = `${config.frontendUrl}/verify`
+  const vars = { appName: APP_NAME, name: escapeHtml(name || 'there'), verifyUrl }
+  const subject = setting ? render(setting.subject, vars) : `Finish verifying your identity on ${APP_NAME}`
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">You're one step away</h2>
+        <p>Hi ${escapeHtml(name || 'there')}, your account is ready, but you still need to verify your identity before you can start chatting.</p>
+        <p><a href="${verifyUrl}" style="color:#7c3aed;font-weight:bold">Verify my identity</a></p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] KYC reminder for ${email}`)
+    return true
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
+  return true
+}
+
 export async function sendWelcomeEmail(email, name) {
   const setting = await getEmailSetting('welcome')
   if (setting && !setting.enabled) return

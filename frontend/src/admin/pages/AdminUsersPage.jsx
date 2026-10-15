@@ -224,6 +224,28 @@ function KycPanel({ detail, onChanged }) {
   const btn = 'text-xs font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-40'
   const needsName = status === 'review' || status === 'verified'
 
+  // An email nudging the member to finish the check (backend allows one per day).
+  const canRemind = status === 'pending' || status === 'failed'
+  const remindedAt = detail.kyc_reminded_at ? new Date(detail.kyc_reminded_at) : null
+  // The time this panel opened: good enough for a once-a-day rule, and stable across renders.
+  const [openedAt] = useState(() => Date.now())
+  const remindedToday = remindedAt && openedAt - remindedAt.getTime() < 24 * 60 * 60 * 1000
+  const [reminderNote, setReminderNote] = useState('')
+  async function remind() {
+    setError('')
+    setReminderNote('')
+    setBusy('remind')
+    try {
+      const { data } = await adminClient.post(`/users/${detail.id}/kyc-reminder`)
+      onChanged(data.user)
+      setReminderNote('Reminder sent.')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not send the reminder. Try again.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <div className={`rounded-xl border p-4 space-y-3 ${status === 'review' ? 'border-violet-200 bg-violet-50/50' : 'border-gray-100'}`}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -289,7 +311,23 @@ function KycPanel({ detail, onChanged }) {
             Let them retry the ID check
           </button>
         )}
+        {canRemind && (
+          <button disabled={!!busy || remindedToday} onClick={remind}
+            title={remindedToday ? 'One reminder per day' : undefined}
+            className={`${btn} border border-violet-200 text-violet-700 hover:bg-violet-50`}>
+            {busy === 'remind' ? 'Sending…' : 'Send KYC reminder'}
+          </button>
+        )}
       </div>
+
+      {canRemind && (remindedAt || reminderNote) && (
+        <p className="text-xs text-gray-500">
+          {reminderNote && <span className="text-green-600 font-medium">{reminderNote} </span>}
+          {remindedAt && <>Last reminded {remindedAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+            {detail.kyc_reminder_count > 1 && <> ({detail.kyc_reminder_count} reminders sent)</>}.</>}
+          {remindedToday && ' The next one can go out 24 hours later.'}
+        </p>
+      )}
 
       {confirmAction && (
         <div className="rounded-lg bg-white border border-gray-200 p-3 flex flex-wrap items-center justify-between gap-2">
@@ -547,6 +585,9 @@ export default function AdminUsersPage() {
   const [confirm, setConfirm] = useState(null) // null | { type, user }
   const [kycFilter, setKycFilter] = useState('') // '' | 'review'
   const [reviewCount, setReviewCount] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkNote, setBulkNote] = useState('')
   const LIMIT = 20
 
   const { showToast } = useToast()
@@ -557,6 +598,7 @@ export default function AdminUsersPage() {
       setUsers(data.users)
       setTotal(data.total)
       setReviewCount(data.reviewCount || 0)
+      setPendingCount(data.pendingCount || 0)
     } catch (err) {
       showToast(apiErrorMessage(err, 'Could not load members'), 'error')
     }
@@ -641,6 +683,7 @@ export default function AdminUsersPage() {
         {[
           { value: '', label: 'All members' },
           { value: 'review', label: 'Needs review', count: reviewCount },
+          { value: 'pending', label: 'KYC not finished', count: pendingCount },
         ].map((f) => (
           <button
             key={f.value || 'all'}
@@ -658,6 +701,35 @@ export default function AdminUsersPage() {
           </button>
         ))}
       </div>
+
+      {kycFilter === 'pending' && pendingCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3">
+          <p className="text-sm text-gray-700">
+            {bulkNote || 'Email everyone here a reminder to finish their ID check. Anyone reminded in the last 24 hours is skipped.'}
+          </p>
+          <button
+            disabled={bulkBusy}
+            onClick={async () => {
+              if (!window.confirm(`Send a KYC reminder email to members who have not finished their ID check (${pendingCount})? Anyone reminded in the last 24 hours is skipped.`)) return
+              setBulkBusy(true)
+              setBulkNote('')
+              try {
+                const { data } = await adminClient.post('/kyc-reminders')
+                setBulkNote(data.sent
+                  ? `Sent ${data.sent} reminder${data.sent === 1 ? '' : 's'}${data.failed ? `, ${data.failed} could not be sent` : ''}.`
+                  : 'Everyone here was already reminded in the last 24 hours.')
+              } catch (err) {
+                setBulkNote(err.response?.data?.error || 'Could not send the reminders. Try again.')
+              } finally {
+                setBulkBusy(false)
+              }
+            }}
+            className="text-sm font-semibold px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50"
+          >
+            {bulkBusy ? 'Sending…' : 'Remind all'}
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
