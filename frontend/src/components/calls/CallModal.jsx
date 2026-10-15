@@ -47,7 +47,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
     : call.callerAvatar || call.calleeAvatar
 
   const {
-    status: agoraStatus, remoteUsers, muted, videoOff, sharingScreen,
+    status: agoraStatus, failure, remoteUsers, muted, videoOff, sharingScreen,
     localVideoTrack, toggleMute, toggleVideo, startScreenShare, stopScreenShare,
     speakerOn, speakerSupported, toggleSpeaker,
   } = useAgoraCall({ callId, isVideo })
@@ -132,7 +132,7 @@ export default function CallModal({ call, darkMode, isCaller, onEnd, onLimitReac
   const statusLabel =
     status === 'connected' ? formatTime(elapsed)
     : status === 'calling' ? 'Calling...'
-    : status === 'failed' ? "Couldn't connect — check your network"
+    : status === 'failed' ? `${failure?.message || "Couldn't connect the call. Please try again."}${failure?.code ? ` (${failure.code})` : ''}`
     : 'Connecting...'
 
   return (

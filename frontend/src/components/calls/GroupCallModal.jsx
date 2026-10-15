@@ -79,7 +79,7 @@ export default function GroupCallModal({ call, onEnd, minimized, onMinimize, onE
   const connectedOnceRef = useRef(false)
 
   const {
-    status, remoteUsers, muted, videoOff, localVideoTrack, toggleMute, toggleVideo,
+    status, failure, remoteUsers, muted, videoOff, localVideoTrack, toggleMute, toggleVideo,
   } = useAgoraCall({ callId, isVideo })
 
   useAgoraVideo(localVideoTrack, localVideoRef)
@@ -178,7 +178,7 @@ export default function GroupCallModal({ call, onEnd, minimized, onMinimize, onE
           <p className="text-white font-bold text-lg truncate">{groupName}</p>
           <p className="text-white/60 text-sm">
             {status === 'failed'
-              ? "Couldn't connect — check your network"
+              ? `${failure?.message || "Couldn't connect the call. Please try again."}${failure?.code ? ` (${failure.code})` : ''}`
               : `${fmt(elapsed)} · ${total} participant${total !== 1 ? 's' : ''}`}
           </p>
         </div>

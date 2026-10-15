@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { describeCallError } from '../utils/callError'
 import AgoraRTC from 'agora-rtc-sdk-ng'
 import { getRtcToken } from '../api/calls'
 
@@ -17,6 +18,8 @@ AgoraRTC.setLogLevel(2)
 export function useAgoraCall({ callId, isVideo, enabled = true }) {
   // 'idle' | 'connecting' | 'connected' | 'failed'
   const [status, setStatus] = useState('idle')
+  // Why a join failed, for the call screen: { code, message } from utils/callError.js.
+  const [failure, setFailure] = useState(null)
   const [remoteUsers, setRemoteUsers] = useState([])
   const [muted, setMuted] = useState(false)
   const [videoOff, setVideoOff] = useState(false)
@@ -94,6 +97,7 @@ export function useAgoraCall({ callId, isVideo, enabled = true }) {
     ;(async () => {
       try {
         setStatus('connecting')
+        setFailure(null)
         const { appId, channel, uid, token } = await getRtcToken(callId)
         if (leftRef.current) return
         await client.join(appId, channel, token, uid)
@@ -114,7 +118,10 @@ export function useAgoraCall({ callId, isVideo, enabled = true }) {
         setStatus('connected')
       } catch (err) {
         console.error('Agora join failed:', err)
-        if (!leftRef.current) setStatus('failed')
+        if (!leftRef.current) {
+          setFailure(describeCallError(err))
+          setStatus('failed')
+        }
       }
     })()
 
@@ -212,6 +219,7 @@ export function useAgoraCall({ callId, isVideo, enabled = true }) {
 
   return {
     status,
+    failure,
     remoteUsers,
     speakerOn,
     speakerSupported,
