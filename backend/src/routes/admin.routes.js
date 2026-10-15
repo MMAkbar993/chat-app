@@ -38,8 +38,7 @@ import {
   adminCreateAd,
   adminUpdateAd,
   adminDeleteAd,
-  adminUploadAdImage,
-} from '../controllers/admin.controller.js'
+  adminUploadAdImage, sendKycReminder, sendKycReminderToAllPending } from '../controllers/admin.controller.js'
 
 export const adminRouter = Router()
 
@@ -63,6 +62,8 @@ adminRouter.post('/users/:id/unblock', unblockUser)
 adminRouter.get('/users/:id', getUserDetailHandler)
 adminRouter.patch('/users/:id/package', changeUserPackage)
 adminRouter.post('/users/:id/kyc', kycAction)
+adminRouter.post('/users/:id/kyc-reminder', sendKycReminder)
+adminRouter.post('/kyc-reminders', sendKycReminderToAllPending)
 
 adminRouter.get('/reports', listReports)
 

@@ -25,6 +25,7 @@ const EMAIL_LABELS = {
   website_verified: 'Website Verified',
   website_verify_code: 'Website Verification Code (Representative)',
   admin_new_signup: 'Admin: New Signup',
+  kyc_reminder: 'KYC Reminder (finish ID check)',
 }
 
 // appName and currentYear are available on every template automatically (merged in by the
@@ -34,6 +35,7 @@ const EMAIL_PLACEHOLDERS = {
   password_reset_otp: ['otp', 'name', 'appName', 'currentYear'],
   feedback_notification: ['label', 'username', 'userEmail', 'message', 'appName', 'currentYear'],
   welcome: ['appName', 'name', 'currentYear'],
+  kyc_reminder: ['appName', 'name', 'verifyUrl', 'currentYear'],
   unread_message: ['appName', 'name', 'senderName', 'currentYear'],
   two_factor_enabled: ['appName', 'currentYear'],
   password_changed: ['appName', 'currentYear'],

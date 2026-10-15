@@ -46,7 +46,8 @@ export async function getDashboardStats() {
 export async function getUserDetail(id) {
   const userResult = await query(
     `SELECT id, full_name, display_name, username, email, phone, country, avatar_url, is_active, blocked_at,
-            created_at, last_seen_at, login_count, kyc_status, kyc_session_id, subscription_plan, subscription_status
+            created_at, last_seen_at, login_count, kyc_status, kyc_session_id, subscription_plan, subscription_status,
+            kyc_reminded_at, kyc_reminder_count
      FROM users WHERE id = $1 AND is_admin = false`,
     [id]
   )
@@ -265,8 +266,17 @@ export async function getAllUsers({ search = '', page = 1, limit = 20, kyc = '' 
        AND ($2::text IS NULL OR kyc_status = $2)`,
     [pat, kycFilter]
   )
-  const review = await query(`SELECT COUNT(*) FROM users WHERE is_admin = false AND kyc_status = 'review'`)
-  return { users: rows.rows, total: parseInt(total.rows[0].count), reviewCount: parseInt(review.rows[0].count) }
+  const counts = await query(
+    `SELECT COUNT(*) FILTER (WHERE kyc_status = 'review') AS review,
+            COUNT(*) FILTER (WHERE kyc_status = 'pending') AS pending
+       FROM users WHERE is_admin = false`
+  )
+  return {
+    users: rows.rows,
+    total: parseInt(total.rows[0].count),
+    reviewCount: parseInt(counts.rows[0].review),
+    pendingCount: parseInt(counts.rows[0].pending),
+  }
 }
 
 export async function countAdmins() {

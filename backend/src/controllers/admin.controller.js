@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import speakeasy from 'speakeasy'
 import { config } from '../config/env.js'
 import { findUserByEmail, setVerifiedName, updateKycStatus } from '../db/queries/users.js'
-import { sendWelcomeEmail } from '../config/email.js'
+import { sendWelcomeEmail, sendKycReminderEmail } from '../config/email.js'
 import { purgeDiditSession } from '../services/kyc.service.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
@@ -275,6 +275,97 @@ export async function kycAction(req, res, next) {
 
     const user = await getUserDetail(id)
     res.json({ user })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── KYC reminders ──────────────────────────────────────────────────────────────
+// For members who signed up but have not finished (or have failed) the identity check. At most
+// one per member per day, so a double click or a second admin cannot flood anyone's inbox.
+const REMINDER_COOLDOWN = '24 hours'
+const REMINDABLE = ['pending', 'failed']
+
+// Claims the member for a reminder: stamps kyc_reminded_at only if they still need one and were
+// not reminded within the cooldown. Returns the row to email, or null.
+async function claimReminder(id) {
+  const { rows } = await query(
+    `UPDATE users SET kyc_reminded_at = NOW(), kyc_reminder_count = kyc_reminder_count + 1
+      WHERE id = $1 AND is_admin = false AND kyc_status = ANY($2::text[]) AND blocked_at IS NULL
+        AND (kyc_reminded_at IS NULL OR kyc_reminded_at < NOW() - $3::interval)
+      RETURNING id, email, display_name, full_name`,
+    [id, REMINDABLE, REMINDER_COOLDOWN]
+  )
+  return rows[0] || null
+}
+
+async function unclaimReminder(id) {
+  await query(
+    `UPDATE users SET kyc_reminded_at = NULL, kyc_reminder_count = GREATEST(kyc_reminder_count - 1, 0) WHERE id = $1`,
+    [id]
+  )
+}
+
+export async function sendKycReminder(req, res, next) {
+  try {
+    const { id } = req.params
+    const member = await claimReminder(id)
+    if (!member) {
+      const { rows } = await query(`SELECT kyc_status, kyc_reminded_at FROM users WHERE id = $1 AND is_admin = false`, [id])
+      if (!rows[0]) return res.status(404).json({ error: 'User not found' })
+      if (!REMINDABLE.includes(rows[0].kyc_status)) return res.status(400).json({ error: 'This member does not need to verify.' })
+      return res.status(429).json({ error: 'Already reminded in the last 24 hours.' })
+    }
+    let sent
+    try {
+      sent = await sendKycReminderEmail(member.email, member.display_name || member.full_name)
+    } catch (err) {
+      await unclaimReminder(id)
+      throw err
+    }
+    if (!sent) {
+      await unclaimReminder(id)
+      return res.status(409).json({ error: 'The KYC reminder email is switched off in Tools, System Emails.' })
+    }
+    const user = await getUserDetail(id)
+    res.json({ user })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// Everyone still pending who has not been reminded in the last day. Sent one after another so
+// the mail server is not hit all at once; capped per click.
+const BULK_REMINDER_CAP = 200
+export async function sendKycReminderToAllPending(req, res, next) {
+  try {
+    const { rows } = await query(
+      `SELECT id FROM users
+        WHERE is_admin = false AND kyc_status = 'pending' AND blocked_at IS NULL
+          AND (kyc_reminded_at IS NULL OR kyc_reminded_at < NOW() - $1::interval)
+        ORDER BY created_at
+        LIMIT $2`,
+      [REMINDER_COOLDOWN, BULK_REMINDER_CAP]
+    )
+    let sent = 0
+    let failed = 0
+    for (const { id } of rows) {
+      const member = await claimReminder(id)
+      if (!member) continue
+      try {
+        const ok = await sendKycReminderEmail(member.email, member.display_name || member.full_name)
+        if (!ok) {
+          await unclaimReminder(id)
+          return res.status(409).json({ error: 'The KYC reminder email is switched off in Tools, System Emails.', sent })
+        }
+        sent++
+      } catch (err) {
+        console.error('KYC reminder failed for', member.email, err.message)
+        await unclaimReminder(id)
+        failed++
+      }
+    }
+    res.json({ sent, failed })
   } catch (err) {
     next(err)
   }
