@@ -14,9 +14,13 @@ import { getIo } from '../socket/index.js'
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
-// calendar.events (not the broader calendar scope) — read/write on events specifically, without
-// calendar-management/sharing permissions this app has no use for.
-const SCOPE = 'https://www.googleapis.com/auth/calendar.events'
+// The narrowest scope that does the one thing Pulse needs: create a meeting event (with a Meet
+// link and the chat member as guest) on the user's own primary calendar. calendar.events.owned is
+// limited to calendars the user owns; calendar.events, used before, covered every calendar shared
+// with them too, which Google's OAuth review rightly flagged. Pulse reads nothing from the
+// calendar. Tokens granted the older scope keep working for this.
+// Keep the Privacy Policy (section 9.1) and the Google Cloud OAuth consent screen in step.
+const SCOPE = 'https://www.googleapis.com/auth/calendar.events.owned'
 
 function redirectUri() {
   if (process.env.GOOGLE_CALENDAR_REDIRECT_URI) return process.env.GOOGLE_CALENDAR_REDIRECT_URI
@@ -99,21 +103,13 @@ export async function calendarCallback(req, res) {
 
     const tokenExpiresAt = data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null
 
-    let calendarName = null
-    try {
-      const { data: cal } = await axios.get('https://www.googleapis.com/calendar/v3/calendars/primary', {
-        headers: { Authorization: `Bearer ${data.access_token}` },
-      })
-      calendarName = cal.summary || null
-    } catch {
-      // Non-fatal — the connection still works, we just won't have a friendly name to show yet.
-    }
-
+    // No calendar name is read: that needs a calendar-properties scope Pulse does not ask for
+    // (the lookup used to fail silently anyway). The schedule screen says "your Google Calendar".
     await upsertCalendarConnection(userId, {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       tokenExpiresAt,
-      calendarName,
+      calendarName: null,
     })
     return sendCalendarPopupResponse(res, { success: true })
   } catch (err) {

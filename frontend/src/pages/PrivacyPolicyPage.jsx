@@ -212,19 +212,18 @@ export default function PrivacyPolicyPage() {
       </Section>
 
       {/* Required for Google OAuth verification. Every statement here matches the code: backend
-          calendar.controller.js (calendar.events: reads the primary calendar's name, creates events)
+          calendar.controller.js (calendar.events.owned: creates events, reads nothing)
           and social.controller.js (youtube.readonly: reads the channel once at connect). Change the
           code, change this. */}
       <Section title="9. Google Account Data (Google Calendar and YouTube)">
         <p>Pulse offers two optional features that connect to your Google Account: Google Calendar and YouTube. They are only used if you choose to connect them, and you can disconnect them at any time. This section explains exactly what Pulse accesses from your Google Account and what it does with it.</p>
         <SubSection title="9.1 Google Calendar">
-          <p>When you connect Google Calendar, Pulse asks Google for permission to view and edit events in your calendars. Pulse uses this permission only to:</p>
+          <p>When you connect Google Calendar, Pulse asks Google for permission to create and manage events on calendars you own. It does not ask for access to calendars that others share with you. Pulse uses this permission only to:</p>
           <LegalList items={[
             'Create an event in your primary Google Calendar when you schedule a meeting from a chat, with the title, description, date and time you enter and a Google Meet link.',
             'Add the other member of that chat as a guest, using the email address of their Pulse account, so that Google can send them the invitation.',
-            'Read the name of your primary calendar, so we can show you which calendar is connected.',
           ]} />
-          <p>Pulse does not read, change or delete any other events in your calendar.</p>
+          <p>Pulse does not read your calendar, and does not change or delete any events it did not create.</p>
         </SubSection>
         <SubSection title="9.2 YouTube">
           <p>When you connect YouTube, Pulse asks Google for read-only access to your YouTube account. Pulse uses it once, at the time you connect, to read your channel's ID, name, handle and link, so that your verified YouTube channel can be shown on your Pulse profile. Google also shares your basic Google profile (your name and email address) as part of connecting, which Pulse uses only to complete the connection.</p>
