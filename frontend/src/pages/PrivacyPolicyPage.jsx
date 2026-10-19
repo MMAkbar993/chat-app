@@ -3,7 +3,7 @@ import LegalPage, { Section, SubSection, LegalList } from '../components/legal/L
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPage title="Pulse Privacy Policy" effectiveDate="14th October 2026" lastUpdated="14th October 2026">
+    <LegalPage title="Pulse Privacy Policy" effectiveDate="19th October 2026" lastUpdated="19th October 2026">
 
       <Section title="1. Introduction">
         <p>Pulse ("Pulse", "we", "our", or "us") is committed to protecting your privacy and safeguarding your personal data. We recognise the importance of handling personal information responsibly and transparently, particularly as a platform built around verified identities and secure communications.</p>
@@ -211,10 +211,47 @@ export default function PrivacyPolicyPage() {
         </SubSection>
       </Section>
 
-      <Section title="9. How We Share Your Personal Data">
+      {/* Required for Google OAuth verification. Every statement here matches the code: backend
+          calendar.controller.js (calendar.events: reads the primary calendar's name, creates events)
+          and social.controller.js (youtube.readonly: reads the channel once at connect). Change the
+          code, change this. */}
+      <Section title="9. Google Account Data (Google Calendar and YouTube)">
+        <p>Pulse offers two optional features that connect to your Google Account: Google Calendar and YouTube. They are only used if you choose to connect them, and you can disconnect them at any time. This section explains exactly what Pulse accesses from your Google Account and what it does with it.</p>
+        <SubSection title="9.1 Google Calendar">
+          <p>When you connect Google Calendar, Pulse asks Google for permission to view and edit events in your calendars. Pulse uses this permission only to:</p>
+          <LegalList items={[
+            'Create an event in your primary Google Calendar when you schedule a meeting from a chat, with the title, description, date and time you enter and a Google Meet link.',
+            'Add the other member of that chat as a guest, using the email address of their Pulse account, so that Google can send them the invitation.',
+            'Read the name of your primary calendar, so we can show you which calendar is connected.',
+          ]} />
+          <p>Pulse does not read, change or delete any other events in your calendar.</p>
+        </SubSection>
+        <SubSection title="9.2 YouTube">
+          <p>When you connect YouTube, Pulse asks Google for read-only access to your YouTube account. Pulse uses it once, at the time you connect, to read your channel's ID, name, handle and link, so that your verified YouTube channel can be shown on your Pulse profile. Google also shares your basic Google profile (your name and email address) as part of connecting, which Pulse uses only to complete the connection.</p>
+          <p>Pulse does not read your videos, comments, subscriptions, playlists, watch history or any other YouTube data, and never posts anything on your behalf.</p>
+        </SubSection>
+        <SubSection title="9.3 How We Use and Protect Google Data">
+          <p>Pulse's use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer" className="text-violet-600 hover:underline">Google API Services User Data Policy</a>, including the Limited Use requirements. In particular:</p>
+          <LegalList items={[
+            'Google data is used only to provide the features described above, which you can see and control in Pulse.',
+            'Google data is never sold, and is not shared with or transferred to anyone else, except where necessary to provide these features, to comply with the law, or as part of a merger or acquisition of Pulse.',
+            'Google data is never used for advertising, including personalised or retargeted advertising.',
+            'Google data is not used to develop, improve or train artificial intelligence or machine learning models.',
+            'No one at Pulse reads your Google data, unless you ask us to help with a problem, it is needed for security purposes such as investigating abuse, or the law requires it.',
+          ]} />
+          <p>To keep a feature working, Pulse stores the access tokens Google issues when you connect. They are kept on our servers with access restricted to authorised personnel, and are deleted when you disconnect.</p>
+        </SubSection>
+        <SubSection title="9.4 Disconnecting and Deleting Google Data">
+          <p>You can disconnect Google Calendar or YouTube at any time from your Pulse settings. When you do, Pulse deletes the access tokens it stored for that connection, and for YouTube removes your channel details from your Pulse profile. Deleting your Pulse Account removes all of this as well.</p>
+          <p>Calendar events that Pulse created for you stay in your Google Calendar, because they belong to you. You can edit or delete them in Google Calendar at any time.</p>
+          <p>You can also remove Pulse's access directly from your Google Account at any time, at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer" className="text-violet-600 hover:underline">myaccount.google.com/permissions</a>.</p>
+        </SubSection>
+      </Section>
+
+      <Section title="10. How We Share Your Personal Data">
         <p>Pulse treats your personal data with care and confidentiality. We do not sell, rent, or trade your personal data to third parties for their own marketing purposes.</p>
         <p>We only share your personal data where necessary to provide the Services, comply with legal obligations, protect our Users, or where you have authorised us to do so.</p>
-        <SubSection title="9.1 Service Providers">
+        <SubSection title="10.1 Service Providers">
           <p>We may share personal data with carefully selected third-party service providers who assist us in operating, maintaining, and improving the Services. These providers may include:</p>
           <LegalList items={[
             'Didit – Identity verification (KYC), document verification, facial recognition, and liveness detection.',
@@ -228,115 +265,115 @@ export default function PrivacyPolicyPage() {
           ]} />
           <p>These providers may only process your personal data for the purposes specified by Pulse and in accordance with applicable data protection laws.</p>
         </SubSection>
-        <SubSection title="9.2 Legal and Regulatory Requirements">
+        <SubSection title="10.2 Legal and Regulatory Requirements">
           <p>Pulse may disclose personal data where we believe such disclosure is necessary to comply with applicable laws or regulations, respond to lawful requests from courts, law enforcement agencies, regulators, or other competent public authorities, protect the rights, property, or safety of Pulse, our Users, or others, investigate suspected unlawful activity, fraud, or security incidents, or enforce our Terms &amp; Conditions or other legal rights.</p>
         </SubSection>
-        <SubSection title="9.3 Business Transfers">
+        <SubSection title="10.3 Business Transfers">
           <p>If Pulse is involved in a merger, acquisition, investment, corporate restructuring, sale of assets, or similar business transaction, your personal data may be transferred as part of that transaction. Where required by applicable law, Users will be notified of any such transfer and any choices available to them.</p>
         </SubSection>
-        <SubSection title="9.4 Professional Advisers">
+        <SubSection title="10.4 Professional Advisers">
           <p>We may disclose personal data to our professional advisers where reasonably necessary, including legal advisers, accountants, auditors, insurance providers, and other professional advisers acting under appropriate confidentiality obligations.</p>
         </SubSection>
-        <SubSection title="9.5 With Your Consent">
+        <SubSection title="10.5 With Your Consent">
           <p>We may share your personal data with third parties where you have expressly requested or authorised us to do so, or where you have otherwise provided your consent. You may withdraw your consent at any time where the processing is based on consent.</p>
         </SubSection>
-        <SubSection title="9.6 International Sharing">
-          <p>Some of our trusted service providers may process personal data outside your country or outside the European Economic Area ("EEA"). Where this occurs, Pulse will ensure that appropriate safeguards are implemented in accordance with applicable data protection laws. Further information is provided in Section 10 – International Data Transfers.</p>
+        <SubSection title="10.6 International Sharing">
+          <p>Some of our trusted service providers may process personal data outside your country or outside the European Economic Area ("EEA"). Where this occurs, Pulse will ensure that appropriate safeguards are implemented in accordance with applicable data protection laws. Further information is provided in Section 11 – International Data Transfers.</p>
         </SubSection>
-        <SubSection title="9.7 No Sale of Personal Data">
+        <SubSection title="10.7 No Sale of Personal Data">
           <p>Pulse does not sell, lease, rent, or otherwise disclose your personal data to third parties for their own advertising or marketing purposes. Your personal data is only shared where necessary to provide the Services, fulfil our legal obligations, protect the security and integrity of the platform, or where you have expressly authorised such sharing.</p>
         </SubSection>
       </Section>
 
-      <Section title="10. International Data Transfers">
+      <Section title="11. International Data Transfers">
         <p>Pulse is based in Bucharest, Romania, and processes personal data in accordance with the General Data Protection Regulation (EU) 2016/679 ("GDPR") and other applicable data protection laws.</p>
         <p>In order to provide the Services, some of your personal data may be transferred to, stored in, or accessed from countries outside the European Economic Area ("EEA").</p>
-        <SubSection title="10.1 International Transfers">
+        <SubSection title="11.1 International Transfers">
           <p>Certain trusted third-party service providers used by Pulse may operate or process personal data from countries outside the EEA. These providers may include services relating to identity verification, payment processing, voice and video communications, cloud hosting and infrastructure, authentication services, customer support, security and fraud prevention, and analytics. Such transfers are only carried out where necessary to provide the Services or to fulfil our contractual or legal obligations.</p>
         </SubSection>
-        <SubSection title="10.2 Appropriate Safeguards">
+        <SubSection title="11.2 Appropriate Safeguards">
           <p>Where personal data is transferred outside the EEA to a country that has not been recognised by the European Commission as providing an adequate level of data protection, Pulse will ensure that appropriate safeguards are implemented in accordance with the GDPR. These safeguards may include European Commission Standard Contractual Clauses ("SCCs"), an adequacy decision issued by the European Commission, or other legally recognised transfer mechanisms permitted under applicable data protection laws.</p>
         </SubSection>
-        <SubSection title="10.3 Protection of Your Personal Data">
+        <SubSection title="11.3 Protection of Your Personal Data">
           <p>Pulse takes reasonable steps to ensure that any organisation receiving personal data outside the EEA maintains appropriate technical and organisational measures to protect your personal data against unauthorised access, disclosure, alteration, loss, or misuse.</p>
           <p>We require our trusted service providers to process personal data only for authorised purposes and in accordance with applicable contractual and legal obligations.</p>
         </SubSection>
-        <SubSection title="10.4 Your Rights">
+        <SubSection title="11.4 Your Rights">
           <p>Where required by applicable law, you may request further information regarding the safeguards applied to international transfers of your personal data. Requests may be submitted using the contact details provided at the end of this Privacy Policy.</p>
         </SubSection>
-        <SubSection title="10.5 Future International Transfers">
+        <SubSection title="11.5 Future International Transfers">
           <p>As Pulse continues to develop and expand its Services, we may engage additional trusted service providers located in other jurisdictions. Where this occurs, any international transfer of personal data will continue to be carried out in accordance with applicable data protection laws and the safeguards described in this Privacy Policy.</p>
         </SubSection>
       </Section>
 
-      <Section title="11. Data Retention">
+      <Section title="12. Data Retention">
         <p>Pulse retains personal data only for as long as necessary to fulfil the purposes for which it was collected, provide the Services, comply with legal and regulatory obligations, resolve disputes, enforce our legal rights, and protect the security and integrity of the platform.</p>
         <p>When personal data is no longer required, it will be securely deleted, anonymised, or otherwise disposed of in accordance with applicable law and our internal data retention procedures.</p>
-        <SubSection title="11.1 Account Information">
+        <SubSection title="12.1 Account Information">
           <p>We retain your account information for as long as your Pulse Account remains active. If your Account is closed or deleted, we may retain certain information for a limited period where necessary to comply with legal obligations, resolve disputes, prevent fraud or abuse, enforce our Terms &amp; Conditions, and protect the security of the Services.</p>
         </SubSection>
-        <SubSection title="11.2 Identity Verification (KYC) Data">
+        <SubSection title="12.2 Identity Verification (KYC) Data">
           <p>Identity documents, selfies, liveness videos and the information read from them are deleted as soon as your verification has a final result, or once a manual review by our team is complete. Your verified name and verification status are kept for as long as your Account exists.</p>
         </SubSection>
-        <SubSection title="11.3 Subscription and Billing Records">
+        <SubSection title="12.3 Subscription and Billing Records">
           <p>Subscription, payment, and billing records are retained for the period required under applicable accounting, taxation, and financial reporting laws. Payment card information is processed by Stripe and is not stored by Pulse.</p>
         </SubSection>
-        <SubSection title="11.4 Communications and Support">
+        <SubSection title="12.4 Communications and Support">
           <p>Communications with Pulse Support and related records may be retained for as long as reasonably necessary to respond to enquiries, improve customer support, investigate complaints, resolve disputes, and protect the security of the Services.</p>
         </SubSection>
-        <SubSection title="11.5 Technical and Security Logs">
+        <SubSection title="12.5 Technical and Security Logs">
           <p>Technical logs, security records, authentication logs, and system activity may be retained for an appropriate period to maintain platform security, detect and investigate fraud or abuse, diagnose technical issues, improve the reliability and performance of the Services, and comply with legal obligations.</p>
         </SubSection>
-        <SubSection title="11.6 Legal Requirements">
+        <SubSection title="12.6 Legal Requirements">
           <p>In certain circumstances, Pulse may retain personal data for longer than the periods described above where necessary to comply with applicable laws or regulations, respond to lawful requests from competent authorities, exercise or defend legal claims, and investigate suspected unlawful activity or security incidents.</p>
         </SubSection>
-        <SubSection title="11.7 Secure Deletion">
+        <SubSection title="12.7 Secure Deletion">
           <p>When personal data is no longer required, Pulse takes reasonable steps to ensure that it is securely deleted, anonymised, or otherwise rendered inaccessible, unless continued retention is required or permitted by applicable law.</p>
         </SubSection>
       </Section>
 
-      <Section title="12. Your Rights Under the GDPR">
+      <Section title="13. Your Rights Under the GDPR">
         <p>If you are located in the European Economic Area ("EEA"), the United Kingdom, or another jurisdiction with similar data protection laws, you may have certain rights regarding your personal data. Pulse is committed to respecting these rights and will respond to requests in accordance with applicable law.</p>
-        <SubSection title="12.1 Right of Access">
+        <SubSection title="13.1 Right of Access">
           <p>You have the right to request confirmation of whether Pulse processes your personal data and, where applicable, to obtain a copy of the personal data we hold about you, together with information about how it is processed.</p>
         </SubSection>
-        <SubSection title="12.2 Right to Rectification">
+        <SubSection title="13.2 Right to Rectification">
           <p>You have the right to request that we correct or update inaccurate, incomplete, or outdated personal data held about you. Where possible, you may also update certain information directly through your Pulse Account.</p>
         </SubSection>
         <SubSection title='12.3 Right to Erasure ("Right to be Forgotten")'>
           <p>You may request that Pulse delete your personal data where the data is no longer necessary for the purposes for which it was collected, you withdraw consent where processing is based on consent, you successfully object to processing, the data has been processed unlawfully, or deletion is required under applicable law.</p>
           <p>This right is not absolute. Pulse may retain certain information where required to comply with legal obligations, resolve disputes, prevent fraud, protect the security of the Services, or exercise or defend legal claims.</p>
         </SubSection>
-        <SubSection title="12.4 Right to Restrict Processing">
+        <SubSection title="13.4 Right to Restrict Processing">
           <p>You may request that Pulse restrict the processing of your personal data in certain circumstances, including where you contest the accuracy of the data, the processing is unlawful but you oppose deletion, Pulse no longer requires the data but you require it for legal claims, or you have objected to processing pending verification of that objection.</p>
         </SubSection>
-        <SubSection title="12.5 Right to Object">
+        <SubSection title="13.5 Right to Object">
           <p>Where Pulse processes your personal data based on legitimate interests, you have the right to object to such processing where your particular circumstances justify doing so. We will carefully consider your request and cease processing unless we have compelling legitimate grounds or another lawful basis to continue.</p>
         </SubSection>
-        <SubSection title="12.6 Right to Data Portability">
+        <SubSection title="13.6 Right to Data Portability">
           <p>Where processing is based on your consent or the performance of a contract and is carried out by automated means, you may request a copy of your personal data in a structured, commonly used, and machine-readable format, or request that it be transferred to another data controller where technically feasible.</p>
         </SubSection>
-        <SubSection title="12.7 Right to Withdraw Consent">
+        <SubSection title="13.7 Right to Withdraw Consent">
           <p>Where Pulse relies on your consent to process personal data, you may withdraw that consent at any time. Withdrawal of consent does not affect the lawfulness of processing carried out before the consent was withdrawn.</p>
         </SubSection>
-        <SubSection title="12.8 Automated Decision-Making">
+        <SubSection title="13.8 Automated Decision-Making">
           <p>Some aspects of Pulse's identity verification process may involve automated decision-making performed by our identity verification provider, Didit. Where an automated verification cannot be completed or requires further assessment, the verification will be referred to Pulse for manual review. You may contact Pulse if you have questions regarding the outcome of your identity verification or wish to request further information regarding the verification process.</p>
         </SubSection>
-        <SubSection title="12.9 Right to Lodge a Complaint">
+        <SubSection title="13.9 Right to Lodge a Complaint">
           <p>If you believe that Pulse has processed your personal data in violation of applicable data protection laws, you have the right to lodge a complaint with your local data protection authority.</p>
           <p>If you are located in Romania, you may lodge a complaint with the National Supervisory Authority for Personal Data Processing (ANSPDCP) or the competent supervisory authority in your country of residence.</p>
           <p>We encourage you to contact Pulse first so that we have the opportunity to address your concerns directly.</p>
         </SubSection>
-        <SubSection title="12.10 Exercising Your Rights">
+        <SubSection title="13.10 Exercising Your Rights">
           <p>To exercise any of the rights described in this Privacy Policy, please contact us using the details provided at the end of this document. We may request additional information to verify your identity before responding to your request in order to protect your personal data and prevent unauthorised access.</p>
           <p>Pulse will respond to valid requests within the timeframes required by applicable data protection laws.</p>
         </SubSection>
       </Section>
 
-      <Section title="13. Data Security">
+      <Section title="14. Data Security">
         <p>Pulse is committed to protecting the confidentiality, integrity, and availability of your personal data. We implement appropriate technical and organisational measures designed to safeguard personal data against accidental or unlawful destruction, loss, alteration, unauthorised disclosure, unauthorised access, or other unlawful forms of processing.</p>
         <p>While we strive to maintain a high level of security, no method of transmitting or storing data electronically can be guaranteed to be completely secure.</p>
-        <SubSection title="13.1 Security Measures">
+        <SubSection title="14.1 Security Measures">
           <p>Pulse maintains a range of security measures appropriate to the nature of the Services and the personal data we process. These measures may include:</p>
           <LegalList items={[
             'Encryption of data in transit using industry-standard protocols.', 'Encryption of sensitive data where appropriate.',
@@ -347,58 +384,58 @@ export default function PrivacyPolicyPage() {
           ]} />
           <p>These measures are regularly reviewed and updated to address evolving security risks.</p>
         </SubSection>
-        <SubSection title="13.2 Access Controls">
+        <SubSection title="14.2 Access Controls">
           <p>Access to personal data is restricted to authorised personnel, contractors, and trusted service providers who require such access in order to perform their duties. All authorised personnel are subject to appropriate confidentiality obligations and are granted access only on a need-to-know basis.</p>
         </SubSection>
-        <SubSection title="13.3 Third-Party Security">
+        <SubSection title="14.3 Third-Party Security">
           <p>Pulse works with carefully selected third-party providers, including providers of identity verification, payment processing, communications infrastructure, hosting, and cloud services. Where personal data is processed by third-party providers on our behalf, we require them to implement appropriate technical and organisational measures designed to protect your personal data and comply with applicable data protection laws.</p>
         </SubSection>
-        <SubSection title="13.4 User Responsibilities">
+        <SubSection title="14.4 User Responsibilities">
           <p>While Pulse takes reasonable steps to protect your personal data, you also play an important role in maintaining the security of your Account. You are responsible for keeping your login credentials confidential, choosing a strong and unique password, enabling additional security features where available, keeping your devices and software up to date, and promptly notifying Pulse if you suspect unauthorised access to your Account or any other security incident.</p>
         </SubSection>
-        <SubSection title="13.5 Security Incidents">
+        <SubSection title="14.5 Security Incidents">
           <p>If Pulse becomes aware of a security incident affecting personal data, we will promptly investigate the incident, take reasonable steps to contain and mitigate its impact, and, where required by applicable law, notify affected Users and the relevant supervisory authorities within the legally required timeframes.</p>
         </SubSection>
-        <SubSection title="13.6 No Absolute Security">
+        <SubSection title="14.6 No Absolute Security">
           <p>Although Pulse implements commercially reasonable safeguards to protect personal data, no website, application, online platform, or electronic communication system can guarantee absolute security. Accordingly, Pulse cannot guarantee that the Services will always be free from unauthorised access, cyberattacks, technical failures, or other security events beyond our reasonable control.</p>
           <p>Users acknowledge that they use the Services and transmit information to Pulse at their own risk, subject always to Pulse's obligations under applicable data protection laws.</p>
         </SubSection>
       </Section>
 
-      <Section title="14. Children's Privacy">
+      <Section title="15. Children's Privacy">
         <p>Pulse is designed exclusively for adults and professionals within the global iGaming industry. The Services are <strong>not intended for individuals under the age of eighteen (18)</strong> or the age of legal majority in their jurisdiction, whichever is higher.</p>
-        <SubSection title="14.1 Age Requirement">
+        <SubSection title="15.1 Age Requirement">
           <p>You must be at least eighteen (18) years of age, or the age of legal majority in your jurisdiction if higher, to create a Pulse Account or use the Services. By registering for an Account, you represent and warrant that you meet this minimum age requirement.</p>
         </SubSection>
-        <SubSection title="14.2 No Knowing Collection of Children's Data">
+        <SubSection title="15.2 No Knowing Collection of Children's Data">
           <p>Pulse does not knowingly collect, process, or store personal data relating to children or individuals who do not meet the minimum age requirement. Our mandatory identity verification (KYC) process is intended to help prevent underage individuals from accessing the Services.</p>
         </SubSection>
-        <SubSection title="14.3 Removal of Accounts">
+        <SubSection title="15.3 Removal of Accounts">
           <p>If Pulse becomes aware that an Account has been created by, or personal data has been collected from, an individual who does not meet the minimum age requirement, we reserve the right to suspend or terminate the Account, remove access to the Services, and delete the associated personal data, except where retention is required by applicable law.</p>
         </SubSection>
-        <SubSection title="14.4 Reporting">
+        <SubSection title="15.4 Reporting">
           <p>If you believe that an individual under the required age has created a Pulse Account or provided personal data to Pulse, please contact us using the contact details provided at the end of this Privacy Policy. We will investigate the matter and take appropriate action in accordance with applicable law and our internal procedures.</p>
         </SubSection>
       </Section>
 
-      <Section title="15. Changes to This Privacy Policy">
+      <Section title="16. Changes to This Privacy Policy">
         <p>Pulse may update this Privacy Policy from time to time to reflect changes to our Services, legal or regulatory requirements, technology, security practices, or the way we process personal data.</p>
         <p>We encourage you to review this Privacy Policy periodically to stay informed about how we protect your personal data.</p>
-        <SubSection title="15.1 Updates to This Policy">
+        <SubSection title="16.1 Updates to This Policy">
           <p>We reserve the right to amend, modify, or replace this Privacy Policy at any time. The most current version will always be made available through the Pulse website and, where applicable, within the Pulse application. The "Last Updated" date at the beginning of this Privacy Policy indicates when the latest changes became effective.</p>
         </SubSection>
-        <SubSection title="15.2 Notification of Material Changes">
+        <SubSection title="16.2 Notification of Material Changes">
           <p>Where required by applicable law or where we consider it appropriate, Pulse will notify Users of material changes to this Privacy Policy through one or more of the following methods: email, in-app notifications, a notice displayed on the Pulse website, or other reasonable methods of communication.</p>
         </SubSection>
-        <SubSection title="15.3 Continued Use of the Services">
+        <SubSection title="16.3 Continued Use of the Services">
           <p>Your continued use of the Services after an updated Privacy Policy becomes effective constitutes your acknowledgement of the revised Privacy Policy. Where applicable law requires your consent for changes affecting the processing of your personal data, Pulse will obtain such consent before the changes take effect.</p>
         </SubSection>
-        <SubSection title="15.4 Previous Versions">
+        <SubSection title="16.4 Previous Versions">
           <p>Previous versions of this Privacy Policy may be retained for legal, regulatory, or record-keeping purposes. Users may request information regarding significant historical changes to this Privacy Policy by contacting Pulse using the details provided below.</p>
         </SubSection>
       </Section>
 
-      <Section title="16. Contact Information">
+      <Section title="17. Contact Information">
         <p>If you have any questions about this Privacy Policy, our privacy practices, or the way Pulse processes your personal data, you may contact us using the details below.</p>
         <p>We are committed to responding to privacy-related enquiries and requests in accordance with applicable data protection laws.</p>
         <SubSection title="Data Controller">
