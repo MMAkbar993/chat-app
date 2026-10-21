@@ -260,6 +260,37 @@ function KycPanel({ detail, onChanged }) {
           {detail.kyc_session_id && <> Session ID: <span className="font-mono">{detail.kyc_session_id}</span></>}
         </p>
       )}
+      {detail.failed_checks?.length > 0 && (
+        <div className="rounded-lg bg-white border border-gray-200 p-3 space-y-2">
+          <p className="text-xs font-semibold text-gray-700">
+            Failed checks kept for review ({detail.failed_checks.length})
+          </p>
+          <ul className="space-y-1.5">
+            {detail.failed_checks.map((f) => {
+              const failed = new Date(f.failed_at)
+              const until = new Date(failed.getTime() + 30 * 24 * 60 * 60 * 1000)
+              return (
+                <li key={f.session_id} className="text-xs text-gray-600 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-mono text-gray-800 select-all">{f.session_id}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(f.session_id)}
+                    className="text-violet-600 hover:underline"
+                  >
+                    Copy
+                  </button>
+                  <span className="text-gray-400">
+                    {f.didit_status ? `${f.didit_status}, ` : ''}{failed.toLocaleDateString([], { dateStyle: 'medium' })} · deleted {until.toLocaleDateString([], { dateStyle: 'medium' })}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="text-[11px] text-gray-400">
+            In the Didit Business Console, open Verifications and search for the session ID to see the document, selfie and the reason it failed.
+          </p>
+        </div>
+      )}
       {status === 'verified' && (
         <p className="text-xs text-gray-600">
           Shown on Pulse as <span className="font-semibold">{detail.display_name || detail.full_name}</span>.
@@ -267,7 +298,7 @@ function KycPanel({ detail, onChanged }) {
         </p>
       )}
       {status === 'failed' && (
-        <p className="text-xs text-gray-600">The check failed and its ID data has been deleted. Let the member try again, or approve them by hand only if you have confirmed who they are another way.</p>
+        <p className="text-xs text-gray-600">The check failed. Review it in Didit, then approve them by hand or let them try again.</p>
       )}
       {status === 'pending' && (
         <p className="text-xs text-gray-600">The member has not finished the identity check yet.</p>
@@ -586,6 +617,7 @@ export default function AdminUsersPage() {
   const [kycFilter, setKycFilter] = useState('') // '' | 'review'
   const [reviewCount, setReviewCount] = useState(0)
   const [pendingCount, setPendingCount] = useState(0)
+  const [failedCount, setFailedCount] = useState(0)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkNote, setBulkNote] = useState('')
   const LIMIT = 20
@@ -599,6 +631,7 @@ export default function AdminUsersPage() {
       setTotal(data.total)
       setReviewCount(data.reviewCount || 0)
       setPendingCount(data.pendingCount || 0)
+      setFailedCount(data.failedCount || 0)
     } catch (err) {
       showToast(apiErrorMessage(err, 'Could not load members'), 'error')
     }
@@ -684,6 +717,7 @@ export default function AdminUsersPage() {
           { value: '', label: 'All members' },
           { value: 'review', label: 'Needs review', count: reviewCount },
           { value: 'pending', label: 'KYC not finished', count: pendingCount },
+          { value: 'failed', label: 'Failed KYC', count: failedCount },
         ].map((f) => (
           <button
             key={f.value || 'all'}

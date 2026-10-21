@@ -2,7 +2,7 @@ import LegalPage, { Section, SubSection, LegalList } from '../components/legal/L
 
 export default function KycPolicyPage() {
   return (
-    <LegalPage title="Pulse KYC & Identity Verification Policy" effectiveDate="14th October 2026" lastUpdated="14th October 2026">
+    <LegalPage title="Pulse KYC & Identity Verification Policy" effectiveDate="21st October 2026" lastUpdated="21st October 2026">
 
       <Section title="1. Introduction">
         <p>Pulse is committed to maintaining a secure, trusted, and professional communication platform for the global iGaming industry. A key part of this commitment is ensuring that every individual using the Services is a verified person.</p>
@@ -307,12 +307,13 @@ export default function KycPolicyPage() {
           <p>Access to verification data is restricted to authorised personnel and trusted service providers with a legitimate need to access such information in the performance of their duties.</p>
         </SubSection>
         <SubSection title="11.3 Retention Periods">
-          <p>Your identity document images, selfie, liveness video, the information read from your document and the related facial data are permanently deleted as soon as your verification has a final result, whether it is approved or declined.</p>
-          <p>Where a verification is referred to our team for manual review, this data is kept only until that review is complete, and is then deleted in the same way.</p>
+          <p>Your identity document images, selfie, liveness video, the information read from your document and the related facial data are permanently deleted as soon as your verification is approved.</p>
+          <p>If a verification is declined, this data is kept for up to 30 days so that our team can review it, for example to help you complete verification or to investigate suspected fraud, and is then permanently deleted. It is deleted sooner if you are verified in the meantime.</p>
+          <p>Where a verification is referred to our team for manual review, this data is kept until that review is complete. If you are approved it is then deleted straight away; if not, it is kept for up to 30 days as described above.</p>
           <p>Your verified name and verification status are kept for as long as your Pulse Account exists, because they are needed to show that your Account is verified. They are deleted with your Account, subject to Section 12.3.</p>
         </SubSection>
         <SubSection title="11.4 Third-Party Storage">
-          <p>Didit, our identity verification provider, processes your identity document, selfie and liveness check on Pulse's behalf. When a verification has a final result, Pulse instructs Didit to permanently delete that verification, including the document images, selfie, liveness video, extracted information and facial data.</p>
+          <p>Didit, our identity verification provider, processes your identity document, selfie and liveness check on Pulse's behalf. When your verification is approved, Pulse instructs Didit to permanently delete it, including the document images, selfie, liveness video, extracted information and facial data. A declined verification is deleted in the same way within 30 days, as set out in Section 11.3.</p>
           <p>Didit may keep a technical log of the requests made by Pulse's systems (for example, when a verification was created or deleted) for up to 12 months. This log does not contain your identity document or images.</p>
           <p>Where third-party providers process verification data on Pulse's behalf, we require them to implement appropriate technical and organisational measures to safeguard that information.</p>
         </SubSection>

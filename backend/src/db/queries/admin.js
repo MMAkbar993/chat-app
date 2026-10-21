@@ -72,7 +72,17 @@ export async function getUserDetail(id) {
     ),
   ])
 
-  return { ...user, verified_websites: websites.rows, rep_websites: repWebsites.rows, reports: reports.rows }
+  const failedChecks = await query(
+    `SELECT session_id, didit_status, failed_at FROM kyc_failed_sessions WHERE user_id = $1 ORDER BY failed_at DESC`,
+    [id]
+  )
+  return {
+    ...user,
+    verified_websites: websites.rows,
+    rep_websites: repWebsites.rows,
+    reports: reports.rows,
+    failed_checks: failedChecks.rows,
+  }
 }
 
 export async function setUserPackage(userId, plan) {
@@ -268,7 +278,8 @@ export async function getAllUsers({ search = '', page = 1, limit = 20, kyc = '' 
   )
   const counts = await query(
     `SELECT COUNT(*) FILTER (WHERE kyc_status = 'review') AS review,
-            COUNT(*) FILTER (WHERE kyc_status = 'pending') AS pending
+            COUNT(*) FILTER (WHERE kyc_status = 'pending') AS pending,
+            COUNT(*) FILTER (WHERE kyc_status = 'failed') AS failed
        FROM users WHERE is_admin = false`
   )
   return {
@@ -276,6 +287,7 @@ export async function getAllUsers({ search = '', page = 1, limit = 20, kyc = '' 
     total: parseInt(total.rows[0].count),
     reviewCount: parseInt(counts.rows[0].review),
     pendingCount: parseInt(counts.rows[0].pending),
+    failedCount: parseInt(counts.rows[0].failed),
   }
 }
 

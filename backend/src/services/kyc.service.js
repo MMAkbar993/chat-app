@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { config } from '../config/env.js'
+import { query } from '../config/database.js'
 import {
   findUserById,
   updateKycSession,
@@ -14,11 +15,60 @@ const FAILED_STATUSES = ['Declined', 'Expired', 'Not Finished']
 // Didit statuses after which a session will not change again.
 export const FINAL_STATUSES = ['Approved', ...FAILED_STATUSES]
 
-// Verify and purge. Once a check has a final outcome, Pulse keeps the verified name and the
+// Verify and purge. Once a check is approved, Pulse keeps the verified name and the
 // status, and asks Didit to delete the session: document images, selfie, liveness video,
 // extracted data, the decision and the face data (docs.didit.me/console/data-retention,
 // "process and purge"). A 404 means it is already gone. Never throws: a failed purge is
 // retried by jobs/purgeKycSessions.js, which finds it because kyc_session_id is still set.
+// How long a failed check stays at Didit for an admin to review (KYC Policy section 11.3).
+export const FAILED_RETENTION_DAYS = 30
+
+// A failed or rejected check: kept at Didit for review instead of purged, recorded in
+// kyc_failed_sessions (deleted after FAILED_RETENTION_DAYS by jobs/purgeKycSessions.js), and
+// cleared from the member so their next attempt starts a fresh session.
+export async function keepFailedSession(userId, sessionId, diditStatus = null) {
+  if (!sessionId) return
+  await query(
+    `INSERT INTO kyc_failed_sessions (session_id, user_id, didit_status) VALUES ($1, $2, $3)
+     ON CONFLICT (session_id) DO NOTHING`,
+    [sessionId, userId, diditStatus]
+  )
+  await clearKycSession(userId, sessionId)
+}
+
+// Deletes a kept failed check at Didit and forgets it. Used once the member is verified, when an
+// admin decides, and by the 30-day job.
+async function purgeFailedSession(sessionId) {
+  if (!config.diditApiKey) return false
+  try {
+    await axios.delete(`${DIDIT_BASE_URL}/session/${sessionId}/delete/`, {
+      headers: { 'x-api-key': config.diditApiKey },
+    })
+  } catch (err) {
+    if (err.response?.status !== 404) {
+      console.error(`Didit purge failed for session ${sessionId}:`, err.response?.status || err.message)
+      return false
+    }
+  }
+  await query(`DELETE FROM kyc_failed_sessions WHERE session_id = $1`, [sessionId])
+  return true
+}
+
+export async function purgeFailedSessionsForUser(userId) {
+  const { rows } = await query(`SELECT session_id FROM kyc_failed_sessions WHERE user_id = $1`, [userId])
+  for (const r of rows) await purgeFailedSession(r.session_id)
+}
+
+export async function purgeExpiredFailedSessions() {
+  const { rows } = await query(
+    `SELECT session_id FROM kyc_failed_sessions
+     WHERE failed_at < NOW() - make_interval(days => $1)
+        OR user_id IN (SELECT id FROM users WHERE kyc_status = 'verified')`,
+    [FAILED_RETENTION_DAYS]
+  )
+  for (const r of rows) await purgeFailedSession(r.session_id)
+}
+
 export async function purgeDiditSession(userId, sessionId) {
   if (!sessionId || !config.diditApiKey) return false
   try {
@@ -55,6 +105,7 @@ export async function applyKycDecision(userId, decision, sessionId) {
     // apart from making sure the session is gone.
     if (wasAlreadyVerified) {
       await purgeDiditSession(userId, sessionId)
+      await purgeFailedSessionsForUser(userId)
       return 'verified'
     }
 
@@ -68,13 +119,16 @@ export async function applyKycDecision(userId, decision, sessionId) {
 
     const { displayName } = await setVerifiedName(userId, verifiedName)
     await updateKycStatus(userId, 'verified')
+    // Verified: this check and any earlier failed ones are deleted at Didit.
     await purgeDiditSession(userId, sessionId)
+    await purgeFailedSessionsForUser(userId)
     if (user) sendWelcomeEmail(user.email, displayName).catch(() => {})
     return 'verified'
   }
   if (FAILED_STATUSES.includes(decision.status)) {
     await updateKycStatus(userId, 'failed')
-    await purgeDiditSession(userId, sessionId)
+    // Kept for an admin to review, then deleted after FAILED_RETENTION_DAYS.
+    await keepFailedSession(userId, sessionId, decision.status)
     return 'failed'
   }
   return null

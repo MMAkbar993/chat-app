@@ -5,7 +5,7 @@ import speakeasy from 'speakeasy'
 import { config } from '../config/env.js'
 import { findUserByEmail, setVerifiedName, updateKycStatus } from '../db/queries/users.js'
 import { sendWelcomeEmail, sendKycReminderEmail } from '../config/email.js'
-import { purgeDiditSession } from '../services/kyc.service.js'
+import { purgeDiditSession, keepFailedSession, purgeFailedSessionsForUser } from '../services/kyc.service.js'
 import { getTwoFactorFields } from '../db/queries/auth_extras.js'
 import { getIo } from '../socket/index.js'
 import { query } from '../config/database.js'
@@ -265,12 +265,18 @@ export async function kycAction(req, res, next) {
 
     // Decided: the ID the admin looked at is no longer needed, so Didit deletes it (verify and
     // purge, see kyc.service.js). A retry must not reuse the old session either way.
-    if (member.kyc_session_id) {
-      const purged = await purgeDiditSession(id, member.kyc_session_id)
-      if (!purged && action === 'retry') {
-        // Didit unreachable: still start the member on a fresh check; the purge job retries.
-        await query(`UPDATE users SET kyc_session_id = NULL WHERE id = $1`, [id])
+    // A rejection is kept 30 days for review like any failed check.
+    if (action === 'reject') {
+      if (member.kyc_session_id) await keepFailedSession(id, member.kyc_session_id, 'Rejected by admin')
+    } else {
+      if (member.kyc_session_id) {
+        const purged = await purgeDiditSession(id, member.kyc_session_id)
+        if (!purged && action === 'retry') {
+          // Didit unreachable: still start the member on a fresh check; the purge job retries.
+          await query(`UPDATE users SET kyc_session_id = NULL WHERE id = $1`, [id])
+        }
       }
+      if (action === 'approve' || action === 'retry') await purgeFailedSessionsForUser(id)
     }
 
     const user = await getUserDetail(id)

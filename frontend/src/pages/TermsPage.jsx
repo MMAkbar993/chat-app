@@ -3,7 +3,7 @@ import LegalPage, { Section, SubSection, LegalList } from '../components/legal/L
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Pulse Terms & Conditions" effectiveDate="14th October 2026" lastUpdated="14th October 2026">
+    <LegalPage title="Pulse Terms & Conditions" effectiveDate="21st October 2026" lastUpdated="21st October 2026">
 
       <Section title="1. Introduction">
         <SubSection title="1.1 About Pulse">
@@ -184,7 +184,7 @@ export default function TermsPage() {
           <p>Identity verification is carried out by Didit in accordance with its own privacy practices and applicable data protection laws.</p>
           <p>Pulse encourages all Users to review Didit's Privacy Policy and Terms of Service before completing the verification process.</p>
           <p>Pulse processes verification-related information in accordance with its own Privacy Policy and applicable laws, including the General Data Protection Regulation (GDPR).</p>
-          <p>Pulse follows a verify and purge approach. Once your verification has a final result, or once any manual review under Section 5.5 is complete, Pulse instructs Didit to permanently delete your identity documents, selfie, liveness video and the information read from them. Pulse retains only your verified name and confirmation that your identity has been verified, as described in our <Link to="/kyc-policy" className="text-violet-600 hover:underline">KYC & Identity Verification Policy</Link>.</p>
+          <p>Pulse follows a verify and purge approach. Once your verification is approved, Pulse instructs Didit to permanently delete your identity documents, selfie, liveness video and the information read from them. A declined verification, including one declined after a manual review under Section 5.5, is kept for up to 30 days so that Pulse can review it, and is then deleted in the same way. Pulse retains only your verified name and confirmation that your identity has been verified, as described in our <Link to="/kyc-policy" className="text-violet-600 hover:underline">KYC & Identity Verification Policy</Link>.</p>
         </SubSection>
         <SubSection title="5.5 Manual Review">
           <p>Where Didit is unable to automatically verify a User's identity or where additional verification is required, the verification request may be referred to Pulse for manual review. During a manual review, Pulse may:</p>

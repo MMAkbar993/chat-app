@@ -93,8 +93,9 @@ export const FAQ = [
       {
         q: 'How long is my KYC information stored?',
         a: [
-          'Only until your check is complete. Pulse verifies and then deletes: as soon as your identity check has a result, your ID document, selfie, video and the details read from your ID are permanently deleted from our verification provider, Didit.',
-          'If your check needs a manual review by our team, it is deleted as soon as that review is finished.',
+          'Only until your check is complete. Pulse verifies and then deletes: as soon as your identity is verified, your ID document, selfie, video and the details read from your ID are permanently deleted from our verification provider, Didit.',
+          'If a check does not pass, it is kept for up to 30 days so our team can review it and help you get verified, and is then deleted. It is deleted sooner if you are verified in the meantime.',
+          'If your check needs a manual review by our team, it is kept until that review is finished.',
           'From your ID, Pulse keeps only your verified name and a record that your identity was verified.',
         ],
       },
@@ -744,7 +745,7 @@ export const FAQ = [
         a: [
           'When you delete your Pulse account, the personal data associated with your account will be deleted in accordance with our Privacy Policy and applicable data-protection requirements.',
           'Certain limited information may need to be retained where required or permitted by law, including where necessary for legal, security, fraud-prevention or dispute-resolution purposes.',
-          'Identity verification data is already deleted once your check is complete, as explained in our KYC & Identity Verification Policy.',
+          'Identity verification data is already deleted once you are verified, or within 30 days of a check that did not pass, as explained in our KYC & Identity Verification Policy.',
         ],
       },
       {
