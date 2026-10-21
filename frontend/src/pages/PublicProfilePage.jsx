@@ -49,7 +49,6 @@ const SHARE_BG = {
   backgroundSize: '18px 18px, auto, auto',
 }
 
-const CHAT_ICON = 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
 const CHECK = 'M5 13l4 4L19 7'
 
 const hostOf = (url) => url.replace(/^https?:\/\//, '').replace(/\/$/, '')
@@ -158,26 +157,16 @@ export default function PublicProfilePage() {
             {subtitle.length > 0 && (
               <p className="relative mt-1.5 text-[15px] font-medium text-violet-700">{subtitle.join(' · ')}</p>
             )}
-            {user.is_verified && (
-              <span className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d={CHECK} />
-                </svg>
-                Verified user
-              </span>
-            )}
             {user.status && <p className="relative mt-2 text-sm text-gray-500 italic">"{user.status}"</p>}
 
             {!isSelf && (
               <div className="relative mt-5">
+                {/* Same gradient as the sign-in and registration buttons. */}
                 <button
                   onClick={handleSendMessage}
                   disabled={authLoading}
-                  className="inline-flex w-full sm:w-auto sm:min-w-72 items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold px-8 py-3 rounded-2xl transition-colors shadow-lg shadow-violet-600/25"
+                  className="inline-flex w-full sm:w-auto sm:min-w-72 items-center justify-center bg-linear-to-r from-sky-400 to-violet-600 hover:brightness-105 active:scale-[0.98] disabled:opacity-60 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={CHAT_ICON} />
-                  </svg>
                   Send Message
                 </button>
               </div>
@@ -249,6 +238,15 @@ export default function PublicProfilePage() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {user.is_verified && (
+            <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 text-center">
+              <p className="text-sm text-gray-500 leading-relaxed">
+                <span className="font-semibold text-gray-700">Your connections deserve confidence.</span>{' '}
+                This member's identity has been verified through Pulse using a government-issued ID.
+              </p>
             </div>
           )}
         </div>
