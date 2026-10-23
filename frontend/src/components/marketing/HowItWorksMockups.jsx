@@ -144,8 +144,6 @@ const PUBLIC_SOCIALS = [
 ]
 
 export function PublicProfileMockup() {
-  const chip = 'inline-flex items-center gap-1 rounded-full border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-gray-700 night:text-gray-200'
-  const tile = 'flex items-center gap-2 rounded-xl border border-gray-200 night:border-gray-700 px-2.5 py-2 text-xs font-medium text-gray-700 night:text-gray-200'
   return (
     <div aria-hidden="true" className="relative max-w-lg mx-auto lg:mr-0 w-full">
       <div className="rounded-2xl border border-gray-200 night:border-gray-700 bg-gray-50 night:bg-gray-950 shadow-2xl shadow-violet-900/15 overflow-hidden text-left">
@@ -162,56 +160,47 @@ export function PublicProfileMockup() {
           </span>
         </div>
 
+        {/* The share page as members now see it (pages/PublicProfilePage.jsx): keep the two in step. */}
         <div className="p-4">
           <div className="rounded-2xl bg-white night:bg-gray-900 border border-gray-100 night:border-gray-800 overflow-hidden">
-            {/* Banner */}
-            <div className="bg-linear-to-r from-violet-600 to-violet-800 px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar name="Daniel Reyes" color="from-sky-400 to-blue-600" className="w-14 h-14 text-base rounded-xl! ring-4 ring-white" />
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 text-base font-bold text-white whitespace-nowrap">
-                    Daniel Reyes
-                    <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
-                      <I d={P.check} className="w-2.5 h-2.5 text-white" stroke={3} />
-                    </span>
-                  </p>
-                  <p className="text-xs text-violet-200">@danielreyes</p>
-                </div>
+            <div className="px-5 pt-5 pb-5 text-center bg-linear-to-b from-violet-100/70 via-violet-50/40 to-white night:from-violet-500/15 night:via-violet-500/5 night:to-gray-900">
+              <div className="relative mx-auto w-16 h-16">
+                <img src="/marketing/people/daniel-video.jpg" alt="" className="w-16 h-16 rounded-full object-cover ring-[3px] ring-white night:ring-gray-900 shadow-md" style={{ objectPosition: '50% 10%' }} />
+                <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-violet-600 text-white ring-2 ring-white night:ring-gray-900 flex items-center justify-center">
+                  <I d={P.check} className="w-2.5 h-2.5" stroke={3.5} />
+                </span>
               </div>
-              <span className="relative shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/15 px-3 py-2 text-xs font-semibold text-white">
-                <I d={P.chat} className="w-3.5 h-3.5" />
+              <p className="mt-2 text-base font-bold text-gray-900 night:text-white">Daniel Reyes</p>
+              <p className="text-[11px] text-gray-500 night:text-gray-400">@danielreyes</p>
+              <p className="mt-1 text-xs font-medium text-violet-700 night:text-violet-300">Affiliate Manager · Malta</p>
+              <span className="relative mt-3 inline-flex items-center justify-center rounded-lg bg-linear-to-r from-sky-400 to-violet-600 px-8 py-2 text-xs font-semibold text-white shadow-md">
                 Send Message
                 {/* A soft pulse so the eye lands on the action this section is about */}
-                <span className="absolute -inset-1 rounded-2xl ring-2 ring-white/40 animate-pulse motion-reduce:animate-none" />
+                <span className="absolute -inset-1 rounded-xl ring-2 ring-violet-400/40 animate-pulse motion-reduce:animate-none" />
               </span>
             </div>
 
-            {/* Body */}
-            <div className="px-4 pt-3.5 pb-4">
-              <div className="flex flex-wrap gap-1.5">
-                <span className={chip}>Affiliate Manager</span>
-                <span className={chip}><I d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" className="w-3 h-3 text-green-500" /> KYC Verified</span>
-                <span className={chip}>📍 Malta</span>
-                <span className={chip}>Member since 2026</span>
-              </div>
-              <p className="mt-3 text-xs text-gray-600 night:text-gray-300 leading-relaxed">
+            <div className="px-5 py-4 border-t border-gray-100 night:border-gray-800">
+              <p className="text-xs text-gray-600 night:text-gray-300 leading-relaxed">
                 Affiliate Manager at Northstar Bet. Always open to new partnerships with quality affiliates and publishers.
               </p>
-
-              <p className="mt-3.5 mb-2 text-xs font-semibold text-gray-700 night:text-gray-200">Websites</p>
-              <div className="flex flex-wrap gap-1.5">
-                <span className={tile}><I d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" className="w-3.5 h-3.5 text-green-500 shrink-0" /> northstarbet.com</span>
-              </div>
-
-              <p className="mt-3.5 mb-2 text-xs font-semibold text-gray-700 night:text-gray-200">Verified Accounts</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-gray-700 night:text-gray-200">
+                  <I d={P.check} className="w-3 h-3 text-green-500" stroke={3} /> northstarbet.com
+                </span>
                 {PUBLIC_SOCIALS.map((s) => (
-                  <span key={s.key} className={tile}>
-                    <SocialIcon platform={s.key} size={18} />
-                    {s.label}
+                  <span key={s.key} title={s.label} className="w-7 h-7 rounded-full border border-gray-200 night:border-gray-700 bg-white night:bg-gray-900 flex items-center justify-center">
+                    <SocialIcon platform={s.key} size={14} />
                   </span>
                 ))}
               </div>
+            </div>
+
+            <div className="border-t border-gray-100 night:border-gray-800 bg-gray-50 night:bg-gray-950/60 px-4 py-3 text-center">
+              <p className="text-[11px] text-gray-500 night:text-gray-400 leading-relaxed">
+                <span className="font-semibold text-gray-700 night:text-gray-200">Your connections deserve confidence.</span>{' '}
+                This member's identity has been verified through Pulse using a government-issued ID.
+              </p>
             </div>
           </div>
         </div>

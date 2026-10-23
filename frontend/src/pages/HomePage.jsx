@@ -266,7 +266,7 @@ export default function HomePage() {
         </section>
 
         {/* 6. Verified profile showcase */}
-        <section className="px-6 py-16 sm:py-20">
+        <section id="profile" className="scroll-mt-16 px-6 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Eyebrow>{C.showcase.eyebrow}</Eyebrow>
