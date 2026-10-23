@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { displayNameOptions } from '../../utils/displayName'
 import { getMyProfile, updateProfile, uploadAvatar } from '../../api/users'
 import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
@@ -24,26 +25,6 @@ function firstNameOf(fullName) {
 // A generational suffix is part of a legal name but is never a name by itself, and it is not
 // the surname either — so for "Edward Paul Tabus Jr", pairing the first word with the last one
 // produces "Edward Jr" and never offers "Edward Tabus".
-const NAME_SUFFIXES = new Set(['jr', 'jr.', 'snr', 'sr', 'sr.', 'ii', 'iii', 'iv'])
-
-// Every sensible way to render someone's own verified name: the whole thing, each individual
-// part, and the first name paired with each later part. Options are built from full_name rather
-// than free text so a display name always stays truthful to the KYC'd identity — but which part
-// you go by is your choice, since "the first word" isn't the first name for everyone.
-function displayNameOptions(fullName) {
-  const full = (fullName || '').trim()
-  const parts = full.split(/\s+/).filter(Boolean)
-  const opts = []
-  if (full) opts.push(full)
-  parts.filter((p) => !NAME_SUFFIXES.has(p.toLowerCase())).forEach((p) => opts.push(p))
-  // Pair the first name with every later part, not just the final word: that last word is a
-  // suffix in "Edward Paul Tabus Jr" and a second surname in "Ana García López", so "first
-  // word + last word" happens to be the wrong answer for both.
-  if (parts.length > 2) parts.slice(1).forEach((p) => opts.push(`${parts[0]} ${p}`))
-  // No exceptions for an old saved value: the name shown must come from the ID, and the server
-  // (utils/names.js) rejects anything else. Keep the two lists in step.
-  return [...new Set(opts)]
-}
 
 const INDUSTRY_ROLES = [
   { value: 'affiliate_publisher',          label: 'Affiliate (Publisher)' },

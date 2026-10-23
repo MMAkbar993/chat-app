@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import VerifyIntro from '../components/verify/VerifyIntro'
 
 // Same promise, same words, as the How It Works page. Both rest on verify and purge (backend
 // kyc.service.js deletes the check at Didit once it has a result) and the KYC Policy section 11.
@@ -19,11 +20,10 @@ function IdDataNote() {
   )
 }
 
-const CHECK = 'M5 13l4 4L19 7'
 
 export default function VerifyPage() {
   const navigate = useNavigate()
-  const { refreshUser } = useAuth()
+  const { refreshUser, user } = useAuth()
   const [status, setStatus] = useState(() =>
     new URLSearchParams(window.location.search).has('session_id') ? 'pending' : 'loading'
   )
@@ -108,50 +108,15 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-lavender flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
+    <div className="min-h-screen bg-lavender flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-10 max-w-md w-full text-center">
         <img src="/full-logo.png" alt="Pulse" className="h-8 mx-auto mb-8" />
 
         {status === 'loading' && (
           <div className="w-10 h-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto my-6" />
         )}
 
-        {status === 'intro' && (
-          <>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Verify your identity</h2>
-            <p className="text-gray-500 text-sm mb-6">
-              Every Pulse member is securely verified, so you know who you're talking to. Only your
-              name is visible, and you control how it's displayed in Settings. Your ID and personal
-              details remain private.
-            </p>
-
-            <ul className="space-y-2.5 text-left mb-6">
-              {['A valid government-issued ID', 'Your camera, for a quick selfie to confirm it\'s you'].map((t) => (
-                <li key={t} className="flex gap-2.5 text-sm text-gray-700">
-                  <svg className="w-4 h-4 mt-0.5 shrink-0 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={CHECK} />
-                  </svg>
-                  {t}
-                </li>
-              ))}
-            </ul>
-
-            <IdDataNote />
-
-            <button
-              onClick={() => { window.location.href = introUrl }}
-              className="mt-6 w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl px-6 py-3 transition-colors"
-            >
-              Start verification
-            </button>
-            <p className="mt-3 text-xs text-gray-400">
-              Read our{' '}
-              <Link to="/kyc-policy" target="_blank" className="text-violet-600 hover:underline">KYC Policy</Link>
-              {' '}and{' '}
-              <Link to="/privacy" target="_blank" className="text-violet-600 hover:underline">Privacy Policy</Link>
-            </p>
-          </>
-        )}
+        {status === 'intro' && <VerifyIntro user={user} onStart={() => { window.location.href = introUrl }} />}
 
         {status === 'review' && (
           <>
