@@ -1,4 +1,5 @@
 import client from './client'
+import { MAX_UPLOAD_BYTES, tooLargeError } from '../utils/uploadError'
 
 export const getMyProfile = () => client.get('/users/me').then((r) => r.data)
 export const updateProfile = (data) => client.patch('/users/me', data).then((r) => r.data)
@@ -39,7 +40,9 @@ export const cancelRepresentationRequest = (id) => client.delete(`/users/me/webs
 export const getNotifications = () => client.get('/users/me/notifications').then((r) => r.data)
 export const markNotificationsRead = () => client.patch('/users/me/notifications/read-all').then((r) => r.data)
 export const clearNotifications = () => client.delete('/users/me/notifications').then((r) => r.data)
+// Files for chat messages. Over the size limit it fails at once, without sending anything.
 export const uploadFile  = (file) => {
+  if (file.size > MAX_UPLOAD_BYTES) return Promise.reject(tooLargeError(file))
   const form = new FormData()
   form.append('file', file)
   return client.post('/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
