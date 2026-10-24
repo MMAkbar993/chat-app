@@ -1,14 +1,21 @@
-// The largest file a chat message can carry. Must match the backend (routes/upload.routes.js,
-// multer fileSize) and Nginx (client_max_body_size in DEPLOY.md).
-export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+// Limits for files sent in chat. Keep in step with the backend (src/utils/uploads.js).
+//
+// The site sits behind Cloudflare, which refuses any single request over 100 MB. Files bigger
+// than CHUNK_BYTES are sent in pieces (api/users.js uploadFile) and joined on the server, so the
+// real ceiling is MAX_UPLOAD_BYTES.
+export const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024   // 1 GB
+export const CHUNK_BYTES = 50 * 1024 * 1024
+// Files over this are kept for LARGE_FILE_DAYS, then deleted to save space (like Telegram).
+export const LARGE_FILE_BYTES = 100 * 1024 * 1024
+export const LARGE_FILE_DAYS = 30
 
 export function formatMegabytes(bytes) {
-  return `${Math.round(bytes / (1024 * 1024))} MB`
+  return bytes >= 1024 * 1024 * 1024
+    ? `${+(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+    : `${Math.round(bytes / (1024 * 1024))} MB`
 }
 
-// A file over the limit, caught before any upload starts: Nginx answers an oversized upload by
-// closing the connection, which the browser reports as a bare network error after the member
-// has waited for most of the file to send.
+// A file over the limit, caught before any upload starts.
 export function tooLargeError(file) {
   return Object.assign(new Error('File too large'), { code: 'FILE_TOO_LARGE', size: file.size })
 }
@@ -22,7 +29,6 @@ export function getUploadErrorMessage(err) {
   if (apiError) return apiError
   // A 413 from Nginx/Cloudflare comes back as an HTML page, not our { error } JSON.
   if (err?.response?.status === 413) return `That file is too large. Files can be up to ${formatMegabytes(MAX_UPLOAD_BYTES)}.`
-  // No response at all: the connection dropped, which is also what an oversized file looks like.
-  if (!err?.response) return `Upload failed. Check your connection and try again. Files can be up to ${formatMegabytes(MAX_UPLOAD_BYTES)}.`
+  if (!err?.response) return 'Upload failed. Check your connection and try again.'
   return 'Upload failed. Please try again.'
 }

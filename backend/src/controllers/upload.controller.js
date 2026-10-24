@@ -4,13 +4,21 @@ import { isProUser, FREE_FILE_SIZE_BYTES } from '../utils/plan.js'
 // The browser supplies this, so treat it as untrusted display text: keep only the basename
 // (no directory components), drop control characters, and cap the length so one absurd name
 // can't blow out every chat bubble it appears in.
-function displayName(original) {
+export function displayName(original) {
   const base = String(original || '')
     .split(/[\\/]/).pop()
     .replace(/[\u0000-\u001f\u007f]/g, '')
     .trim()
   if (!base) return null
   return base.length > 120 ? `${base.slice(0, 117)}…` : base
+}
+
+export function messageTypeFor(mimetype) {
+  const mime = mimetype || ''
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('audio/')) return 'audio'
+  if (mime.startsWith('video/')) return 'video'
+  return 'file'
 }
 
 export async function uploadMessageFile(req, res, next) {
@@ -22,11 +30,7 @@ export async function uploadMessageFile(req, res, next) {
       return res.status(413).json({ error: 'Free plan uploads are limited to 5MB. Upgrade to Pro for unlimited file sharing.' })
     }
 
-    const mime = req.file.mimetype || ''
-    let messageType = 'file'
-    if (mime.startsWith('image/')) messageType = 'image'
-    else if (mime.startsWith('audio/')) messageType = 'audio'
-    else if (mime.startsWith('video/')) messageType = 'video'
+    const messageType = messageTypeFor(req.file.mimetype)
     // The on-disk name is randomised to avoid collisions and path tricks, so the original has
     // to travel separately or the recipient just sees "msg-<uuid>-<epoch>.pdf".
     res.json({ fileUrl: `/uploads/${req.file.filename}`, fileName: displayName(req.file.originalname), messageType })

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { LARGE_FILE_BYTES, LARGE_FILE_DAYS } from '../../utils/uploadError'
 
 function formatBytes(bytes) {
   if (!bytes) return ''
@@ -130,6 +131,12 @@ export default function MediaCaptionModal({ items: initialItems, skipped = 0, da
               </div>
             ))}
           </div>
+        )}
+
+        {items.some((it) => it.file?.size > LARGE_FILE_BYTES) && (
+          <p className={`px-4 pt-2 text-xs ${muted}`}>
+            Files over 100 MB are available for {LARGE_FILE_DAYS} days.
+          </p>
         )}
 
         {skipped > 0 && (

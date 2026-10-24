@@ -5,6 +5,7 @@ import { createApp } from './server.js'
 import { initSocket } from './socket/index.js'
 import { checkUnreadMessages } from './jobs/unreadMessageEmail.js'
 import { purgeFinishedKycSessions } from './jobs/purgeKycSessions.js'
+import { cleanUpUploads } from './jobs/uploadCleanup.js'
 
 const UNREAD_EMAIL_INTERVAL_MS = 15 * 60 * 1000
 const KYC_PURGE_INTERVAL_MS = 60 * 60 * 1000
@@ -24,6 +25,10 @@ async function start() {
   const purgeKyc = () => purgeFinishedKycSessions().catch((err) => console.error('purgeFinishedKycSessions failed:', err.message))
   purgeKyc()
   setInterval(purgeKyc, KYC_PURGE_INTERVAL_MS)
+  // Expire large chat files after 30 days and clear abandoned upload pieces (jobs/uploadCleanup.js).
+  const cleanUploads = () => cleanUpUploads().catch((err) => console.error('cleanUpUploads failed:', err.message))
+  cleanUploads()
+  setInterval(cleanUploads, KYC_PURGE_INTERVAL_MS)
 }
 
 start().catch((err) => {

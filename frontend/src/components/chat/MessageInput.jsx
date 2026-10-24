@@ -59,7 +59,7 @@ function toPending(files, fallbackType = 'file') {
   }
 }
 
-export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, onRemoveMediaPreview, editingMessage, onClearEdit, onEditSubmit, droppedFiles }) {
+export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, onRemoveMediaPreview, onMediaProgress, editingMessage, onClearEdit, onEditSubmit, droppedFiles }) {
   const { showToast } = useToast()
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
@@ -257,11 +257,15 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
     let replyId = replyTo?.id || null
     let captionLeft = caption
     onClearReply?.()
-    const jobs = items.map((it, i) => ({
-      it,
-      tempId: onMediaPreview?.(it.localUrl, it.mediaType, i === 0 ? caption : null, it.file?.name || null),
-      upload: uploadFile(it.file).then((r) => ({ ok: true, r }), (err) => ({ ok: false, err })),
-    }))
+    const jobs = items.map((it, i) => {
+      const tempId = onMediaPreview?.(it.localUrl, it.mediaType, i === 0 ? caption : null, it.file?.name || null)
+      return {
+        it,
+        tempId,
+        upload: uploadFile(it.file, { onProgress: (pct) => onMediaProgress?.(tempId, pct) })
+          .then((r) => ({ ok: true, r }), (err) => ({ ok: false, err })),
+      }
+    })
     let uploadErrors = 0
     for (const job of jobs) {
       const res = await job.upload

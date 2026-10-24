@@ -24,7 +24,7 @@ function extOf(filename) {
   return i === -1 ? '' : filename.slice(i).toLowerCase()
 }
 
-function isDangerous(file) {
+export function isDangerous(file) {
   const ext = extOf(file.originalname || '')
   if (DANGEROUS_EXTENSIONS.has(ext)) return true
   // An allowed .html file arrives as text/html (or untyped): let exactly that through for it.

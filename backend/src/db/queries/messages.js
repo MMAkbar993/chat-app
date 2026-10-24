@@ -11,7 +11,7 @@ export async function getMessages(conversationId, userId, limit = 50, before = n
   const result = await query(
     `SELECT
        m.id, m.conversation_id, m.content, m.message_type, m.media_url, m.file_name,
-       m.is_deleted, m.created_at, m.reply_to_message_id, m.status, m.edited_at,
+       m.is_deleted, m.created_at, m.reply_to_message_id, m.status, m.edited_at, m.media_expired,
        u.id AS sender_id, u.full_name AS sender_name, u.avatar_url AS sender_avatar,
        u.display_name AS sender_display_name,
        rm.content AS reply_content,

@@ -298,6 +298,22 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                   {renderMessageText(caption, searchQuery)}
                 </p>
               )
+              // Large files are deleted after 30 days (backend jobs/uploadCleanup.js).
+              if (msg.media_expired)
+                return (
+                  <div className={mediaWithCaption ? 'px-3 pt-2' : ''}>
+                    <div className="flex items-center gap-2.5 opacity-80">
+                      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium">This file has expired</p>
+                        <p className="text-xs opacity-75">Files over 100 MB are kept for 30 days.</p>
+                      </div>
+                    </div>
+                    {captionEl}
+                  </div>
+                )
               if (msg.message_type === 'image' && src)
                 return (
                   // A fixed pixel width once known (see fitMediaBoxWidth) — an explicit width
@@ -327,8 +343,11 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         />
                       </button>
                       {msg.uploading && (
-                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-lg bg-black/30">
                           <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          {msg.uploadProgress != null && (
+                            <span className="text-xs font-semibold text-white drop-shadow">{msg.uploadProgress}%</span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -366,8 +385,11 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                         )}
                       </button>
                       {msg.uploading && (
-                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-lg bg-black/30">
                           <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          {msg.uploadProgress != null && (
+                            <span className="text-xs font-semibold text-white drop-shadow">{msg.uploadProgress}%</span>
+                          )}
                         </div>
                       )}
                     </div>

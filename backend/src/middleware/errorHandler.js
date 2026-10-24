@@ -6,8 +6,10 @@ import { config } from '../config/env.js'
 // generic message, so a database or library error never shows its internals to the browser.
 export function errorHandler(err, req, res, next) {
   // An upload over the size limit (multer, routes/upload.routes.js): the member's mistake, not a fault.
+  // The app sends anything bigger than one request in pieces, so this only fires for a client
+  // that skipped that.
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ error: 'That file is too large. Files can be up to 100 MB.' })
+    return res.status(413).json({ error: 'That file is too large to send in one go. Please update the app and try again.' })
   }
   const status = err.status || err.statusCode || 500
   if (status >= 500) console.error(`[${req.method} ${req.originalUrl}]`, err)

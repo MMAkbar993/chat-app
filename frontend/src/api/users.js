@@ -1,5 +1,5 @@
 import client from './client'
-import { MAX_UPLOAD_BYTES, tooLargeError } from '../utils/uploadError'
+import { MAX_UPLOAD_BYTES, CHUNK_BYTES, tooLargeError } from '../utils/uploadError'
 
 export const getMyProfile = () => client.get('/users/me').then((r) => r.data)
 export const updateProfile = (data) => client.patch('/users/me', data).then((r) => r.data)
@@ -41,11 +41,44 @@ export const getNotifications = () => client.get('/users/me/notifications').then
 export const markNotificationsRead = () => client.patch('/users/me/notifications/read-all').then((r) => r.data)
 export const clearNotifications = () => client.delete('/users/me/notifications').then((r) => r.data)
 // Files for chat messages. Over the size limit it fails at once, without sending anything.
-export const uploadFile  = (file) => {
-  if (file.size > MAX_UPLOAD_BYTES) return Promise.reject(tooLargeError(file))
-  const form = new FormData()
-  form.append('file', file)
-  return client.post('/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data)
+// Up to CHUNK_BYTES goes in one request; anything bigger is sent in pieces of CHUNK_BYTES,
+// because Cloudflare refuses any single request over 100 MB (backend chunkedUpload.controller.js).
+// onProgress(0..100) is called as bytes go out.
+export const uploadFile  = async (file, { onProgress } = {}) => {
+  if (file.size > MAX_UPLOAD_BYTES) throw tooLargeError(file)
+  if (file.size <= CHUNK_BYTES) {
+    const form = new FormData()
+    form.append('file', file)
+    const r = await client.post('/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => e.total && onProgress?.(Math.round((e.loaded / e.total) * 100)),
+    })
+    return r.data
+  }
+
+  const { data: start } = await client.post('/upload/chunked/start', {
+    fileName: file.name, mimeType: file.type, size: file.size,
+  })
+  let sent = 0
+  for (let i = 0; i < start.chunks; i++) {
+    const piece = file.slice(i * start.chunkSize, (i + 1) * start.chunkSize)
+    // A dropped piece is retried a couple of times before the whole upload gives up.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await client.put(`/upload/chunked/${start.uploadId}/${i}`, piece, {
+          headers: { 'Content-Type': 'application/octet-stream' },
+          onUploadProgress: (e) => onProgress?.(Math.round(((sent + e.loaded) / file.size) * 100)),
+        })
+        break
+      } catch (err) {
+        if (attempt >= 3 || err.response?.status < 500) throw err
+      }
+    }
+    sent += piece.size
+    onProgress?.(Math.round((sent / file.size) * 100))
+  }
+  const { data } = await client.post(`/upload/chunked/${start.uploadId}/complete`)
+  return data
 }
 
 // Becoming a representative of a company by proving you receive mail at its domain. Admin

@@ -362,6 +362,10 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     return tempId
   }
 
+  function updateMediaProgress(tempId, pct) {
+    if (tempId) setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, uploadProgress: pct } : m)))
+  }
+
   function removeMediaPreview(tempId) {
     if (tempId) setMessages((prev) => prev.filter((m) => m.id !== tempId))
   }
@@ -806,6 +810,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
             onClearReply={clearReply}
             onMediaPreview={handleMediaPreview}
             onRemoveMediaPreview={removeMediaPreview}
+            onMediaProgress={updateMediaProgress}
             editingMessage={editingMessage}
             onClearEdit={() => setEditingMessage(null)}
             onEditSubmit={handleEditMessage}
