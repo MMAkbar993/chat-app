@@ -109,8 +109,8 @@ export default function VerifyPage() {
 
   return (
     <div className="min-h-screen bg-lavender flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-10 max-w-md w-full text-center">
-        <img src="/full-logo.png" alt="Pulse" className="h-8 mx-auto mb-8" />
+      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-md w-full text-center">
+        <img src="/full-logo.png" alt="Pulse" className="h-8 mx-auto mb-6" />
 
         {status === 'loading' && (
           <div className="w-10 h-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto my-6" />
