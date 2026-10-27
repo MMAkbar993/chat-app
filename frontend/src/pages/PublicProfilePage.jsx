@@ -57,6 +57,8 @@ const hrefOf = (url) => (url.startsWith('http') ? url : `https://${url}`)
 // About text longer than this many characters starts folded to a few lines, so one long bio
 // cannot stretch the card.
 const LONG_BIO = 220
+// About text up to this length fits on one line beside the social icons.
+const SHORT_BIO = 55
 
 export default function PublicProfilePage() {
   const { username } = useParams()
@@ -113,6 +115,35 @@ export default function PublicProfilePage() {
   const socials = user.social_connections || []
   const hasLinks = websites.length > 0 || repSites.length > 0 || socials.length > 0
   const longBio = (user.bio || '').length > LONG_BIO
+  // Short enough to sit on one line beside the icons (no websites to show, which need their own row).
+  const inlineBio = Boolean(user.bio) && user.bio.length <= SHORT_BIO && !user.bio.includes('\n')
+    && socials.length > 0 && websites.length === 0 && repSites.length === 0
+  const socialIcons = socials.length > 0 && (
+    <div className="flex items-center gap-2">
+      {socials.map((sc) => {
+        const meta = PLATFORM_META[sc.platform] || { label: sc.platform, color: '#6b7280', Icon: null }
+        return (
+          <a
+            key={sc.platform}
+            href={sc.profile_url || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`${meta.label} (verified)`}
+            aria-label={meta.label}
+            className="w-10 h-10 rounded-full border border-gray-200 bg-white hover:border-violet-300 flex items-center justify-center transition-colors"
+          >
+            {meta.img ? (
+              <img src={meta.img} alt="" className="w-5 h-5 rounded object-cover" />
+            ) : meta.Icon ? (
+              <meta.Icon className="w-5 h-5" style={{ color: meta.color }} />
+            ) : (
+              <span className="w-5 h-5 rounded-full bg-gray-400" />
+            )}
+          </a>
+        )
+      })}
+    </div>
+  )
 
   const chip = 'inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-violet-300 hover:text-violet-700 transition-colors'
 
@@ -173,8 +204,17 @@ export default function PublicProfilePage() {
             )}
           </div>
 
-          {/* Only what they filled in: a paragraph, then one row of links. */}
-          {(user.bio || hasLinks) && (
+          {/* A one-line bio with only social icons: both on one row, so the card does not look
+              empty. flex-wrap drops the icons underneath on a phone if they do not fit. */}
+          {inlineBio && (
+            <div className="px-6 sm:px-8 py-6 border-t border-gray-100 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+              <p className="text-[15px] leading-relaxed text-gray-700">{user.bio}</p>
+              {socialIcons}
+            </div>
+          )}
+
+          {/* Otherwise only what they filled in: a paragraph, then one row of links. */}
+          {!inlineBio && (user.bio || hasLinks) && (
             <div className="px-6 sm:px-8 py-6 border-t border-gray-100 space-y-5">
               {user.bio && (
                 <div>
@@ -210,32 +250,7 @@ export default function PublicProfilePage() {
                       <span className="text-xs font-normal text-gray-400">Rep</span>
                     </a>
                   ))}
-                  {socials.length > 0 && (
-                  <div className="flex items-center gap-2">
-                  {socials.map((sc) => {
-                    const meta = PLATFORM_META[sc.platform] || { label: sc.platform, color: '#6b7280', Icon: null }
-                    return (
-                      <a
-                        key={sc.platform}
-                        href={sc.profile_url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`${meta.label} (verified)`}
-                        aria-label={meta.label}
-                        className="w-10 h-10 rounded-full border border-gray-200 bg-white hover:border-violet-300 flex items-center justify-center transition-colors"
-                      >
-                        {meta.img ? (
-                          <img src={meta.img} alt="" className="w-5 h-5 rounded object-cover" />
-                        ) : meta.Icon ? (
-                          <meta.Icon className="w-5 h-5" style={{ color: meta.color }} />
-                        ) : (
-                          <span className="w-5 h-5 rounded-full bg-gray-400" />
-                        )}
-                      </a>
-                    )
-                  })}
-                  </div>
-                  )}
+                  {socialIcons}
                 </div>
               )}
             </div>
