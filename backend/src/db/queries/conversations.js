@@ -18,6 +18,7 @@ export async function getConversationsForUser(userId) {
        other_user.full_name AS other_user_name,
        other_user.avatar_url AS other_user_avatar,
        other_user.display_name AS other_user_display_name,
+       other_user.username AS other_user_username,
        other_user.status AS other_user_status,
        other_user.last_seen_at AS other_user_last_seen_at,
        EXISTS (
@@ -63,7 +64,7 @@ export async function getConversationsForUser(userId) {
               cp.role,
               m.id, m.content, m.message_type, m.created_at, m.status, m.sender_id, sender.full_name, cp.last_read_at,
               cp.is_archived, cp.is_pinned, cp.is_favorite, cp.is_muted, cp.is_deleted,
-              other_user.id, other_user.full_name, other_user.avatar_url, other_user.display_name, other_user.last_seen_at
+              other_user.id, other_user.full_name, other_user.avatar_url, other_user.display_name, other_user.last_seen_at, other_user.username
      ORDER BY COALESCE(m.created_at, c.created_at) DESC`,
     [userId]
   )

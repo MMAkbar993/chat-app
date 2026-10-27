@@ -6,6 +6,8 @@ import { uploadFile } from '../../api/users'
 import AttachmentMenu from './AttachmentMenu'
 import MediaCaptionModal from './MediaCaptionModal'
 import EmojiPicker from './EmojiPicker'
+import MentionPicker from './MentionPicker'
+import { mentionQueryAt, filterMentionCandidates } from '../../utils/mentions'
 import { playSentSound } from '../../utils/sounds'
 import { getReplyPreviewText, getReplyImageUrl } from '../../utils/replyPreview'
 import { getUploadErrorMessage } from '../../utils/uploadError'
@@ -59,7 +61,7 @@ function toPending(files, fallbackType = 'file') {
   }
 }
 
-export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, onRemoveMediaPreview, onMediaProgress, editingMessage, onClearEdit, onEditSubmit, droppedFiles }) {
+export default function MessageInput({ conversationId, onSend, darkMode, replyTo, onClearReply, onMediaPreview, onRemoveMediaPreview, onMediaProgress, mentionCandidates = [], editingMessage, onClearEdit, onEditSubmit, droppedFiles }) {
   const { showToast } = useToast()
   const [text, setText] = useState('')
   const [showAttachMenu, setShowAttachMenu] = useState(false)
@@ -80,6 +82,31 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   const typingRef = useRef(false)
   const typingTimerRef = useRef(null)
   const textareaRef = useRef(null)
+  // "@" mentions: what is being typed after the @ (null when not mentioning) and the active row.
+  const [mention, setMention] = useState(null) // { query, start }
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const mentionMatches = mention ? filterMentionCandidates(mentionCandidates, mention.query) : []
+
+  function updateMention(value, caret) {
+    const found = mentionCandidates.length ? mentionQueryAt(value, caret) : null
+    setMention(found)
+    setMentionIndex(0)
+  }
+
+  function pickMention(person) {
+    const el = textareaRef.current
+    if (!mention || !el) return
+    const caret = el.selectionStart
+    const insert = `@${person.username} `
+    const next = text.slice(0, mention.start) + insert + text.slice(caret)
+    setText(next)
+    setMention(null)
+    requestAnimationFrame(() => {
+      const pos = mention.start + insert.length
+      el.focus()
+      el.setSelectionRange(pos, pos)
+    })
+  }
   const mediaRecorderRef = useRef(null)
   const chunksRef = useRef([])
   const recordTimerRef = useRef(null)
@@ -160,6 +187,7 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
 
   function handleChange(e) {
     setText(e.target.value)
+    updateMention(e.target.value, e.target.selectionStart)
     const el = e.target
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
@@ -222,6 +250,12 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
   }
 
   function handleKey(e) {
+    if (mentionMatches.length) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIndex((i) => (i + 1) % mentionMatches.length); return }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setMentionIndex((i) => (i - 1 + mentionMatches.length) % mentionMatches.length); return }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickMention(mentionMatches[mentionIndex] || mentionMatches[0]); return }
+      if (e.key === 'Escape') { e.preventDefault(); setMention(null); return }
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
@@ -475,13 +509,23 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
             </button>
           </div>
         ) : (
-          <div className={`flex-1 flex items-end gap-2 rounded-2xl px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+          <div className={`relative flex-1 flex items-end gap-2 rounded-2xl px-4 py-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            <MentionPicker
+              items={mentionMatches}
+              activeIndex={mentionIndex}
+              onPick={pickMention}
+              onHover={setMentionIndex}
+              darkMode={darkMode}
+            />
             <textarea
               ref={textareaRef}
               rows={1}
               value={text}
               onChange={handleChange}
               onKeyDown={handleKey}
+              onKeyUp={(e) => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) updateMention(text, e.currentTarget.selectionStart) }}
+              onClick={(e) => updateMention(text, e.currentTarget.selectionStart)}
+              onBlur={() => setMention(null)}
               onPaste={handlePaste}
               placeholder="Type Your Message"
               className={`flex-1 bg-transparent resize-none outline-none text-sm max-h-32 overflow-y-auto leading-5 py-0.5 ${

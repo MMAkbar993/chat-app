@@ -11,6 +11,7 @@ import ReadByPopover from './ReadByPopover'
 import { forwardMessageApi } from '../../api/conversations'
 import { getReplyPreviewText, getReplyImageUrl, hasReplyPreview } from '../../utils/replyPreview'
 import { apiErrorMessage } from '../../utils/apiError'
+import { MENTION_RE } from '../../utils/mentions'
 
 
 function formatTime(ts) {
@@ -58,10 +59,41 @@ function linkifyNode(node, keyPrefix) {
   )
 }
 
-function renderMessageText(text, query) {
+// @username becomes a link to that member's profile; a mention of the reader is highlighted so
+// it stands out in a busy group. Only touches plain string segments, like linkifyNode.
+function mentionifyNode(node, keyPrefix, myUsername) {
+  if (typeof node !== 'string' || !node.includes('@')) return [node]
+  const out = []
+  let last = 0
+  for (const m of node.matchAll(MENTION_RE)) {
+    const at = m.index + m[1].length
+    if (at > last) out.push(node.slice(last, at))
+    const username = m[2]
+    const isMe = myUsername && username.toLowerCase() === myUsername.toLowerCase()
+    out.push(
+      <a
+        key={`${keyPrefix}-${at}`}
+        href={`/u/${username}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className={`font-semibold hover:underline ${isMe ? 'rounded px-0.5 bg-amber-200/70 text-amber-900' : ''}`}
+      >
+        @{username}
+      </a>
+    )
+    last = at + 1 + username.length
+  }
+  if (last < node.length) out.push(node.slice(last))
+  return out
+}
+
+function renderMessageText(text, query, myUsername) {
   const highlighted = highlightText(text, query)
   const nodes = Array.isArray(highlighted) ? highlighted : [highlighted]
-  return nodes.flatMap((node, i) => linkifyNode(node, `link-${i}`))
+  return nodes
+    .flatMap((node, i) => linkifyNode(node, `link-${i}`))
+    .flatMap((node, i) => mentionifyNode(node, `mention-${i}`, myUsername))
 }
 
 // \p{Extended_Pictographic} covers emoji glyphs without also matching plain digits/punctuation
@@ -295,7 +327,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               // inheriting it from the bubble the way a file attachment's caption still does.
               const captionEl = caption && (
                 <p className={`whitespace-pre-wrap wrap-break-word ${mediaWithCaption ? 'px-3 pb-2 pt-1.5' : 'mt-1.5'}`}>
-                  {renderMessageText(caption, searchQuery)}
+                  {renderMessageText(caption, searchQuery, user?.username)}
                 </p>
               )
               // Large files are deleted after 30 days (backend jobs/uploadCleanup.js).
@@ -412,7 +444,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
               if (emojiOnly) return <p className="text-5xl leading-tight">{msg.content.trim()}</p>
               return (
                 <>
-                  <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery)}</p>
+                  <p className="whitespace-pre-wrap wrap-break-word">{renderMessageText(msg.content || '', searchQuery, user?.username)}</p>
                   {previewUrl && <LinkPreviewCard url={previewUrl} darkMode={darkMode} isMe={isMe} />}
                 </>
               )

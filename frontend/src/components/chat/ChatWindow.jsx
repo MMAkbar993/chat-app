@@ -322,6 +322,19 @@ export default function ChatWindow({ darkMode, onCallStart }) {
   if (!activeConversation) return null
 
   const isGroup = activeConversation.type === 'group'
+  // Who "@" can tag here: the other members of a group, or the other person in a one-to-one chat.
+  const mentionCandidates = isGroup
+    ? groupParticipants
+        .filter((p) => p.id !== user?.id)
+        .map((p) => ({ id: p.id, username: p.username, name: p.display_name || p.full_name, avatar_url: p.avatar_url }))
+    : activeConversation.other_user_username
+      ? [{
+          id: activeConversation.other_user_id,
+          username: activeConversation.other_user_username,
+          name: activeConversation.other_user_display_name || activeConversation.other_user_name,
+          avatar_url: activeConversation.other_user_avatar,
+        }]
+      : []
   // Announcement-mode groups: everyone can read, only admins can post. Enforced server-side
   // too (both the socket send path and the REST fallback) — this is just what lets the
   // composer disappear for a member instead of them finding out by having a send rejected.
@@ -815,6 +828,7 @@ export default function ChatWindow({ darkMode, onCallStart }) {
             onClearEdit={() => setEditingMessage(null)}
             onEditSubmit={handleEditMessage}
             droppedFiles={droppedFiles}
+            mentionCandidates={mentionCandidates}
           />
         )}
       </div>
