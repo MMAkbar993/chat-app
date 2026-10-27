@@ -217,14 +217,18 @@ export default function MessageInput({ conversationId, onSend, darkMode, replyTo
       cancelEdit()
       return
     }
-    // Don't clear the box until we know it actually went out, so a failed send doesn't
-    // silently eat what you typed.
-    const sent = await onSend(content, 'text', replyTo?.id || null)
-    if (sent === false) return
-    if (getNotifPrefs().sound !== false) playSentSound()
+    // The box clears straight away and the message shows as sending. If it fails, the text comes
+    // back (unless something new has been typed) so nothing is lost.
+    const replyId = replyTo?.id || null
     setText('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     onClearReply?.()
+    const sent = await onSend(content, 'text', replyId)
+    if (sent === false) {
+      setText((current) => current || content)
+      return
+    }
+    if (getNotifPrefs().sound !== false) playSentSound()
     socket?.emit('stop-typing', { conversationId })
     typingRef.current = false
     clearTimeout(typingTimerRef.current)

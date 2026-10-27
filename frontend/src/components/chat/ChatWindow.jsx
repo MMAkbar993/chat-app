@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useChat } from '../../context/ChatContext'
+import { newClientId } from '../../utils/clientId'
 import { useSocket } from '../../context/SocketContext'
 import { useToast } from '../../context/ToastContext'
 import { deleteMessageApi, deleteMessageForMeApi, editMessageApi, getPinnedMessageApi, pinMessageApi, unpinMessageApi } from '../../api/conversations'
@@ -189,12 +190,13 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     if (isNewConv) scrolledForConvRef.current = convId
     pinToBottom(!isNewConv)
 
-    if (!isNewConv) return
-    // Opening a conversation, the list keeps growing for a moment after this runs: avatars and
+    // Opening a conversation, or a new message arriving, the list keeps growing for a moment after this runs: avatars and
     // images decode, link previews resolve, fonts swap, a long message reflows. Each one makes
     // the real bottom lower than wherever we just landed — which is why opening a chat could
     // still leave it part-way up. Watching the container catches all of it, including content
     // that was not in the DOM when this effect ran, where the old per-image listeners could not.
+    // A picture that has just arrived is the common case: it has no height until it loads, so
+    // without this it ended up cut off below the bottom of the chat.
     let settled = false
     const observer = new ResizeObserver(() => { if (!settled) pinToBottom() })
     observer.observe(messagesContainerRef.current)
@@ -383,9 +385,32 @@ export default function ChatWindow({ darkMode, onCallStart }) {
     if (tempId) setMessages((prev) => prev.filter((m) => m.id !== tempId))
   }
 
+  // Text appears at once with a clock (like Telegram), and the real message replaces it when the
+  // server echoes it back. Waiting for the server before showing anything made a slow connection
+  // look like nothing happened, and people sent the same message twice.
   async function handleSend(content, messageType = 'text', replyToMessageId = null, caption = null, fileName = null) {
-    const sent = await sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption, fileName)
-    if (!sent) showToast("You're offline — reconnecting. Your message wasn't sent.", 'error')
+    const clientId = newClientId()
+    const pendingId = `pending-${clientId}`
+    if (messageType === 'text') {
+      setMessages((prev) => [...prev, {
+        id: pendingId,
+        client_id: clientId,
+        pending: true,
+        status: 'sending',
+        conversation_id: activeConversation.id,
+        sender_id: user.id,
+        sender_display_name: user.display_name || user.full_name,
+        message_type: 'text',
+        content,
+        reply_to_message_id: replyToMessageId,
+        created_at: new Date().toISOString(),
+      }])
+    }
+    const sent = await sendMessage(activeConversation.id, content, messageType, replyToMessageId, caption, fileName, clientId)
+    if (!sent) {
+      setMessages((prev) => prev.filter((m) => m.id !== pendingId))
+      showToast("You're offline — reconnecting. Your message wasn't sent.", 'error')
+    }
     return sent
   }
 

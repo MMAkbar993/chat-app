@@ -19,6 +19,14 @@ function formatTime(ts) {
 }
 
 function Ticks({ status }) {
+  if (status === 'sending') {
+    return (
+      <svg className="inline-block ml-1 w-3 h-3 align-middle text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="Sending">
+        <circle cx="12" cy="12" r="9" strokeWidth={2} />
+        <path strokeLinecap="round" strokeWidth={2} d="M12 7v5l3 2" />
+      </svg>
+    )
+  }
   if (status === 'read') {
     return <img src="/checkmark-read.png" alt="Read" className="inline-block ml-1 h-2.5 w-auto align-middle" />
   }
@@ -124,8 +132,8 @@ function isEmojiOnly(text) {
 // on the block wrapping both the image and the caption — a block with an explicit width does
 // not get overridden wider by a child's preferred width, so the caption is forced to wrap
 // within it instead of setting the container's size itself.
-const MEDIA_BOX_MAX_W = 380
-const MEDIA_BOX_MAX_H = 320
+const MEDIA_BOX_MAX_W = 420
+const MEDIA_BOX_MAX_H = 420
 const MEDIA_BOX_MIN_W = 160
 function fitMediaBoxWidth(naturalWidth, naturalHeight) {
   if (!naturalWidth || !naturalHeight) return null
@@ -196,6 +204,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
   }
 
   function openMenuFromRect(rect) {
+    if (msg.pending || msg.uploading) return
     setMenuDir(rect && window.innerHeight - rect.bottom < 300 ? 'up' : 'down')
     setShowMenu(true)
   }
@@ -371,7 +380,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                           onLoad={(e) => {
                             if (mediaWithCaption) setMediaBoxWidth(fitMediaBoxWidth(e.target.naturalWidth, e.target.naturalHeight))
                           }}
-                          className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`}
+                          className={`block max-w-full max-h-105 ${msg.uploading ? 'opacity-60' : ''}`}
                         />
                       </button>
                       {msg.uploading && (
@@ -404,7 +413,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
                           onLoadedMetadata={(e) => {
                             if (mediaWithCaption) setMediaBoxWidth(fitMediaBoxWidth(e.target.videoWidth, e.target.videoHeight))
                           }}
-                          className={`block max-w-full max-h-80 ${msg.uploading ? 'opacity-60' : ''}`}
+                          className={`block max-w-full max-h-105 ${msg.uploading ? 'opacity-60' : ''}`}
                         />
                         {!msg.uploading && (
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -550,7 +559,7 @@ export default function MessageBubble({ msg, darkMode, onReply, onEdit, onDelete
             <span className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>edited</span>
           )}
           <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatTime(msg.created_at)}</span>
-          {isMe && (inGroup && !msg.uploading && !msg.is_deleted ? (
+          {isMe && (inGroup && !msg.uploading && !msg.pending && !msg.is_deleted ? (
             <span className="relative inline-flex">
               <button
                 type="button"

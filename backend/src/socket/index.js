@@ -14,6 +14,8 @@ const onlineUsers = new Map()       // userId → socket count
 const groupCallRooms = new Map()    // callId → Map<userId, { name, avatar }>
 const activeCalls = new Map()       // userId → callId (users currently on a live call)
 const pendingGroupCalls = new Map() // callId → { callerId, pending: Set<userId> }
+const recentSends = new Map()       // "userId:clientId" → Promise of the ack, so a resend is not a second message
+const RECENT_SEND_TTL_MS = 5 * 60 * 1000
 
 function groupBySender(rows) {
   const map = {}
@@ -95,10 +97,23 @@ export function initSocket(httpServer) {
 
     // `ack` lets the sender find out whether this actually landed. Without it a send into a
     // half-dead socket looks identical to a successful one from the client's side.
-    socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, fileName, replyToMessageId }, ack) => {
+    socket.on('send-message', async ({ conversationId, content, messageType = 'text', mediaUrl, fileName, replyToMessageId, clientId }, ack) => {
+      // A resend of a message we already have (the sender's app retried after a slow reply, or
+      // they pressed Enter twice) gets the original's answer instead of a second copy.
+      const sendKey = typeof clientId === 'string' && clientId.length <= 64 ? `${userId}:${clientId}` : null
+      if (sendKey && recentSends.has(sendKey)) {
+        const earlier = await recentSends.get(sendKey).catch(() => null)
+        if (earlier?.ok) return ack?.(earlier)
+      }
+      let settle = () => {}
+      if (sendKey) {
+        recentSends.set(sendKey, new Promise((resolve) => { settle = resolve }))
+        setTimeout(() => recentSends.delete(sendKey), RECENT_SEND_TTL_MS)
+      }
+      const reply = (res) => { settle(res); ack?.(res) }
       try {
         const ok = await isParticipant(conversationId, userId)
-        if (!ok) return ack?.({ ok: false, error: 'Not a participant' })
+        if (!ok) return reply({ ok: false, error: 'Not a participant' })
 
         const participants = await getParticipants(conversationId)
 
@@ -109,7 +124,7 @@ export function initSocket(httpServer) {
         if (convRestricted) {
           const senderRole = participants.find((p) => p.id === userId)?.role
           if (senderRole !== 'admin') {
-            return ack?.({ ok: false, error: 'Only admins can send messages in this group' })
+            return reply({ ok: false, error: 'Only admins can send messages in this group' })
           }
         }
 
@@ -140,16 +155,18 @@ export function initSocket(httpServer) {
           reply_message_type: replyMsg?.message_type || null,
           reply_media_url: replyMediaUrl,
           reply_sender_name: replyMsg?.sender_display_name || replyMsg?.sender_name || null,
+          // Lets the sender's app swap its "sending" bubble for this one.
+          client_id: sendKey ? clientId : null,
         }
 
         // Emit to all participants (including sender for echo)
         participants.forEach((p) => {
           io.to(`user:${p.id}`).emit('new-message', fullMsg)
         })
-        ack?.({ ok: true, id: msg.id })
+        reply({ ok: true, id: msg.id })
       } catch (err) {
         console.error('send-message error:', err)
-        ack?.({ ok: false, error: 'Could not send' })
+        reply({ ok: false, error: 'Could not send' })
       }
     })
 
