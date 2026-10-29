@@ -357,11 +357,9 @@ export default function UserProfileModal({
             </div>
           )}
           {status && (
-            <p className={`text-sm mt-1.5 flex items-start gap-1.5 ${dm ? 'text-violet-300' : 'text-violet-600'}`}>
-              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.9 9.9 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span>{status}</span>
+            // Shown as a quote, the same as on the public profile page.
+            <p className={`text-sm mt-1.5 italic ${dm ? 'text-violet-300' : 'text-violet-600'}`}>
+              "{status}"
             </p>
           )}
           {bio && (

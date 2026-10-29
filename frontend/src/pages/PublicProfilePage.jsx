@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { FaFacebook, FaLinkedin, FaYoutube, FaInstagram, FaTwitch } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
@@ -54,9 +54,6 @@ const CHECK = 'M5 13l4 4L19 7'
 const hostOf = (url) => url.replace(/^https?:\/\//, '').replace(/\/$/, '')
 const hrefOf = (url) => (url.startsWith('http') ? url : `https://${url}`)
 
-// About text longer than this many characters starts folded to a few lines, so one long bio
-// cannot stretch the card.
-const LONG_BIO = 220
 // About text up to this length fits on one line beside the social icons.
 const SHORT_BIO = 55
 
@@ -68,6 +65,20 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [bioOpen, setBioOpen] = useState(false)
+  // About text starts folded to 4 lines so one long bio cannot stretch the card. "Show more" only
+  // appears when the text really is cut off at the current width: counting characters showed it
+  // for bios that already fit, and clicking it changed nothing.
+  const bioRef = useRef(null)
+  const [bioCut, setBioCut] = useState(false)
+  useEffect(() => {
+    const el = bioRef.current
+    if (!el || bioOpen) return
+    const measure = () => setBioCut(el.scrollHeight > el.clientHeight + 1)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [user?.bio, bioOpen])
 
   useEffect(() => {
     client.get(`/users/profile/${username}`)
@@ -114,7 +125,6 @@ export default function PublicProfilePage() {
   const repSites = user.rep_websites || []
   const socials = user.social_connections || []
   const hasLinks = websites.length > 0 || repSites.length > 0 || socials.length > 0
-  const longBio = (user.bio || '').length > LONG_BIO
   // Short enough to sit on one line beside the icons (no websites to show, which need their own row).
   const inlineBio = Boolean(user.bio) && user.bio.length <= SHORT_BIO && !user.bio.includes('\n')
     && socials.length > 0 && websites.length === 0 && repSites.length === 0
@@ -218,10 +228,10 @@ export default function PublicProfilePage() {
             <div className="px-6 sm:px-8 py-6 border-t border-gray-100 space-y-5">
               {user.bio && (
                 <div>
-                  <p className={`text-[15px] leading-relaxed text-gray-700 whitespace-pre-line ${longBio && !bioOpen ? 'line-clamp-4' : ''}`}>
+                  <p ref={bioRef} className={`text-[15px] leading-relaxed text-gray-700 whitespace-pre-line ${bioOpen ? '' : 'line-clamp-4'}`}>
                     {user.bio}
                   </p>
-                  {longBio && (
+                  {(bioCut || bioOpen) && (
                     <button onClick={() => setBioOpen((o) => !o)} className="mt-1 text-sm font-medium text-violet-600 hover:underline">
                       {bioOpen ? 'Show less' : 'Show more'}
                     </button>
