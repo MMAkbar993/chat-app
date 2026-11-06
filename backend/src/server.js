@@ -25,6 +25,7 @@ import { businessRouter } from './routes/business.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
 import { ogRouter } from './routes/og.routes.js'
 import { linkPreviewRouter } from './routes/linkPreview.routes.js'
+import { giveawayRouter } from './routes/giveaway.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { apiLimiter } from './middleware/rateLimit.js'
 
@@ -128,6 +129,7 @@ export function createApp() {
   app.use('/api/admin', adminRouter)
   app.use('/api/link-preview', linkPreviewRouter)
   app.use('/api/support', supportRouter)
+  app.use('/api/giveaway', giveawayRouter)
 
   app.use(errorHandler)
 
