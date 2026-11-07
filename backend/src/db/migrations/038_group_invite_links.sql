@@ -1,3 +1,4 @@
+jV1bq?ChbDi2n4tj
 -- Shareable join links for groups. The code is what's in the URL, so it's generated randomly
 -- rather than derived from the group id — a sequential or guessable code would let anyone
 -- enumerate their way into private groups.
