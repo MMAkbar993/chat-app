@@ -4,6 +4,7 @@ import {
   CHANCE_SCALE, giveawayToday, giveawayDates, giveawayPhase, nextResetAt, spinForEntrant, publicPrize,
 } from '../services/giveaway.service.js'
 import { listPrizesWithStock, findEntrantById, listEntrantSpins, listEntrantWins } from '../db/queries/giveaway.js'
+import { startJoin, verifyJoin, requestInfo, checkCountry } from '../services/giveawayJoin.service.js'
 
 // Giveaway entrants are not Pulse members: they sign in to the giveaway with an email code
 // (Phase 2) and get this token, which only the giveaway routes accept. purpose stops a Pulse
@@ -92,8 +93,32 @@ export async function getGiveawayState(req, res, next) {
 
 export async function spinGiveaway(req, res, next) {
   try {
+    checkCountry(requestInfo(req).country)
     const result = await spinForEntrant(req.entrant.id)
     res.json(result)
+  } catch (err) {
+    if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
+}
+
+// Join, or sign back in: step 1 emails a code.
+export async function joinStart(req, res, next) {
+  try {
+    const { email, category, turnstileToken, deviceId } = req.body || {}
+    res.json(await startJoin({ email, category, turnstileToken, deviceId }, req))
+  } catch (err) {
+    if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
+}
+
+// Step 2: the code from the email. Answers with the giveaway token the page keeps.
+export async function joinVerify(req, res, next) {
+  try {
+    const { email, code, category, deviceId } = req.body || {}
+    const { entrantId, isNew } = await verifyJoin({ email, code, category, deviceId }, req)
+    res.json({ token: signEntrantToken(entrantId), isNew })
   } catch (err) {
     if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
     next(err)

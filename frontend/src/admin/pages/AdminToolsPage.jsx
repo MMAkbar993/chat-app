@@ -26,6 +26,7 @@ const EMAIL_LABELS = {
   website_verify_code: 'Website Verification Code (Representative)',
   admin_new_signup: 'Admin: New Signup',
   kyc_reminder: 'KYC Reminder (finish ID check)',
+  giveaway_code: 'Christmas Giveaway: Sign In Code',
 }
 
 // appName and currentYear are available on every template automatically (merged in by the
@@ -43,6 +44,7 @@ const EMAIL_PLACEHOLDERS = {
   website_verified: ['appName', 'url', 'currentYear'],
   website_verify_code: ['appName', 'domain', 'code', 'currentYear'],
   admin_new_signup: ['appName', 'username', 'email', 'fullName', 'currentYear'],
+  giveaway_code: ['appName', 'code', 'currentYear'],
 }
 
 function BroadcastsSection() {

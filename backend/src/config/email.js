@@ -100,6 +100,30 @@ export async function sendWebsiteVerifyCode(email, code, domain) {
   await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
+// The code for joining (or signing back in to) the Christmas giveaway. Like the website code,
+// always sent and the code put back if an edit to the template dropped it.
+export async function sendGiveawayCodeEmail(email, code) {
+  const setting = await getEmailSetting('giveaway_code')
+  const vars = { appName: APP_NAME, code: escapeHtml(code) }
+  const subject = setting ? render(setting.subject, vars) : `Your Christmas giveaway code: ${code}`
+  let html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#b91c1c">25 Days of Christmas</h2>
+        <p>Here is your code for the Christmas giveaway. It expires in 15 minutes.</p>
+        <div style="font-size:2rem;font-weight:bold;letter-spacing:0.3em;color:#b91c1c;padding:16px 0">${escapeHtml(code)}</div>
+      </div>
+    `
+  if (!html.includes(String(code))) {
+    html += `<div style="font-family:sans-serif;max-width:480px;margin:auto;font-size:2rem;font-weight:bold;letter-spacing:0.3em;color:#b91c1c;padding:16px 0">${escapeHtml(code)}</div>`
+  }
+
+  if (!transporter) {
+    console.log(`[DEV] Giveaway code for ${email}: ${code}`)
+    return
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
+}
+
 // Nudges a member who signed up but has not finished the identity check (admin panel button).
 // Returns false when the template is switched off in System Emails, so the admin is told nothing
 // was sent instead of being told it worked.
