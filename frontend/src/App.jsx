@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { SocketProvider } from './context/SocketContext'
@@ -44,6 +45,10 @@ import AdminLayout from './admin/components/AdminLayout'
 import PrivateBetaBadge from './components/ui/PrivateBetaBadge'
 import CookieConsent from './components/legal/CookieConsent'
 import { initAnalytics } from './utils/cookieConsent'
+
+// The Christmas giveaway pages load only when someone opens them.
+const GiveawayPage = lazy(() => import('./features/giveaway/GiveawayPage'))
+const GiveawayTermsPage = lazy(() => import('./features/giveaway/GiveawayTermsPage'))
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-lavender">
@@ -128,6 +133,8 @@ export default function App() {
           <Route path="/" element={<GuestRoute><HomePage /></GuestRoute>} />
           {/* Business share link — opened by visitors to a company's website, usually signed out. */}
           <Route path="/b/:slug" element={<BusinessProfilePage />} />
+          <Route path="/christmas" element={<Suspense fallback={<Spinner />}><GiveawayPage /></Suspense>} />
+          <Route path="/christmas/terms" element={<Suspense fallback={<Spinner />}><GiveawayTermsPage /></Suspense>} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiePolicyPage />} />
