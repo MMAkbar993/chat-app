@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { authMiddleware } from '../middleware/auth.js'
-import { getGiveawayState, spinGiveaway, giveawayEntrantAuth, joinStart, joinVerify, claimPreview, claimPrize } from '../controllers/giveaway.controller.js'
+import { getGiveawayState, spinGiveaway, giveawayEntrantAuth, joinStart, joinVerify, claimPreview, claimPrize, previewReset } from '../controllers/giveaway.controller.js'
 
 // One spin a day is enforced in the database; this only stops a script hammering the endpoint.
 const spinLimiter = rateLimit({
@@ -39,3 +39,4 @@ giveawayRouter.post('/join/start', joinLimiter, joinStart)
 giveawayRouter.post('/join/verify', joinLimiter, joinVerify)
 giveawayRouter.get('/claim/:code', claimLimiter, claimPreview)
 giveawayRouter.post('/claim', claimLimiter, authMiddleware, claimPrize)
+giveawayRouter.post('/preview/reset', spinLimiter, giveawayEntrantAuth, previewReset)

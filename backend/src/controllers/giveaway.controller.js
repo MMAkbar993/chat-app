@@ -2,8 +2,9 @@ import jwt from 'jsonwebtoken'
 import { config } from '../config/env.js'
 import {
   CHANCE_SCALE, giveawayToday, giveawayDates, giveawayPhase, nextResetAt, spinForEntrant, publicPrize,
+  isPreviewEmail, validPreviewDay,
 } from '../services/giveaway.service.js'
-import { listPrizesWithStock, findEntrantById, listEntrantSpins, listEntrantWins } from '../db/queries/giveaway.js'
+import { listPrizesWithStock, findEntrantById, listEntrantSpins, listEntrantWins, deleteEntrantPreviewData } from '../db/queries/giveaway.js'
 import { startJoin, verifyJoin, requestInfo, checkCountry } from '../services/giveawayJoin.service.js'
 import { previewCode, claimCode } from '../services/giveawayClaim.service.js'
 
@@ -49,21 +50,32 @@ function stockLabel(p) {
 // Everything the giveaway page needs: the dates, today's state, the prize list with odds and
 // stock, and, when signed in, this person's spins and prizes. Public, so the page can show the
 // prizes before anyone joins.
+// The day a preview tester is playing: the one they picked, else today if it is a giveaway day,
+// else the first day.
+function previewDay(requested) {
+  if (validPreviewDay(requested)) return requested
+  const today = giveawayToday()
+  return validPreviewDay(today) ? today : giveawayDates().start
+}
+
 export async function getGiveawayState(req, res, next) {
   try {
-    const today = giveawayToday()
-    const prizes = await listPrizesWithStock(today)
+    const id = entrantIdFrom(req)
+    const entrant = id ? await findEntrantById(id) : null
+    const preview = Boolean(entrant && isPreviewEmail(entrant.email))
+    const today = preview ? previewDay(req.query.day) : giveawayToday()
+
+    const prizes = await listPrizesWithStock(today, preview)
     const used = prizes.filter((p) => p.active).reduce((sum, p) => sum + p.chance, 0)
 
     let me = null
-    const id = entrantIdFrom(req)
-    const entrant = id ? await findEntrantById(id) : null
     if (entrant) {
-      const [spins, wins] = await Promise.all([listEntrantSpins(entrant.id), listEntrantWins(entrant.id)])
+      const [spins, wins] = await Promise.all([listEntrantSpins(entrant.id, preview), listEntrantWins(entrant.id, preview)])
       me = {
         email: entrant.email,
         category: entrant.category,
-        finished: Boolean(entrant.finished_at),
+        preview,
+        finished: preview ? wins.some((w) => w.ends_game) : Boolean(entrant.finished_at),
         blocked: Boolean(entrant.blocked_at),
         spunToday: spins.some((s) => s.day === today),
         spins: spins.map((s) => ({ day: s.day, outcome: s.outcome })),
@@ -78,7 +90,8 @@ export async function getGiveawayState(req, res, next) {
       ...giveawayDates(),
       today,
       phase: giveawayPhase(today),
-      nextResetAt: nextResetAt(),
+      nextResetAt: preview ? null : nextResetAt(),
+      preview,
       noPrizeChance: Math.max(0, CHANCE_SCALE - used) / (CHANCE_SCALE / 100),
       prizes: prizes.map((p) => ({
         ...publicPrize(p),
@@ -95,7 +108,10 @@ export async function getGiveawayState(req, res, next) {
 export async function spinGiveaway(req, res, next) {
   try {
     checkCountry(requestInfo(req).country)
-    const result = await spinForEntrant(req.entrant.id)
+    const preview = isPreviewEmail(req.entrant.email)
+    const result = preview
+      ? await spinForEntrant(req.entrant.id, { preview: true, today: previewDay(req.body?.day) })
+      : await spinForEntrant(req.entrant.id)
     res.json(result)
   } catch (err) {
     if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
@@ -143,6 +159,17 @@ export async function claimPrize(req, res, next) {
     res.json(await claimCode(req.user, code, walletAddress, requestInfo(req).country))
   } catch (err) {
     if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
+}
+
+// Preview mode only: a tester wipes their own test spins and prizes to play again from scratch.
+export async function previewReset(req, res, next) {
+  try {
+    if (!isPreviewEmail(req.entrant.email)) return res.status(403).json({ error: 'Only for preview testers.' })
+    await deleteEntrantPreviewData(req.entrant.id)
+    res.json({ ok: true })
+  } catch (err) {
     next(err)
   }
 }

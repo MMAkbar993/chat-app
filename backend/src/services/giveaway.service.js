@@ -35,6 +35,21 @@ export function giveawayToday(now = new Date()) {
   return now.toISOString().slice(0, 10)
 }
 
+// Preview mode: these emails can play before the start, on any day they choose (the page shows
+// them a day picker). Their spins and wins are flagged is_preview and counted apart from real
+// ones. Empty the list (and run npm run giveaway:reset-preview) before launch.
+const PREVIEW_EMAILS = (process.env.GIVEAWAY_PREVIEW_EMAILS || '')
+  .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+
+export function isPreviewEmail(email) {
+  return PREVIEW_EMAILS.includes(String(email || '').trim().toLowerCase())
+}
+
+// A preview day must be one of the giveaway's days.
+export function validPreviewDay(day) {
+  return DAY_RE.test(day || '') && day >= START_DAY && day <= END_DAY
+}
+
 export function giveawayDates() {
   return { start: START_DAY, end: END_DAY, claimDeadline: CLAIM_DEADLINE_DAY }
 }
@@ -66,9 +81,9 @@ export function drawPrize(prizes, roll = randomInt(0, CHANCE_SCALE)) {
 
 // Claim codes like XMAS-7K2Q-M9TD. No 0/O, 1/I/L, so they are easy to type from a screenshot.
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-export function newClaimCode() {
+export function newClaimCode(preview = false) {
   const part = () => Array.from({ length: 4 }, () => CODE_ALPHABET[randomInt(0, CODE_ALPHABET.length)]).join('')
-  return `XMAS-${part()}-${part()}`
+  return preview ? `XMAS-TEST-${part()}` : `XMAS-${part()}-${part()}`
 }
 
 function fail(status, message, reason) {
@@ -82,7 +97,9 @@ function fail(status, message, reason) {
 // Runs in one transaction. The entrant's row is locked first, so two clicks at once spin once;
 // the drawn prize's row is locked while its stock is counted, so the last unit of a prize cannot
 // go to two people.
-export async function spinForEntrant(entrantId, { today = giveawayToday(), roll } = {}) {
+// preview: a preview mode spin (see isPreviewEmail). It plays exactly like a real one, but only
+// against other preview spins: its own stock counts, its own "already won", its own vouchers.
+export async function spinForEntrant(entrantId, { today = giveawayToday(), roll, preview = false } = {}) {
   if (giveawayPhase(today) === 'before') throw fail(400, 'The giveaway has not started yet.', 'not_started')
   if (giveawayPhase(today) === 'ended') throw fail(400, 'The giveaway has ended.', 'ended')
 
@@ -96,7 +113,16 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll 
     )
     if (!entrant) throw fail(404, 'Entry not found.', 'no_entrant')
     if (entrant.blocked_at) throw fail(403, 'This entry can no longer take part.', 'blocked')
-    if (entrant.finished_at) throw fail(409, 'You have already won your prize. Thanks for playing!', 'finished')
+    if (preview) {
+      const { rows: [done] } = await client.query(
+        `SELECT 1 FROM giveaway_wins w JOIN giveaway_prizes p ON p.key = w.prize_key
+         WHERE w.entrant_id = $1 AND w.is_preview AND p.ends_game LIMIT 1`,
+        [entrantId]
+      )
+      if (done) throw fail(409, 'You have already won your prize. Thanks for playing!', 'finished')
+    } else if (entrant.finished_at) {
+      throw fail(409, 'You have already won your prize. Thanks for playing!', 'finished')
+    }
 
     const { rows: [already] } = await client.query(
       `SELECT 1 FROM giveaway_spins WHERE entrant_id = $1 AND spin_day = $2`,
@@ -116,8 +142,8 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll 
       outcome = 'prize'
       if (!drawn.ends_game) {
         const { rows: [held] } = await client.query(
-          `SELECT 1 FROM giveaway_wins WHERE entrant_id = $1 AND prize_key = $2`,
-          [entrantId, drawn.key]
+          `SELECT 1 FROM giveaway_wins WHERE entrant_id = $1 AND prize_key = $2 AND is_preview = $3`,
+          [entrantId, drawn.key, preview]
         )
         if (held) outcome = 'duplicate'
       }
@@ -126,8 +152,8 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll 
         await client.query(`SELECT 1 FROM giveaway_prizes WHERE key = $1 FOR UPDATE`, [drawn.key])
         const { rows: [counts] } = await client.query(
           `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE won_day = $2)::int AS today
-           FROM giveaway_wins WHERE prize_key = $1`,
-          [drawn.key, today]
+           FROM giveaway_wins WHERE prize_key = $1 AND is_preview = $3`,
+          [drawn.key, today, preview]
         )
         if ((drawn.total_limit !== null && counts.total >= drawn.total_limit) ||
             (drawn.daily_limit !== null && counts.today >= drawn.daily_limit)) {
@@ -135,17 +161,17 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll 
         }
       }
       if (outcome === 'prize') {
-        win = await insertWin(client, entrantId, drawn.key, today)
+        win = await insertWin(client, entrantId, drawn.key, today, preview)
       }
     }
 
     await client.query(
-      `INSERT INTO giveaway_spins (entrant_id, spin_day, drawn_prize, outcome, win_id) VALUES ($1, $2, $3, $4, $5)`,
-      [entrantId, today, drawn?.key || null, outcome, win?.id || null]
+      `INSERT INTO giveaway_spins (entrant_id, spin_day, drawn_prize, outcome, win_id, is_preview) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [entrantId, today, drawn?.key || null, outcome, win?.id || null, preview]
     )
 
     const finished = Boolean(win && drawn.ends_game)
-    if (finished) {
+    if (finished && !preview) {
       await client.query(`UPDATE giveaway_entrants SET finished_at = NOW() WHERE id = $1`, [entrantId])
     }
 
@@ -169,13 +195,13 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll 
 }
 
 // A code clash is about one in a trillion per pair, but retry rather than fail a winning spin.
-async function insertWin(client, entrantId, prizeKey, today) {
+async function insertWin(client, entrantId, prizeKey, today, preview) {
   for (let attempt = 0; attempt < 5; attempt++) {
     await client.query('SAVEPOINT win_code')
     try {
       const { rows: [row] } = await client.query(
-        `INSERT INTO giveaway_wins (entrant_id, prize_key, won_day, code) VALUES ($1, $2, $3, $4) RETURNING id, code`,
-        [entrantId, prizeKey, today, newClaimCode()]
+        `INSERT INTO giveaway_wins (entrant_id, prize_key, won_day, code, is_preview) VALUES ($1, $2, $3, $4, $5) RETURNING id, code`,
+        [entrantId, prizeKey, today, newClaimCode(preview), preview]
       )
       await client.query('RELEASE SAVEPOINT win_code')
       return row

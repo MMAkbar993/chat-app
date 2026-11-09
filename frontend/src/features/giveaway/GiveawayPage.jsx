@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import './giveaway.css'
-import { fetchState, spin, getToken, setToken, errorMessage } from './giveawayApi'
+import { fetchState, spin, getToken, setToken, errorMessage, setPreviewDay, resetPreview } from './giveawayApi'
 import { useGiveawayMusic } from './useGiveawayMusic'
 import SpinWheel, { CLAIM_PATH } from './SpinWheel'
 import JoinModal from './JoinModal'
@@ -155,6 +155,36 @@ function Faq() {
   )
 }
 
+// Shown only to preview testers (GIVEAWAY_PREVIEW_EMAILS on the server): pick any December day to
+// play, and wipe your test spins to start again. Test prizes never touch real prize stock.
+function PreviewBar({ days, today, onDay, onReset }) {
+  const [busy, setBusy] = useState(false)
+  async function reset() {
+    if (!window.confirm('Delete all your test spins and test prizes?')) return
+    setBusy(true)
+    try { await onReset() } finally { setBusy(false) }
+  }
+  return (
+    <div className="relative z-20 border-b border-amber-300/40 bg-amber-300 text-[#0b1d33]">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm">
+        <span className="font-bold">🧪 Preview mode</span>
+        <span className="hidden sm:inline">Only testers see this. Test prizes do not use real stock.</span>
+        <label className="ml-auto flex items-center gap-2 font-semibold">
+          Day
+          <select value={today} onChange={(e) => onDay(e.target.value)}
+            className="rounded-lg border border-[#0b1d33]/30 bg-white px-2 py-1 font-semibold">
+            {days.map((d, i) => <option key={d} value={d}>{i + 1} December</option>)}
+          </select>
+        </label>
+        <button type="button" onClick={reset} disabled={busy}
+          className="rounded-lg bg-[#0b1d33] px-3 py-1.5 font-semibold text-white hover:bg-[#16304f] disabled:opacity-50">
+          {busy ? 'Resetting…' : 'Reset my test spins'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function GiveawayPage() {
   usePageTitle()
   const music = useGiveawayMusic()
@@ -207,6 +237,18 @@ export default function GiveawayPage() {
     }
   }
 
+  function pickPreviewDay(day) {
+    setPreviewDay(day)
+    setHint('')
+    load()
+  }
+
+  async function doPreviewReset() {
+    await resetPreview()
+    setHint('Your test spins and prizes were deleted.')
+    load()
+  }
+
   function signOut() {
     setToken(null)
     load()
@@ -219,6 +261,7 @@ export default function GiveawayPage() {
   return (
     <div className="xmas-page relative min-h-screen overflow-x-hidden text-white">
       <Snow />
+      {state?.preview && <PreviewBar days={days} today={state.today} onDay={pickPreviewDay} onReset={doPreviewReset} />}
 
       <header className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4">
         <Link to="/" className="flex items-center gap-2.5 rounded" aria-label="Pulse home">
@@ -264,7 +307,9 @@ export default function GiveawayPage() {
             {state?.phase === 'open' && (me?.spunToday || me?.finished)
               ? (me.finished
                 ? <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-5 py-4 font-semibold">You won your big prize! Claim it on Pulse below.</p>
-                : <Countdown to={state.nextResetAt} label="Your next spin unlocks in" />)
+                : state.preview
+                  ? <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-5 py-4">You have spun on this day. Pick another day in the preview bar.</p>
+                  : <Countdown to={state.nextResetAt} label="Your next spin unlocks in" />)
               : null}
             {state?.phase === 'open' && !me && (
               <button type="button" onClick={() => setJoinOpen(true)}

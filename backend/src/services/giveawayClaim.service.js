@@ -72,7 +72,7 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
   try {
     await client.query('BEGIN')
     const { rows: [row] } = await client.query(
-      `SELECT w.id, w.entrant_id, w.claimed_by, w.conversation_id, w.code,
+      `SELECT w.id, w.entrant_id, w.claimed_by, w.conversation_id, w.code, w.is_preview,
               p.key, p.name, p.needs_wallet, p.pro_months, p.pro_lifetime
        FROM giveaway_wins w JOIN giveaway_prizes p ON p.key = w.prize_key
        WHERE w.code = $1 FOR UPDATE OF w`,
@@ -176,6 +176,7 @@ async function openHostChat(user, win, proEndsAt) {
 
   const first = (user.display_name || user.full_name || '').split(' ')[0]
   const lines = [
+    ...(win.is_preview ? ['🧪 TEST PRIZE from giveaway preview mode, not a real win.'] : []),
     `🎄 Congratulations${first ? `, ${first}` : ''}! You won ${win.name} in the Affiliate Roulette × Pulse Christmas giveaway.`,
     `Prize code: ${win.code}`,
   ]

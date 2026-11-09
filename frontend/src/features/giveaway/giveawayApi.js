@@ -39,9 +39,24 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Preview mode (testers only, decided by the server): the December day being tried. Kept for the
+// browser tab, so a reload stays on the same day.
+const PREVIEW_DAY_KEY = 'pulse_xmas_preview_day'
+export function getPreviewDay() {
+  try { return sessionStorage.getItem(PREVIEW_DAY_KEY) } catch { return null }
+}
+export function setPreviewDay(day) {
+  try { sessionStorage.setItem(PREVIEW_DAY_KEY, day) } catch { /* storage unavailable */ }
+}
+
 export async function fetchState() {
-  const { data } = await api.get('/state')
+  const day = getPreviewDay()
+  const { data } = await api.get('/state', { params: day ? { day } : {} })
   return data
+}
+
+export async function resetPreview() {
+  await api.post('/preview/reset')
 }
 
 export async function startJoin({ email, category, turnstileToken }) {
@@ -56,7 +71,8 @@ export async function verifyJoin({ email, code, category }) {
 }
 
 export async function spin() {
-  const { data } = await api.post('/spin')
+  const day = getPreviewDay()
+  const { data } = await api.post('/spin', day ? { day } : {})
   return data
 }
 
