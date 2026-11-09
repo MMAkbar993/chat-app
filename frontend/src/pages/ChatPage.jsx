@@ -8,6 +8,8 @@ import { markTourSeen } from '../api/users'
 import client from '../api/client'
 import { PENDING_DM_KEY, PENDING_DM_EVENT } from '../utils/pendingDm'
 import { PENDING_JOIN_KEY } from '../utils/pendingJoin'
+import { takePendingClaim } from '../utils/pendingClaim'
+import { useNavigate } from 'react-router-dom'
 import { joinGroupByInvite } from '../api/groups'
 import { playRingtone, stopRingtone } from '../utils/sounds'
 import Sidebar from '../components/chat/Sidebar'
@@ -109,6 +111,14 @@ export default function ChatPage() {
         // Revoked while they were signing up, most likely. They're in the app either way.
       })
   }, [openConversation])
+
+  // A Christmas giveaway winner who went through sign up and the ID check from the claim page:
+  // back to /claim to finish claiming (features/giveaway/ClaimPrizePage.jsx).
+  const navigate = useNavigate()
+  useEffect(() => {
+    const code = takePendingClaim()
+    if (code) navigate(`/claim?code=${encodeURIComponent(code)}`)
+  }, [navigate])
 
   // A ?conversation=<id> deep link opens that thread. Group invite links land here after
   // joining, and nothing was reading the parameter, so following one dropped people on an

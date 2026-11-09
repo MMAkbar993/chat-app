@@ -3,7 +3,7 @@ import { getOnlineUserCount } from '../../socket/index.js'
 import { getSalesTotals } from './payments.js'
 
 // Mirrors backend/src/utils/plan.js's isProUser() as SQL — keep in sync if that logic changes.
-const PRO_SQL = `subscription_plan IN ('monthly','yearly') AND subscription_status IN ('active','past_due')`
+const PRO_SQL = `((subscription_plan IN ('monthly','yearly') AND subscription_status IN ('active','past_due')) OR pro_ends_at > NOW())`
 
 export async function findAdminById(id) {
   const result = await query(

@@ -5,6 +5,7 @@ import {
 } from '../services/giveaway.service.js'
 import { listPrizesWithStock, findEntrantById, listEntrantSpins, listEntrantWins } from '../db/queries/giveaway.js'
 import { startJoin, verifyJoin, requestInfo, checkCountry } from '../services/giveawayJoin.service.js'
+import { previewCode, claimCode } from '../services/giveawayClaim.service.js'
 
 // Giveaway entrants are not Pulse members: they sign in to the giveaway with an email code
 // (Phase 2) and get this token, which only the giveaway routes accept. purpose stops a Pulse
@@ -119,6 +120,27 @@ export async function joinVerify(req, res, next) {
     const { email, code, category, deviceId } = req.body || {}
     const { entrantId, isNew } = await verifyJoin({ email, code, category, deviceId }, req)
     res.json({ token: signEntrantToken(entrantId), isNew })
+  } catch (err) {
+    if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
+}
+
+// Claiming on Pulse. The preview is public (the claim page shows the prize before sign in);
+// claiming needs a signed in, verified Pulse account.
+export async function claimPreview(req, res, next) {
+  try {
+    res.json(await previewCode(req.params.code))
+  } catch (err) {
+    if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
+}
+
+export async function claimPrize(req, res, next) {
+  try {
+    const { code, walletAddress } = req.body || {}
+    res.json(await claimCode(req.user, code, walletAddress, requestInfo(req).country))
   } catch (err) {
     if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
     next(err)

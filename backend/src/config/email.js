@@ -124,6 +124,32 @@ export async function sendGiveawayCodeEmail(email, code) {
   await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
+// A week before free Pro time (e.g. won in the Christmas giveaway) runs out. Returns false when
+// the template is switched off in System Emails.
+export async function sendProEndingSoonEmail(email, name, endsAt) {
+  const setting = await getEmailSetting('pro_ending_soon')
+  if (setting && !setting.enabled) return false
+
+  const endDate = new Date(endsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  const upgradeUrl = `${config.frontendUrl}/chat`
+  const vars = { appName: APP_NAME, name: escapeHtml(name || 'there'), endDate, upgradeUrl }
+  const subject = setting ? render(setting.subject, vars) : `Your free ${APP_NAME} Pro ends on ${endDate}`
+  const html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#7c3aed">Your Pro time is almost up</h2>
+        <p>Hi ${escapeHtml(name || 'there')}, your free ${APP_NAME} Pro ends on <strong>${endDate}</strong>. After that your account moves to the free plan.</p>
+        <p><a href="${upgradeUrl}" style="color:#7c3aed;font-weight:bold">Keep Pro</a></p>
+      </div>
+    `
+
+  if (!transporter) {
+    console.log(`[DEV] Pro ending soon email for ${email} (ends ${endDate})`)
+    return true
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
+  return true
+}
+
 // Nudges a member who signed up but has not finished the identity check (admin panel button).
 // Returns false when the template is switched off in System Emails, so the admin is told nothing
 // was sent instead of being told it worked.

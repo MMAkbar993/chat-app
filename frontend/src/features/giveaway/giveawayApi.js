@@ -72,3 +72,9 @@ export const CATEGORIES = [
   { value: 'affiliate_network', label: 'Affiliate Network' },
   { value: 'other', label: 'Other (everyone else in iGaming)' },
 ]
+
+// What a prize code is for. Public: the claim page shows the prize before anyone signs in.
+export async function previewClaim(code) {
+  const { data } = await api.get(`/claim/${encodeURIComponent(code)}`)
+  return data
+}

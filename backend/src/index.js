@@ -7,6 +7,7 @@ import { checkUnreadMessages } from './jobs/unreadMessageEmail.js'
 import { purgeFinishedKycSessions } from './jobs/purgeKycSessions.js'
 import { cleanUpUploads } from './jobs/uploadCleanup.js'
 import { warnIfTurnstileMissing } from './services/giveawayJoin.service.js'
+import { remindProEndingSoon } from './jobs/proEndingReminder.js'
 
 const UNREAD_EMAIL_INTERVAL_MS = 15 * 60 * 1000
 const KYC_PURGE_INTERVAL_MS = 60 * 60 * 1000
@@ -31,6 +32,10 @@ async function start() {
   const cleanUploads = () => cleanUpUploads().catch((err) => console.error('cleanUpUploads failed:', err.message))
   cleanUploads()
   setInterval(cleanUploads, KYC_PURGE_INTERVAL_MS)
+  // A week before free Pro time ends, tell the member (jobs/proEndingReminder.js).
+  const remindPro = () => remindProEndingSoon().catch((err) => console.error('remindProEndingSoon failed:', err.message))
+  remindPro()
+  setInterval(remindPro, KYC_PURGE_INTERVAL_MS)
 }
 
 start().catch((err) => {

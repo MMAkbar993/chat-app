@@ -49,6 +49,7 @@ import { initAnalytics } from './utils/cookieConsent'
 // The Christmas giveaway pages load only when someone opens them.
 const GiveawayPage = lazy(() => import('./features/giveaway/GiveawayPage'))
 const GiveawayTermsPage = lazy(() => import('./features/giveaway/GiveawayTermsPage'))
+const ClaimPrizePage = lazy(() => import('./features/giveaway/ClaimPrizePage'))
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-lavender">
@@ -134,6 +135,7 @@ export default function App() {
           {/* Business share link — opened by visitors to a company's website, usually signed out. */}
           <Route path="/b/:slug" element={<BusinessProfilePage />} />
           <Route path="/christmas" element={<Suspense fallback={<Spinner />}><GiveawayPage /></Suspense>} />
+          <Route path="/claim" element={<Suspense fallback={<Spinner />}><ClaimPrizePage /></Suspense>} />
           <Route path="/christmas/terms" element={<Suspense fallback={<Spinner />}><GiveawayTermsPage /></Suspense>} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
-import { getGiveawayState, spinGiveaway, giveawayEntrantAuth, joinStart, joinVerify } from '../controllers/giveaway.controller.js'
+import { authMiddleware } from '../middleware/auth.js'
+import { getGiveawayState, spinGiveaway, giveawayEntrantAuth, joinStart, joinVerify, claimPreview, claimPrize } from '../controllers/giveaway.controller.js'
 
 // One spin a day is enforced in the database; this only stops a script hammering the endpoint.
 const spinLimiter = rateLimit({
@@ -20,9 +21,21 @@ const joinLimiter = rateLimit({
   message: { error: 'Too many attempts. Please try again in a few minutes.' },
 })
 
+// Looking up and claiming prize codes. Codes are 8 random characters, so guessing is hopeless
+// anyway; this keeps a script from trying.
+const claimLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in a few minutes.' },
+})
+
 export const giveawayRouter = Router()
 
 giveawayRouter.get('/state', getGiveawayState)
 giveawayRouter.post('/spin', spinLimiter, giveawayEntrantAuth, spinGiveaway)
 giveawayRouter.post('/join/start', joinLimiter, joinStart)
 giveawayRouter.post('/join/verify', joinLimiter, joinVerify)
+giveawayRouter.get('/claim/:code', claimLimiter, claimPreview)
+giveawayRouter.post('/claim', claimLimiter, authMiddleware, claimPrize)
