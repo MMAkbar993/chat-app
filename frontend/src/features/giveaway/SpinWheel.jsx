@@ -94,8 +94,12 @@ export default function SpinWheel({ day, onSpin, onClose, onDone }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Day ${day} spin`}>
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0d2138] p-6 text-white shadow-2xl xmas-pop">
+    // The overlay scrolls, so on a short screen (a small laptop, a zoomed browser) the whole popup,
+    // close button included, can still be reached. A click outside it closes it, except mid spin.
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Day ${day} spin`}>
+      <div className="flex min-h-full items-center justify-center p-4"
+        onClick={(e) => { if (e.target === e.currentTarget && phase !== 'spinning') onClose() }}>
+      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#0d2138] p-5 sm:p-6 text-white shadow-2xl xmas-pop">
         {phase !== 'spinning' && (
           <button type="button" onClick={onClose} aria-label="Close"
             className="absolute right-4 top-4 h-9 w-9 rounded-full bg-white/10 text-lg leading-none hover:bg-white/20">×</button>
@@ -103,7 +107,7 @@ export default function SpinWheel({ day, onSpin, onClose, onDone }) {
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Day {day} of 25</p>
         <h2 className="mt-1 text-center text-2xl font-bold">Spin the wheel</h2>
 
-        <div className="relative mx-auto mt-6 aspect-square w-[min(78vw,300px)]">
+        <div className="relative mx-auto mt-4 sm:mt-6 aspect-square w-[min(78vw,300px,38vh)] min-w-44">
           {/* pointer */}
           <div className="absolute left-1/2 -top-1 z-10 -translate-x-1/2 h-0 w-0 border-x-[14px] border-t-[24px] border-x-transparent border-t-amber-300 drop-shadow" aria-hidden="true" />
           <div
@@ -122,7 +126,7 @@ export default function SpinWheel({ day, onSpin, onClose, onDone }) {
           </div>
         </div>
 
-        <div className="mt-6 min-h-28 text-center" aria-live="polite">
+        <div className="mt-4 sm:mt-6 min-h-28 text-center" aria-live="polite">
           {phase === 'ready' && (
             <button type="button" onClick={handleSpin} autoFocus
               className="w-full rounded-2xl bg-linear-to-r from-red-600 to-amber-500 px-6 py-4 text-lg font-bold shadow-lg hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
@@ -138,6 +142,7 @@ export default function SpinWheel({ day, onSpin, onClose, onDone }) {
           )}
           {phase === 'result' && result && <ResultPanel result={result} copied={copied} onCopy={copyCode} onClose={onClose} />}
         </div>
+      </div>
       </div>
     </div>
   )
@@ -164,6 +169,9 @@ function ResultPanel({ result, copied, onCopy, onClose }) {
           className="mt-4 block rounded-2xl bg-linear-to-r from-violet-600 to-fuchsia-600 px-6 py-3 font-bold hover:brightness-110">
           Claim on Pulse
         </Link>
+        <button type="button" onClick={onClose} className="mt-2 w-full rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:bg-white/10 hover:text-white">
+          Close (your code stays under My prizes)
+        </button>
       </div>
     )
   }
