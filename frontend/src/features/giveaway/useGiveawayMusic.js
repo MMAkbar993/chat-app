@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Background music for the giveaway page. Browsers block sound until the visitor interacts, so it
 // starts on their first tap or click anywhere on the page, unless they muted it on an earlier
-// visit. Until the music file is in place (public/christmas/music.mp3) the button stays hidden.
-const SRC = '/christmas/music.mp3'
+// visit. Until the music file is in place (public/xmas-assets/music.mp3; not public/christmas, as a folder named like the page makes nginx answer 403) the button stays hidden.
+const SRC = '/xmas-assets/music.mp3'
 const MUTE_KEY = 'pulse_xmas_muted'
 
 function readMuted() {

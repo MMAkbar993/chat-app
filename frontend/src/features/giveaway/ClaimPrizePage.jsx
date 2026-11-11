@@ -173,7 +173,7 @@ export default function ClaimPrizePage() {
       <Link to="/christmas" className="mb-6 flex items-center gap-2.5" aria-label="Back to the Christmas giveaway">
         <img src="/White Pulse Logo.png" alt="Pulse" className="h-7" />
         <span className="text-white/40" aria-hidden="true">×</span>
-        <img src="/christmas/ar-logo-santa.png" alt="Affiliate Roulette" className="h-10 w-10 -mt-2" />
+        <img src="/xmas-assets/ar-logo-santa.png" alt="Affiliate Roulette" className="h-10 w-10 -mt-2" />
       </Link>
       <div className={`${CARD} w-full max-w-md`}>{body}</div>
     </div>

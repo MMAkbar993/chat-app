@@ -295,7 +295,7 @@ export default function GiveawayPage() {
         <Link to="/" className="flex items-center gap-2.5 rounded" aria-label="Pulse home">
           <img src="/White Pulse Logo.png" alt="Pulse" className="h-7" />
           <span className="text-white/60" aria-hidden="true">×</span>
-          <img src="/christmas/ar-logo-santa.png" alt="Affiliate Roulette" className="h-10 w-10 -mt-2" />
+          <img src="/xmas-assets/ar-logo-santa.png" alt="Affiliate Roulette" className="h-10 w-10 -mt-2" />
         </Link>
         <div className="flex items-center gap-2">
           {music.available && (
@@ -326,7 +326,7 @@ export default function GiveawayPage() {
           <Bauble className="left-[16%] hidden md:flex xmas-bauble-b" color="bg-linear-to-br from-emerald-300 to-emerald-700" string="h-8" />
           <Bauble className="right-[6%] hidden sm:flex xmas-bauble-b" color="bg-linear-to-br from-sky-200 to-sky-600" string="h-12" />
           <Bauble className="right-[16%] hidden md:flex" color="bg-linear-to-br from-amber-200 to-amber-500" string="h-20" />
-          <img src="/christmas/ar-logo-santa.png" alt="" className="xmas-logo-glow relative mx-auto h-20 w-20 sm:h-24 sm:w-24" />
+          <img src="/xmas-assets/ar-logo-santa.png" alt="" className="xmas-logo-glow relative mx-auto h-20 w-20 sm:h-24 sm:w-24" />
           <p className="relative mt-3 text-xs font-bold uppercase tracking-[0.25em] text-amber-200">Affiliate Roulette × Pulse</p>
           <h1 className="relative mt-2 text-4xl font-extrabold leading-tight drop-shadow sm:text-6xl">
             25 Days of <span className="bg-linear-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">Christmas</span>
