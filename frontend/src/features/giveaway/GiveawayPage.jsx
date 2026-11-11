@@ -41,6 +41,33 @@ function Snow() {
   return <div className="xmas-snow" aria-hidden="true">{FLAKES.map((f) => <span key={f.id} className="xmas-flake" style={f.style} />)}</div>
 }
 
+// A string of lights along the bottom of the header.
+function Lights() {
+  return <div className="xmas-lights" aria-hidden="true">{Array.from({ length: 26 }, (_, i) => <span key={i} className="xmas-bulb" />)}</div>
+}
+
+// A bauble hanging on a string, for the hero banner's corners.
+function Bauble({ className, color, string = 'h-14' }) {
+  return (
+    <div className={`xmas-bauble pointer-events-none absolute top-0 flex flex-col items-center ${className}`} aria-hidden="true">
+      <span className={`w-px bg-amber-100/60 ${string}`} />
+      <span className="h-2 w-3 rounded-sm bg-amber-300" />
+      <span className={`relative h-11 w-11 rounded-full shadow-lg ${color}`}>
+        <span className="absolute left-2 top-2 h-3 w-3 rounded-full bg-white/50 blur-[1px]" />
+      </span>
+    </div>
+  )
+}
+
+// Snow lying along the top edge of the hero banner.
+function SnowCap() {
+  return (
+    <svg className="pointer-events-none absolute inset-x-0 top-0 h-7 w-full" viewBox="0 0 400 28" preserveAspectRatio="none" aria-hidden="true">
+      <path fill="#f8fafc" d="M0 0h400v10c-10 0-12 9-22 9s-12-6-22-6-10 12-22 12-12-9-24-9-10 6-22 6-12-8-22-8-12 11-24 11-10-7-22-7-12 5-22 5-10-9-22-9-12 12-24 12-12-8-22-8-10 6-22 6-12-10-24-10-10 8-22 8-12-5-22-5-10 9-22 9-12-7-24-7V0z" />
+    </svg>
+  )
+}
+
 function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -61,10 +88,10 @@ function Countdown({ to, label }) {
   ].filter(([unit, v]) => unit !== 'days' || v > 0)
   return (
     <div className="text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">{label}</p>
       <div className="mt-2 flex justify-center gap-2" role="timer" aria-live="off">
         {parts.map(([unit, v]) => (
-          <div key={unit} className="min-w-16 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+          <div key={unit} className="min-w-16 rounded-xl border border-white/20 bg-black/25 px-3 py-2">
             <div className="font-mono text-2xl font-bold tabular-nums">{String(v).padStart(2, '0')}</div>
             <div className="text-[10px] uppercase tracking-wider text-white/50">{unit}</div>
           </div>
@@ -263,73 +290,82 @@ export default function GiveawayPage() {
       <Snow />
       {state?.preview && <PreviewBar days={days} today={state.today} onDay={pickPreviewDay} onReset={doPreviewReset} />}
 
-      <header className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4">
+      <header className="xmas-header relative z-10">
+       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
         <Link to="/" className="flex items-center gap-2.5 rounded" aria-label="Pulse home">
           <img src="/White Pulse Logo.png" alt="Pulse" className="h-7" />
-          <span className="text-white/40" aria-hidden="true">×</span>
-          <img src="/affiliate-roulette-icon.png" alt="Affiliate Roulette" className="h-7 w-7 rounded-md" />
+          <span className="text-white/60" aria-hidden="true">×</span>
+          <img src="/christmas/ar-logo-santa.png" alt="Affiliate Roulette" className="h-10 w-10 -mt-2" />
         </Link>
         <div className="flex items-center gap-2">
           {music.available && (
             <button type="button" onClick={music.toggle} aria-label={music.muted ? 'Turn music on' : 'Mute music'}
-              className="h-10 w-10 rounded-full border border-white/15 bg-white/5 text-lg hover:bg-white/10">
+              className="h-10 w-10 rounded-full border border-white/25 bg-white/10 text-lg hover:bg-white/20">
               {music.muted || !music.playing ? '🔇' : '🔊'}
             </button>
           )}
           {me ? (
             <>
-              <a href="#my-prizes" className="hidden rounded-full border border-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/10 sm:inline-block">My prizes</a>
-              <button type="button" onClick={signOut} className="rounded-full px-3 py-2 text-sm text-white/70 hover:text-white" title={me.email}>Sign out</button>
+              <a href="#my-prizes" className="hidden rounded-full border border-white/30 px-4 py-2 text-sm font-semibold hover:bg-white/10 sm:inline-block">My prizes</a>
+              <button type="button" onClick={signOut} className="rounded-full px-3 py-2 text-sm text-white/80 hover:text-white" title={me.email}>Sign out</button>
             </>
           ) : (
-            <button type="button" onClick={() => setJoinOpen(true)} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#0b1d33] hover:bg-amber-100">
+            <button type="button" onClick={() => setJoinOpen(true)} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-amber-100">
               Join free
             </button>
           )}
         </div>
+       </div>
+       <Lights />
       </header>
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 pb-20">
-        <section className="pt-6 text-center sm:pt-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Affiliate Roulette × Pulse</p>
-          <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-6xl">
-            25 Days of <span className="bg-linear-to-r from-red-400 via-amber-300 to-emerald-300 bg-clip-text text-transparent">Christmas</span>
+        <section className="xmas-hero relative mt-10 overflow-hidden rounded-[2rem] px-5 pb-10 pt-12 text-center sm:mt-12 sm:px-10 sm:pb-12 sm:pt-14">
+          <SnowCap />
+          <Bauble className="left-[6%] hidden sm:flex" color="bg-linear-to-br from-amber-200 to-amber-500" string="h-16" />
+          <Bauble className="left-[16%] hidden md:flex xmas-bauble-b" color="bg-linear-to-br from-emerald-300 to-emerald-700" string="h-8" />
+          <Bauble className="right-[6%] hidden sm:flex xmas-bauble-b" color="bg-linear-to-br from-sky-200 to-sky-600" string="h-12" />
+          <Bauble className="right-[16%] hidden md:flex" color="bg-linear-to-br from-amber-200 to-amber-500" string="h-20" />
+          <img src="/christmas/ar-logo-santa.png" alt="" className="xmas-logo-glow relative mx-auto h-20 w-20 sm:h-24 sm:w-24" />
+          <p className="relative mt-3 text-xs font-bold uppercase tracking-[0.25em] text-amber-200">Affiliate Roulette × Pulse</p>
+          <h1 className="relative mt-2 text-4xl font-extrabold leading-tight drop-shadow sm:text-6xl">
+            25 Days of <span className="bg-linear-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">Christmas</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-white/75 sm:text-lg">
+          <p className="relative mx-auto mt-4 max-w-xl text-white/90 sm:text-lg">
             25 days of chances to win! Pulse Pro, free advertising, vouchers, crypto, gift cards and more.
           </p>
-          <p className="mt-2 text-sm font-semibold text-white/60">1 to 25 December 2026 · Spin daily. Win big.</p>
+          <p className="relative mt-2 text-sm font-semibold text-white/75">1 to 25 December 2026 · Spin daily. Win big.</p>
 
-          <div className="mx-auto mt-8 max-w-md">
+          <div className="relative mx-auto mt-8 max-w-md">
             {!state && !loadError && <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-300 border-t-transparent" />}
             {loadError && <p className="text-red-300">{loadError}</p>}
             {state?.phase === 'before' && <Countdown to={`${state.start}T00:00:00Z`} label="The first door opens in" />}
             {state?.phase === 'open' && (me?.spunToday || me?.finished)
               ? (me.finished
-                ? <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-5 py-4 font-semibold">You won your big prize! Claim it on Pulse below.</p>
+                ? <p className="rounded-2xl border border-amber-200/50 bg-black/20 px-5 py-4 font-semibold">You won your big prize! Claim it on Pulse below.</p>
                 : state.preview
-                  ? <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-5 py-4">You have spun on this day. Pick another day in the preview bar.</p>
+                  ? <p className="rounded-2xl border border-amber-200/50 bg-black/20 px-5 py-4">You have spun on this day. Pick another day in the preview bar.</p>
                   : <Countdown to={state.nextResetAt} label="Your next spin unlocks in" />)
               : null}
             {state?.phase === 'open' && !me && (
               <button type="button" onClick={() => setJoinOpen(true)}
-                className="w-full rounded-2xl bg-linear-to-r from-red-600 to-amber-500 px-6 py-4 text-lg font-bold shadow-lg hover:brightness-110">
+                className="w-full rounded-2xl bg-linear-to-r from-amber-300 to-yellow-400 px-6 py-4 text-lg font-extrabold text-red-800 shadow-lg shadow-black/20 hover:brightness-105">
                 Join free and spin today
               </button>
             )}
             {canSpinToday && (
               <button type="button" onClick={() => setSpinDay(state.today)}
-                className="w-full rounded-2xl bg-linear-to-r from-red-600 to-amber-500 px-6 py-4 text-lg font-bold shadow-lg hover:brightness-110">
+                className="w-full rounded-2xl bg-linear-to-r from-amber-300 to-yellow-400 px-6 py-4 text-lg font-extrabold text-red-800 shadow-lg shadow-black/20 hover:brightness-105">
                 Open today's door
               </button>
             )}
             {state?.phase === 'ended' && (
-              <p className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <p className="rounded-2xl border border-white/20 bg-black/20 px-5 py-4">
                 The giveaway has ended. Thank you for playing! Winners can claim their prize on Pulse until {prettyDay(state.claimDeadline)} 2027.
               </p>
             )}
             {state?.phase === 'before' && !me && (
-              <button type="button" onClick={() => setJoinOpen(true)} className="mt-5 w-full rounded-2xl border border-white/20 bg-white/5 px-6 py-3 font-semibold hover:bg-white/10">
+              <button type="button" onClick={() => setJoinOpen(true)} className="mt-5 w-full rounded-2xl border border-white/40 bg-white/10 px-6 py-3 font-semibold hover:bg-white/20">
                 Join now so you are ready on 1 December
               </button>
             )}

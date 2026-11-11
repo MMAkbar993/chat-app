@@ -40,9 +40,57 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Red header band with a string of lights hanging off its bottom edge. */
+.xmas-header {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 14px, transparent 14px 28px),
+    linear-gradient(90deg, #7f1d1d 0%, #b91c1c 50%, #7f1d1d 100%);
+  box-shadow: 0 6px 24px -8px rgba(0, 0, 0, 0.6);
+}
+.xmas-lights {
+  position: absolute; left: 0; right: 0; bottom: -15px; height: 22px;
+  display: flex; justify-content: space-around; overflow: hidden; pointer-events: none;
+}
+.xmas-lights::before {
+  content: ''; position: absolute; top: 3px; left: 0; right: 0; height: 2px; background: #14532d;
+}
+.xmas-bulb {
+  position: relative; margin-top: 5px; width: 9px; height: 14px;
+  border-radius: 50% 50% 45% 45%;
+  background: currentColor; box-shadow: 0 0 10px 2px currentColor;
+  animation: xmas-twinkle 1.8s ease-in-out infinite;
+}
+.xmas-bulb::before {
+  content: ''; position: absolute; top: -3px; left: 2px; width: 5px; height: 4px; border-radius: 1px; background: #166534;
+}
+.xmas-bulb:nth-child(4n+1) { color: #f87171; }
+.xmas-bulb:nth-child(4n+2) { color: #facc15; animation-delay: -0.45s; }
+.xmas-bulb:nth-child(4n+3) { color: #4ade80; animation-delay: -0.9s; }
+.xmas-bulb:nth-child(4n+4) { color: #60a5fa; animation-delay: -1.35s; }
+@keyframes xmas-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; box-shadow: 0 0 2px 0 currentColor; }
+}
+
+/* The red hero banner: snow along its top edge, hanging baubles in the corners. */
+.xmas-hero {
+  background:
+    radial-gradient(520px 260px at 50% 0%, rgba(254, 202, 202, 0.28), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 16px, transparent 16px 32px),
+    linear-gradient(165deg, #991b1b 0%, #c81e1e 48%, #7f1d1d 100%);
+  box-shadow: 0 30px 80px -30px rgba(220, 38, 38, 0.65), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.xmas-bauble { transform-origin: top center; animation: xmas-swing 4s ease-in-out infinite; }
+.xmas-bauble-b { animation-duration: 5s; animation-delay: -1.5s; }
+@keyframes xmas-swing {
+  0%, 100% { transform: rotate(4deg); }
+  50% { transform: rotate(-4deg); }
+}
+.xmas-logo-glow { filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35)); }
+
 @media (prefers-reduced-motion: reduce) {
   .xmas-flake { display: none; }
-  .xmas-door-today { animation: none; }
+  .xmas-door-today, .xmas-bulb, .xmas-bauble { animation: none; }
   .xmas-wheel { transition-duration: 1.2s; }
   .xmas-pop { animation: none; }
 }

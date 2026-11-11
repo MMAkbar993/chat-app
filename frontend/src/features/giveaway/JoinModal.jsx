@@ -28,7 +28,8 @@ function Turnstile({ onToken }) {
   const box = useRef(null)
   const [failed, setFailed] = useState(false)
   useEffect(() => {
-    if (!SITE_KEY) { onToken('dev'); return }
+    // Local development only: the backend skips the check when it has no secret either.
+    if (!SITE_KEY) { if (import.meta.env.DEV) onToken('dev'); return }
     let widgetId = null
     let gone = false
     loadTurnstile().then((ts) => {
@@ -46,7 +47,12 @@ function Turnstile({ onToken }) {
       if (widgetId !== null) window.turnstile?.remove(widgetId)
     }
   }, [onToken])
-  if (!SITE_KEY) return null
+  if (!SITE_KEY) {
+    return import.meta.env.DEV ? null : (
+      // A live build made without VITE_TURNSTILE_SITE_KEY: say so instead of failing on submit.
+      <p className="text-sm text-red-300">Joining is not open yet: the security check is still being set up.</p>
+    )
+  }
   return (
     <div>
       <div ref={box} className="min-h-16.25" />

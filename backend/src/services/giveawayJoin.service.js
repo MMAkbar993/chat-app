@@ -76,16 +76,31 @@ async function verifyTurnstile(token, ip) {
     return
   }
   if (!token) throw fail(400, 'Please complete the security check.', 'turnstile')
+  let data
   try {
-    const { data } = await axios.post(
+    const res = await axios.post(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',
       new URLSearchParams({ secret, response: String(token), ...(ip ? { remoteip: ip } : {}) }),
-      { timeout: 8000 }
+      // Cloudflare answers some failures (a bad secret, say) with a 4xx and a JSON body: read it
+      // like any other answer instead of treating it as "could not reach Cloudflare".
+      { timeout: 8000, validateStatus: () => true }
     )
-    if (!data?.success) throw fail(400, 'The security check failed. Please try again.', 'turnstile')
+    data = res.data
+    if (res.status >= 500) throw new Error(`HTTP ${res.status}`)
   } catch (err) {
-    if (err.reason) throw err
+    console.error('Turnstile siteverify unreachable:', err.code || '', err.message)
     throw fail(503, 'We could not run the security check. Please try again.', 'turnstile_unreachable')
+  }
+  if (!data?.success) {
+    const codes = data?.['error-codes'] || []
+    // invalid-input-secret / missing-input-secret: our setup is wrong, not the visitor. Log it
+    // loudly (pm2 logs) so it gets fixed, and do not blame the visitor.
+    if (codes.some((c) => String(c).includes('secret'))) {
+      console.error('Turnstile: TURNSTILE_SECRET_KEY is wrong:', codes.join(', '))
+      throw fail(503, 'The security check is not set up correctly yet. Please try again later.', 'turnstile_config')
+    }
+    console.warn('Turnstile check failed:', codes.join(', ') || 'no reason given')
+    throw fail(400, 'The security check failed. Please try again.', 'turnstile')
   }
 }
 
