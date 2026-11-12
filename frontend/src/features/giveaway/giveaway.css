@@ -1,96 +1,203 @@
-/* Christmas giveaway page: the few effects Tailwind classes do not cover. */
+/* Christmas giveaway: one red and gold look for every page and popup (the page, the wheel, the
+   join form, the claim page, the terms). The effects Tailwind classes do not cover live here. */
+@import '@fontsource/dancing-script/700.css';
 
+/* In the components layer so Tailwind utilities on the same element (hidden, absolute, ...) win. */
+@layer components {
 .xmas-page {
-  background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(220, 38, 38, 0.28), transparent 60%),
-    radial-gradient(900px 500px at 100% 30%, rgba(22, 163, 74, 0.18), transparent 60%),
-    linear-gradient(180deg, #07111f 0%, #0b1d33 45%, #0a1626 100%);
+  --xmas-gold: #f5c451;
+  background-color: #4a0509;
+  background-image:
+    radial-gradient(900px 520px at 50% 14%, rgba(255, 96, 70, 0.32), transparent 65%),
+    radial-gradient(5px 5px at 12% 22%, rgba(255, 214, 120, 0.7), transparent),
+    radial-gradient(4px 4px at 86% 18%, rgba(255, 214, 120, 0.6), transparent),
+    radial-gradient(6px 6px at 74% 34%, rgba(255, 214, 120, 0.45), transparent),
+    radial-gradient(4px 4px at 22% 40%, rgba(255, 214, 120, 0.5), transparent),
+    linear-gradient(180deg, #8f0c14 0%, #6d0910 30%, #4f060b 70%, #3a0407 100%);
+}
+
+/* Type */
+.xmas-script { font-family: 'Dancing Script', 'Brush Script MT', cursive; font-weight: 700; }
+.xmas-gold-text {
+  background: linear-gradient(180deg, #fff3c8 0%, #f7cd5b 45%, #d4951d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.xmas-title-shadow { filter: drop-shadow(0 4px 0 rgba(90, 30, 0, 0.45)) drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45)); }
+/* "DAY 5 OF 25" with a thin gold line either side. */
+.xmas-eyebrow { display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+.xmas-eyebrow::before, .xmas-eyebrow::after {
+  content: ''; height: 1px; width: 2.5rem; background: linear-gradient(90deg, transparent, var(--xmas-gold, #f5c451), transparent);
+}
+
+/* Buttons */
+.xmas-btn-gold {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  border-radius: 9999px; font-weight: 800; color: #4a0a0a;
+  background: linear-gradient(180deg, #ffeaa9 0%, #f8c94d 45%, #e0a020 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -2px 0 rgba(150, 90, 0, 0.35), 0 10px 26px -8px rgba(245, 180, 40, 0.7);
+  transition: filter 0.15s, transform 0.15s;
+}
+.xmas-btn-gold:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.xmas-btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+.xmas-btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: 9999px; font-weight: 600; color: #fff;
+  border: 1.5px solid rgba(245, 196, 81, 0.85); background: rgba(0, 0, 0, 0.12);
+  transition: background 0.15s;
+}
+.xmas-btn-outline:hover:not(:disabled) { background: rgba(245, 196, 81, 0.14); }
+.xmas-btn-outline:disabled { opacity: 0.5; }
+
+/* Popups and cards: deep red with a gold edge. */
+.xmas-panel {
+  position: relative; overflow: hidden; color: #fff;
+  border: 1.5px solid rgba(245, 196, 81, 0.8);
+  background: radial-gradient(120% 75% at 50% 0%, #b3141d 0%, #820c13 50%, #5c070c 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 46px -6px rgba(245, 196, 81, 0.4), 0 30px 70px -20px rgba(0, 0, 0, 0.7);
+}
+/* Light rays fanning out behind the wheel and the prize. */
+.xmas-rays::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg at 50% 42%, rgba(255, 210, 140, 0.11) 0deg 5deg, transparent 5deg 13deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 70%);
+}
+.xmas-card {
+  border: 1px solid rgba(245, 196, 81, 0.3);
+  background: linear-gradient(160deg, rgba(160, 18, 27, 0.55), rgba(70, 6, 10, 0.6));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.xmas-input {
+  width: 100%; border-radius: 0.85rem; color: #fff;
+  border: 1px solid rgba(245, 196, 81, 0.35); background: rgba(0, 0, 0, 0.25);
+}
+.xmas-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+.xmas-input:focus { outline: none; border-color: #f5c451; box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.2); }
+.xmas-code-box { border: 1.5px dashed rgba(245, 196, 81, 0.85); background: rgba(0, 0, 0, 0.22); }
+
+/* Advent calendar */
+.xmas-calendar {
+  border: 1px solid rgba(245, 196, 81, 0.45);
+  background: linear-gradient(180deg, rgba(110, 8, 14, 0.92), rgba(60, 5, 9, 0.95));
+  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.xmas-tile {
+  border: 1px solid rgba(255, 160, 140, 0.28);
+  background: linear-gradient(160deg, #a9131c 0%, #6e0a10 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 16px -8px rgba(0, 0, 0, 0.6);
+}
+.xmas-tile-today {
+  border: 2px solid #f7cd5b;
+  background: radial-gradient(circle at 50% 55%, rgba(255, 200, 90, 0.45), transparent 70%), linear-gradient(160deg, #b8161f, #7a0b12);
+  animation: xmas-glow 1.8s ease-in-out infinite;
+}
+.xmas-tile-won { border-color: rgba(245, 196, 81, 0.7); background: linear-gradient(160deg, #8a5a10, #5a1209); }
+.xmas-tile-done { opacity: 0.55; }
+@keyframes xmas-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55), 0 10px 30px -10px rgba(250, 204, 21, 0.6); }
+  50% { box-shadow: 0 0 0 7px rgba(250, 204, 21, 0), 0 10px 40px -6px rgba(250, 204, 21, 0.95); }
 }
 
 /* Falling snow. Each flake sets --x, --size, --dur, --delay, --drift inline. */
 .xmas-snow { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
 .xmas-flake {
-  position: absolute;
-  top: -12px;
-  left: var(--x);
-  width: var(--size);
-  height: var(--size);
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.85);
-  filter: blur(0.5px);
+  position: absolute; top: -12px; left: var(--x);
+  width: var(--size); height: var(--size); border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85); filter: blur(0.5px);
   animation: xmas-fall var(--dur) linear var(--delay) infinite;
 }
-@keyframes xmas-fall {
-  to { transform: translate3d(var(--drift), 105vh, 0); }
+@keyframes xmas-fall { to { transform: translate3d(var(--drift), 105vh, 0); } }
+
+/* String of warm lights under the header. */
+.xmas-lights {
+  position: absolute; left: 0; right: 0; bottom: -16px; height: 24px;
+  display: flex; justify-content: space-around; overflow: hidden; pointer-events: none;
+}
+.xmas-lights::before { content: ''; position: absolute; top: 3px; left: 0; right: 0; height: 1.5px; background: rgba(60, 25, 10, 0.9); }
+.xmas-bulb {
+  position: relative; margin-top: 5px; width: 8px; height: 12px; border-radius: 50% 50% 45% 45%;
+  background: currentColor; box-shadow: 0 0 10px 3px currentColor;
+  animation: xmas-twinkle 1.8s ease-in-out infinite;
+}
+.xmas-bulb::before { content: ''; position: absolute; top: -3px; left: 2px; width: 4px; height: 4px; border-radius: 1px; background: #5b3a12; }
+.xmas-bulb:nth-child(3n+1) { color: #ffd76a; }
+.xmas-bulb:nth-child(3n+2) { color: #fff3c4; animation-delay: -0.6s; }
+.xmas-bulb:nth-child(3n+3) { color: #ffb347; animation-delay: -1.2s; }
+@keyframes xmas-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; box-shadow: 0 0 3px 0 currentColor; }
 }
 
-/* Today's door gently pulses so it is obvious where to tap. */
-.xmas-door-today { animation: xmas-glow 1.8s ease-in-out infinite; }
-@keyframes xmas-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55), 0 10px 30px -10px rgba(250, 204, 21, 0.6); }
-  50% { box-shadow: 0 0 0 8px rgba(250, 204, 21, 0), 0 10px 40px -6px rgba(250, 204, 21, 0.9); }
+/* Baubles hanging on a string and swinging. */
+.xmas-bauble { transform-origin: top center; animation: xmas-swing 4s ease-in-out infinite; }
+.xmas-bauble-b { animation-duration: 5s; animation-delay: -1.5s; }
+@keyframes xmas-swing {
+  0%, 100% { transform: rotate(5deg); }
+  50% { transform: rotate(-5deg); }
 }
+.xmas-ball-red { background: radial-gradient(circle at 32% 30%, #ff8a8a 0%, #e0222c 30%, #8f0a12 75%, #5a050a 100%); }
+.xmas-ball-gold { background: radial-gradient(circle at 32% 30%, #fff4c6 0%, #f3c14b 35%, #b9800f 80%, #7a5206 100%); }
+.xmas-ball-shadow { box-shadow: 0 10px 20px -6px rgba(0, 0, 0, 0.55), 0 0 18px -4px rgba(255, 180, 90, 0.5); }
 
-/* The wheel turns with this curve: fast start, long slow finish. */
+/* Gift boxes (the hero's corners, and the prize popup). */
+.xmas-gift { position: relative; width: var(--w, 180px); aspect-ratio: 1 / 0.92; }
+.xmas-gift-box {
+  position: absolute; left: 6%; right: 6%; top: 26%; bottom: 0; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; padding-left: 22%;
+  background:
+    linear-gradient(90deg, transparent 20%, #f7cd5b 20%, #d99a1b 31%, transparent 31%),
+    linear-gradient(160deg, #e2252f 0%, #a8111a 55%, #760a10 100%);
+  box-shadow: inset -14px -12px 26px rgba(0, 0, 0, 0.28), inset 6px 6px 14px rgba(255, 255, 255, 0.12), 0 20px 30px -14px rgba(0, 0, 0, 0.7);
+}
+.xmas-gift-lid {
+  position: absolute; left: 0; right: 0; top: 14%; height: 17%; border-radius: 8px; z-index: 1;
+  background:
+    linear-gradient(90deg, transparent 18%, #ffe08a 18%, #e0a020 32%, transparent 32%),
+    linear-gradient(180deg, #ef3a43 0%, #b3141d 100%);
+  box-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.5);
+}
+.xmas-gift-snow::after {
+  content: ''; position: absolute; left: 3%; right: 3%; top: -7px; height: 14px; border-radius: 12px 12px 8px 8px;
+  background: linear-gradient(180deg, #ffffff, #e5edf7); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+.xmas-gift-bow { position: absolute; top: 0; left: 25%; width: 46%; height: 18%; transform: translateX(-50%); z-index: 2; }
+.xmas-gift-bow::before, .xmas-gift-bow::after {
+  content: ''; position: absolute; bottom: 0; width: 50%; height: 100%; border-radius: 50%;
+  border: 5px solid #f5c451; border-bottom-color: #c98a17;
+}
+.xmas-gift-bow::before { left: 0; transform: rotate(-18deg); }
+.xmas-gift-bow::after { right: 0; transform: rotate(18deg); }
+
+/* The wheel */
 .xmas-wheel { transition: transform 5s cubic-bezier(0.12, 0.8, 0.12, 1); }
+.xmas-rim {
+  background: conic-gradient(#fff1b8, #e0a020, #ffe08a, #c98a17, #fff1b8, #e0a020, #ffe08a, #c98a17, #fff1b8);
+  box-shadow: 0 0 34px rgba(245, 196, 81, 0.55), inset 0 0 8px rgba(0, 0, 0, 0.45);
+}
+.xmas-rim-bulb {
+  width: 3.4%; aspect-ratio: 1; border-radius: 9999px; background: #fff7da;
+  box-shadow: 0 0 6px 2px rgba(255, 220, 120, 0.95);
+  animation: xmas-twinkle 1.4s ease-in-out infinite;
+}
+.xmas-rim-bulb-b { animation-delay: -0.7s; }
+.xmas-hub {
+  background: radial-gradient(circle at 40% 35%, #2a1a10, #120a06);
+  border: 3px solid #f5c451; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.5);
+}
 
 .xmas-pop { animation: xmas-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
 @keyframes xmas-pop {
   from { opacity: 0; transform: scale(0.85); }
   to { opacity: 1; transform: scale(1); }
 }
-
-/* Red header band with a string of lights hanging off its bottom edge. */
-.xmas-header {
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 14px, transparent 14px 28px),
-    linear-gradient(90deg, #7f1d1d 0%, #b91c1c 50%, #7f1d1d 100%);
-  box-shadow: 0 6px 24px -8px rgba(0, 0, 0, 0.6);
-}
-.xmas-lights {
-  position: absolute; left: 0; right: 0; bottom: -15px; height: 22px;
-  display: flex; justify-content: space-around; overflow: hidden; pointer-events: none;
-}
-.xmas-lights::before {
-  content: ''; position: absolute; top: 3px; left: 0; right: 0; height: 2px; background: #14532d;
-}
-.xmas-bulb {
-  position: relative; margin-top: 5px; width: 9px; height: 14px;
-  border-radius: 50% 50% 45% 45%;
-  background: currentColor; box-shadow: 0 0 10px 2px currentColor;
-  animation: xmas-twinkle 1.8s ease-in-out infinite;
-}
-.xmas-bulb::before {
-  content: ''; position: absolute; top: -3px; left: 2px; width: 5px; height: 4px; border-radius: 1px; background: #166534;
-}
-.xmas-bulb:nth-child(4n+1) { color: #f87171; }
-.xmas-bulb:nth-child(4n+2) { color: #facc15; animation-delay: -0.45s; }
-.xmas-bulb:nth-child(4n+3) { color: #4ade80; animation-delay: -0.9s; }
-.xmas-bulb:nth-child(4n+4) { color: #60a5fa; animation-delay: -1.35s; }
-@keyframes xmas-twinkle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; box-shadow: 0 0 2px 0 currentColor; }
-}
-
-/* The red hero banner: snow along its top edge, hanging baubles in the corners. */
-.xmas-hero {
-  background:
-    radial-gradient(520px 260px at 50% 0%, rgba(254, 202, 202, 0.28), transparent 70%),
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 16px, transparent 16px 32px),
-    linear-gradient(165deg, #991b1b 0%, #c81e1e 48%, #7f1d1d 100%);
-  box-shadow: 0 30px 80px -30px rgba(220, 38, 38, 0.65), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-.xmas-bauble { transform-origin: top center; animation: xmas-swing 4s ease-in-out infinite; }
-.xmas-bauble-b { animation-duration: 5s; animation-delay: -1.5s; }
-@keyframes xmas-swing {
-  0%, 100% { transform: rotate(4deg); }
-  50% { transform: rotate(-4deg); }
-}
-.xmas-logo-glow { filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35)); }
+.xmas-logo-glow { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4)); }
 
 @media (prefers-reduced-motion: reduce) {
   .xmas-flake { display: none; }
-  .xmas-door-today, .xmas-bulb, .xmas-bauble { animation: none; }
+  .xmas-tile-today, .xmas-bulb, .xmas-bauble, .xmas-rim-bulb { animation: none; }
   .xmas-wheel { transition-duration: 1.2s; }
   .xmas-pop { animation: none; }
+}
 }

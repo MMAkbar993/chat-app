@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './giveaway.css'
+import { XmasShell } from './XmasDecor'
 
 // Terms for the Christmas giveaway. Keep in step with the backend rules and giveawayContent.js.
 // TODO before launch: Eddie to confirm the organiser's legal name and address, and how vouchers
@@ -77,23 +78,26 @@ export default function GiveawayTermsPage() {
   }, [])
 
   return (
-    <div className="xmas-page min-h-screen text-white">
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <Link to="/christmas" className="text-sm text-amber-300 underline hover:text-amber-200">← Back to the giveaway</Link>
-        <h1 className="mt-6 text-3xl font-extrabold">25 Days of Christmas: Terms</h1>
-        <p className="mt-2 text-sm text-white/60">No purchase necessary. 18+ only.</p>
-        <div className="mt-8 space-y-7">
+    <XmasShell right={<Link to="/christmas" className="xmas-btn-outline px-4 py-2 text-sm">Back to the giveaway</Link>}>
+      <main className="mx-auto max-w-3xl px-4 py-12">
+        <p className="xmas-eyebrow text-xs font-bold uppercase tracking-[0.25em] text-amber-300">Affiliate Roulette × Pulse</p>
+        <h1 className="mt-3 text-center text-4xl font-extrabold sm:text-5xl">
+          25 Days of <span className="xmas-script xmas-gold-text xmas-title-shadow pr-2">Christmas</span>
+        </h1>
+        <p className="mt-2 text-center text-lg font-semibold">Giveaway Terms</p>
+        <p className="mt-1 text-center text-sm text-white/70">No purchase necessary. 18+ only.</p>
+        <div className="xmas-card mt-8 space-y-7 rounded-[1.75rem] p-6 sm:p-9">
           {SECTIONS.map((s) => (
             <section key={s.h}>
-              <h2 className="text-lg font-bold">{s.h}</h2>
-              {s.p.map((t) => <p key={t.slice(0, 40)} className="mt-2 leading-relaxed text-white/80">{t}</p>)}
+              <h2 className="text-lg font-bold text-amber-200">{s.h}</h2>
+              {s.p.map((t) => <p key={t.slice(0, 40)} className="mt-2 leading-relaxed text-white/85">{t}</p>)}
             </section>
           ))}
         </div>
-        <p className="mt-10 text-sm text-white/60">
+        <p className="mt-8 text-center text-sm text-white/70">
           <Link to="/privacy" className="underline hover:text-white">Pulse Privacy Policy</Link> · <Link to="/terms" className="underline hover:text-white">Pulse Terms</Link>
         </p>
-      </div>
-    </div>
+      </main>
+    </XmasShell>
   )
 }

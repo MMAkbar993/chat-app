@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FiX } from 'react-icons/fi'
 import { CATEGORIES, startJoin, verifyJoin, errorMessage } from './giveawayApi'
+import { SnowDrift } from './XmasDecor'
 
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY
 const TURNSTILE_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
@@ -50,18 +52,18 @@ function Turnstile({ onToken }) {
   if (!SITE_KEY) {
     return import.meta.env.DEV ? null : (
       // A live build made without VITE_TURNSTILE_SITE_KEY: say so instead of failing on submit.
-      <p className="text-sm text-red-300">Joining is not open yet: the security check is still being set up.</p>
+      <p className="text-sm text-amber-100">Joining is not open yet: the security check is still being set up.</p>
     )
   }
   return (
     <div>
       <div ref={box} className="min-h-16.25" />
-      {failed && <p className="text-sm text-red-300">The security check could not load. Please turn off any blocker and reload.</p>}
+      {failed && <p className="text-sm text-amber-100">The security check could not load. Please turn off any blocker and reload.</p>}
     </div>
   )
 }
 
-const INPUT = 'w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 focus:border-amber-300 focus:outline-none'
+const INPUT = 'xmas-input px-4 py-3'
 
 export default function JoinModal({ onClose, onJoined }) {
   const [step, setStep] = useState('details') // details | code
@@ -117,15 +119,22 @@ export default function JoinModal({ onClose, onJoined }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="xmas-join-title">
-      <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[#0d2138] p-6 text-white shadow-2xl xmas-pop max-h-[92vh] overflow-y-auto">
+    // Scrolls as a whole on short screens, like the wheel popup. A click outside closes it.
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="xmas-join-title">
+      <div className="flex min-h-full items-center justify-center p-4"
+        onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose() }}>
+      <div className="xmas-panel xmas-pop w-full max-w-md rounded-[1.75rem] px-6 pb-12 pt-6">
         <button type="button" onClick={onClose} aria-label="Close" disabled={busy}
-          className="absolute right-4 top-4 h-9 w-9 rounded-full bg-white/10 text-lg leading-none hover:bg-white/20">×</button>
+          className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-amber-300/60 bg-black/25 hover:bg-black/40">
+          <FiX aria-hidden="true" />
+        </button>
+        <div className="relative z-10">
+        <p className="xmas-eyebrow text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">25 Days of Christmas</p>
 
         {step === 'details' ? (
           <form onSubmit={sendCode} noValidate>
-            <h2 id="xmas-join-title" className="text-2xl font-bold">{returning ? 'Welcome back' : 'Join the giveaway'}</h2>
-            <p className="mt-1 text-sm text-white/70">
+            <h2 id="xmas-join-title" className="mt-1 text-center text-2xl font-extrabold">{returning ? 'Welcome back' : 'Join the giveaway'}</h2>
+            <p className="mt-1 text-center text-sm text-white/80">
               {returning ? 'Enter the email you joined with and we will send you a code.' : 'Free to join. One spin every day from 1 to 25 December.'}
             </p>
 
@@ -139,7 +148,7 @@ export default function JoinModal({ onClose, onJoined }) {
                 <div className="mt-2 grid gap-2" role="radiogroup" aria-labelledby="xmas-cat-label">
                   {CATEGORIES.map((c) => (
                     <label key={c.value} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 text-sm transition-colors ${
-                      category === c.value ? 'border-amber-300 bg-amber-300/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
+                      category === c.value ? 'border-amber-300 bg-amber-300/15' : 'border-amber-200/20 bg-black/20 hover:bg-black/30'}`}>
                       <input type="radio" name="xmas-category" value={c.value} checked={category === c.value}
                         onChange={() => setCategory(c.value)} className="accent-amber-400" />
                       {c.label}
@@ -156,10 +165,10 @@ export default function JoinModal({ onClose, onJoined }) {
                 By joining you confirm you are 18 or over and agree to the <Link to="/christmas/terms" className="underline hover:text-white" target="_blank">giveaway terms</Link>.
               </p>
             )}
-            {error && <p className="mt-3 text-sm text-red-300" role="alert">{error}</p>}
+            {error && <p className="mt-3 text-sm text-amber-100" role="alert">{error}</p>}
 
             <button type="submit" disabled={busy || !email.trim()}
-              className="mt-5 w-full rounded-2xl bg-linear-to-r from-red-600 to-amber-500 px-6 py-3.5 font-bold disabled:opacity-50 hover:brightness-110">
+              className="xmas-btn-gold mt-5 w-full px-6 py-3.5 text-lg">
               {busy ? 'Sending…' : 'Send my code'}
             </button>
             <button type="button" onClick={() => { setReturning((r) => !r); setError('') }}
@@ -169,15 +178,15 @@ export default function JoinModal({ onClose, onJoined }) {
           </form>
         ) : (
           <form onSubmit={checkCode} noValidate>
-            <h2 id="xmas-join-title" className="text-2xl font-bold">Check your email</h2>
-            {notice && <p className="mt-1 text-sm text-white/70">{notice}</p>}
+            <h2 id="xmas-join-title" className="mt-1 text-center text-2xl font-extrabold">Check your email</h2>
+            {notice && <p className="mt-1 text-center text-sm text-white/80">{notice}</p>}
             <label className="mt-5 block text-sm font-medium" htmlFor="xmas-code">6 digit code</label>
             <input id="xmas-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} autoFocus value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className={`${INPUT} mt-1.5 text-center font-mono text-2xl tracking-[0.5em]`} placeholder="••••••" />
-            {error && <p className="mt-3 text-sm text-red-300" role="alert">{error}</p>}
+            {error && <p className="mt-3 text-sm text-amber-100" role="alert">{error}</p>}
             <button type="submit" disabled={busy || code.length !== 6}
-              className="mt-5 w-full rounded-2xl bg-linear-to-r from-red-600 to-amber-500 px-6 py-3.5 font-bold disabled:opacity-50 hover:brightness-110">
+              className="xmas-btn-gold mt-5 w-full px-6 py-3.5 text-lg">
               {busy ? 'Checking…' : returning ? 'Sign in' : 'Join the giveaway'}
             </button>
 
@@ -188,6 +197,9 @@ export default function JoinModal({ onClose, onJoined }) {
             </div>
           </form>
         )}
+        </div>
+        <SnowDrift className="h-10" />
+      </div>
       </div>
     </div>
   )

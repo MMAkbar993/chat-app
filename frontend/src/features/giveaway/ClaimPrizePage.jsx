@@ -5,14 +5,15 @@ import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import { previewClaim, errorMessage } from './giveawayApi'
 import { setPendingClaim } from '../../utils/pendingClaim'
+import { XmasShell, GiftBox, SnowDrift } from './XmasDecor'
 
 // /claim?code=XMAS-XXXX-XXXX: where a Christmas giveaway winner turns their prize code into the
 // prize. Shows the prize to anyone; claiming needs a verified Pulse account, so a visitor who is
 // not there yet is sent through sign up and the ID check and brought back here afterwards
 // (utils/pendingClaim.js, picked up in ChatPage.jsx).
 
-const CARD = 'rounded-3xl border border-white/10 bg-[#0d2138]/90 p-6 sm:p-8 shadow-2xl backdrop-blur'
-const BTN = 'block w-full rounded-2xl px-6 py-3.5 text-center font-bold transition hover:brightness-110 disabled:opacity-50'
+const GOLD = 'xmas-btn-gold w-full px-6 py-3.5 text-lg'
+const OUTLINE = 'xmas-btn-outline w-full px-6 py-3'
 const CODE_RE = /^XMAS-[A-Z0-9]{4}-[A-Z0-9]{4}$/
 
 const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
@@ -29,11 +30,11 @@ function EnterCode() {
   const code = value.trim().toUpperCase()
   return (
     <form onSubmit={(e) => { e.preventDefault(); navigate(`/claim?code=${encodeURIComponent(code)}`) }}>
-      <h1 className="text-2xl font-bold">Claim your prize</h1>
-      <p className="mt-1 text-sm text-white/70">Enter the prize code you won in the Christmas giveaway.</p>
+      <h1 className="text-center text-2xl font-extrabold">Claim your prize</h1>
+      <p className="mt-1 text-center text-sm text-white/80">Enter the prize code you won in the Christmas giveaway.</p>
       <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="XMAS-XXXX-XXXX" aria-label="Prize code"
-        className="mt-5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center font-mono text-lg tracking-widest text-white uppercase placeholder:text-white/30 focus:border-amber-300 focus:outline-none" />
-      <button type="submit" disabled={!CODE_RE.test(code)} className={`${BTN} mt-4 bg-linear-to-r from-red-600 to-amber-500`}>Continue</button>
+        className="xmas-input mt-5 px-4 py-3 text-center font-mono text-lg tracking-widest uppercase" />
+      <button type="submit" disabled={!CODE_RE.test(code)} className={`${GOLD} mt-4`}>Continue</button>
     </form>
   )
 }
@@ -85,9 +86,9 @@ export default function ClaimPrizePage() {
   } else if (error && !preview) {
     body = (
       <div>
-        <h1 className="text-2xl font-bold">Prize code not found</h1>
-        <p className="mt-2 text-white/70">{error}</p>
-        <Link to="/claim" className={`${BTN} mt-5 bg-white/10`}>Try another code</Link>
+        <h1 className="text-center text-2xl font-extrabold">Prize code not found</h1>
+        <p className="mt-2 text-center text-white/80">{error}</p>
+        <Link to="/claim" className={`${OUTLINE} mt-5`}>Try another code</Link>
       </div>
     )
   } else if (!preview || authLoading) {
@@ -96,14 +97,14 @@ export default function ClaimPrizePage() {
     const line = proLine(done.prize, done.proEndsAt)
     body = (
       <div className="text-center xmas-pop">
-        <p className="text-5xl">🎉</p>
+        <GiftBox width={140} className="mx-auto" />
         <h1 className="mt-3 text-3xl font-extrabold">Congratulations!</h1>
         <p className="mt-2 text-lg">{done.alreadyClaimed ? 'You have already claimed' : 'You have claimed'} <strong>{done.prize.name}</strong>.</p>
-        {line && <p className="mt-2 text-emerald-300 font-semibold">{line}</p>}
+        {line && <p className="mt-2 font-semibold text-amber-200">{line}</p>}
         <p className="mt-3 text-sm text-white/70">
           {done.conversationId ? 'We have opened a chat with the Affiliate Roulette team, who will arrange the rest with you.' : 'The Affiliate Roulette team will contact you on Pulse to arrange the rest.'}
         </p>
-        <Link to={done.conversationId ? `/chat?conversation=${done.conversationId}` : '/chat'} className={`${BTN} mt-6 bg-linear-to-r from-violet-600 to-fuchsia-600`}>
+        <Link to={done.conversationId ? `/chat?conversation=${done.conversationId}` : '/chat'} className={`${GOLD} mt-6`}>
           {done.conversationId ? 'Open the chat' : 'Go to Pulse'}
         </Link>
       </div>
@@ -112,10 +113,10 @@ export default function ClaimPrizePage() {
     const { prize } = preview
     const head = (
       <div className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Christmas giveaway prize</p>
-        <p className="mt-3 text-4xl">{prize.group === 'mega' ? '🏆' : '🎁'}</p>
-        <h1 className="mt-2 text-2xl font-extrabold">{prize.name}</h1>
-        <p className="mt-2 font-mono tracking-widest text-amber-200">{preview.code}</p>
+        <p className="xmas-eyebrow text-xs font-bold uppercase tracking-[0.25em] text-amber-300">Christmas giveaway prize</p>
+        {prize.group === 'mega' ? <p className="mt-4 text-6xl" aria-hidden="true">🏆</p> : <GiftBox width={130} className="mx-auto mt-4" />}
+        <h1 className="mt-3 text-2xl font-extrabold"><span className="xmas-gold-text">{prize.name}</span></h1>
+        <p className="xmas-code-box mx-auto mt-3 w-fit rounded-xl px-4 py-1.5 font-mono tracking-widest text-amber-200">{preview.code}</p>
       </div>
     )
     let action
@@ -127,15 +128,15 @@ export default function ClaimPrizePage() {
       action = (
         <div>
           <p className="text-center text-sm text-white/75">To claim it, create a free Pulse account and verify your ID. It takes about 2 minutes. We will bring you back here after.</p>
-          <Link to="/signup" onClick={() => setPendingClaim(preview.code)} className={`${BTN} mt-5 bg-linear-to-r from-violet-600 to-fuchsia-600`}>Create a free Pulse account</Link>
-          <Link to="/login" onClick={() => setPendingClaim(preview.code)} className={`${BTN} mt-3 bg-white/10`}>I already have an account</Link>
+          <Link to="/signup" onClick={() => setPendingClaim(preview.code)} className={`${GOLD} mt-5`}>Create a free Pulse account</Link>
+          <Link to="/login" onClick={() => setPendingClaim(preview.code)} className={`${OUTLINE} mt-3`}>I already have an account</Link>
         </div>
       )
     } else if (!verified) {
       action = (
         <div>
           <p className="text-center text-sm text-white/75">One last step: verify your ID so we know the prize goes to a real person. We will bring you back here after.</p>
-          <Link to="/verify" onClick={() => setPendingClaim(preview.code)} className={`${BTN} mt-5 bg-linear-to-r from-violet-600 to-fuchsia-600`}>Verify my ID</Link>
+          <Link to="/verify" onClick={() => setPendingClaim(preview.code)} className={`${GOLD} mt-5`}>Verify my ID</Link>
         </div>
       )
     } else {
@@ -147,12 +148,12 @@ export default function ClaimPrizePage() {
               <label htmlFor="claim-wallet" className="text-sm font-medium">Your {isBtc ? 'Bitcoin' : 'Ethereum'} wallet address</label>
               <input id="claim-wallet" value={wallet} onChange={(e) => setWallet(e.target.value.trim())} spellCheck={false} autoComplete="off"
                 placeholder={isBtc ? 'bc1…' : '0x…'}
-                className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-white/30 focus:border-amber-300 focus:outline-none" />
+                className="xmas-input mt-1.5 px-4 py-3 font-mono text-sm" />
               <p className="mt-1.5 text-xs text-white/55">Please double check it. Crypto sent to a wrong address cannot be returned.</p>
             </div>
           )}
           <p className="text-center text-sm text-white/75">Claiming as <strong>{user.display_name || user.full_name}</strong>.</p>
-          <button type="button" onClick={claim} disabled={busy || (prize.needsWallet && !wallet)} className={`${BTN} mt-4 bg-linear-to-r from-red-600 to-amber-500`}>
+          <button type="button" onClick={claim} disabled={busy || (prize.needsWallet && !wallet)} className={`${GOLD} mt-4`}>
             {busy ? 'Claiming…' : 'Claim my prize'}
           </button>
         </div>
@@ -162,20 +163,20 @@ export default function ClaimPrizePage() {
       <div>
         {head}
         <div className="mt-6">{action}</div>
-        {error && <p className="mt-4 text-center text-sm text-red-300" role="alert">{error}</p>}
-        <p className="mt-6 text-center text-xs text-white/45">Claim by {formatDate(preview.claimDeadline)} · <Link to="/christmas/terms" className="underline hover:text-white">Giveaway terms</Link></p>
+        {error && <p className="mt-4 text-center text-sm font-semibold text-amber-100" role="alert">{error}</p>}
+        <p className="mt-6 text-center text-xs text-white/60">Claim by {formatDate(preview.claimDeadline)} · <Link to="/christmas/terms" className="underline hover:text-white">Giveaway terms</Link></p>
       </div>
     )
   }
 
   return (
-    <div className="xmas-page flex min-h-screen flex-col items-center justify-center px-4 py-10 text-white">
-      <Link to="/christmas" className="mb-6 flex items-center gap-2.5" aria-label="Back to the Christmas giveaway">
-        <img src="/White Pulse Logo.png" alt="Pulse" className="h-7" />
-        <span className="text-white/40" aria-hidden="true">×</span>
-        <img src="/xmas-assets/ar-logo-santa.png" alt="Affiliate Roulette" className="h-10 w-10 -mt-2" />
-      </Link>
-      <div className={`${CARD} w-full max-w-md`}>{body}</div>
-    </div>
+    <XmasShell>
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+        <div className="xmas-panel xmas-rays xmas-pop w-full max-w-md rounded-[1.75rem] px-6 pb-14 pt-7 sm:px-8">
+          <div className="relative z-10">{body}</div>
+          <SnowDrift className="h-10" />
+        </div>
+      </main>
+    </XmasShell>
   )
 }
