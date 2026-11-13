@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom'
 
 // The decorations shared by every Christmas giveaway page and popup, so they all look the same.
-// Purely visual: everything here is hidden from screen readers.
+// Purely visual: everything here is hidden from screen readers. The artwork (gift boxes, pine
+// branches, snow bank) is Affiliate Roulette's, in public/xmas-assets.
 
 export const PULSE_LOGO = '/White Pulse Logo.png'
 export const AR_LOGO = '/xmas-assets/ar-logo-santa.png'
+export const GIFT_PULSE = '/xmas-assets/gift-pulse.webp'
+export const GIFT_AR = '/xmas-assets/gift-ar.webp'
+const PINE_LEFT = '/xmas-assets/pine-left.webp'
+const PINE_RIGHT = '/xmas-assets/pine-right.webp'
+const SNOW_BANK = '/xmas-assets/snow-strip.webp'
 
 // Snowflakes with random positions, made once when the page loads so they never jump.
 const FLAKES = Array.from({ length: 42 }, (_, i) => ({
@@ -28,6 +34,16 @@ export function Lights() {
   return <div className="xmas-lights" aria-hidden="true">{Array.from({ length: 30 }, (_, i) => <span key={i} className="xmas-bulb" />)}</div>
 }
 
+// Snowy pine branches with lights in the two top corners, swaying a little.
+export function PineCorners() {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-0" aria-hidden="true">
+      <img src={PINE_LEFT} alt="" className="xmas-pine xmas-pine-l absolute -left-3 -top-4 w-[clamp(120px,24vw,360px)]" />
+      <img src={PINE_RIGHT} alt="" className="xmas-pine xmas-pine-r absolute -right-3 -top-4 w-[clamp(120px,24vw,360px)]" />
+    </div>
+  )
+}
+
 // A bauble hanging on a string and swinging gently.
 export function Bauble({ className = '', tone = 'red', string = 'h-14', size = 'h-12 w-12', slow = false }) {
   return (
@@ -41,16 +57,12 @@ export function Bauble({ className = '', tone = 'red', string = 'h-14', size = '
   )
 }
 
-// The four baubles that hang from the top corners of every giveaway page.
+// Swinging baubles just inside the pine branches (the branches carry their own baubles too).
 export function CornerBaubles() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-56 overflow-hidden" aria-hidden="true">
-      <Bauble className="left-[3%] hidden sm:flex" string="h-20" size="h-14 w-14" />
-      <Bauble className="left-[11%] hidden md:flex" tone="gold" string="h-10" size="h-10 w-10" slow />
-      <Bauble className="right-[3%] hidden sm:flex" tone="gold" string="h-16" size="h-14 w-14" slow />
-      <Bauble className="right-[11%] hidden md:flex" string="h-28" size="h-10 w-10" />
-      <Bauble className="left-[4%] flex sm:hidden" string="h-8" size="h-8 w-8" />
-      <Bauble className="right-[4%] flex sm:hidden" tone="gold" string="h-12" size="h-8 w-8" slow />
+      <Bauble className="left-[24%] hidden lg:flex" tone="gold" string="h-12" size="h-10 w-10" slow />
+      <Bauble className="right-[24%] hidden lg:flex" string="h-20" size="h-10 w-10" />
     </div>
   )
 }
@@ -64,7 +76,7 @@ export function SnowCap({ className = '' }) {
   )
 }
 
-// Snow drifts along the bottom of a popup or section.
+// Snow drifts along the bottom of a popup.
 export function SnowDrift({ className = '' }) {
   return (
     <svg className={`pointer-events-none absolute inset-x-0 bottom-0 w-full ${className}`} viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true">
@@ -79,42 +91,52 @@ export function SnowDrift({ className = '' }) {
   )
 }
 
-// A wrapped present, optionally with a logo on the front.
-export function GiftBox({ logo, alt = '', width = 180, className = '' }) {
+// The snow bank the calendar sits in, the full width of the screen. Its flat bottom edge fades out.
+export function SnowBank({ className = '' }) {
   return (
-    <div className={`xmas-gift ${className}`} style={{ '--w': `${width}px` }} aria-hidden={alt ? undefined : 'true'}>
-      <div className="xmas-gift-bow" />
-      <div className="xmas-gift-lid xmas-gift-snow" />
-      <div className="xmas-gift-box">
-        {logo && <img src={logo} alt={alt} className="max-h-[55%] max-w-[78%] object-contain opacity-95 drop-shadow" />}
-      </div>
+    <div className={`pointer-events-none absolute left-1/2 w-screen -translate-x-1/2 ${className}`} aria-hidden="true">
+      <img src={SNOW_BANK} alt="" className="block h-20 w-full object-cover object-top mask-[linear-gradient(to_bottom,#000_55%,transparent)] sm:h-28 lg:h-32" />
     </div>
   )
+}
+
+// The present for a prize: the Pulse box for Pulse Pro, the Affiliate Roulette box for the rest.
+export function PrizeGift({ prizeKey = '', className = '' }) {
+  const pulse = prizeKey.startsWith('pro_')
+  return <img src={pulse ? GIFT_PULSE : GIFT_AR} alt="" aria-hidden="true" className={`xmas-gift-img ${className}`} />
 }
 
 // The Pulse logo × the Affiliate Roulette logo, linking back to a page.
 export function LogoLockup({ to = '/', label = 'Pulse home' }) {
   return (
-    <Link to={to} className="flex items-center gap-2.5 rounded" aria-label={label}>
+    <Link to={to} className="flex items-center gap-2.5 rounded drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]" aria-label={label}>
       <img src={PULSE_LOGO} alt="Pulse" className="h-7" />
-      <span className="text-white/60" aria-hidden="true">×</span>
+      <span className="text-white/70" aria-hidden="true">×</span>
       <img src={AR_LOGO} alt="Affiliate Roulette" className="-mt-2 h-10 w-10" />
     </Link>
   )
 }
 
-// The page frame for the smaller giveaway pages (claim, terms): background, snow, baubles, header.
+// The page header: logos, buttons on the right, pine branches in the corners, lights underneath.
+export function XmasHeader({ logoTo, logoLabel, right }) {
+  return (
+    <header className="relative z-20 border-b border-amber-300/25">
+      <PineCorners />
+      <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-4">
+        <LogoLockup to={logoTo} label={logoLabel} />
+        {right}
+      </div>
+      <Lights />
+    </header>
+  )
+}
+
+// The page frame for the smaller giveaway pages (claim, terms): background, snow, header, baubles.
 export function XmasShell({ children, back = '/christmas', backLabel = 'Back to the Christmas giveaway', right = null }) {
   return (
     <div className="xmas-page relative min-h-screen overflow-x-hidden text-white">
       <Snow />
-      <header className="relative z-20 border-b border-amber-300/25">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <LogoLockup to={back} label={backLabel} />
-          {right}
-        </div>
-        <Lights />
-      </header>
+      <XmasHeader logoTo={back} logoLabel={backLabel} right={right} />
       {/* The baubles hang from just under the header. */}
       <div className="relative">
         <CornerBaubles />

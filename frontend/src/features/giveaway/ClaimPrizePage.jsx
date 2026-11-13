@@ -5,7 +5,7 @@ import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import { previewClaim, errorMessage } from './giveawayApi'
 import { setPendingClaim } from '../../utils/pendingClaim'
-import { XmasShell, GiftBox, SnowDrift } from './XmasDecor'
+import { XmasShell, PrizeGift, SnowDrift } from './XmasDecor'
 
 // /claim?code=XMAS-XXXX-XXXX: where a Christmas giveaway winner turns their prize code into the
 // prize. Shows the prize to anyone; claiming needs a verified Pulse account, so a visitor who is
@@ -109,7 +109,7 @@ export default function ClaimPrizePage() {
     const line = proLine(done.prize, done.proEndsAt)
     body = (
       <div className="text-center xmas-pop">
-        <GiftBox width={140} className="mx-auto" />
+        <PrizeGift prizeKey={done.prize.key} className="xmas-float mx-auto w-44" />
         <h1 className="mt-3 text-3xl font-extrabold">Congratulations!</h1>
         <p className="mt-2 text-lg">{done.alreadyClaimed ? 'You have already claimed' : 'You have claimed'} <strong>{done.prize.name}</strong>.</p>
         {line && <p className="mt-2 font-semibold text-amber-200">{line}</p>}
@@ -126,7 +126,7 @@ export default function ClaimPrizePage() {
     const head = (
       <div className="text-center">
         <p className="xmas-eyebrow text-xs font-bold uppercase tracking-[0.25em] text-amber-300">Christmas giveaway prize</p>
-        {prize.group === 'mega' ? <p className="mt-4 text-6xl" aria-hidden="true">🏆</p> : <GiftBox width={130} className="mx-auto mt-4" />}
+        <PrizeGift prizeKey={prize.key} className="xmas-float mx-auto mt-4 w-40" />
         <h1 className="mt-3 text-2xl font-extrabold"><span className="xmas-gold-text">{prize.name}</span></h1>
         <p className="xmas-code-box mx-auto mt-3 w-fit rounded-xl px-4 py-1.5 font-mono tracking-widest text-amber-200">{preview.code}</p>
       </div>

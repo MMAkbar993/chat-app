@@ -7,7 +7,7 @@ import { useGiveawayMusic } from './useGiveawayMusic'
 import SpinWheel, { CLAIM_PATH } from './SpinWheel'
 import JoinModal from './JoinModal'
 import { GIVEAWAY_FAQ, HOW_IT_WORKS } from './giveawayContent'
-import { Snow, Lights, CornerBaubles, SnowCap, SnowDrift, GiftBox, LogoLockup, PULSE_LOGO, AR_LOGO } from './XmasDecor'
+import { Snow, CornerBaubles, SnowCap, SnowBank, XmasHeader, GIFT_PULSE, GIFT_AR, PULSE_LOGO } from './XmasDecor'
 
 // The Affiliate Roulette x Pulse Christmas giveaway: an advent calendar of 25 doors, one spin a
 // day. Everything that matters (dates, odds, stock, who may spin) comes from /api/giveaway/state;
@@ -293,9 +293,7 @@ export default function GiveawayPage() {
       <Snow />
       {state?.preview && <PreviewBar days={days} today={state.today} onDay={pickPreviewDay} onReset={doPreviewReset} />}
 
-      <header className="relative z-20 border-b border-amber-300/25">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <LogoLockup />
+      <XmasHeader right={
           <div className="flex items-center gap-2">
             {music.available && (
               <button type="button" onClick={music.toggle} aria-label={music.muted ? 'Turn music on' : 'Mute music'}
@@ -312,17 +310,16 @@ export default function GiveawayPage() {
               <button type="button" onClick={() => setJoinOpen(true)} className="xmas-btn-gold px-5 py-2 text-sm">Join free</button>
             )}
           </div>
-        </div>
-        <Lights />
-      </header>
+      } />
 
       <div className="relative">
         <CornerBaubles />
 
         <main className="relative z-10 mx-auto max-w-5xl px-4 pb-20">
           <section className="relative pb-4 pt-12 text-center sm:pt-14">
-            <GiftBox logo={PULSE_LOGO} width={190} className="absolute -left-10 top-44 hidden -rotate-8 xl:block" />
-            <GiftBox logo={AR_LOGO} width={190} className="absolute -right-10 top-44 hidden rotate-8 xl:block" />
+            {/* The two presents either side of the title (wide screens); smaller ones above the calendar on phones. */}
+            <img src={GIFT_PULSE} alt="" aria-hidden="true" className="xmas-gift-img xmas-float absolute -left-4 top-48 hidden w-40 lg:block xl:-left-16 xl:w-60" />
+            <img src={GIFT_AR} alt="" aria-hidden="true" className="xmas-gift-img xmas-float xmas-float-b absolute -right-4 top-44 hidden w-40 lg:block xl:-right-16 xl:w-60" />
 
             <p className="xmas-btn-gold pointer-events-none px-6 py-2 text-sm sm:text-base">
               <span aria-hidden="true">🎁</span> Affiliate Roulette × Pulse
@@ -374,8 +371,12 @@ export default function GiveawayPage() {
 
           {state && (
             <section className="relative mt-10" aria-labelledby="xmas-cal">
-              {/* Snow drifts either side of the calendar, the full width of the screen. */}
-              <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-screen -translate-x-1/2" aria-hidden="true"><SnowDrift className="h-full" /></div>
+              {/* The calendar sits in a snow bank the full width of the screen. */}
+              <SnowBank className="-top-6 sm:-top-10" />
+              <div className="relative -mb-3 flex items-end justify-center gap-6 lg:hidden" aria-hidden="true">
+                <img src={GIFT_PULSE} alt="" className="xmas-gift-img xmas-float w-28 sm:w-36" />
+                <img src={GIFT_AR} alt="" className="xmas-gift-img xmas-float xmas-float-b w-28 sm:w-36" />
+              </div>
               <h2 id="xmas-cal" className="sr-only">Advent calendar</h2>
               <div className="xmas-calendar relative mx-auto max-w-3xl rounded-[1.75rem] px-3 pb-5 pt-9 sm:px-7 sm:pb-7 sm:pt-11">
                 <SnowCap className="h-8 rounded-t-[1.75rem]" />

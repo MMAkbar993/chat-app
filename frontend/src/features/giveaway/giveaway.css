@@ -141,34 +141,26 @@
 .xmas-ball-gold { background: radial-gradient(circle at 32% 30%, #fff4c6 0%, #f3c14b 35%, #b9800f 80%, #7a5206 100%); }
 .xmas-ball-shadow { box-shadow: 0 10px 20px -6px rgba(0, 0, 0, 0.55), 0 0 18px -4px rgba(255, 180, 90, 0.5); }
 
-/* Gift boxes (the hero's corners, and the prize popup). */
-.xmas-gift { position: relative; width: var(--w, 180px); aspect-ratio: 1 / 0.92; }
-.xmas-gift-box {
-  position: absolute; left: 6%; right: 6%; top: 26%; bottom: 0; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; padding-left: 22%;
-  background:
-    linear-gradient(90deg, transparent 20%, #f7cd5b 20%, #d99a1b 31%, transparent 31%),
-    linear-gradient(160deg, #e2252f 0%, #a8111a 55%, #760a10 100%);
-  box-shadow: inset -14px -12px 26px rgba(0, 0, 0, 0.28), inset 6px 6px 14px rgba(255, 255, 255, 0.12), 0 20px 30px -14px rgba(0, 0, 0, 0.7);
+/* Affiliate Roulette's artwork: gift boxes float gently, pine branches sway from their corner. */
+.xmas-gift-img { filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.45)); }
+.xmas-float { animation: xmas-float 5s ease-in-out infinite; }
+.xmas-float-b { animation-duration: 6s; animation-delay: -2s; }
+@keyframes xmas-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
 }
-.xmas-gift-lid {
-  position: absolute; left: 0; right: 0; top: 14%; height: 17%; border-radius: 8px; z-index: 1;
-  background:
-    linear-gradient(90deg, transparent 18%, #ffe08a 18%, #e0a020 32%, transparent 32%),
-    linear-gradient(180deg, #ef3a43 0%, #b3141d 100%);
-  box-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.5);
+.xmas-pine { filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45)); animation: xmas-sway 7s ease-in-out infinite; }
+.xmas-pine-l { transform-origin: 0 0; }
+.xmas-pine-r { transform-origin: 100% 0; animation-delay: -3.5s; }
+@keyframes xmas-sway {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: 1.6deg; }
 }
-.xmas-gift-snow::after {
-  content: ''; position: absolute; left: 3%; right: 3%; top: -7px; height: 14px; border-radius: 12px 12px 8px 8px;
-  background: linear-gradient(180deg, #ffffff, #e5edf7); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+.xmas-pine-r { animation-name: xmas-sway-r; }
+@keyframes xmas-sway-r {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: -1.6deg; }
 }
-.xmas-gift-bow { position: absolute; top: 0; left: 25%; width: 46%; height: 18%; transform: translateX(-50%); z-index: 2; }
-.xmas-gift-bow::before, .xmas-gift-bow::after {
-  content: ''; position: absolute; bottom: 0; width: 50%; height: 100%; border-radius: 50%;
-  border: 5px solid #f5c451; border-bottom-color: #c98a17;
-}
-.xmas-gift-bow::before { left: 0; transform: rotate(-18deg); }
-.xmas-gift-bow::after { right: 0; transform: rotate(18deg); }
 
 /* The wheel */
 .xmas-wheel { transition: transform 5s cubic-bezier(0.12, 0.8, 0.12, 1); }
@@ -196,7 +188,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .xmas-flake { display: none; }
-  .xmas-tile-today, .xmas-bulb, .xmas-bauble, .xmas-rim-bulb { animation: none; }
+  .xmas-tile-today, .xmas-bulb, .xmas-bauble, .xmas-rim-bulb, .xmas-float, .xmas-pine { animation: none; }
   .xmas-wheel { transition-duration: 1.2s; }
   .xmas-pop { animation: none; }
 }

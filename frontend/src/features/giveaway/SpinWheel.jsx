@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiCopy, FiCheck, FiX } from 'react-icons/fi'
-import { GiftBox, SnowDrift, AR_LOGO } from './XmasDecor'
+import { PrizeGift, SnowDrift, AR_LOGO } from './XmasDecor'
 
 // The wheel is only the show: the server has already decided the prize (see the backend's
 // giveaway.service.js) before the wheel starts to turn, and the wheel lands on the slice that
@@ -198,7 +198,7 @@ function ResultPanel({ result, copied, onCopy, onClose }) {
         <div className="relative mx-auto mt-5 w-fit">
           <span className="absolute -left-6 top-2 text-xl" aria-hidden="true">✨</span>
           <span className="absolute -right-5 top-8 text-lg" aria-hidden="true">✨</span>
-          <GiftBox width={150} />
+          <PrizeGift prizeKey={result.prize.key} className="xmas-float w-44" />
         </div>
         <p className="mt-4 text-2xl font-extrabold leading-snug">You won <PrizeName name={result.prize.name} />!</p>
         <p className="mt-4 text-sm text-white/80">Your prize code</p>
