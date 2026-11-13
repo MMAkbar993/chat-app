@@ -72,7 +72,7 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
   try {
     await client.query('BEGIN')
     const { rows: [row] } = await client.query(
-      `SELECT w.id, w.entrant_id, w.claimed_by, w.conversation_id, w.code, w.is_preview,
+      `SELECT w.id, w.entrant_id, w.claimed_by, w.conversation_id, w.code, w.is_preview, w.wallet_address,
               p.key, p.name, p.needs_wallet, p.pro_months, p.pro_lifetime
        FROM giveaway_wins w JOIN giveaway_prizes p ON p.key = w.prize_key
        WHERE w.code = $1 FOR UPDATE OF w`,
@@ -82,7 +82,9 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
     if (row.claimed_by) {
       if (row.claimed_by === user.id) {
         await client.query('ROLLBACK')
-        return { alreadyClaimed: true, prize: { key: row.key, name: row.name }, conversationId: row.conversation_id }
+        // Claimed before but the chat never opened (no host set up then, say): try again now.
+        const conversationId = row.conversation_id || await openChatAndSave(user, { ...row, wallet: row.wallet_address }, user.pro_ends_at)
+        return { alreadyClaimed: true, prize: { key: row.key, name: row.name }, conversationId }
       }
       throw fail(409, 'This prize has already been claimed.', 'claimed')
     }
@@ -140,32 +142,58 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
   }
 
   // The prize is claimed even if the chat cannot be opened; the host sees it in the admin panel.
-  let conversationId = null
+  const conversationId = await openChatAndSave(user, win, proEndsAt)
+  return { alreadyClaimed: false, prize, proEndsAt, conversationId }
+}
+
+async function openChatAndSave(user, win, proEndsAt) {
   try {
-    conversationId = await openHostChat(user, win, proEndsAt)
+    const conversationId = await openHostChat(user, win, proEndsAt)
     if (conversationId) await query(`UPDATE giveaway_wins SET conversation_id = $1 WHERE id = $2`, [conversationId, win.id])
+    return conversationId
   } catch (err) {
     console.error('giveaway claim: could not open the host chat:', err.message)
+    return null
   }
-
-  return { alreadyClaimed: false, prize, proEndsAt, conversationId }
 }
 
 async function findHost() {
   const username = process.env.GIVEAWAY_HOST_USERNAME
-  if (!username) return null
+  if (!username) {
+    console.warn('giveaway claim: GIVEAWAY_HOST_USERNAME is not set, so no chat was opened with the winner.')
+    return null
+  }
   const { rows: [host] } = await query(
     `SELECT id, full_name, display_name, avatar_url FROM users WHERE LOWER(username) = LOWER($1)`,
     [username]
   )
+  if (!host) console.warn(`giveaway claim: no Pulse user with the username "${username}" (GIVEAWAY_HOST_USERNAME), so no chat was opened.`)
   return host || null
+}
+
+// At start up: say so if winners will not get a chat with the host.
+export async function warnIfHostMissing() {
+  const username = process.env.GIVEAWAY_HOST_USERNAME
+  if (!username) {
+    if (process.env.NODE_ENV === 'production') console.warn('GIVEAWAY_HOST_USERNAME is not set: giveaway winners will not get a chat with the host when they claim.')
+    return
+  }
+  try {
+    const { rows } = await query('SELECT 1 FROM users WHERE LOWER(username) = LOWER($1)', [username])
+    if (!rows.length) console.warn(`GIVEAWAY_HOST_USERNAME is "${username}" but no Pulse user has that username.`)
+  } catch { /* database not ready: the claim itself will log it */ }
 }
 
 // A direct chat between the host and the winner, with a first message from the host's account
 // that says what was won. Marked as automatic so nobody thinks Eddie typed it at 3am.
 async function openHostChat(user, win, proEndsAt) {
   const host = await findHost()
-  if (!host || host.id === user.id) return null
+  if (!host) return null
+  // The host cannot open a chat with themselves (testing with the host account).
+  if (host.id === user.id) {
+    console.warn('giveaway claim: the winner is the host account itself, so no chat was opened.')
+    return null
+  }
 
   let conv = await getDirectConversation(user.id, host.id)
   if (!conv) {

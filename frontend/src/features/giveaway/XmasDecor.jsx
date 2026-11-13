@@ -92,14 +92,13 @@ export function GiftBox({ logo, alt = '', width = 180, className = '' }) {
   )
 }
 
-// "pulse × AFFILIATE ROULETTE", linking back to a page.
-export function LogoLockup({ to = '/', label = 'Pulse home', compact = false }) {
+// The Pulse logo × the Affiliate Roulette logo, linking back to a page.
+export function LogoLockup({ to = '/', label = 'Pulse home' }) {
   return (
     <Link to={to} className="flex items-center gap-2.5 rounded" aria-label={label}>
       <img src={PULSE_LOGO} alt="Pulse" className="h-7" />
       <span className="text-white/60" aria-hidden="true">×</span>
       <img src={AR_LOGO} alt="Affiliate Roulette" className="-mt-2 h-10 w-10" />
-      {!compact && <span className="hidden text-xs font-bold uppercase tracking-[0.25em] text-white/90 md:inline">Affiliate Roulette</span>}
     </Link>
   )
 }

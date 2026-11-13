@@ -66,6 +66,18 @@ export default function ClaimPrizePage() {
 
   const verified = user?.kyc_status === 'verified'
 
+  // Already claimed: if it was this account, the server answers with the chat (and opens it now
+  // if it never opened), so the winner sees the same "you claimed it" screen again.
+  const checkOwnClaim = preview?.claimed && verified
+  useEffect(() => {
+    if (!checkOwnClaim || done) return
+    let gone = false
+    client.post('/giveaway/claim', { code })
+      .then(({ data }) => { if (!gone) setDone(data) })
+      .catch(() => { /* claimed by someone else: the message below stays */ })
+    return () => { gone = true }
+  }, [checkOwnClaim, done, code])
+
   async function claim() {
     setBusy(true)
     setError('')
@@ -121,7 +133,7 @@ export default function ClaimPrizePage() {
     )
     let action
     if (preview.claimed) {
-      action = <p className="text-center text-white/75">This prize has already been claimed.{user && <> If it was you, you will find the chat in <Link to="/chat" className="underline">Pulse</Link>.</>}</p>
+      action = <p className="text-center text-white/80">This prize has already been claimed.{!user && <> If it was you, <Link to="/login" onClick={() => setPendingClaim(preview.code)} className="underline">sign in to Pulse</Link> to see it.</>}</p>
     } else if (preview.closed) {
       action = <p className="text-center text-white/75">Prizes had to be claimed by {formatDate(preview.claimDeadline)}.</p>
     } else if (!user) {

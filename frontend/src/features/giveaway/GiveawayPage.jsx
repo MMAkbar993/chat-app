@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FiCalendar, FiGift, FiZap, FiShield, FiLock, FiArrowRight, FiVolume2, FiVolumeX } from 'react-icons/fi'
+import { FiCalendar, FiGift, FiZap, FiShield, FiLock, FiArrowRight, FiVolume2, FiVolumeX, FiMessageCircle } from 'react-icons/fi'
 import './giveaway.css'
 import { fetchState, spin, getToken, setToken, errorMessage, setPreviewDay, resetPreview } from './giveawayApi'
 import { useGiveawayMusic } from './useGiveawayMusic'
@@ -144,6 +144,39 @@ function Faq() {
         </div>
       ))}
     </div>
+  )
+}
+
+// For visitors who have not heard of Pulse: prizes are claimed there, so say what it is.
+const PULSE_POINTS = [
+  { icon: FiShield, title: 'Real people only', body: 'Every member verifies their ID, so you always know who you are talking to.' },
+  { icon: FiMessageCircle, title: 'Made for iGaming', body: 'Chat with affiliates, operators and managers, one to one or in groups.' },
+  { icon: FiGift, title: 'Where you claim prizes', body: 'Win here, then claim your prize on Pulse with a free account.' },
+]
+
+function WhatIsPulse() {
+  return (
+    <section className="xmas-card mt-14 rounded-[1.75rem] p-6 sm:p-9" aria-labelledby="xmas-pulse">
+      <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
+        <img src={PULSE_LOGO} alt="" className="h-8 shrink-0" />
+        <div className="sm:ml-2 sm:border-l sm:border-amber-300/30 sm:pl-5">
+          <h2 id="xmas-pulse" className="text-2xl font-extrabold"><span className="xmas-gold-text">What is Pulse?</span></h2>
+          <p className="mt-1 text-white/85">Pulse is a messaging app built for the iGaming industry, where every member is ID verified.</p>
+        </div>
+      </div>
+      <ul className="mt-6 grid gap-3 sm:grid-cols-3">
+        {PULSE_POINTS.map(({ icon: Icon, title, body }) => (
+          <li key={title} className="rounded-2xl bg-black/20 p-4">
+            <Icon className="text-2xl text-amber-300" aria-hidden="true" />
+            <p className="mt-2 font-semibold">{title}</p>
+            <p className="mt-1 text-sm text-white/75">{body}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6 text-center">
+        <Link to="/how-it-works" target="_blank" className="xmas-btn-outline px-6 py-2.5 text-sm">See how Pulse works</Link>
+      </div>
+    </section>
   )
 }
 
@@ -354,6 +387,8 @@ export default function GiveawayPage() {
               </div>
             </section>
           )}
+
+          <WhatIsPulse />
 
           {me && me.wins.length > 0 && (
             <section id="my-prizes" className="mt-16 scroll-mt-6" aria-labelledby="xmas-mine">
