@@ -5,7 +5,7 @@ import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import { previewClaim, errorMessage } from './giveawayApi'
 import { setPendingClaim } from '../../utils/pendingClaim'
-import { XmasShell, PrizeGift, SnowDrift } from './XmasDecor'
+import { XmasShell, PrizeGift, SnowDrift, WhatIsPulse } from './XmasDecor'
 
 // /claim?code=XMAS-XXXX-XXXX: where a Christmas giveaway winner turns their prize code into the
 // prize. Shows the prize to anyone; claiming needs a verified Pulse account, so a visitor who is
@@ -142,7 +142,7 @@ export default function ClaimPrizePage() {
     } else if (!user) {
       action = (
         <div>
-          <p className="text-center text-sm text-white/75">To claim it, create a free Pulse account and verify your ID. It takes about 2 minutes. We will bring you back here after.</p>
+          <p className="text-center text-sm text-white/80">To claim it, create a free Pulse account. It takes about 2 minutes, and we will bring you back here after.</p>
           <Link to="/signup" onClick={() => setPendingClaim(preview.code)} className={`${GOLD} mt-5`}>Create a free Pulse account</Link>
           <Link to="/login" onClick={() => setPendingClaim(preview.code)} className={`${OUTLINE} mt-3`}>I already have an account</Link>
         </div>
@@ -150,8 +150,8 @@ export default function ClaimPrizePage() {
     } else if (!verified) {
       action = (
         <div>
-          <p className="text-center text-sm text-white/75">One last step: verify your ID so we know the prize goes to a real person. We will bring you back here after.</p>
-          <Link to="/verify" onClick={() => setPendingClaim(preview.code)} className={`${GOLD} mt-5`}>Verify my ID</Link>
+          <p className="text-center text-sm text-white/80">One last step: a quick check that you are a real person, so prizes only go to real people. Every Pulse member does it once. We will bring you back here after.</p>
+          <Link to="/verify" onClick={() => setPendingClaim(preview.code)} className={`${GOLD} mt-5`}>Continue</Link>
         </div>
       )
     } else {
@@ -186,11 +186,13 @@ export default function ClaimPrizePage() {
 
   return (
     <XmasShell>
-      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+      <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-6 px-4 py-12">
         <div className="xmas-panel xmas-rays xmas-pop w-full max-w-md rounded-[1.75rem] px-6 pb-14 pt-7 sm:px-8">
           <div className="relative z-10">{body}</div>
           <SnowDrift className="h-10" />
         </div>
+        {/* Not on Pulse yet: say what it is before asking them to join. */}
+        {!authLoading && !user && preview && !preview.claimed && !preview.closed && <WhatIsPulse compact className="w-full max-w-md" />}
       </main>
     </XmasShell>
   )

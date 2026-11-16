@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { FiShield, FiMessageCircle, FiGift } from 'react-icons/fi'
 
 // The decorations shared by every Christmas giveaway page and popup, so they all look the same.
 // Purely visual: everything here is hidden from screen readers. The artwork (gift boxes, pine
@@ -143,5 +144,41 @@ export function XmasShell({ children, back = '/christmas', backLabel = 'Back to 
         <div className="relative z-10">{children}</div>
       </div>
     </div>
+  )
+}
+
+// For visitors who have not heard of Pulse: prizes are claimed there, so say what it is. On the
+// giveaway page (three columns) and under the claim card (compact: one column).
+const PULSE_POINTS = [
+  { icon: FiShield, title: 'Real people only', body: 'Every member is verified, so you always know who you are talking to.' },
+  { icon: FiMessageCircle, title: 'Made for iGaming', body: 'Chat with affiliates, operators and managers, one to one or in groups.' },
+  { icon: FiGift, title: 'Where you claim prizes', body: 'Win here, then claim your prize on Pulse with a free account.' },
+]
+
+export function WhatIsPulse({ className = '', compact = false }) {
+  return (
+    <section className={`xmas-card rounded-[1.75rem] ${compact ? 'p-5 sm:p-6' : 'p-6 sm:p-9'} ${className}`} aria-labelledby="xmas-pulse">
+      <div className={`flex flex-col items-center gap-3 text-center ${compact ? '' : 'sm:flex-row sm:text-left'}`}>
+        <img src={PULSE_LOGO} alt="" className="h-8 shrink-0" />
+        <div className={compact ? '' : 'sm:ml-2 sm:border-l sm:border-amber-300/30 sm:pl-5'}>
+          <h2 id="xmas-pulse" className={`${compact ? 'text-xl' : 'text-2xl'} font-extrabold`}><span className="xmas-gold-text">What is Pulse?</span></h2>
+          <p className="mt-1 text-white/85">Pulse is a safer alternative to Telegram and Teams: a messaging app built for the iGaming industry, where every member is verified.</p>
+        </div>
+      </div>
+      <ul className={`mt-5 grid gap-3 ${compact ? '' : 'sm:grid-cols-3'}`}>
+        {PULSE_POINTS.map(({ icon: Icon, title, body }) => (
+          <li key={title} className={`rounded-2xl bg-black/20 p-4 ${compact ? 'flex items-start gap-3 text-left' : ''}`}>
+            <Icon className="shrink-0 text-2xl text-amber-300" aria-hidden="true" />
+            <div>
+              <p className={`${compact ? '' : 'mt-2'} font-semibold`}>{title}</p>
+              <p className="mt-1 text-sm text-white/75">{body}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-5 text-center">
+        <Link to="/how-it-works?theme=light" target="_blank" className="xmas-btn-outline px-6 py-2.5 text-sm">See how Pulse works</Link>
+      </div>
+    </section>
   )
 }

@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react'
 import Modal from '../../components/ui/Modal'
 import PaymentModal from './PaymentModal'
 import { useAuth } from '../../context/AuthContext'
-import { isProUser } from '../../utils/plan'
+import { isProUser, giftProEnd, giftProText } from '../../utils/plan'
 
 // A colour per row. The surrounding chrome — header, plan rows, button — is all one violet;
 // the variety belongs on the perk icons, where it's what stops a long list reading as a plain
@@ -69,6 +69,7 @@ const SAVINGS_PCT = Math.round((1 - yearly.amount / (monthly.amount * 12)) * 100
 export default function UpgradeModal({ isOpen, onClose, darkMode = false }) {
   const { user } = useAuth()
   const pro = isProUser(user)
+  const gift = giftProEnd(user)
   const [plan, setPlan] = useState('monthly')
   const [showPayment, setShowPayment] = useState(false)
   const selected = PLANS.find((p) => p.key === plan)
@@ -202,7 +203,12 @@ export default function UpgradeModal({ isOpen, onClose, darkMode = false }) {
 
         {/* Pinned CTA */}
         <div className={`shrink-0 px-4 pt-3 pb-4 border-t ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
-          {pro ? (
+          {gift ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-amber-800">
+              <p className="text-sm font-bold">🎄 You've been upgraded!</p>
+              <p className="text-xs mt-0.5">You have Pulse Pro {giftProText(gift)}, free from the Christmas giveaway. Nothing to pay.</p>
+            </div>
+          ) : pro ? (
             <p className={`text-center text-sm py-2.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>You're already on Pro.</p>
           ) : (
             <>

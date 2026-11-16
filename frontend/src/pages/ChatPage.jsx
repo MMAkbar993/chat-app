@@ -26,6 +26,7 @@ import GroupCallModal from '../components/calls/GroupCallModal'
 import CallingCard from '../components/calls/CallingCard'
 import IncomingCallModal from '../components/calls/IncomingCallModal'
 import UpgradeModal from '../features/payment/UpgradeModal'
+import GiftProNotice from '../features/payment/GiftProNotice'
 import ProductTour from '../components/onboarding/ProductTour'
 import { apiErrorMessage } from '../utils/apiError'
 
@@ -386,6 +387,7 @@ export default function ChatPage() {
       )}
 
       <UpgradeModal isOpen={showCallLimitUpgrade} onClose={() => setShowCallLimitUpgrade(false)} darkMode={darkMode} />
+      <GiftProNotice darkMode={darkMode} />
 
       <ProductTour
         hasSeenTour={user?.has_seen_tour}
