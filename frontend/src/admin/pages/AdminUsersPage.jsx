@@ -508,6 +508,22 @@ function UserDetailModal({ userId, onClose, onSaved }) {
                 </button>
               </div>
               <p className="text-xs text-gray-400 mt-1">Local override — does not create or change a real Stripe subscription.</p>
+              {detail.pro_ends_at && new Date(detail.pro_ends_at) > new Date() && (
+                <p className="mt-2 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  🎄 Free Pro from the Christmas giveaway {new Date(detail.pro_ends_at).getUTCFullYear() >= 9999 ? 'for life' : `until ${fmtDate(detail.pro_ends_at)}`}.
+                  {' '}Set Free does not remove it.
+                </p>
+              )}
+              {detail.giveaway_wins?.length > 0 && (
+                <div className="mt-2 text-xs text-gray-600">
+                  <p className="font-semibold text-gray-700">Christmas giveaway prizes claimed</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {detail.giveaway_wins.map((w) => (
+                      <li key={w.code}>{w.prize_name} · <span className="font-mono">{w.code}</span>{w.is_preview ? ' (test)' : ''} · {fmtDate(w.claimed_at)}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Editable profile */}

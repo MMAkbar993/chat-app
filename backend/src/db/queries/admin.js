@@ -1,4 +1,5 @@
 import { query } from '../../config/database.js'
+import { listUserGiveawayWins } from './adminGiveaway.js'
 import { getOnlineUserCount } from '../../socket/index.js'
 import { getSalesTotals } from './payments.js'
 
@@ -47,7 +48,7 @@ export async function getUserDetail(id) {
   const userResult = await query(
     `SELECT id, full_name, display_name, username, email, phone, country, avatar_url, is_active, blocked_at,
             created_at, last_seen_at, login_count, kyc_status, kyc_session_id, subscription_plan, subscription_status,
-            kyc_reminded_at, kyc_reminder_count
+            kyc_reminded_at, kyc_reminder_count, pro_ends_at
      FROM users WHERE id = $1 AND is_admin = false`,
     [id]
   )
@@ -82,6 +83,7 @@ export async function getUserDetail(id) {
     rep_websites: repWebsites.rows,
     reports: reports.rows,
     failed_checks: failedChecks.rows,
+    giveaway_wins: await listUserGiveawayWins(id),
   }
 }
 

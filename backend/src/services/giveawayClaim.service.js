@@ -73,12 +73,15 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
     await client.query('BEGIN')
     const { rows: [row] } = await client.query(
       `SELECT w.id, w.entrant_id, w.claimed_by, w.conversation_id, w.code, w.is_preview, w.wallet_address,
-              p.key, p.name, p.needs_wallet, p.pro_months, p.pro_lifetime
+              p.key, p.name, p.needs_wallet, p.pro_months, p.pro_lifetime, e.blocked_at AS entrant_blocked_at
        FROM giveaway_wins w JOIN giveaway_prizes p ON p.key = w.prize_key
+       JOIN giveaway_entrants e ON e.id = w.entrant_id
        WHERE w.code = $1 FOR UPDATE OF w`,
       [code]
     )
     if (!row) throw fail(404, 'That prize code was not found. Please check it.', 'not_found')
+    // An entry blocked by an admin (cheating) cannot have its prizes claimed.
+    if (row.entrant_blocked_at && row.claimed_by !== user.id) throw fail(403, 'This prize can no longer be claimed. Please contact us if this is a mistake.', 'blocked')
     if (row.claimed_by) {
       if (row.claimed_by === user.id) {
         await client.query('ROLLBACK')

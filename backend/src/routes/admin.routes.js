@@ -40,6 +40,11 @@ import {
   adminDeleteAd,
   adminUploadAdImage, sendKycReminder, sendKycReminderToAllPending } from '../controllers/admin.controller.js'
 
+import {
+  adminGiveawayOverview, adminGiveawayEntrants, adminGiveawayBlockEntrant, adminGiveawayWins,
+  adminGiveawayUpdateWin, adminGiveawayUpdatePrize, adminGiveawayExportEntrants, adminGiveawayExportWins,
+} from '../controllers/adminGiveaway.controller.js'
+
 export const adminRouter = Router()
 
 // Public
@@ -85,6 +90,16 @@ adminRouter.patch('/system-emails/:key', updateSystemEmail)
 adminRouter.get('/groups', listGroups)
 adminRouter.get('/conversations', listConversations)
 adminRouter.get('/calls', listCalls)
+
+// Christmas giveaway
+adminRouter.get('/giveaway/overview', adminGiveawayOverview)
+adminRouter.get('/giveaway/entrants', adminGiveawayEntrants)
+adminRouter.post('/giveaway/entrants/:id/block', adminGiveawayBlockEntrant)
+adminRouter.get('/giveaway/wins', adminGiveawayWins)
+adminRouter.patch('/giveaway/wins/:id', adminGiveawayUpdateWin)
+adminRouter.patch('/giveaway/prizes/:key', adminGiveawayUpdatePrize)
+adminRouter.get('/giveaway/export/entrants.csv', adminGiveawayExportEntrants)
+adminRouter.get('/giveaway/export/wins.csv', adminGiveawayExportWins)
 
 adminRouter.put('/settings/profile', updateProfile)
 adminRouter.post('/settings/password', changePassword)

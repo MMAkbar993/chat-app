@@ -40,6 +40,7 @@ import AdminWebsitesPage from './admin/pages/AdminWebsitesPage'
 import AdminReportsPage from './admin/pages/AdminReportsPage'
 import AdminAdsPage from './admin/pages/AdminAdsPage'
 import AdminToolsPage from './admin/pages/AdminToolsPage'
+import AdminGiveawayPage from './admin/pages/AdminGiveawayPage'
 import AdminSettingsPage from './admin/pages/AdminSettingsPage'
 import AdminLayout from './admin/components/AdminLayout'
 import PrivateBetaBadge from './components/ui/PrivateBetaBadge'
@@ -176,6 +177,7 @@ export default function App() {
                 <Route path="reports" element={<AdminProtectedRoute><AdminReportsPage /></AdminProtectedRoute>} />
                 <Route path="ads" element={<AdminProtectedRoute><AdminAdsPage /></AdminProtectedRoute>} />
                 <Route path="tools" element={<AdminProtectedRoute><AdminToolsPage /></AdminProtectedRoute>} />
+                <Route path="giveaway" element={<AdminProtectedRoute><AdminGiveawayPage /></AdminProtectedRoute>} />
                 <Route path="settings" element={<AdminProtectedRoute><AdminSettingsPage /></AdminProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/admin/login" replace />} />
               </Routes>
