@@ -75,7 +75,8 @@ export async function getGiveawayState(req, res, next) {
         email: entrant.email,
         category: entrant.category,
         preview,
-        finished: preview ? wins.some((w) => w.ends_game) : Boolean(entrant.finished_at),
+        // Won their one big prize; they still spin every day for the small prizes.
+        bigWon: wins.some((w) => w.ends_game),
         blocked: Boolean(entrant.blocked_at),
         spunToday: spins.some((s) => s.day === today),
         spins: spins.map((s) => ({ day: s.day, outcome: s.outcome })),

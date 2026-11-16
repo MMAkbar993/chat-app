@@ -1,10 +1,14 @@
 // The Christmas giveaway's rules, decided here on the server and never in the browser.
 //
-// One spin per entrant per UTC day from GIVEAWAY_START to GIVEAWAY_END. Each spin draws one prize
-// by its chance (out of 100,000; the rest is No Prize) with a secure random number. Then:
+// One spin per entrant per UTC day from GIVEAWAY_START to GIVEAWAY_END, every day, also after a
+// big win (it is an advent calendar: a door to open each day). Each spin draws one prize by its
+// chance (out of 100,000; the rest is No Prize) with a secure random number. Then:
+//   - a big prize (ends_game = true) when they already won a big prize counts as No Prize
+//     ('big_done'): one big prize per person
+//   - a small prize (5% and 10% vouchers, 1 and 3 months of Pulse Pro) they already hold counts
+//     as No Prize ('duplicate'): each small prize once per person
 //   - a prize that has run out, in total or for today, counts as No Prize ("Limit Reached")
-//   - a voucher that does not end the game (5%, 10%) and that they already hold counts as No Prize
-//   - any other prize is theirs, gets a claim code, and ends their game
+//   - anything else is theirs and gets a claim code
 // A prize that is switched off (active = false) is left out of the draw, so its chance also
 // becomes No Prize.
 import { randomInt } from 'crypto'
@@ -90,9 +94,10 @@ function fail(status, message, reason) {
   return Object.assign(new Error(message), { status, reason })
 }
 
-// Spins once for this entrant today. Returns { outcome, prize, win, finished } where outcome is
-// 'none' | 'prize' | 'duplicate' | 'limit', prize is the drawn prize (null for No Prize) and win
-// is { code, prizeKey } when they won something.
+// Spins once for this entrant today. Returns { outcome, prize, win, bigPrize } where outcome is
+// 'none' | 'prize' | 'duplicate' | 'limit' | 'big_done', prize is the drawn prize (null for No
+// Prize), win is { code, prizeKey } when they won something, and bigPrize says this win was
+// their big prize.
 //
 // Runs in one transaction. The entrant's row is locked first, so two clicks at once spin once;
 // the drawn prize's row is locked while its stock is counted, so the last unit of a prize cannot
@@ -113,16 +118,6 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
     )
     if (!entrant) throw fail(404, 'Entry not found.', 'no_entrant')
     if (entrant.blocked_at) throw fail(403, 'This entry can no longer take part.', 'blocked')
-    if (preview) {
-      const { rows: [done] } = await client.query(
-        `SELECT 1 FROM giveaway_wins w JOIN giveaway_prizes p ON p.key = w.prize_key
-         WHERE w.entrant_id = $1 AND w.is_preview AND p.ends_game LIMIT 1`,
-        [entrantId]
-      )
-      if (done) throw fail(409, 'You have already won your prize. Thanks for playing!', 'finished')
-    } else if (entrant.finished_at) {
-      throw fail(409, 'You have already won your prize. Thanks for playing!', 'finished')
-    }
 
     const { rows: [already] } = await client.query(
       `SELECT 1 FROM giveaway_spins WHERE entrant_id = $1 AND spin_day = $2`,
@@ -140,7 +135,16 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
     let win = null
     if (drawn) {
       outcome = 'prize'
-      if (!drawn.ends_game) {
+      if (drawn.ends_game) {
+        // One big prize per person (current prize settings, so a prize changed to small later
+        // does not count as their big one).
+        const { rows: [big] } = await client.query(
+          `SELECT 1 FROM giveaway_wins w JOIN giveaway_prizes p ON p.key = w.prize_key
+           WHERE w.entrant_id = $1 AND w.is_preview = $2 AND p.ends_game LIMIT 1`,
+          [entrantId, preview]
+        )
+        if (big) outcome = 'big_done'
+      } else {
         const { rows: [held] } = await client.query(
           `SELECT 1 FROM giveaway_wins WHERE entrant_id = $1 AND prize_key = $2 AND is_preview = $3`,
           [entrantId, drawn.key, preview]
@@ -170,9 +174,10 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
       [entrantId, today, drawn?.key || null, outcome, win?.id || null, preview]
     )
 
-    const finished = Boolean(win && drawn.ends_game)
-    if (finished && !preview) {
-      await client.query(`UPDATE giveaway_entrants SET finished_at = NOW() WHERE id = $1`, [entrantId])
+    // finished_at now only records when they won their big prize (the admin panel shows it).
+    const bigPrize = Boolean(win && drawn.ends_game)
+    if (bigPrize && !preview) {
+      await client.query(`UPDATE giveaway_entrants SET finished_at = COALESCE(finished_at, NOW()) WHERE id = $1`, [entrantId])
     }
 
     await client.query('COMMIT')
@@ -180,7 +185,7 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
       outcome,
       prize: drawn ? publicPrize(drawn) : null,
       win: win ? { code: win.code, prizeKey: drawn.key } : null,
-      finished,
+      bigPrize,
     }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})

@@ -4,8 +4,8 @@
 export const HOW_IT_WORKS = [
   { title: 'Join free', body: 'Enter your email, pick what best describes you, and confirm with the code we send you.' },
   { title: 'Spin every day', body: 'One spin a day from 1 to 25 December. A new door opens at midnight UTC.' },
-  { title: 'Win a prize', body: 'Win and you get a prize code. A 5% or 10% voucher keeps you in the game; any bigger prize is your big win.' },
-  { title: 'Claim on Pulse', body: 'Join Pulse, verify your ID, and enter your code by 31 January 2027. We will chat with you to arrange your prize.' },
+  { title: 'Win prizes', body: 'Win and you get a prize code. You can win one big prize, and keep opening a door every day for vouchers and Pulse Pro.' },
+  { title: 'Claim on Pulse', body: 'Create a free Pulse account and enter your code by 31 January 2027. We will chat with you to arrange your prize.' },
 ]
 
 export const GIVEAWAY_FAQ = [
@@ -23,7 +23,7 @@ export const GIVEAWAY_FAQ = [
   },
   {
     q: 'Can I win more than once?',
-    a: 'You can hold one 5% voucher and one 10% voucher and keep spinning. Winning any other prize is your big win and ends your spins. If you land on a voucher you already have, it counts as no prize that day.',
+    a: 'Yes. You can spin every day, all 25 days. You can win one big prize, and you can also win each small prize once: the 5% and 10% vouchers, and 1 and 3 months of Pulse Pro. If you land on a big prize after your big win, or on a small prize you already have, it counts as no prize that day.',
   },
   {
     q: 'What does Limit Reached mean?',

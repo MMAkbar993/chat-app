@@ -123,7 +123,7 @@ function PrizeRow({ p, tests, onSaved }) {
     <tr className={`hover:bg-gray-50 ${p.active ? '' : 'opacity-50'}`}>
       <td className="px-4 py-2.5">
         <p className="font-medium text-gray-800">{p.name}</p>
-        <p className="text-xs text-gray-400">{p.prize_group === 'mega' ? 'Mega prize · ' : ''}{p.ends_game ? 'Ends their game' : 'Keeps playing'}</p>
+        <p className="text-xs text-gray-400">{p.prize_group === 'mega' ? 'Mega prize · ' : ''}{p.ends_game ? 'Big prize (one per person)' : 'Small prize (once each)'}</p>
       </td>
       <td className="px-4 py-2.5 text-gray-600 font-mono text-xs">{p.chance}%</td>
       <td className="px-4 py-2.5 text-gray-700">
@@ -377,7 +377,7 @@ function EntriesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {[['', 'All'], ['active', 'Playing'], ['finished', 'Won big prize'], ['blocked', 'Blocked']].map(([v, label]) => (
+        {[['', 'All'], ['active', 'No big prize yet'], ['finished', 'Won big prize'], ['blocked', 'Blocked']].map(([v, label]) => (
           <button key={v} onClick={() => { setStatus(v); setPage(1) }}
             className={`${BTN} ${status === v ? 'bg-violet-600 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{label}</button>
         ))}

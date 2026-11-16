@@ -38,7 +38,7 @@ const SECTIONS = [
   {
     h: '5. Prizes and limits',
     p: [
-      'You may hold one 5% voucher and one 10% voucher and keep playing. Winning any other prize ends your spins for the rest of the Giveaway. Landing on a voucher you already hold counts as no prize.',
+      'You may spin once a day on every day of the Giveaway, including after you win. Each person can win one big prize. The small prizes (the 5% and 10% vouchers and 1 and 3 months of Pulse Pro) can each be won once per person, also after a big prize. Landing on a big prize after your big prize, or on a small prize you already hold, counts as no prize.',
       'Some prizes are limited in total and per day. When a prize runs out it shows Limit Reached and landing on it counts as no prize.',
       'Vouchers and advertising prizes are for Affiliate Roulette and are subject to its usual terms. Crypto prizes are sent to a wallet address you give us, worth €10 at the time of sending. Pulse Pro prizes run from the day you claim them. Prizes have no cash alternative, cannot be transferred or sold, and may be replaced by a prize of similar value if one becomes unavailable.',
     ],

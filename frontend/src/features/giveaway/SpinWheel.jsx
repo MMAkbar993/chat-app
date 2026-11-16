@@ -210,9 +210,9 @@ function ResultPanel({ result, copied, onCopy, onClose }) {
             : <FiCopy className="text-white/80" aria-hidden="true" />}
         </button>
         <p className="mt-4 text-sm text-white/85">
-          {result.finished
-            ? 'Claim it on Pulse by 31 January 2027. That was your big prize, so your spins are done. Thanks for playing!'
-            : 'Claim it on Pulse by 31 January 2027. Keep spinning every day for a bigger prize!'}
+          {result.bigPrize
+            ? 'That is your big prize! Claim it on Pulse by 31 January 2027, and keep opening a door every day for vouchers and Pulse Pro.'
+            : 'Claim it on Pulse by 31 January 2027. Come back every day to open the next door!'}
         </p>
         <Link to={`${CLAIM_PATH}?code=${encodeURIComponent(result.win.code)}`} className="xmas-btn-gold mt-5 w-full px-6 py-3.5 text-lg">
           <img src={AR_LOGO} alt="" className="-mt-1 h-7 w-7" /> Claim on Pulse
@@ -226,6 +226,7 @@ function ResultPanel({ result, copied, onCopy, onClose }) {
   const text = {
     duplicate: `You already have the ${result.prize?.name}, so today counts as no prize. Try again tomorrow!`,
     limit: `So close! ${result.prize?.name} has reached its limit for now. Try again tomorrow!`,
+    big_done: `You landed on ${result.prize?.name}, but you already won your big prize, so today counts as no prize. Come back tomorrow for vouchers and Pulse Pro!`,
     none: 'No prize today. Come back tomorrow for another spin!',
   }[result.outcome] || 'No prize today. Come back tomorrow!'
   return (

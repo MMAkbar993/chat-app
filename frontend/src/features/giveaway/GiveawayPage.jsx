@@ -82,7 +82,7 @@ function Door({ day, index, state, onOpen }) {
   const spinOnDay = me?.spins.find((s) => s.day === day)
   const won = spinOnDay?.outcome === 'prize'
   const isToday = day === today && phase === 'open'
-  const canSpin = isToday && !(me?.finished) && !(me?.spunToday) && !(me?.blocked)
+  const canSpin = isToday && !(me?.spunToday) && !(me?.blocked)
   const past = day < today
   const future = day > today
 
@@ -220,7 +220,6 @@ export default function GiveawayPage() {
     if (future) { setHint(`Door ${days.indexOf(day) + 1} opens on ${prettyDay(day)}. Come back then!`); return }
     if (!isToday) return
     if (!me) { setJoinOpen(true); return }
-    if (me.finished) { setHint('You have already won your big prize. Thanks for playing!'); return }
     if (me.spunToday) { setHint('You have spun today. Come back tomorrow for the next door!'); return }
     if (canSpin) setSpinDay(day)
   }
@@ -252,7 +251,8 @@ export default function GiveawayPage() {
 
   const standard = state?.prizes.filter((p) => p.group !== 'mega') || []
   const mega = state?.prizes.filter((p) => p.group === 'mega') || []
-  const canSpinToday = state?.phase === 'open' && me && !me.finished && !me.spunToday && !me.blocked
+  const canSpinToday = state?.phase === 'open' && me && !me.spunToday && !me.blocked
+  const unclaimed = me?.wins.filter((w) => !w.claimed).length || 0
   const BIG_CTA = 'xmas-btn-gold w-full px-6 py-4 text-lg sm:text-xl'
 
   return (
@@ -308,13 +308,17 @@ export default function GiveawayPage() {
               {!state && !loadError && <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-300 border-t-transparent" />}
               {loadError && <p className="font-semibold text-amber-100">{loadError}</p>}
               {state?.phase === 'before' && <Countdown to={`${state.start}T00:00:00Z`} label="The first door opens in" />}
-              {state?.phase === 'open' && (me?.spunToday || me?.finished)
-                ? (me.finished
-                  ? <a href="#my-prizes" className={BIG_CTA}>You won your big prize! Claim it on Pulse below. <FiArrowRight aria-hidden="true" /></a>
-                  : state.preview
-                    ? <p className="xmas-card rounded-2xl px-5 py-4">You have spun on this day. Pick another day in the preview bar.</p>
-                    : <Countdown to={state.nextResetAt} label="Your next spin unlocks in" />)
-                : null}
+              {state?.phase === 'open' && me?.spunToday && (
+                state.preview
+                  ? <p className="xmas-card rounded-2xl px-5 py-4">You have spun on this day. Pick another day in the preview bar.</p>
+                  : <Countdown to={state.nextResetAt} label="Your next door opens in" />
+              )}
+              {/* Prizes waiting to be claimed: point at them (spinning still goes on every day). */}
+              {state?.phase !== 'before' && unclaimed > 0 && (
+                <a href="#my-prizes" className={`${me.spunToday ? BIG_CTA : 'xmas-btn-outline w-full px-6 py-3'} mt-4`}>
+                  {me.bigWon ? 'You won your big prize! Claim it on Pulse below.' : `You have ${unclaimed} prize${unclaimed === 1 ? '' : 's'} to claim on Pulse.`} <FiArrowRight aria-hidden="true" />
+                </a>
+              )}
               {state?.phase === 'open' && !me && (
                 <button type="button" onClick={() => setJoinOpen(true)} className={BIG_CTA}>Join free and spin today</button>
               )}
