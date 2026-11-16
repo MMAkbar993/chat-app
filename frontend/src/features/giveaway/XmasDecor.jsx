@@ -120,7 +120,7 @@ export function LogoLockup({ to = '/', label = 'Pulse home' }) {
 // The page header: logos, buttons on the right, pine branches in the corners, lights underneath.
 export function XmasHeader({ logoTo, logoLabel, right }) {
   return (
-    <header className="relative z-20 border-b border-amber-300/25">
+    <header className="relative z-20 border-b border-amber-300/40 bg-[#0b0708] shadow-[0_6px_24px_-8px_rgba(0,0,0,0.7)]">
       <PineCorners />
       <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-4">
         <LogoLockup to={logoTo} label={logoLabel} />

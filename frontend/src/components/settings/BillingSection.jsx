@@ -91,6 +91,10 @@ export default function BillingSection({ darkMode }) {
   // payment never went through, and a null plan means the account was only ever
   // KYC-verified (which also flips status to 'active') — both are still Free.
   const isPaid = Boolean(billing?.plan) && (billing?.status === 'active' || billing?.status === 'past_due')
+  // Free Pro from the Christmas giveaway: not a paid plan, but Pro all the same until it ends.
+  const giftEnd = billing?.proEndsAt && new Date(billing.proEndsAt) > new Date() ? new Date(billing.proEndsAt) : null
+  const giftLifetime = giftEnd && giftEnd.getUTCFullYear() >= 9999
+  const giftOnly = Boolean(giftEnd) && !isPaid
   const showBadge = isPaid || billing?.status === 'cancelled'
   const status = STATUS_STYLE[billing?.status] || STATUS_STYLE.inactive
   const planLabel = isPaid && billing?.plan
@@ -111,7 +115,10 @@ export default function BillingSection({ darkMode }) {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className={`text-base font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>{planLabel} Plan</h3>
+              <h3 className={`text-base font-bold ${dm ? 'text-white' : 'text-gray-900'}`}>{giftOnly ? 'Pro' : planLabel} Plan</h3>
+              {giftEnd && (
+                <span className="text-xs font-semibold rounded-full px-2.5 py-0.5 bg-amber-100 text-amber-700">🎄 Free gift</span>
+              )}
               {showBadge && (
                 <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${status.bg}`}>{status.label}</span>
               )}
@@ -122,17 +129,23 @@ export default function BillingSection({ darkMode }) {
                 {billing.cancelAtPeriodEnd ? 'Cancels on' : 'Renews on'} {renewalDate}
               </p>
             )}
-            {!isPaid && (
+            {giftEnd && (
+              <p className={`text-sm mt-1 ${sub}`}>
+                Free Pulse Pro from the Christmas giveaway, {giftLifetime ? 'for life' : `until ${giftEnd.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`}.
+                {giftOnly && !giftLifetime && ' Nothing to pay. You can upgrade when it ends to keep Pro.'}
+              </p>
+            )}
+            {!isPaid && !giftEnd && (
               <p className={`text-sm mt-1 ${sub}`}>You're not currently subscribed to a paid plan.</p>
             )}
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <button
+            {!giftLifetime && <button
               onClick={() => setShowUpgrade(true)}
               className="text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl px-4 py-2 transition-colors"
             >
               {isPaid ? 'Manage Plan' : 'Upgrade'}
-            </button>
+            </button>}
             {isPaid && (
               <button
                 onClick={billing.cancelAtPeriodEnd ? handleResumePlan : handleCancelPlan}

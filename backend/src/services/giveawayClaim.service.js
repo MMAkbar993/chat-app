@@ -69,6 +69,8 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
   const code = normalizeCode(rawCode)
   const client = await getClient()
   let win, prize, proEndsAt = null
+  // Free Pro time still left from before: a new Pro prize is added on top of it.
+  const proStacked = Boolean(user.pro_ends_at) && new Date(user.pro_ends_at) > new Date()
   try {
     await client.query('BEGIN')
     const { rows: [row] } = await client.query(
@@ -146,7 +148,7 @@ export async function claimCode(user, rawCode, rawWallet, ipCountry) {
 
   // The prize is claimed even if the chat cannot be opened; the host sees it in the admin panel.
   const conversationId = await openChatAndSave(user, win, proEndsAt)
-  return { alreadyClaimed: false, prize, proEndsAt, conversationId }
+  return { alreadyClaimed: false, prize, proEndsAt, proStacked: proStacked && !prize.proLifetime, conversationId }
 }
 
 async function openChatAndSave(user, win, proEndsAt) {

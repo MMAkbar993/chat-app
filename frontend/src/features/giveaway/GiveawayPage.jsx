@@ -161,7 +161,7 @@ function WhatIsPulse() {
         <img src={PULSE_LOGO} alt="" className="h-8 shrink-0" />
         <div className="sm:ml-2 sm:border-l sm:border-amber-300/30 sm:pl-5">
           <h2 id="xmas-pulse" className="text-2xl font-extrabold"><span className="xmas-gold-text">What is Pulse?</span></h2>
-          <p className="mt-1 text-white/85">Pulse is a messaging app built for the iGaming industry, where every member is ID verified.</p>
+          <p className="mt-1 text-white/85">Pulse is a safer alternative to Telegram and Teams: a messaging app built for the iGaming industry, where every member is ID verified.</p>
         </div>
       </div>
       <ul className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -174,7 +174,7 @@ function WhatIsPulse() {
         ))}
       </ul>
       <div className="mt-6 text-center">
-        <Link to="/how-it-works" target="_blank" className="xmas-btn-outline px-6 py-2.5 text-sm">See how Pulse works</Link>
+        <Link to="/how-it-works?theme=light" target="_blank" className="xmas-btn-outline px-6 py-2.5 text-sm">See how Pulse works</Link>
       </div>
     </section>
   )

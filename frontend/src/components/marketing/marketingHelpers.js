@@ -60,10 +60,18 @@ function storedTheme() {
   return null
 }
 
+// A link can ask for a theme for this visit with ?theme=light or ?theme=dark (the Christmas
+// giveaway links here in light). It is not saved; the visitor's own toggle still wins after.
+function linkedTheme() {
+  if (typeof window === 'undefined') return null
+  const t = new URLSearchParams(window.location.search).get('theme')
+  return t === 'dark' ? true : t === 'light' ? false : null
+}
+
 // [dark, toggle]. With nothing saved, follows the device's light/dark setting — and keeps
 // following it if that changes — until the visitor picks one themselves.
 export function useMarketingTheme() {
-  const [chosen, setChosen] = useState(storedTheme)
+  const [chosen, setChosen] = useState(() => linkedTheme() ?? storedTheme())
   const [system, setSystem] = useState(
     () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-color-scheme: dark)').matches)
   )

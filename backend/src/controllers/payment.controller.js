@@ -22,7 +22,8 @@ export async function createSubscriptionHandler(req, res, next) {
 export async function getBillingHandler(req, res, next) {
   try {
     const billing = await getBillingInfo(req.user.id)
-    res.json(billing)
+    // Free Pro (the Christmas giveaway) is not a Stripe plan, so say so separately.
+    res.json({ ...billing, proEndsAt: req.user.pro_ends_at || null })
   } catch (err) {
     next(err)
   }

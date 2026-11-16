@@ -18,8 +18,11 @@ const CODE_RE = /^XMAS-[A-Z0-9]{4}-[A-Z0-9]{4}$/
 
 const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
-function proLine(prize, proEndsAt) {
+function proLine(prize, proEndsAt, stacked) {
   if (prize.proLifetime) return 'Your Pulse Pro is active for life.'
+  if (prize.proMonths && proEndsAt && stacked) {
+    return `${prize.proMonths} ${prize.proMonths === 1 ? 'month was' : 'months were'} added to the Pulse Pro you already had, so it is now active until ${formatDate(proEndsAt)}.`
+  }
   if (prize.proMonths && proEndsAt) return `Your Pulse Pro is active until ${formatDate(proEndsAt)}.`
   return null
 }
@@ -106,7 +109,7 @@ export default function ClaimPrizePage() {
   } else if (!preview || authLoading) {
     body = <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-300 border-t-transparent" />
   } else if (done) {
-    const line = proLine(done.prize, done.proEndsAt)
+    const line = proLine(done.prize, done.proEndsAt, done.proStacked)
     body = (
       <div className="text-center xmas-pop">
         <PrizeGift prizeKey={done.prize.key} className="xmas-float mx-auto w-44" />
