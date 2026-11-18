@@ -43,6 +43,7 @@ import {
 import {
   adminGiveawayOverview, adminGiveawayEntrants, adminGiveawayBlockEntrant, adminGiveawayWins,
   adminGiveawayUpdateWin, adminGiveawayUpdatePrize, adminGiveawayExportEntrants, adminGiveawayExportWins,
+  adminGiveawayRunDraw, adminGiveawayVoidDraw,
 } from '../controllers/adminGiveaway.controller.js'
 
 export const adminRouter = Router()
@@ -100,6 +101,8 @@ adminRouter.patch('/giveaway/wins/:id', adminGiveawayUpdateWin)
 adminRouter.patch('/giveaway/prizes/:key', adminGiveawayUpdatePrize)
 adminRouter.get('/giveaway/export/entrants.csv', adminGiveawayExportEntrants)
 adminRouter.get('/giveaway/export/wins.csv', adminGiveawayExportWins)
+adminRouter.post('/giveaway/draw', adminGiveawayRunDraw)
+adminRouter.post('/giveaway/draw/void', adminGiveawayVoidDraw)
 
 adminRouter.put('/settings/profile', updateProfile)
 adminRouter.post('/settings/password', changePassword)

@@ -7,6 +7,7 @@ import {
 import { listPrizesWithStock, findEntrantById, listEntrantSpins, listEntrantWins, deleteEntrantPreviewData } from '../db/queries/giveaway.js'
 import { startJoin, verifyJoin, requestInfo, checkCountry } from '../services/giveawayJoin.service.js'
 import { previewCode, claimCode } from '../services/giveawayClaim.service.js'
+import { DRAW_PRIZE_KEY, drawAt, entrantEntries, getLiveDraw } from '../services/giveawayDraw.service.js'
 
 // Giveaway entrants are not Pulse members: they sign in to the giveaway with an email code
 // (Phase 2) and get this token, which only the giveaway routes accept. purpose stops a Pulse
@@ -40,8 +41,9 @@ export async function giveawayEntrantAuth(req, res, next) {
   }
 }
 
-function stockLabel(p) {
+function stockLabel(p, today) {
   if (!p.active) return 'unavailable'
+  if (p.available_from && today < p.available_from) return 'not_yet'
   if (p.total_limit !== null && p.won_total >= p.total_limit) return 'limit_reached'
   if (p.daily_limit !== null && p.won_today >= p.daily_limit) return 'limit_reached_today'
   return 'available'
@@ -68,10 +70,17 @@ export async function getGiveawayState(req, res, next) {
     const prizes = await listPrizesWithStock(today, preview)
     const used = prizes.filter((p) => p.active).reduce((sum, p) => sum + p.chance, 0)
 
+    const liveDraw = await getLiveDraw(preview)
+    const drawPrize = prizes.find((p) => p.key === DRAW_PRIZE_KEY)
+
     let me = null
     if (entrant) {
-      const [spins, wins] = await Promise.all([listEntrantSpins(entrant.id, preview), listEntrantWins(entrant.id, preview)])
+      const [spins, wins, entries] = await Promise.all([
+        listEntrantSpins(entrant.id, preview), listEntrantWins(entrant.id, preview), entrantEntries(entrant.id, preview),
+      ])
       me = {
+        entries,
+        drawWinner: Boolean(liveDraw && liveDraw.entrant_id === entrant.id),
         email: entrant.email,
         category: entrant.category,
         preview,
@@ -94,10 +103,16 @@ export async function getGiveawayState(req, res, next) {
       nextResetAt: preview ? null : nextResetAt(),
       preview,
       noPrizeChance: Math.max(0, CHANCE_SCALE - used) / (CHANCE_SCALE / 100),
-      prizes: prizes.map((p) => ({
+      // The Grand Prize Draw: its prize is not on the wheel. Who won is only told to the winner.
+      draw: {
+        prize: drawPrize?.name || 'Free Pulse Pro for Life',
+        at: drawAt(),
+        drawn: Boolean(liveDraw),
+      },
+      prizes: prizes.filter((p) => p.key !== DRAW_PRIZE_KEY).map((p) => ({
         ...publicPrize(p),
         chance: (p.active ? p.chance : 0) / (CHANCE_SCALE / 100), // as a percentage
-        stock: stockLabel(p),
+        stock: stockLabel(p, today),
       })),
       me,
     })

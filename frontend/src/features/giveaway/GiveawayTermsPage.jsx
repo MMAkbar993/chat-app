@@ -44,6 +44,13 @@ const SECTIONS = [
     ],
   },
   {
+    h: '5a. Grand Prize Draw',
+    p: [
+      'One winner of Free Pulse Pro for Life is drawn at random after the Giveaway ends at 23:59 UTC on 25 December 2026. Every spin gives 1 entry, win or lose, and the +2 entries result gives 2 more. Each entry has an equal chance. Entries that are blocked under section 7 are not included. The winner is told by email and claims the prize like any other prize. If the winner is disqualified, the Organisers may draw again.',
+      'The mega prizes on the wheel ($100 Apple and Amazon gift cards and the $500 Affiliate Roulette voucher) can only be won from 21 December 2026; before then, landing on one counts as no prize.',
+    ],
+  },
+  {
     h: '6. Claiming',
     p: [
       'To claim, create a Pulse account, complete the ID check, and enter your prize code on Pulse. The name on your ID must be your own and you must meet section 3. The Organisers will contact you through Pulse to arrange your prize.',

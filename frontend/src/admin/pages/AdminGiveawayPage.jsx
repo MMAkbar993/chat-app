@@ -123,7 +123,11 @@ function PrizeRow({ p, tests, onSaved }) {
     <tr className={`hover:bg-gray-50 ${p.active ? '' : 'opacity-50'}`}>
       <td className="px-4 py-2.5">
         <p className="font-medium text-gray-800">{p.name}</p>
-        <p className="text-xs text-gray-400">{p.prize_group === 'mega' ? 'Mega prize · ' : ''}{p.ends_game ? 'Big prize (one per person)' : 'Small prize (once each)'}</p>
+        <p className="text-xs text-gray-400">
+          {p.bonus_entries ? `Not a prize: +${p.bonus_entries} Grand Prize Draw entries`
+            : p.key === 'pro_lifetime' ? 'Grand Prize Draw prize (kept off the wheel)'
+            : <>{p.prize_group === 'mega' ? 'Mega prize · ' : ''}{p.ends_game ? 'Big prize (one per person)' : 'Small prize (once each)'}{p.available_from ? ` · from ${fmtDay(p.available_from)}` : ''}</>}
+        </p>
       </td>
       <td className="px-4 py-2.5 text-gray-600 font-mono text-xs">{p.chance}%</td>
       <td className="px-4 py-2.5 text-gray-700">
@@ -152,6 +156,80 @@ function PrizeRow({ p, tests, onSaved }) {
   )
 }
 
+// The Grand Prize Draw: who is in it, the winner once drawn, and running or voiding it.
+function DrawPanel({ draw, phase, tests, onChanged }) {
+  const { showToast } = useToast()
+  const [busy, setBusy] = useState(false)
+  const live = draw.live
+  const canRun = !live && (tests || phase === 'ended')
+
+  async function run() {
+    if (!window.confirm(tests ? 'Run a test draw over preview mode spins?' : 'Run the Grand Prize Draw now? The winner is emailed straight away.')) return
+    setBusy(true)
+    try {
+      const { data } = await adminClient.post('/giveaway/draw', { tests })
+      showToast(`Drawn: ${data.result.email}`, 'success')
+      onChanged()
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not run the draw'), 'error')
+    }
+    setBusy(false)
+  }
+
+  async function voidIt() {
+    const reason = window.prompt('Why is this draw being voided? (for example: winner disqualified). The prize code is removed and this person is left out of the redraw.')
+    if (!reason?.trim()) return
+    setBusy(true)
+    try {
+      await adminClient.post('/giveaway/draw/void', { tests, reason })
+      showToast('Draw voided. You can now run it again.', 'success')
+      onChanged()
+    } catch (err) {
+      showToast(apiErrorMessage(err, 'Could not void the draw'), 'error')
+    }
+    setBusy(false)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">🎟️ Grand Prize Draw{tests ? ' (test)' : ''}: Free Pulse Pro for Life</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {draw.pool.entries} entries from {draw.pool.entrants} people. Draws by itself after the last door ({fmtDate(draw.at)}, midnight UTC). Blocked entries are left out.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {!live && (
+            <button disabled={busy || !canRun || !draw.pool.entries} onClick={run}
+              title={canRun ? '' : 'The real draw can only run after the giveaway has ended'}
+              className={`${BTN} bg-violet-600 text-white hover:bg-violet-700`}>{tests ? 'Run test draw' : 'Run draw now'}</button>
+          )}
+          {live && !live.claimed_at && (
+            <button disabled={busy} onClick={voidIt} className={`${BTN} border border-red-200 text-red-600 hover:bg-red-50`}>Void and redraw</button>
+          )}
+        </div>
+      </div>
+      {live && (
+        <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-gray-800">
+          <p><strong>Winner:</strong> {live.winner_email} · {live.winner_entries} of {live.total_entries} entries ({live.entrant_count} people)</p>
+          <p className="mt-0.5">
+            <strong>Prize code:</strong> <span className="font-mono select-all">{live.code || '—'}</span> ·{' '}
+            {live.claimed_at ? <span className="text-emerald-700 font-semibold">Claimed by @{live.claimed_username} on {fmtDate(live.claimed_at)}</span> : 'Not claimed yet'}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">Drawn {fmtDate(live.created_at)} by {live.drawn_by}</p>
+        </div>
+      )}
+      {draw.voided.length > 0 && (
+        <div className="mt-3 text-xs text-gray-500">
+          <p className="font-semibold text-gray-600">Voided draws</p>
+          {draw.voided.map((v) => <p key={v.id}>{v.winner_email} · voided {fmtDate(v.voided_at)} by {v.voided_by}: {v.void_reason}</p>)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function OverviewTab({ tests }) {
   const [data, load] = useAdminData('/giveaway/overview', { tests: tests ? 1 : 0 }, 'Could not load the giveaway')
 
@@ -171,6 +249,8 @@ function OverviewTab({ tests }) {
         <Stat label={tests ? 'Test prizes won' : 'Prizes won'} value={n.wins} sub={`${n.wins_today} today · ${n.claimed} claimed`} tone="violet" />
         <Stat label="To deliver" value={n.to_deliver} sub="Claimed, not sent yet" tone={n.to_deliver ? 'amber' : 'gray'} />
       </div>
+
+      <DrawPanel draw={data.draw} phase={data.phase} tests={tests} onChanged={load} />
 
       {n.categories.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -404,7 +484,7 @@ function EntriesTab() {
                   <th className="px-4 py-2.5 font-medium">Email</th>
                   <th className="px-4 py-2.5 font-medium">Category</th>
                   <th className="px-4 py-2.5 font-medium">Country / IP</th>
-                  <th className="px-4 py-2.5 font-medium">Spins / prizes</th>
+                  <th className="px-4 py-2.5 font-medium">Spins / prizes / entries</th>
                   <th className="px-4 py-2.5 font-medium">Joined</th>
                   <th className="px-4 py-2.5 font-medium" />
                 </tr>
@@ -430,7 +510,7 @@ function EntriesTab() {
                           title="Show every entry from this IP">{e.same_ip} on this IP</button>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-600">{e.spins} / {e.wins}</td>
+                    <td className="px-4 py-2.5 text-gray-600">{e.spins} / {e.wins} / {e.entries}</td>
                     <td className="px-4 py-2.5 text-gray-500">{fmtDate(e.created_at)}</td>
                     <td className="px-4 py-2.5 text-right">
                       {e.blocked_at

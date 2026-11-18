@@ -4,7 +4,7 @@
 export const HOW_IT_WORKS = [
   { title: 'Join free', body: 'Enter your email, pick what best describes you, and confirm with the code we send you.' },
   { title: 'Spin every day', body: 'One spin a day from 1 to 25 December. A new door opens at midnight UTC.' },
-  { title: 'Win prizes', body: 'Win and you get a prize code. You can win one big prize, and keep opening a door every day for vouchers and Pulse Pro.' },
+  { title: 'Win prizes', body: 'Win and you get a prize code. You can win one big prize, and keep opening a door every day for vouchers, Pulse Pro and Grand Prize Draw entries.' },
   { title: 'Claim on Pulse', body: 'Create a free Pulse account and enter your code by 31 January 2027. We will chat with you to arrange your prize.' },
 ]
 
@@ -24,6 +24,14 @@ export const GIVEAWAY_FAQ = [
   {
     q: 'Can I win more than once?',
     a: 'Yes. You can spin every day, all 25 days. You can win one big prize, and you can also win each small prize once: the 5% and 10% vouchers, and 1 and 3 months of Pulse Pro. If you land on a big prize after your big win, or on a small prize you already have, it counts as no prize that day.',
+  },
+  {
+    q: 'What is the Grand Prize Draw?',
+    a: 'One winner gets Free Pulse Pro for Life, drawn at random after the last door closes on 25 December. Every spin gives you 1 entry, win or lose, and landing on +2 entries gives you 2 more. Each entry is an equal chance, so opening a door every day gives you the most chances. The winner is emailed and claims the prize on Pulse.',
+  },
+  {
+    q: 'When can I win the mega prizes?',
+    a: 'The mega prizes ($100 Apple and Amazon gift cards and the $500 Affiliate Roulette voucher) can only be won in the last 5 days, from 21 to 25 December. Before that, landing on one counts as no prize.',
   },
   {
     q: 'What does Limit Reached mean?',

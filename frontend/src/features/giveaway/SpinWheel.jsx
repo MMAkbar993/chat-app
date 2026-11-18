@@ -13,6 +13,7 @@ const SEGMENTS = [
   { kind: 'promo', label: 'Free ads', color: '#c45a0e' },
   { kind: 'bigv', label: 'Big voucher', color: '#bd111b' },
   { kind: 'crypto', label: 'Crypto', color: '#0c7a8a' },
+  { kind: 'entries', label: '+2 entries', color: '#9d174d' },
   { kind: 'mega', label: 'Mega prize', color: '#b8820c' },
   { kind: 'none', label: 'Try again', color: '#16294a' },
   { kind: 'v5', label: '5% off', color: '#c0141e' },
@@ -27,9 +28,13 @@ const RIM_BULBS = 18
 
 export const CLAIM_PATH = '/claim'
 
+// The slice for the prize the server drew, even when it does not count today (a duplicate, a
+// limit reached, a second big prize, a mega prize before 21 December), so the wheel stops where
+// the message says it landed.
 function kindFor(result) {
-  if (result.outcome !== 'prize' || !result.prize) return 'none'
-  const { key, group } = result.prize
+  if (!result.prize) return 'none'
+  const { key, group, bonusEntries } = result.prize
+  if (bonusEntries) return 'entries'
   if (group === 'mega') return 'mega'
   if (key === 'voucher_5') return 'v5'
   if (key === 'voucher_10') return 'v10'
@@ -191,7 +196,28 @@ function PrizeName({ name }) {
   return <><span className="xmas-gold-text">{name.slice(0, cut)}</span>{name.slice(cut)}</>
 }
 
+// Every spin earns Grand Prize Draw entries; say how many they have now.
+function EntriesLine({ result }) {
+  if (!result.entries) return null
+  return (
+    <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-1.5 text-sm font-semibold text-amber-100">
+      <span aria-hidden="true">🎟️</span> +{result.entriesAdded} Grand Prize Draw {result.entriesAdded === 1 ? 'entry' : 'entries'} · {result.entries} in total
+    </p>
+  )
+}
+
 function ResultPanel({ result, copied, onCopy, onClose }) {
+  if (result.outcome === 'entries') {
+    return (
+      <div className="xmas-pop">
+        <p className="mt-8 text-6xl" aria-hidden="true">🎟️</p>
+        <p className="mt-4 text-2xl font-extrabold">You won <span className="xmas-gold-text">+2 entries</span>!</p>
+        <p className="mt-2 text-white/90">More chances to win Free Pulse Pro for Life in the Grand Prize Draw after the last door on 25 December.</p>
+        <EntriesLine result={result} />
+        <button type="button" onClick={onClose} className="xmas-btn-gold mt-6 w-full px-5 py-3">Great!</button>
+      </div>
+    )
+  }
   if (result.outcome === 'prize' && result.win) {
     return (
       <div className="xmas-pop">
@@ -214,6 +240,7 @@ function ResultPanel({ result, copied, onCopy, onClose }) {
             ? 'That is your big prize! Claim it on Pulse by 31 January 2027, and keep opening a door every day for vouchers and Pulse Pro.'
             : 'Claim it on Pulse by 31 January 2027. Come back every day to open the next door!'}
         </p>
+        <EntriesLine result={result} />
         <Link to={`${CLAIM_PATH}?code=${encodeURIComponent(result.win.code)}`} className="xmas-btn-gold mt-5 w-full px-6 py-3.5 text-lg">
           <img src={AR_LOGO} alt="" className="-mt-1 h-7 w-7" /> Claim on Pulse
         </Link>
@@ -227,12 +254,14 @@ function ResultPanel({ result, copied, onCopy, onClose }) {
     duplicate: `You already have the ${result.prize?.name}, so today counts as no prize. Try again tomorrow!`,
     limit: `So close! ${result.prize?.name} has reached its limit for now. Try again tomorrow!`,
     big_done: `You landed on ${result.prize?.name}, but you already won your big prize, so today counts as no prize. Come back tomorrow for vouchers and Pulse Pro!`,
+    not_yet: `So close! You landed on ${result.prize?.name}, but mega prizes can only be won in the last 5 days, from 21 December. Today counts as no prize.`,
     none: 'No prize today. Come back tomorrow for another spin!',
   }[result.outcome] || 'No prize today. Come back tomorrow!'
   return (
     <div className="xmas-pop">
       <p className="mt-8 text-6xl" aria-hidden="true">❄️</p>
       <p className="mt-4 text-lg text-white/90">{text}</p>
+      <EntriesLine result={result} />
       <button type="button" onClick={onClose} className="xmas-btn-outline mt-6 w-full px-5 py-3">Close</button>
     </div>
   )

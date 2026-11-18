@@ -40,6 +40,7 @@ export async function listGiveawayEntrants({ q = '', category = '', status = '',
     `SELECT e.id, e.email, e.category, e.country, e.ip, e.created_at, e.finished_at, e.blocked_at,
             (SELECT COUNT(*) FROM giveaway_spins s WHERE s.entrant_id = e.id AND NOT s.is_preview)::int AS spins,
             (SELECT COUNT(*) FROM giveaway_wins w WHERE w.entrant_id = e.id AND NOT w.is_preview)::int AS wins,
+            (SELECT COALESCE(SUM(s.entries), 0) FROM giveaway_spins s WHERE s.entrant_id = e.id AND NOT s.is_preview)::int AS entries,
             (SELECT COUNT(*) FROM giveaway_entrants e2 WHERE e2.ip = e.ip)::int AS same_ip,
             (SELECT u.username FROM giveaway_wins w JOIN users u ON u.id = w.claimed_by
               WHERE w.entrant_id = e.id LIMIT 1) AS pulse_username,
@@ -136,7 +137,8 @@ export async function exportGiveawayEntrants() {
   const { rows } = await query(
     `SELECT e.email, e.category, e.country, e.ip, e.created_at, e.finished_at, e.blocked_at,
             (SELECT COUNT(*) FROM giveaway_spins s WHERE s.entrant_id = e.id AND NOT s.is_preview)::int AS spins,
-            (SELECT COUNT(*) FROM giveaway_wins w WHERE w.entrant_id = e.id AND NOT w.is_preview)::int AS wins
+            (SELECT COUNT(*) FROM giveaway_wins w WHERE w.entrant_id = e.id AND NOT w.is_preview)::int AS wins,
+            (SELECT COALESCE(SUM(s.entries), 0) FROM giveaway_spins s WHERE s.entrant_id = e.id AND NOT s.is_preview)::int AS draw_entries
      FROM giveaway_entrants e ORDER BY e.created_at`
   )
   return rows

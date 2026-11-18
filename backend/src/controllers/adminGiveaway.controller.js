@@ -1,6 +1,7 @@
 // Admin panel for the Christmas giveaway (all routes sit behind adminAuthMiddleware).
 import { giveawayToday, giveawayDates, giveawayPhase, isPreviewEmail, ENTRANT_CATEGORIES } from '../services/giveaway.service.js'
 import { listPrizesWithStock } from '../db/queries/giveaway.js'
+import { drawAt, getLiveDraw, listVoidedDraws, drawPoolSummary, runDraw, voidDraw } from '../services/giveawayDraw.service.js'
 import {
   giveawayOverview, listGiveawayEntrants, setGiveawayEntrantBlocked, listGiveawayWins,
   updateGiveawayWin, updateGiveawayPrize, exportGiveawayEntrants, exportGiveawayWins,
@@ -18,7 +19,9 @@ export async function adminGiveawayOverview(req, res, next) {
   try {
     const today = giveawayToday()
     const tests = isTests(req)
-    const [numbers, prizes] = await Promise.all([giveawayOverview(today, tests), listPrizesWithStock(today, tests)])
+    const [numbers, prizes, draw, voided, pool] = await Promise.all([
+      giveawayOverview(today, tests), listPrizesWithStock(today, tests), getLiveDraw(tests), listVoidedDraws(tests), drawPoolSummary(tests),
+    ])
     res.json({
       today,
       phase: giveawayPhase(today),
@@ -26,6 +29,7 @@ export async function adminGiveawayOverview(req, res, next) {
       tests,
       numbers,
       prizes: prizes.map((p) => ({ ...p, chance: p.chance / 1000 })),
+      draw: { at: drawAt(), live: draw, voided, pool },
     })
   } catch (err) { next(err) }
 }
@@ -67,6 +71,30 @@ export async function adminGiveawayUpdateWin(req, res, next) {
     if (!row) return res.status(400).json({ error: 'Only a claimed prize that is not Pulse Pro can be marked delivered' })
     res.json({ win: row })
   } catch (err) { next(err) }
+}
+
+// The Grand Prize Draw: run it (after the giveaway, or any time for test data), or void it.
+export async function adminGiveawayRunDraw(req, res, next) {
+  try {
+    const tests = req.body?.tests === true
+    res.json({ result: await runDraw({ preview: tests, by: req.admin.email }) })
+  } catch (err) {
+    if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
+}
+
+export async function adminGiveawayVoidDraw(req, res, next) {
+  try {
+    const tests = req.body?.tests === true
+    const reason = String(req.body?.reason || '').trim().slice(0, 500)
+    if (!reason) return res.status(400).json({ error: 'Please give a reason' })
+    await voidDraw({ preview: tests, by: req.admin.email, reason })
+    res.json({ ok: true })
+  } catch (err) {
+    if (err.reason) return res.status(err.status).json({ error: err.message, reason: err.reason })
+    next(err)
+  }
 }
 
 // A limit is a whole number from 0 up, or null for no limit.

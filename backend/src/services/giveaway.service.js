@@ -8,7 +8,11 @@
 //   - a small prize (5% and 10% vouchers, 1 and 3 months of Pulse Pro) they already hold counts
 //     as No Prize ('duplicate'): each small prize once per person
 //   - a prize that has run out, in total or for today, counts as No Prize ("Limit Reached")
+//   - a prize with an available_from day (the mega prizes: the last 5 days) counts as No Prize
+//     before that day ('not_yet')
+//   - "+2 entries" (bonus_entries) is not a prize: it adds entries to the Grand Prize Draw
 //   - anything else is theirs and gets a claim code
+// Every spin also earns 1 entry into the Grand Prize Draw (giveawayDraw.service.js).
 // A prize that is switched off (active = false) is left out of the draw, so its chance also
 // becomes No Prize.
 import { randomInt } from 'crypto'
@@ -94,10 +98,11 @@ function fail(status, message, reason) {
   return Object.assign(new Error(message), { status, reason })
 }
 
-// Spins once for this entrant today. Returns { outcome, prize, win, bigPrize } where outcome is
-// 'none' | 'prize' | 'duplicate' | 'limit' | 'big_done', prize is the drawn prize (null for No
-// Prize), win is { code, prizeKey } when they won something, and bigPrize says this win was
-// their big prize.
+// Spins once for this entrant today. Returns { outcome, prize, win, bigPrize, entriesAdded,
+// entries } where outcome is 'none' | 'prize' | 'duplicate' | 'limit' | 'big_done' | 'entries' |
+// 'not_yet', prize is the drawn prize (null for No Prize), win is { code, prizeKey } when they
+// won something, bigPrize says this win was their big prize, entriesAdded is the draw entries
+// this spin gave and entries their total.
 //
 // Runs in one transaction. The entrant's row is locked first, so two clicks at once spin once;
 // the drawn prize's row is locked while its stock is counted, so the last unit of a prize cannot
@@ -126,14 +131,21 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
     if (already) throw fail(409, 'You have already spun today. Come back tomorrow!', 'spun_today')
 
     const { rows: prizes } = await client.query(
-      `SELECT key, name, prize_group, chance, total_limit, daily_limit, ends_game, needs_wallet, active
+      `SELECT key, name, prize_group, chance, total_limit, daily_limit, ends_game, needs_wallet, active,
+              bonus_entries, to_char(available_from, 'YYYY-MM-DD') AS available_from
        FROM giveaway_prizes ORDER BY sort_order, key`
     )
     const drawn = drawPrize(prizes, roll)
 
     let outcome = 'none'
     let win = null
-    if (drawn) {
+    let entriesAdded = 1
+    if (drawn?.bonus_entries) {
+      outcome = 'entries'
+      entriesAdded += drawn.bonus_entries
+    } else if (drawn && drawn.available_from && today < drawn.available_from) {
+      outcome = 'not_yet'
+    } else if (drawn) {
       outcome = 'prize'
       if (drawn.ends_game) {
         // One big prize per person (current prize settings, so a prize changed to small later
@@ -170,8 +182,12 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
     }
 
     await client.query(
-      `INSERT INTO giveaway_spins (entrant_id, spin_day, drawn_prize, outcome, win_id, is_preview) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [entrantId, today, drawn?.key || null, outcome, win?.id || null, preview]
+      `INSERT INTO giveaway_spins (entrant_id, spin_day, drawn_prize, outcome, win_id, is_preview, entries) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [entrantId, today, drawn?.key || null, outcome, win?.id || null, preview, entriesAdded]
+    )
+    const { rows: [total] } = await client.query(
+      `SELECT COALESCE(SUM(entries), 0)::int AS entries FROM giveaway_spins WHERE entrant_id = $1 AND is_preview = $2`,
+      [entrantId, preview]
     )
 
     // finished_at now only records when they won their big prize (the admin panel shows it).
@@ -186,6 +202,8 @@ export async function spinForEntrant(entrantId, { today = giveawayToday(), roll,
       prize: drawn ? publicPrize(drawn) : null,
       win: win ? { code: win.code, prizeKey: drawn.key } : null,
       bigPrize,
+      entriesAdded,
+      entries: total.entries,
     }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
@@ -225,5 +243,7 @@ export function publicPrize(p) {
     group: p.prize_group,
     endsGame: p.ends_game,
     needsWallet: p.needs_wallet,
+    bonusEntries: p.bonus_entries || null,
+    availableFrom: p.available_from || null,
   }
 }

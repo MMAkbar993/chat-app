@@ -124,6 +124,29 @@ export async function sendGiveawayCodeEmail(email, code) {
   await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
 }
 
+// The Christmas Grand Prize Draw winner. Always sent (the winner must hear about it).
+export async function sendGiveawayDrawWinnerEmail(email, { code, prizeName, claimDeadline }) {
+  const setting = await getEmailSetting('giveaway_draw_winner')
+  const deadline = new Date(`${claimDeadline}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  const claimUrl = `${config.frontendUrl}/claim?code=${encodeURIComponent(code)}`
+  const vars = { appName: APP_NAME, code: escapeHtml(code), prizeName: escapeHtml(prizeName), claimUrl, claimDeadline: deadline }
+  const subject = setting ? render(setting.subject, vars) : `You won the Grand Prize: ${prizeName}`
+  let html = setting ? render(setting.body_html, vars) : `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#b91c1c">You won the Grand Prize Draw!</h2>
+        <p>You won <strong>${escapeHtml(prizeName)}</strong>. Your prize code is <strong>${escapeHtml(code)}</strong>.</p>
+        <p><a href="${claimUrl}">Claim it on ${APP_NAME}</a> by ${deadline}.</p>
+      </div>
+    `
+  if (!html.includes(String(code))) html += `<p style="font-family:sans-serif">Your prize code: <strong>${escapeHtml(code)}</strong></p>`
+
+  if (!transporter) {
+    console.log(`[DEV] Grand Prize Draw winner email for ${email}: ${code}`)
+    return
+  }
+  await transporter.sendMail({ from: MAIL_FROM, to: email, subject, html })
+}
+
 // A week before free Pro time (e.g. won in the Christmas giveaway) runs out. Returns false when
 // the template is switched off in System Emails.
 export async function sendProEndingSoonEmail(email, name, endsAt) {

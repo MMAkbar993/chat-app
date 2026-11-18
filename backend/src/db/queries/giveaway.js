@@ -5,7 +5,7 @@ import { query } from '../../config/database.js'
 export async function listPrizesWithStock(day, preview = false) {
   const { rows } = await query(
     `SELECT p.key, p.name, p.prize_group, p.chance, p.total_limit, p.daily_limit, p.ends_game,
-            p.needs_wallet, p.active,
+            p.needs_wallet, p.active, p.bonus_entries, to_char(p.available_from, 'YYYY-MM-DD') AS available_from,
             COUNT(w.id)::int AS won_total,
             COUNT(w.id) FILTER (WHERE w.won_day = $1)::int AS won_today
      FROM giveaway_prizes p

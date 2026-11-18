@@ -81,6 +81,7 @@ function Door({ day, index, state, onOpen }) {
   const { today, phase, me } = state
   const spinOnDay = me?.spins.find((s) => s.day === day)
   const won = spinOnDay?.outcome === 'prize'
+  const gotEntries = spinOnDay?.outcome === 'entries'
   const isToday = day === today && phase === 'open'
   const canSpin = isToday && !(me?.spunToday) && !(me?.blocked)
   const past = day < today
@@ -88,9 +89,9 @@ function Door({ day, index, state, onOpen }) {
 
   let face, cls, label
   if (spinOnDay) {
-    face = <span className="text-2xl sm:text-4xl">{won ? '🎁' : '❄️'}</span>
-    cls = won ? 'xmas-tile xmas-tile-won' : 'xmas-tile xmas-tile-done'
-    label = `Day ${index + 1}: ${won ? 'you won a prize' : 'no prize'}`
+    face = <span className="text-2xl sm:text-4xl">{won ? '🎁' : gotEntries ? '🎟️' : '❄️'}</span>
+    cls = won || gotEntries ? 'xmas-tile xmas-tile-won' : 'xmas-tile xmas-tile-done'
+    label = `Day ${index + 1}: ${won ? 'you won a prize' : gotEntries ? 'you won 2 extra draw entries' : 'no prize'}`
   } else if (isToday && (canSpin || !me)) {
     face = <span className="text-3xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] sm:text-5xl">🎁</span>
     cls = 'xmas-tile xmas-tile-today'
@@ -117,15 +118,46 @@ function Door({ day, index, state, onOpen }) {
 function PrizeRow({ p }) {
   const gone = p.stock === 'limit_reached' || p.stock === 'unavailable'
   const outToday = p.stock === 'limit_reached_today'
+  const notYet = p.stock === 'not_yet'
   return (
     <li className={`xmas-card flex items-center justify-between gap-3 rounded-xl px-4 py-3 ${gone ? 'opacity-50' : ''}`}>
       <span className={`text-sm font-medium ${gone ? 'line-through' : ''}`}>{p.name}</span>
       <span className="flex shrink-0 items-center gap-2">
         {gone && <span className="rounded-full bg-black/30 px-2 py-0.5 text-[11px] font-semibold text-rose-100">Limit Reached</span>}
         {outToday && <span className="rounded-full bg-amber-300/20 px-2 py-0.5 text-[11px] font-semibold text-amber-100">Gone for today</span>}
+        {notYet && p.availableFrom && <span className="rounded-full bg-amber-300/20 px-2 py-0.5 text-[11px] font-semibold text-amber-100">From {prettyDay(p.availableFrom)}</span>}
         <span className="font-mono text-xs font-semibold text-amber-200">{p.chance.toFixed(p.chance < 0.1 ? 3 : 2)}%</span>
       </span>
     </li>
+  )
+}
+
+// The Grand Prize Draw: one winner of the draw prize after the last door. Every spin is 1 entry.
+function GrandPrizeDraw({ state }) {
+  const { draw, me } = state
+  return (
+    <div className="xmas-card mt-6 rounded-2xl px-5 py-4 text-left">
+      <div className="flex items-center gap-4">
+        <img src={GIFT_PULSE} alt="" aria-hidden="true" className="xmas-gift-img w-16 shrink-0 sm:w-20" />
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">Grand Prize Draw</p>
+          <p className="text-lg font-extrabold leading-tight"><span className="xmas-gold-text">{draw.prize}</span></p>
+          <p className="mt-0.5 text-xs text-white/75 sm:text-sm">
+            {draw.drawn
+              ? 'The Grand Prize has been drawn. Thank you for playing!'
+              : 'One winner, drawn after the last door on 25 December. Every spin gives you 1 entry, and the +2 entries slice gives you 2 more.'}
+          </p>
+        </div>
+      </div>
+      {me?.drawWinner && (
+        <a href="#my-prizes" className="xmas-btn-gold mt-4 w-full px-5 py-2.5">🎉 You won the Grand Prize! Claim it below</a>
+      )}
+      {me && !draw.drawn && (
+        <p className="mt-3 flex items-center justify-center gap-2 rounded-full bg-black/25 px-4 py-1.5 text-sm font-semibold text-amber-100">
+          <span aria-hidden="true">🎟️</span> Your entries: {me.entries}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -337,6 +369,7 @@ export default function GiveawayPage() {
                   Join now so you are ready on 1 December
                 </button>
               )}
+              {state && <GrandPrizeDraw state={state} />}
             </div>
           </section>
 
@@ -386,7 +419,11 @@ export default function GiveawayPage() {
             <section className="mt-16" aria-labelledby="xmas-prizes">
               <SectionTitle id="xmas-prizes">Prizes and Chances</SectionTitle>
               <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-white/75">The chance of each prize on every spin. When a prize runs out it shows Limit Reached, and its chance becomes no prize.</p>
-              <h3 className="xmas-eyebrow mt-8 text-sm font-bold uppercase tracking-[0.2em] text-amber-300">Mega Prizes</h3>
+              <h3 className="xmas-eyebrow mt-8 text-sm font-bold uppercase tracking-[0.2em] text-amber-300">Grand Prize Draw</h3>
+              <p className="xmas-card mt-3 rounded-xl px-4 py-3 text-center text-sm">
+                <strong>{state.draw.prize}</strong> for one winner, drawn after the last door on 25 December. Every spin is 1 entry; each entry is an equal chance.
+              </p>
+              <h3 className="xmas-eyebrow mt-8 text-sm font-bold uppercase tracking-[0.2em] text-amber-300">Mega Prizes (from 21 December)</h3>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">{mega.map((p) => <PrizeRow key={p.key} p={p} />)}</ul>
               <h3 className="xmas-eyebrow mt-8 text-sm font-bold uppercase tracking-[0.2em] text-amber-300">Prizes</h3>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">{standard.map((p) => <PrizeRow key={p.key} p={p} />)}</ul>

@@ -28,6 +28,7 @@ const EMAIL_LABELS = {
   kyc_reminder: 'KYC Reminder (finish ID check)',
   giveaway_code: 'Christmas Giveaway: Sign In Code',
   pro_ending_soon: 'Free Pro Ending Soon (7 days before)',
+  giveaway_draw_winner: 'Christmas Giveaway: Grand Prize Draw Winner',
 }
 
 // appName and currentYear are available on every template automatically (merged in by the
@@ -47,6 +48,7 @@ const EMAIL_PLACEHOLDERS = {
   admin_new_signup: ['appName', 'username', 'email', 'fullName', 'currentYear'],
   giveaway_code: ['appName', 'code', 'currentYear'],
   pro_ending_soon: ['appName', 'name', 'endDate', 'upgradeUrl', 'currentYear'],
+  giveaway_draw_winner: ['appName', 'prizeName', 'code', 'claimUrl', 'claimDeadline', 'currentYear'],
 }
 
 function BroadcastsSection() {

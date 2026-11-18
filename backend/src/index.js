@@ -9,6 +9,7 @@ import { cleanUpUploads } from './jobs/uploadCleanup.js'
 import { warnIfTurnstileMissing } from './services/giveawayJoin.service.js'
 import { warnIfHostMissing } from './services/giveawayClaim.service.js'
 import { remindProEndingSoon } from './jobs/proEndingReminder.js'
+import { runAutomaticDraw } from './services/giveawayDraw.service.js'
 
 const UNREAD_EMAIL_INTERVAL_MS = 15 * 60 * 1000
 const KYC_PURGE_INTERVAL_MS = 60 * 60 * 1000
@@ -38,6 +39,10 @@ async function start() {
   const remindPro = () => remindProEndingSoon().catch((err) => console.error('remindProEndingSoon failed:', err.message))
   remindPro()
   setInterval(remindPro, KYC_PURGE_INTERVAL_MS)
+  // Christmas Grand Prize Draw: draws by itself within the hour after the giveaway ends.
+  const draw = () => runAutomaticDraw().catch((err) => console.error('Grand Prize Draw failed:', err.message))
+  draw()
+  setInterval(draw, KYC_PURGE_INTERVAL_MS)
 }
 
 start().catch((err) => {
