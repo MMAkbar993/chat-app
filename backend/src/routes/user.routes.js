@@ -4,7 +4,7 @@ import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import {
-  getProfile, updateProfile, uploadAvatar, getUserById, getPublicProfile, getMySocialConnections, getBlockedUsers, deactivateAccount, changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats, markTourSeenHandler, getPrivacy, updatePrivacy, updateTimezone,
+  getProfile, updateProfile, uploadAvatar, getUserById, getPublicProfile, getMySocialConnections, getBlockedUsers, deactivateAccount, changePassword, changeEmail, deleteMyAccount, clearAllChats, deleteAllChats, markTourSeenHandler, markGiftProSeenHandler, getPrivacy, updatePrivacy, updateTimezone,
 } from '../controllers/user.controller.js'
 import {
   initWebsiteVerification, confirmWebsiteVerification, removeWebsiteVerification, requestRepresentation, getRepresentationRequests, handleRepresentationRequest, getApprovedRepresentatives, revokeRepresentative, getWebsiteRepresentatives, transferWebsiteOwnership, getMyVerifiedWebsites, revokeRepresentation, getMyRepresentationStatus, cancelRepresentationRequest, sendRepEmailCode, confirmRepEmailCode, removeMyRepresentation,
@@ -70,6 +70,7 @@ userRouter.delete('/me/notifications', clearNotifications)
 userRouter.post('/me/avatar', upload.single('avatar'), uploadAvatar)
 userRouter.post('/me/feedback', submitFeedback)
 userRouter.patch('/me/tour-seen', markTourSeenHandler)
+userRouter.patch('/me/gift-pro-seen', markGiftProSeenHandler)
 userRouter.get('/:id', getUserById)
 userRouter.post('/:id/block', blockUserHandler)
 userRouter.delete('/:id/block', unblockUserHandler)

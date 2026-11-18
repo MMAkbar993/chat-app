@@ -2,10 +2,13 @@ import { useState } from 'react'
 import Modal from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
 import { giftProEnd, giftProText } from '../../utils/plan'
+import { markGiftProSeen } from '../../api/users'
 
 // Shown once when someone opens Pulse with free Pro from the Christmas giveaway, so they know
 // they have been upgraded (and do not go looking for an upgrade they already have). Shown again
-// only if the end date changes, i.e. they win more Pro.
+// only if the end date changes, i.e. they win more Pro. "Seen" is kept on the account
+// (users.gift_pro_seen_for), so it is once per win on every device; the browser copy only stops
+// it flashing up again before the server has answered.
 const SEEN_KEY = 'pulse:giftProSeen'
 
 function seenFor() {
@@ -15,15 +18,19 @@ function seenFor() {
 const PERKS = ['Unlimited audio and video calls', 'Screen sharing', 'Groups and Google Calendar', 'Unlimited file sharing']
 
 export default function GiftProNotice({ darkMode = false }) {
-  const { user } = useAuth()
+  const { user, setUser } = useAuth()
   const end = giftProEnd(user)
   const stamp = end ? end.toISOString() : null
+  const seenOnAccount = user?.gift_pro_seen_for ? new Date(user.gift_pro_seen_for).toISOString() : null
   const [closedFor, setClosedFor] = useState(null)
-  const open = Boolean(stamp) && seenFor() !== stamp && closedFor !== stamp
+  const open = Boolean(stamp) && seenOnAccount !== stamp && seenFor() !== stamp && closedFor !== stamp
 
   function close() {
-    try { localStorage.setItem(SEEN_KEY, stamp) } catch { /* shown again next visit, harmless */ }
+    try { localStorage.setItem(SEEN_KEY, stamp) } catch { /* the account copy still counts */ }
     setClosedFor(stamp)
+    markGiftProSeen()
+      .then(({ gift_pro_seen_for }) => setUser((u) => (u ? { ...u, gift_pro_seen_for } : u)))
+      .catch(() => { /* not saved: it may show once more on another device */ })
   }
 
   if (!open) return null

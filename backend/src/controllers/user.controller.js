@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { query } from '../config/database.js'
-import { findUserById, markTourSeen } from '../db/queries/users.js'
+import { findUserById, markTourSeen, markGiftProSeen } from '../db/queries/users.js'
 import { getSocialConnections } from '../db/queries/auth_extras.js'
 import { sendPasswordChangedEmail, sendEmailChangedEmail } from '../config/email.js'
 import { isAllowedDisplayName } from '../utils/names.js'
@@ -18,6 +18,14 @@ function containsUrl(text) {
   return Boolean(text) && URL_PATTERN.test(text)
 }
 
+
+export async function markGiftProSeenHandler(req, res, next) {
+  try {
+    res.json({ gift_pro_seen_for: await markGiftProSeen(req.user.id) })
+  } catch (err) {
+    next(err)
+  }
+}
 
 export async function markTourSeenHandler(req, res, next) {
   try {

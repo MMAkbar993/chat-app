@@ -26,7 +26,7 @@ export async function findUserById(id) {
             subscription_status, kyc_status, kyc_session_id, is_active, created_at,
             avatar_url, display_name, bio, status, gender, website, date_of_birth,
             website_verified, website_verify_token,
-            job_title, company_name, website_representation_approved, has_seen_tour, timezone, pro_ends_at
+            job_title, company_name, website_representation_approved, has_seen_tour, timezone, pro_ends_at, gift_pro_seen_for
      FROM users WHERE id = $1`,
     [id]
   )
@@ -106,6 +106,15 @@ export async function incrementLoginCount(userId) {
     `UPDATE users SET login_count = login_count + 1 WHERE id = $1`,
     [userId]
   )
+}
+
+// The member has seen the "You've been upgraded" popup for their current free Pro end date.
+export async function markGiftProSeen(userId) {
+  const { rows } = await query(
+    `UPDATE users SET gift_pro_seen_for = pro_ends_at WHERE id = $1 RETURNING gift_pro_seen_for`,
+    [userId]
+  )
+  return rows[0]?.gift_pro_seen_for || null
 }
 
 export async function markTourSeen(userId) {

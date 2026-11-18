@@ -13,6 +13,7 @@ export const uploadAvatar = (file) => {
 }
 export const getUserById = (id) => client.get(`/users/${id}`).then((r) => r.data)
 export const markTourSeen = () => client.patch('/users/me/tour-seen').then((r) => r.data)
+export const markGiftProSeen = () => client.patch('/users/me/gift-pro-seen').then((r) => r.data)
 export const blockUser       = (id) => client.post(`/users/${id}/block`).then((r) => r.data)
 export const unblockUser     = (id) => client.delete(`/users/${id}/block`).then((r) => r.data)
 export const reportUser      = (id, reason) => client.post(`/users/${id}/report`, { reason }).then((r) => r.data)
