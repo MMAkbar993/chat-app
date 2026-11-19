@@ -136,7 +136,7 @@ function PrizeRow({ p }) {
 function GrandPrizeDraw({ state }) {
   const { draw, me } = state
   return (
-    <div className="xmas-card mt-6 rounded-2xl px-5 py-4 text-left">
+    <div className="xmas-card mt-2 rounded-2xl px-5 py-4 text-left">
       <div className="flex items-center gap-4">
         <img src={GIFT_PULSE} alt="" aria-hidden="true" className="xmas-gift-img w-16 shrink-0 sm:w-20" />
         <div className="min-w-0">
@@ -336,7 +336,8 @@ export default function GiveawayPage() {
               ))}
             </ul>
 
-            <div className="relative mx-auto mt-8 max-w-xl">
+            {/* One column with even gaps, so buttons never touch; the main action comes first. */}
+            <div className="relative mx-auto mt-8 flex max-w-xl flex-col gap-4">
               {!state && !loadError && <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-300 border-t-transparent" />}
               {loadError && <p className="font-semibold text-amber-100">{loadError}</p>}
               {state?.phase === 'before' && <Countdown to={`${state.start}T00:00:00Z`} label="The first door opens in" />}
@@ -344,12 +345,6 @@ export default function GiveawayPage() {
                 state.preview
                   ? <p className="xmas-card rounded-2xl px-5 py-4">You have spun on this day. Pick another day in the preview bar.</p>
                   : <Countdown to={state.nextResetAt} label="Your next door opens in" />
-              )}
-              {/* Prizes waiting to be claimed: point at them (spinning still goes on every day). */}
-              {state?.phase !== 'before' && unclaimed > 0 && (
-                <a href="#my-prizes" className={`${me.spunToday ? BIG_CTA : 'xmas-btn-outline w-full px-6 py-3'} mt-4`}>
-                  {me.bigWon ? 'You won your big prize! Claim it on Pulse below.' : `You have ${unclaimed} prize${unclaimed === 1 ? '' : 's'} to claim on Pulse.`} <FiArrowRight aria-hidden="true" />
-                </a>
               )}
               {state?.phase === 'open' && !me && (
                 <button type="button" onClick={() => setJoinOpen(true)} className={BIG_CTA}>Join free and spin today</button>
@@ -359,13 +354,19 @@ export default function GiveawayPage() {
                   <span aria-hidden="true">🎁</span> Open today's door
                 </button>
               )}
+              {/* Prizes waiting to be claimed: point at them (spinning still goes on every day). */}
+              {state?.phase !== 'before' && unclaimed > 0 && (
+                <a href="#my-prizes" className={me.spunToday ? BIG_CTA : 'xmas-btn-outline w-full px-6 py-3'}>
+                  {me.bigWon ? 'You won your big prize! Claim it on Pulse below.' : `You have ${unclaimed} prize${unclaimed === 1 ? '' : 's'} to claim on Pulse.`} <FiArrowRight aria-hidden="true" />
+                </a>
+              )}
               {state?.phase === 'ended' && (
                 <p className="xmas-card rounded-2xl px-5 py-4">
                   The giveaway has ended. Thank you for playing! Winners can claim their prize on Pulse until {prettyDay(state.claimDeadline)} 2027.
                 </p>
               )}
               {state?.phase === 'before' && !me && (
-                <button type="button" onClick={() => setJoinOpen(true)} className="xmas-btn-outline mt-5 w-full px-6 py-3">
+                <button type="button" onClick={() => setJoinOpen(true)} className="xmas-btn-outline w-full px-6 py-3">
                   Join now so you are ready on 1 December
                 </button>
               )}
